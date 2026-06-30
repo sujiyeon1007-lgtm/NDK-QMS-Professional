@@ -1,0 +1,66 @@
+/**
+ * Project TITAN Professional V1.0 — Design Tokens (Foundation)
+ * PM Development Standard · 색상 직접 입력 금지 — 토큰만 사용
+ */
+
+:root {
+  /* Primary / Secondary */
+  --titan-primary: #2563eb;
+  --titan-primary-hover: #1d4ed8;
+  --titan-secondary: #64748b;
+  --titan-secondary-hover: #475569;
+
+  /* Semantic */
+  --titan-success: #10b981;
+  --titan-warning: #f97316;
+  --titan-danger: #ef4444;
+  --titan-neutral: #64748b;
+
+  /* Background / Surface */
+  --titan-bg: #f8fafc;
+  --titan-surface: #ffffff;
+  --titan-sidebar-bg: #0f172a;
+  --titan-sidebar-active: #2563eb;
+
+  /* Text */
+  --titan-text: #0f172a;
+  --titan-text-muted: #64748b;
+  --titan-text-inverse: #ffffff;
+
+  /* Border */
+  --titan-border: #e2e8f0;
+
+  /* Table (PM 공통 리스트) */
+  --titan-table-header: #e3e9f0;
+  --titan-table-header-text: #1e293b;
+  --titan-table-header-border: #d5dee8;
+  --titan-table-border: #dde6f0;
+  --titan-table-row-hover: #f3f7fc;
+  --titan-table-row-selected: #edf4fd;
+  --titan-table-cell-py: 10px;
+  --titan-table-cell-px: 12px;
+
+  /* Layout */
+  --titan-sidebar-width: 196px;
+  --titan-header-h: 56px;
+  --titan-footer-h: 32px;
+  --titan-main-px: 16px;
+  --titan-main-py: 12px;
+  --titan-gap: 10px;
+
+  /* Radius & Shadow */
+  --titan-radius: 10px;
+  --titan-radius-sm: 6px;
+  --titan-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  /* List-first layout */
+  --titan-list-ratio: 86%;
+  --titan-side-max: 240px;
+
+  /* Status (PM V1.0 공식 — Status Badge) */
+  --titan-status-progress: #1976d2;
+  --titan-status-complete: #2e7d32;
+  --titan-status-wait: #f57c00;
+  --titan-status-hold: #757575;
+  --titan-status-defect: #d32f2f;
+}

@@ -1,0 +1,149 @@
+.work-schedule-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.schedule-panel {
+  min-height: calc(100vh - 224px);
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.schedule-panel-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.schedule-panel-head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.schedule-panel-head > span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e3e9f3;
+  font-size: 12px;
+  font-weight: 900;
+  color: #475569;
+}
+
+.schedule-list-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.schedule-empty {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.schedule-empty p {
+  margin: 0;
+}
+
+.schedule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.schedule-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 62px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #eef2f7;
+  background: #ffffff;
+}
+
+.schedule-list li:hover {
+  background: #f8fafc;
+}
+
+.schedule-list input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #5b8def;
+}
+
+.schedule-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.schedule-main strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.schedule-main span,
+.schedule-main p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.schedule-icon-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.schedule-icon-btn:hover {
+  background: #f1f5f9;
+  color: #4f73ac;
+}
+
+.schedule-icon-btn.danger:hover {
+  background: #fef2f2;
+  color: #a35454;
+}
+
+.schedule-actions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+@media (max-width: 768px) {
+  .schedule-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .schedule-list .status-badge,
+  .schedule-actions {
+    grid-column: 2;
+  }
+}

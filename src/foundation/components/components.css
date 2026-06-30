@@ -1,0 +1,820 @@
+/** Foundation component styles — stubs (PM 승인 후 확장) */
+
+.titan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: auto;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: var(--titan-radius-sm);
+  border: 1px solid var(--titan-border);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  cursor: pointer;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  text-align: center;
+}
+
+.titan-btn__icon {
+  flex-shrink: 0;
+}
+
+/* Project TITAN — 단어 단위 줄바꿈 (버튼 · 제목 · 카드) */
+.titan-text-wrap {
+  display: inline-block;
+  max-width: 100%;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.titan-word-wrap,
+.titan-section-page__title,
+.titan-page-top-bar__title,
+.titan-kpi-panel__title,
+.titan-kpi-card__label,
+.titan-kpi-card__sub,
+.titan-collapse__head,
+.inbound-page__title {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  white-space: normal;
+}
+
+.titan-btn--primary {
+  background: var(--titan-primary);
+  border-color: var(--titan-primary);
+  color: #fff;
+}
+
+.titan-btn--secondary {
+  background: var(--titan-surface);
+  border-color: var(--titan-border);
+  color: var(--titan-text);
+}
+
+.titan-btn--secondary:hover {
+  background: var(--titan-bg);
+  border-color: var(--titan-secondary);
+  color: var(--titan-secondary-hover);
+}
+
+.titan-card {
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius);
+  box-shadow: var(--titan-shadow);
+  padding: 14px 16px;
+}
+
+.titan-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  font-size: 13px;
+}
+
+.titan-status-chip {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.titan-status-chip--progress {
+  background: #dbeafe;
+  color: var(--titan-status-progress);
+}
+
+.titan-status-chip--complete {
+  background: #dcfce7;
+  color: var(--titan-status-complete);
+}
+
+.titan-status-chip--wait {
+  background: #ffedd5;
+  color: var(--titan-status-wait);
+}
+
+.titan-status-chip--hold {
+  background: #f1f5f9;
+  color: var(--titan-status-hold);
+}
+
+.titan-status-chip--defect {
+  background: #fee2e2;
+  color: var(--titan-status-defect);
+}
+
+.titan-status-chip--incoming {
+  background: #dbeafe;
+  color: var(--titan-status-progress);
+}
+
+.titan-status-chip--production {
+  background: #dcfce7;
+  color: var(--titan-status-complete);
+}
+
+.titan-status-chip--certificate {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.titan-status-chip--prod-wait {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.titan-status-chip--inspect {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.titan-status-chip--ship-wait {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+/* ── HOME Dashboard KPI panels (시안) ── */
+.titan-kpi-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px 16px 14px;
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius);
+  box-shadow: var(--titan-shadow);
+}
+
+.titan-kpi-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: #1e293b;
+}
+
+.titan-kpi-panel__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.titan-kpi-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.titan-kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 132px;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.titan-kpi-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.titan-kpi-card__label {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1e293b;
+  word-break: keep-all;
+}
+
+.titan-kpi-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.titan-kpi-card__icon--blue {
+  background: #eff6ff;
+  color: var(--titan-primary);
+}
+
+.titan-kpi-card__icon--orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.titan-kpi-card__icon--green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.titan-kpi-card__icon--purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.titan-kpi-card__count {
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titan-kpi-card__count small {
+  margin-left: 1px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.titan-kpi-card__sub {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--titan-text-muted);
+  word-break: keep-all;
+}
+
+.titan-kpi-panel__footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--titan-border);
+  text-align: center;
+}
+
+.titan-kpi-panel__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-primary);
+  text-decoration: none;
+}
+
+.titan-kpi-panel__link:hover {
+  text-decoration: underline;
+}
+
+/* ── TitanDataTable (PM 공통 리스트) ── */
+.titan-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--titan-table-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+}
+
+.titan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.titan-table--ratio {
+  table-layout: fixed;
+}
+
+.titan-table--ratio .titan-table__cell--company,
+.titan-table--ratio .titan-table__cell--partName,
+.titan-table--ratio .titan-table__cell--partNo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titan-table--ratio .titan-table__cell--partName {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.titan-table__header-row th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.titan-table__cell--head {
+  padding: var(--titan-table-cell-py) var(--titan-table-cell-px);
+  background: var(--titan-table-header);
+  border-bottom: 1px solid var(--titan-table-header-border);
+  color: var(--titan-table-header-text);
+  font-weight: 800;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.titan-table__cell {
+  padding: var(--titan-table-cell-py) var(--titan-table-cell-px);
+  border-bottom: 1px solid var(--titan-table-border);
+  color: var(--titan-text);
+  vertical-align: middle;
+  background: var(--titan-surface);
+}
+
+.titan-table__body tr:last-child .titan-table__cell {
+  border-bottom: none;
+}
+
+.titan-table__body tr.titan-table__row:hover .titan-table__cell {
+  background: var(--titan-table-row-hover);
+}
+
+.titan-table__body tr.titan-table__row--selected .titan-table__cell,
+.titan-table__body tr.titan-table__row--active .titan-table__cell {
+  background: var(--titan-table-row-selected);
+}
+
+.titan-table__body tr.titan-table__row--selected:hover .titan-table__cell,
+.titan-table__body tr.titan-table__row--active:hover .titan-table__cell {
+  background: var(--titan-table-row-selected);
+}
+
+.titan-table__checkbox {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--titan-primary);
+  cursor: pointer;
+}
+
+.titan-table__empty {
+  padding: 32px var(--titan-table-cell-px) !important;
+  text-align: center;
+  color: var(--titan-text-muted);
+  font-weight: 600;
+}
+
+/* ── Pagination (테이블 공통) ── */
+.titan-table-footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  min-height: 38px;
+}
+
+.titan-table-footer__total {
+  justify-self: start;
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  font-weight: 600;
+}
+
+.titan-table-footer__pagination {
+  justify-self: center;
+}
+
+.titan-table-footer__page-size {
+  justify-self: end;
+}
+
+.titan-table-footer__total strong {
+  color: var(--titan-text);
+  font-weight: 800;
+}
+
+.titan-page-size {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  font-weight: 600;
+}
+
+.titan-page-size__select {
+  height: 30px;
+  min-width: 58px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 12px;
+  color: var(--titan-text);
+}
+
+.titan-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.titan-pagination__btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  color: var(--titan-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.titan-pagination__btn:hover:not(:disabled) {
+  border-color: #bfdbfe;
+  color: var(--titan-primary);
+}
+
+.titan-pagination__btn.active {
+  background: var(--titan-primary);
+  border-color: var(--titan-primary);
+  color: #fff;
+}
+
+.titan-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.titan-pagination__ellipsis {
+  min-width: 20px;
+  text-align: center;
+  color: var(--titan-text-muted);
+  font-size: 12px;
+}
+
+/* ── Search Panel (공통 CRUD) ── */
+.titan-search-panel {
+  padding: 12px 14px !important;
+}
+
+.titan-search-panel__basic {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  min-height: 62px;
+}
+
+.titan-search-panel__fields {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.titan-search-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.titan-search-panel__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-search-panel__select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 13px;
+  color: var(--titan-text);
+}
+
+.titan-search-panel__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.titan-advanced-search {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.titan-advanced-search--open {
+  grid-template-rows: 1fr;
+}
+
+.titan-advanced-search__inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.titan-advanced-search--open .titan-advanced-search__inner {
+  opacity: 1;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--titan-border);
+}
+
+.titan-advanced-search__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.titan-advanced-search__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titan-advanced-search__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-advanced-search__date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.titan-advanced-search__date-range span {
+  color: var(--titan-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .titan-search-panel__basic {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .titan-search-panel__fields,
+  .titan-advanced-search__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .titan-table-footer {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .titan-table-footer__total,
+  .titan-table-footer__pagination,
+  .titan-table-footer__page-size {
+    justify-self: center;
+  }
+}
+
+/* legacy alias */
+.titan-pagination.titan-table__pagination,
+.titan-table__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+}
+
+.titan-pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.titan-pagination__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  font-weight: 600;
+}
+
+.titan-pagination__size select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 12px;
+}
+
+.titan-collapse {
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  overflow: hidden;
+}
+
+.titan-collapse__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--titan-text);
+  text-align: left;
+}
+
+.titan-collapse__icon {
+  transition: transform 0.15s;
+  color: var(--titan-text-muted);
+}
+
+.titan-collapse__icon.open {
+  transform: rotate(180deg);
+}
+
+.titan-collapse__body {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--titan-border);
+}
+
+.titan-foundation-stub {
+  padding: 12px;
+  border: 1px dashed var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  color: var(--titan-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── TitanRegisterModal (공통 등록 모달) ── */
+body.titan-modal-open {
+  overflow: hidden;
+}
+
+.titan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.titan-modal {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.titan-modal--wide {
+  width: min(960px, 78vw);
+}
+
+.titan-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--titan-border);
+  flex-shrink: 0;
+}
+
+.titan-modal__kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--titan-primary);
+}
+
+.titan-modal__header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--titan-text);
+}
+
+.titan-modal__close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--titan-text-muted);
+}
+
+.titan-modal__form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.titan-modal__body {
+  padding: 14px 18px 16px;
+  overflow-y: auto;
+}
+
+.titan-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.titan-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titan-modal__field--full {
+  grid-column: 1 / -1;
+}
+
+.titan-modal__field span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-modal__field select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 13px;
+}
+
+.titan-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--titan-border);
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .titan-modal__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── 등록 모달 입력값 요약 카드 ── */
+.titan-register-summary {
+  min-width: 0;
+  align-self: start;
+}
+
+.titan-register-summary__text {
+  display: block;
+  max-width: 100%;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-height: 1.4;
+  overflow: hidden;
+}

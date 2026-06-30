@@ -1,0 +1,65 @@
+.titan-section-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-height: 0;
+}
+
+.titan-section-page__header {
+  flex: 0 0 auto;
+  padding: 12px 14px;
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius);
+}
+
+.titan-section-page__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--titan-text);
+}
+
+.titan-section-page__desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--titan-text-muted);
+}
+
+.titan-section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.titan-section-tabs__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--titan-radius-sm);
+  border: 1px solid var(--titan-border);
+  background: var(--titan-bg);
+  color: var(--titan-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.titan-section-tabs__link:hover {
+  background: #eff6ff;
+  color: var(--titan-primary);
+  border-color: #bfdbfe;
+}
+
+.titan-section-tabs__link.active {
+  background: var(--titan-primary);
+  border-color: var(--titan-primary);
+  color: #fff;
+}
+
+.titan-section-page__body {
+  flex: 1 1 auto;
+  min-height: 0;
+}

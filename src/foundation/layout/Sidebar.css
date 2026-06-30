@@ -1,0 +1,71 @@
+/**
+ * Project TITAN V1.0 — Sidebar
+ */
+
+.titan-sidebar {
+  width: var(--titan-sidebar-width);
+  flex: 0 0 var(--titan-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--titan-sidebar-bg);
+  color: var(--titan-text-inverse);
+  overflow: hidden;
+}
+
+.titan-sidebar__brand {
+  padding: 14px 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.titan-sidebar__brand strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.titan-sidebar__brand span {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.titan-sidebar__nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.titan-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  margin-top: 2px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.titan-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.titan-sidebar__link.active {
+  background: var(--titan-sidebar-active);
+  color: #fff;
+}
+
+.titan-sidebar__footer {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+}

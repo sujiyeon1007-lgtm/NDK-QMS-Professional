@@ -1,0 +1,196 @@
+.home-task-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+body.home-task-modal-open {
+  overflow: hidden;
+}
+
+.home-task-modal {
+  width: min(380px, 100%);
+  background: #ffffff;
+  border: 1px solid #e3e9f3;
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.home-task-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.home-task-modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.home-task-modal-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.home-task-modal-close:hover {
+  background: #f8fafc;
+}
+
+.home-task-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-task-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-task-field > span,
+.home-task-priority legend {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.home-task-field input[type="text"],
+.home-task-field input[type="time"],
+.home-task-field textarea {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.home-task-field textarea {
+  height: auto;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.home-task-field input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.home-task-priority {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.home-task-priority-options {
+  display: flex;
+  gap: 8px;
+}
+
+.priority-option {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+}
+
+.priority-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.priority-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.priority-option input:checked + span {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.priority-option.important input:checked + span {
+  border-color: #d97706;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.priority-option.urgent input:checked + span {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.home-task-error {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.home-task-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.home-task-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-task-btn.ghost {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+}
+
+.home-task-btn.primary {
+  border: none;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.home-task-btn.primary:hover {
+  background: #1e40af;
+}

@@ -1,0 +1,311 @@
+/**
+ * Project TITAN V1.0 — Approved UI patterns (Design Freeze)
+ * Reference: Incoming Management mockup
+ */
+
+/* ── Search: base 4 fields + ▼ 추가 옵션 ── */
+.titan-search-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--titan-point, #2563eb);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.titan-search-advanced-toggle:hover {
+  color: #1d4ed8;
+}
+
+.titan-search-advanced-toggle .chevron {
+  transition: transform var(--titan-collapse-duration, 250ms) ease;
+}
+
+.titan-search-advanced-toggle.is-collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+.search-grid--advanced {
+  padding-top: 4px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+/* Global search primary button (Design Freeze) */
+.search-btn.primary {
+  background: var(--titan-point, #2563eb);
+  border-color: var(--titan-point, #2563eb);
+  color: #ffffff;
+}
+
+.search-btn.primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.titan-table-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--titan-text, #37474f);
+  letter-spacing: -0.02em;
+}
+
+.titan-table-subtitle {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.titan-page-size select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border, #dbe4f0);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--titan-text, #37474f);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ── Table toolbar ── */
+.titan-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.titan-table-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.titan-table-count {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.titan-table-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.titan-table-tool-btn {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--titan-border, #dbe4f0);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--titan-text, #37474f);
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.titan-table-tool-btn:hover {
+  background: #f8fafc;
+  border-color: #c7d7ea;
+}
+
+.titan-column-menu {
+  position: relative;
+}
+
+.titan-column-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--titan-border, #dbe4f0);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.titan-column-popover label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text, #37474f);
+  cursor: pointer;
+}
+
+/* ── Side reference cards (입고현황 · 사내재고) ── */
+.titan-ref-card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--titan-border, #e3e9f3);
+  border-radius: var(--titan-panel-radius, 12px);
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.titan-ref-card:hover {
+  border-color: #c7d7ea;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.titan-ref-card.active {
+  border-color: #a9c7ee;
+  background: #f8fbff;
+}
+
+.titan-ref-card__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+  margin-bottom: 4px;
+}
+
+.titan-ref-card__value {
+  display: block;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--titan-text, #37474f);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.titan-ref-card__value small {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.titan-ref-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--titan-point, #4682b4);
+}
+
+/* ── Notice card ── */
+.titan-notice-card {
+  padding: 10px 12px;
+  border: 1px solid var(--titan-border, #e3e9f3);
+  border-radius: var(--titan-panel-radius, 12px);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.titan-notice-card h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--titan-text, #37474f);
+}
+
+.titan-notice-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titan-notice-card li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text, #37474f);
+}
+
+.titan-notice-card li time {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.titan-notice-card__all {
+  margin-top: 8px;
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--titan-border, #dbe4f0);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--titan-text, #37474f);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.titan-notice-card__all:hover {
+  background: #eff6ff;
+  border-color: #c7d7ea;
+}
+
+.titan-side-stack {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* Scrollable detail / workflow area */
+.titan-side-stack__main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-page-gap, 10px);
+}
+
+.titan-side-stack__main::-webkit-scrollbar {
+  width: 5px;
+}
+
+.titan-side-stack__main::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* KPI / ref cards pinned to bottom of side column */
+.titan-side-stack__pinned {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--titan-page-gap, 10px);
+  border-top: 1px solid var(--titan-border, #e3e9f3);
+  background: var(--titan-bg, #f5f5f5);
+}

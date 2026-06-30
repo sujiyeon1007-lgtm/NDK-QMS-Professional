@@ -1,0 +1,207 @@
+/**
+ * NDK QMS V2.0 — Sidebar (Design Guide)
+ * Dark navy · white icons · blue active highlight · version footer
+ */
+
+.app-sidebar {
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-icon: #ffffff;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: #2563eb;
+  --sidebar-divider: rgba(255, 255, 255, 0.08);
+
+  width: var(--titan-sidebar-width, 196px);
+  flex: 0 0 var(--titan-sidebar-width, 196px);
+  align-self: stretch;
+  min-height: 0;
+  max-height: 100%;
+  background: var(--sidebar-bg);
+  border-right: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--sidebar-text);
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-brand {
+  flex: 0 0 auto;
+  max-height: var(--titan-sidebar-brand-max-h, 68px);
+  padding: 14px 12px 10px;
+  background: transparent;
+  border-bottom: 1px solid var(--sidebar-divider);
+  overflow: hidden;
+}
+
+.sidebar-brand p {
+  display: none;
+}
+
+.sidebar-brand span {
+  display: block;
+  font-size: 0;
+  line-height: 0;
+}
+
+.sidebar-brand span::before {
+  content: "QMS Professional";
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.sidebar-brand span::after {
+  content: "NDK QMS V2.0";
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--sidebar-text-muted);
+  line-height: 1.2;
+}
+
+.sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--titan-sidebar-link-gap, 10px);
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+  color: var(--sidebar-icon);
+  opacity: 0.92;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background: var(--sidebar-hover);
+  color: #ffffff;
+}
+
+.sidebar-link:hover svg {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.sidebar-link.active {
+  background: var(--sidebar-active);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.sidebar-link.active svg {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.sidebar-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-sidebar-item-gap, 4px);
+  flex-shrink: 0;
+}
+
+.sidebar-menu-group + .sidebar-menu-group {
+  margin-top: var(--titan-sidebar-group-gap, 8px);
+  padding-top: var(--titan-sidebar-group-divider-pad, 8px);
+  border-top: 1px solid var(--sidebar-divider);
+}
+
+.sidebar-group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--titan-sidebar-link-gap, 10px);
+  min-height: var(--titan-sidebar-group-label-h, 26px);
+  padding: 0 12px;
+  color: var(--sidebar-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sidebar-group-label svg {
+  flex-shrink: 0;
+  color: var(--sidebar-text-muted);
+  opacity: 0.85;
+}
+
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-sidebar-item-gap, 4px);
+  padding: 2px 0 0;
+}
+
+.sidebar-sub-link {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.sidebar-link-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-footer {
+  flex: 0 0 auto;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--sidebar-divider);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sidebar-text-muted);
+  line-height: 1.45;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .app-sidebar {
+    flex-basis: var(--titan-sidebar-width, 196px);
+  }
+}

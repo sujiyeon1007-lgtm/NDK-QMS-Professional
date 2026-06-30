@@ -1,0 +1,316 @@
+/* Project TITAN — 거래명세서 공식 양식 (A4 2부) */
+
+.ts-preview-wrap {
+  padding: 12px;
+  border-radius: 12px;
+  background: #cbd5e1;
+  overflow-x: auto;
+}
+
+.ts-page {
+  width: 210mm;
+  margin: 0 auto;
+  padding: 8mm 10mm;
+  background: #fff;
+  border: 2px solid #111;
+  box-sizing: border-box;
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  color: #111;
+}
+
+.ts-sheet {
+  width: 100%;
+}
+
+.ts-sheet-top {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: end;
+  margin-bottom: 0;
+  min-height: 48px;
+}
+
+.ts-issue-date {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #111;
+  text-align: center;
+  font-size: 10px;
+  background: #fff;
+}
+
+.ts-issue-date.highlighted {
+  background: #fff3bf;
+}
+
+.ts-issue-label {
+  border-bottom: 1px solid #111;
+  padding: 2px 2px;
+  font-weight: 700;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.ts-issue-value {
+  padding: 3px 4px;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.ts-title {
+  margin: 0;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.42em;
+  line-height: 1.1;
+  padding-right: 0.42em;
+}
+
+.ts-copy-label {
+  margin: 0;
+  text-align: right;
+  font-size: 10px;
+  font-weight: 700;
+  padding-bottom: 2px;
+}
+
+.ts-form-block {
+  width: 100%;
+}
+
+/* ── 공통 테이블 ── */
+.ts-form-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10px;
+}
+
+.ts-form-table th,
+.ts-form-table td {
+  border: 1px solid #111;
+  padding: 2px 4px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+/* ── 공급자/공급받는자 10열 ── */
+.ts-party-table {
+  margin-bottom: 0;
+}
+
+.ts-party-table .ts-col-side {
+  width: 4.5%;
+}
+
+.ts-party-table .ts-col-label {
+  width: 7.5%;
+}
+
+.ts-party-table .ts-col-value {
+  width: 13%;
+}
+
+.ts-party-side-label {
+  text-align: center;
+  font-weight: 800;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  line-height: 1;
+  padding: 4px 1px !important;
+}
+
+.ts-field-label {
+  text-align: center;
+  font-weight: 700;
+  background: #fafafa;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.ts-field-value {
+  font-size: 10px;
+  font-weight: 600;
+  padding-left: 5px !important;
+}
+
+.ts-field-value.has-seal {
+  position: relative;
+  padding-right: 52px !important;
+}
+
+.ts-company-seal {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border: 2.5px solid #dc2626;
+  border-radius: 50%;
+  color: #dc2626;
+  font-size: 18px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.ts-total-row td {
+  height: 30px;
+}
+
+.ts-total-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  padding-right: 0.18em !important;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.ts-total-value {
+  text-align: right;
+  padding-right: 10px !important;
+  white-space: nowrap;
+}
+
+.ts-total-amount-text {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* ── 품목표 9열 ── */
+.ts-items-table {
+  margin-top: -1px;
+}
+
+.ts-items-table thead th {
+  border-top: none;
+}
+
+.ts-items-table .ts-i-no {
+  width: 5%;
+}
+
+.ts-items-table .ts-i-part-name {
+  width: 18%;
+}
+
+.ts-items-table .ts-i-part-no {
+  width: 14%;
+}
+
+.ts-items-table .ts-i-qty {
+  width: 9%;
+}
+
+.ts-items-table .ts-i-price {
+  width: 10%;
+}
+
+.ts-items-table .ts-i-supply {
+  width: 13%;
+}
+
+.ts-items-table .ts-i-vat {
+  width: 11%;
+}
+
+.ts-items-table .ts-i-total {
+  width: 13%;
+}
+
+.ts-items-table .ts-i-note {
+  width: 7%;
+}
+
+.ts-items-table thead th {
+  height: 22px;
+  font-weight: 800;
+  font-size: 9px;
+  text-align: center;
+  background: #fafafa;
+  padding: 2px 2px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.ts-items-table tbody td {
+  height: 22px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.ts-items-table tbody td.left {
+  text-align: left;
+  padding-left: 5px !important;
+}
+
+.ts-items-table tbody td.num {
+  text-align: right;
+  padding-right: 6px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-items-footer td {
+  height: 26px;
+  font-weight: 700;
+}
+
+.ts-receiver-label {
+  text-align: center !important;
+}
+
+.ts-receiver-sign {
+  text-align: center !important;
+  letter-spacing: 0.45em;
+  padding-right: 0.45em !important;
+}
+
+.ts-subtotal-label {
+  text-align: center !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.15em;
+}
+
+.ts-page-divider {
+  margin: 8mm 0;
+  border: none;
+  border-top: 1px dashed #666;
+}
+
+@media print {
+  .ts-preview-wrap {
+    padding: 0;
+    background: #fff;
+    border-radius: 0;
+  }
+
+  .ts-page {
+    border: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  .ts-page-divider {
+    margin: 6mm 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .ts-page {
+    width: 100%;
+    min-width: 720px;
+  }
+}

@@ -1,0 +1,164 @@
+.inspection-log-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.inspection-log-modal {
+  width: min(920px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid #e3e9f3;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.inspection-log-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e8eef5;
+}
+
+.inspection-log-modal-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #2563eb;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inspection-log-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.inspection-log-modal-close {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.inspection-log-modal-form {
+  padding: 18px 22px 22px;
+}
+
+.inspection-log-form-section + .inspection-log-form-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f7;
+}
+
+.inspection-log-form-section h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #334155;
+}
+
+.inspection-log-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.inspection-log-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspection-log-form-grid label.span-2 {
+  grid-column: span 2;
+}
+
+.inspection-log-form-grid span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.inspection-log-form-grid input,
+.inspection-log-form-grid select,
+.inspection-log-form-grid textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.inspection-log-form-grid textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.inspection-log-qty-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 8px;
+}
+
+.inspection-log-qty-unit input,
+.inspection-log-qty-unit select {
+  min-width: 0;
+}
+
+.inspection-log-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f7;
+}
+
+.inspection-log-btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.inspection-log-btn.primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .inspection-log-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inspection-log-form-grid label.span-2 {
+    grid-column: span 1;
+  }
+}

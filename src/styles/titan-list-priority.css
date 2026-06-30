@@ -1,0 +1,196 @@
+/**
+ * List-first layout — 제품 리스트 ★★★★★
+ * KPI · 검색 · 상세는 줄이고, 목록 영역을 최대한 넓게.
+ * 메인 스크롤 허용 (사이드바 고정).
+ */
+
+/* ── 공통: 목록/분할 레이아웃이 있는 업무 화면 ── */
+.titan-page:has(.titan-list-workspace),
+.titan-page:has(.titan-split-workspace) {
+  gap: 6px;
+}
+
+.titan-page:has(.titan-list-workspace) .page-top-bar,
+.titan-page:has(.titan-split-workspace) .page-top-bar {
+  padding: 6px 12px;
+}
+
+.titan-page:has(.titan-list-workspace) .page-title-block h2,
+.titan-page:has(.titan-split-workspace) .page-title-block h2 {
+  font-size: 17px;
+}
+
+.titan-page:has(.titan-list-workspace) .page-kicker,
+.titan-page:has(.titan-split-workspace) .page-kicker {
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+/* 리스트 우선 — 설명·breadcrumb 숨김 (세로 공간 → 목록) */
+.titan-page:has(.titan-list-workspace) .page-description,
+.titan-page:has(.titan-list-workspace) .breadcrumb,
+.titan-page:has(.titan-split-workspace) .page-description,
+.titan-page:has(.titan-split-workspace) .breadcrumb {
+  display: none;
+}
+
+/* KPI 슬림 */
+.titan-page:has(.titan-list-workspace) .ndk-summary-grid,
+.titan-page:has(.titan-split-workspace) .ndk-summary-grid {
+  gap: 6px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card {
+  padding: 7px 10px;
+  gap: 8px;
+  min-height: 52px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card__icon,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card__icon {
+  width: 34px;
+  height: 34px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card__icon svg,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card__label,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card__label {
+  font-size: 10px;
+  margin-bottom: 1px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card__value,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card__value {
+  font-size: 20px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-card__note,
+.titan-page:has(.titan-split-workspace) .ndk-summary-card__note {
+  display: none;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-summary-grid.ndk-summary-grid--6,
+.titan-page:has(.titan-split-workspace) .ndk-summary-grid.ndk-summary-grid--6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+/* 검색 슬림 */
+.titan-page:has(.titan-list-workspace) .ndk-search-card,
+.titan-page:has(.titan-split-workspace) .ndk-search-card,
+.titan-page:has(.titan-list-workspace) .titan-search-panel--compact,
+.titan-page:has(.titan-split-workspace) .titan-search-panel--compact {
+  padding: 6px 10px !important;
+}
+
+.titan-page:has(.titan-list-workspace) .search-field input,
+.titan-page:has(.titan-list-workspace) .search-field select,
+.titan-page:has(.titan-split-workspace) .search-field input,
+.titan-page:has(.titan-split-workspace) .search-field select {
+  height: 28px;
+  font-size: 12px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-search-card .search-grid,
+.titan-page:has(.titan-split-workspace) .ndk-search-card .search-grid {
+  gap: 5px 8px;
+}
+
+.titan-page:has(.titan-list-workspace) .titan-table-toolbar,
+.titan-page:has(.titan-split-workspace) .titan-table-toolbar {
+  margin-bottom: 4px;
+}
+
+.titan-page:has(.titan-list-workspace) .ndk-table-card,
+.titan-page:has(.titan-split-workspace) .ndk-table-card {
+  padding: 8px 10px 6px;
+}
+
+/* ── 입고관리: 리스트 최대 (약 88 : 12) ── */
+.incoming-page .incoming-main {
+  --titan-list-columns: minmax(0, 1fr) minmax(180px, 220px);
+}
+
+.incoming-page .incoming-table-card {
+  width: 100%;
+}
+
+.incoming-page .incoming-table-wrap {
+  min-height: 360px;
+}
+
+.incoming-page .titan-list-side .titan-collapsible-panel__head h3 {
+  font-size: 13px;
+}
+
+.incoming-page .incoming-status-legend {
+  padding: 8px 10px;
+}
+
+.incoming-page .incoming-status-legend h4 {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.incoming-page .incoming-status-legend li {
+  font-size: 10px;
+  gap: 5px;
+}
+
+.incoming-page .ndk-work-card__head h3 {
+  font-size: 14px;
+}
+
+/* ── 성적서 · 출고: 리스트 넓게 ── */
+.certificate-page .cert-main {
+  --titan-list-columns: minmax(0, 1fr) minmax(180px, 230px);
+}
+
+.shipment-page .ship-split-workspace {
+  --titan-split-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+}
+
+/* ── 생산일보: 미등록 리스트 + 이력 ── */
+.daily-work-page .daily-split-workspace {
+  --titan-split-columns: minmax(320px, 1fr) minmax(0, 1.35fr);
+}
+
+.daily-work-page .daily-split-left {
+  grid-template-rows: minmax(280px, 1fr) auto;
+}
+
+.daily-work-page .daily-entry-panel-wrap {
+  max-height: none;
+}
+
+/* ── 생산작업계획 등 list workspace ── */
+.production-plan-page .production-main,
+.history-page .hist-main,
+.inspection-log-page .inspection-log-main,
+.production-results-page .production-results-main {
+  --titan-list-columns: minmax(0, 1fr) minmax(180px, 220px);
+}
+
+@media (max-width: 1400px) {
+  .titan-page:has(.titan-list-workspace) .ndk-summary-grid.ndk-summary-grid--6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .incoming-page .incoming-main,
+  .certificate-page .cert-main,
+  .production-plan-page .production-main {
+    --titan-list-columns: 1fr;
+  }
+
+  .shipment-page .ship-split-workspace,
+  .daily-work-page .daily-split-workspace {
+    grid-template-columns: 1fr;
+  }
+}

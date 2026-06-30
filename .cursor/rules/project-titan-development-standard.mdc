@@ -1,0 +1,145 @@
+---
+description: Project TITAN V1.0 PM-approved Development Standard — workflow, structure, UI, CSS, testing, Cursor rules
+alwaysApply: true
+---
+
+# Project TITAN Professional V1.0 — Development Standard (PM Final)
+
+**Purpose:** QMS + MES + ERP for NDK real operations. Prioritize **design and consistency** over speed. Maintainable structure for anyone on the team.
+
+**Source of truth (code):** `src/config/developmentStandard.js`, `src/config/menuStructure.js`
+
+---
+
+## 1. Project Structure Rules
+
+- Keep the **originally approved folder structure** — do not reorganize without PM approval.
+- **Reuse shared components** — do not duplicate the same UI pattern per page.
+- **Separate page CSS from shared CSS** — page-specific styles only in that page folder; shared styles in `src/foundation/styles/` and Foundation components.
+- **Extend, do not replace** — new features grow within existing structure.
+
+## 2. Development Order (Mandatory)
+
+Every screen follows this sequence. **No coding before design is complete.**
+
+```text
+기획 → 화면 설계 → PM 승인 → Cursor 개발 → 테스트 → 수정 → 다음 화면
+```
+
+## 3. Screen Build Order (One at a Time)
+
+Build **one screen at a time**. Do not start the next screen until the current one is **PM-approved**.
+
+```text
+HOME → 입출고관리 → 생산관리 → 품질관리 → 개인업무 → 통계자료 → 기준정보관리 → 환경설정
+```
+
+## 4. UI Development Rules
+
+### Layout (shared shell only)
+
+Use Foundation layout: **Header · Sidebar · Main · Footer** (`src/foundation/layout/AppShell.jsx`).
+
+### Search area
+
+- Show **essential filters only** by default.
+- Advanced filters live under **"추가 옵션"** (collapsed by default).
+
+### List (center of every screen)
+
+- **List-first** — list occupies the widest area (`--titan-list-ratio`, `--titan-side-max`).
+- Table is the primary content on work screens.
+
+### Detail panel
+
+- Use **collapse (접기/펼치기)**.
+- Default: **expanded**.
+- When collapsed, list area **automatically widens**.
+
+### Right panel
+
+- Use **only when needed** — not fixed on every screen.
+
+## 5. Component Rules
+
+Use Foundation shared components. **Do not create a new component for the same function.**
+
+| Standard name | Foundation path |
+|---------------|-----------------|
+| Button | `src/foundation/components/Button.jsx` |
+| Table | `src/foundation/components/Table.jsx` |
+| Status Badge | `src/foundation/components/StatusChip.jsx` |
+| Search Box | `src/foundation/components/SearchPanel.jsx` |
+| Card | `src/foundation/components/Card.jsx` |
+| Collapse Panel | `src/foundation/components/CollapsePanel.jsx` |
+| Modal / Popup | Add under `src/foundation/components/` when first approved screen needs them — reuse thereafter |
+
+Expand stubs only when PM-approved design requires it.
+
+## 6. CSS Rules
+
+- **Shared styles first** — `src/foundation/styles/foundation.css` + component CSS.
+- **Never hardcode colors** in components or pages — use Design Tokens in `src/foundation/styles/tokens.css`.
+- Token groups: Primary, Secondary, Success, Warning, Danger, Border, Background, Text, Shadow, Status.
+
+## 7. Table Rules (Core of TITAN)
+
+All screens use **one shared table style** (Foundation Table when implemented).
+
+- Fixed header · hover · sortable columns · pagination · checkbox selection · status badge
+- **Do not change column order/format arbitrarily** — follow common column rules (Date, ID, Company, Item, LOT, etc.) per screen design.
+
+## 8. Input Rules
+
+- **Minimize manual input.**
+- Auto-fill when possible: 관리번호, 등록일, 작성자, 상태, etc.
+
+## 9. Workflow Rules (Fixed — Do Not Change)
+
+All menus align to this flow:
+
+```text
+입고 → 생산 → 품질 → 출고 → 통계
+```
+
+Detailed chain: 입고 등록 → 작업지시서 → 생산정보 등록 → 검사일지 → 성적서 → 출고 → 이력조회
+
+See `WORKFLOW_STEPS` in `src/config/menuStructure.js`.
+
+## 10. Data Rules
+
+- **Never enter the same data twice.**
+- Data entered once is **reused** across menus: 입고 → 생산 → 검사 → 성적서 → 출고 → 통계.
+
+## 11. Change Rules
+
+- Fixing one feature must **not break other screens**.
+- Changing a **shared component** requires verifying **all screens** that use it.
+
+## 12. Test Checklist (Every New Feature)
+
+- UI layout intact · responsive behavior · data binding · button actions · search · CRUD · workflow links
+
+## 13. Cursor Rules (Strict)
+
+- **No UI structure changes without PM approval.**
+- **Do not alter approved designs.**
+- **Do not add new colors or layouts** outside Design Tokens and approved patterns.
+- **Prefer existing Foundation components.**
+- **Structure and consistency over feature count.**
+- **Fix root cause** — no temporary hacks.
+
+## 14. Development Philosophy
+
+Not a "many features fast" project. Goal: **easiest, fastest real NDK operations.**
+
+- Real work first · list-first · minimal input · maximum inquiry · shared components · simple intuitive UI · easy maintenance · extensible structure
+
+## Terminology
+
+- Do not use `오늘` in user-facing text.
+- Date basis: `금일`, `전일`, `금월`, `전월`.
+
+## Legacy
+
+- Do not import or extend prototype UI: `src/components/layout/`, `src/components/ui/`, `src/styles/titan-*.css`, `ndk-v2-ui.css`.

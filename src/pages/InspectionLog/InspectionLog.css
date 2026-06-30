@@ -1,0 +1,125 @@
+.inspection-log-main {
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.inspection-log-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.inspection-log-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin: 0;
+}
+
+.inspection-log-detail-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inspection-log-detail-grid div.span-2 {
+  grid-column: span 2;
+}
+
+.inspection-log-detail-grid dt {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.inspection-log-detail-grid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.inspection-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.inspection-log-action-btn {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.inspection-log-action-btn.primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.inspection-log-action-btn.danger {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.inspection-log-print-preview-wrap {
+  margin-top: 14px;
+  border-top: 1px solid #eef2f7;
+  padding-top: 12px;
+}
+
+.inspection-log-print-caption {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.inspection-log-chain-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.inspection-log-chain-note a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.inspection-log-empty-detail,
+.inspection-log-empty-cell {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.inspection-log-print-host {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 210mm;
+  pointer-events: none;
+  opacity: 0;
+}
+
+@media (max-width: 1100px) {
+  .inspection-log-main {
+    grid-template-columns: 1fr;
+  }
+}

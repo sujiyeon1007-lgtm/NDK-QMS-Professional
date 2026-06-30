@@ -1,0 +1,360 @@
+/**
+ * Project TITAN — 공통 ERP/MES Table Design System (V3 · Pastel)
+ */
+
+.col-check {
+  width: 44px;
+  text-align: center;
+}
+
+.erp-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.erp-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+/* Header — 밝은 회색 배경 · 진한 회색 Bold */
+.erp-table thead th {
+  position: relative;
+  padding: var(--titan-table-th-padding, 10px 10px);
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+  white-space: nowrap;
+  background: var(--titan-table-header-bg, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-bottom: 1px solid #cbd5e1;
+  vertical-align: middle;
+}
+
+.erp-table thead th + th {
+  border-left-color: #dbe4f0;
+}
+
+.erp-table thead th:hover {
+  background: #eff6ff;
+}
+
+.erp-table thead th.col-check {
+  width: 44px;
+}
+
+/* Body — 글씨 검정 · 한 줄 표시 */
+.erp-table tbody td {
+  padding: var(--titan-table-td-padding, 11px 10px);
+  min-height: var(--ndk-table-row-min-h, 44px);
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.4;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.erp-table tbody tr {
+  cursor: default;
+}
+
+.erp-table.clickable-rows tbody tr,
+.incoming-table tbody tr {
+  cursor: pointer;
+}
+
+.erp-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.erp-table tbody tr.selected td {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.erp-table tbody tr.selected td:first-child {
+  border-left: 2px solid #2563eb;
+}
+
+.erp-table tbody tr.selected td:last-child {
+  border-right: 2px solid #2563eb;
+}
+
+.erp-table tbody tr.selected:hover td {
+  background: #eff6ff;
+}
+
+/* 정렬 */
+.erp-table .col-check,
+.erp-table .cell-badge,
+.erp-table thead th.col-check {
+  text-align: center;
+}
+
+.erp-table .cell-text,
+.erp-table .cell-id,
+.erp-table .cell-lot,
+.erp-table .cell-num,
+.erp-table .cell-date,
+.erp-table .cell-badge {
+  white-space: nowrap;
+}
+
+.erp-table .cell-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.erp-table .cell-text,
+.erp-table .cell-id {
+  text-align: left;
+}
+
+.erp-table .cell-date {
+  text-align: center;
+}
+
+.erp-table .cell-lot {
+  text-align: left;
+  font-weight: 700;
+}
+
+.erp-table .group-header-row td {
+  white-space: nowrap;
+}
+
+.cell-id {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+/* 관리번호 링크 */
+.mgmt-id-link {
+  color: #0f172a;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mgmt-id-link:hover {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+/* 상태 Badge — Project TITAN 공통 파스텔 Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  color: #334155;
+}
+
+.status-badge.입고예정,
+.status-badge.입고대기 {
+  background: #faf6ed;
+  border-color: #f0e8d8;
+  color: #9a6a2f;
+}
+
+.status-badge.입고완료 {
+  background: #edf3fa;
+  border-color: #dce8f4;
+  color: #315f8c;
+}
+
+.status-badge.생산계획 {
+  background: #f3f0f8;
+  border-color: #e8e2f0;
+  color: #67508a;
+}
+
+.status-badge.생산중 {
+  background: #edf6fa;
+  border-color: #dceef4;
+  color: #336b78;
+}
+
+.status-badge.열처리중 {
+  background: #edf8f4;
+  border-color: #d9f0e6;
+  color: #3b7663;
+}
+
+.status-badge.검사중 {
+  background: #fffbea;
+  border-color: #f4e8b8;
+  color: #8a742e;
+}
+
+.status-badge.보류 {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.status-badge.불량 {
+  background: #fef2f2;
+  border-color: #fee2e2;
+  color: #8f3d3d;
+}
+
+.status-badge.성적서대기 {
+  background: #faf0f4;
+  border-color: #f0e0e8;
+  color: #8f4f66;
+}
+
+.status-badge.출고대기 {
+  background: #faf4ed;
+  border-color: #f0e6d8;
+  color: #9a6736;
+}
+
+.status-badge.출고완료 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+.status-badge.진행중 {
+  background: #edf3fa;
+  border-color: #dce8f4;
+  color: #315f8c;
+}
+
+.status-badge.대기 {
+  background: #faf6ed;
+  border-color: #f0e8d8;
+  color: #9a6a2f;
+}
+
+.status-badge.완료 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+/* V2.0 workflow badges (pastel — project-wide) */
+.status-badge.LOT미지정,
+.status-badge.미등록,
+.status-badge.미발행 {
+  background: #fff8ef;
+  border-color: #f0e6d8;
+  color: #a56f38;
+}
+
+.status-badge.작업지시출력 {
+  background: #edf3fa;
+  border-color: #dce8f4;
+  color: #315f8c;
+}
+
+.status-badge.LOT완료 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+.status-badge.성적서완료,
+.status-badge.발행완료 {
+  background: #f3f0f8;
+  border-color: #e8e2f0;
+  color: #67508a;
+}
+
+/* LOT 상태 Badge — Project TITAN 공통 */
+.lot-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  margin-top: 4px;
+}
+
+.lot-status-badge.LOT생성 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+.lot-status-badge.작업진행중 {
+  background: #fffbea;
+  border-color: #f4e8b8;
+  color: #8a742e;
+}
+
+.lot-status-badge.생산완료 {
+  background: #edf3fa;
+  border-color: #dce8f4;
+  color: #315f8c;
+}
+
+.lot-status-badge.성적서완료 {
+  background: #f3f0f8;
+  border-color: #e8e2f0;
+  color: #67508a;
+}
+
+.lot-status-badge.출고완료 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+.lot-status-badge.LOT취소 {
+  background: #fef2f2;
+  border-color: #fee2e2;
+  color: #8f3d3d;
+}
+
+/* 좌측 Queue 목록 */
+.daily-queue-item,
+.cert-queue-item,
+.ship-queue-item,
+.hist-queue-item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+  color: #0f172a;
+}
+
+.daily-queue-item:hover,
+.cert-queue-item:hover,
+.ship-queue-item:hover,
+.hist-queue-item:hover {
+  background: #f8fafc;
+  border-color: #d5dde8;
+}
+
+.daily-queue-item.selected,
+.cert-queue-item.selected,
+.ship-queue-item.selected,
+.hist-queue-item.selected {
+  background: #edf4fd;
+  border-color: #a9c7ee;
+  box-shadow: 0 0 0 2px rgba(169, 199, 238, 0.22);
+}

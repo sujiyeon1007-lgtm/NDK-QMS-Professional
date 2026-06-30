@@ -1,0 +1,167 @@
+.inbound-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-height: 0;
+}
+
+.inbound-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inbound-page__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.inbound-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inbound-page__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, var(--titan-side-max));
+  gap: var(--titan-gap);
+  min-height: 420px;
+}
+
+.inbound-page__list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.inbound-page__selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--titan-radius-sm);
+  font-size: 12px;
+}
+
+.inbound-page__selection-bar div {
+  display: flex;
+  gap: 6px;
+}
+
+.inbound-page__table {
+  flex: 1 1 auto;
+  min-height: 280px;
+}
+
+.inbound-page__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-width: 0;
+}
+
+.inbound-detail {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.inbound-detail div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.inbound-detail dt {
+  margin: 0;
+  color: var(--titan-text-muted);
+  font-weight: 700;
+}
+
+.inbound-detail dd {
+  margin: 0;
+  color: var(--titan-text);
+  font-weight: 600;
+}
+
+.inbound-tasks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.inbound-tasks__item {
+  padding: 8px 10px;
+  border-radius: var(--titan-radius-sm);
+  border: 1px solid var(--titan-border);
+  background: var(--titan-bg);
+  font-size: 11px;
+}
+
+.inbound-tasks__item strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.inbound-tasks__item span {
+  color: var(--titan-text-muted);
+}
+
+.inbound-tasks__item--active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.inbound-tasks__item--active strong {
+  color: var(--titan-primary);
+}
+
+.inbound-tasks__item--done {
+  opacity: 0.65;
+}
+
+.inbound-page__detail-action {
+  width: 100%;
+  margin-top: auto;
+}
+
+/* ── TitanDetailPanel (우측 패널 공통) ── */
+.titan-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-width: 0;
+}
+
+.titan-detail-panel__divider {
+  border: none;
+  border-top: 1px solid var(--titan-border);
+  margin: 0;
+}
+
+.titan-detail-panel__action {
+  width: 100%;
+}
+
+.titan-detail-panel__action .titan-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .inbound-page__workspace {
+    grid-template-columns: 1fr;
+  }
+}

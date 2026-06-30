@@ -1,0 +1,126 @@
+.production-results-main {
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.production-results-search-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 10px;
+}
+
+.production-results-page .search-field input {
+  height: var(--titan-search-field-h);
+  padding: 0 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.production-results-page .search-btn {
+  height: var(--titan-search-btn-h);
+  padding: 0 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.production-results-page .search-btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.production-results-count {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  font-size: 12px;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+.production-results-page .panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.production-results-page .panel-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.production-results-page .panel-header p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.production-results-table {
+  min-width: 100%;
+}
+
+.production-results-empty,
+.production-results-detail-empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.production-results-detail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 0;
+}
+
+.production-results-detail div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.production-results-detail dt {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.production-results-detail dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.titan-status-card.is-static {
+  cursor: default;
+}
+
+.titan-status-card.is-static:hover {
+  border-color: #e3e9f3;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+@media (max-width: 960px) {
+  .production-results-search-grid {
+    grid-template-columns: 1fr;
+  }
+}

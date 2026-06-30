@@ -1,0 +1,141 @@
+.titan-table-head-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 18px;
+  width: 100%;
+}
+
+.titan-table-head-label,
+.titan-table-filter-trigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+}
+
+.titan-table-head-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0;
+}
+
+.titan-table-sort {
+  color: #cbd5e1;
+  font-size: 9px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.titan-table-sort.active {
+  color: #2563eb;
+  opacity: 1;
+}
+
+.erp-table thead th:hover .titan-table-sort,
+.hist-data-table thead th:hover .titan-table-sort,
+.wj-table thead th:hover .titan-table-sort {
+  opacity: 1;
+}
+
+.titan-table-filter-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  color: #94a3b8;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+
+.erp-table thead th:hover .titan-table-filter-trigger,
+.hist-data-table thead th:hover .titan-table-filter-trigger,
+.wj-table thead th:hover .titan-table-filter-trigger {
+  opacity: 1;
+}
+
+.titan-table-filter-trigger:hover {
+  background: #eaf2ff;
+  color: #2563eb;
+}
+
+.titan-table-filter-trigger.filtered {
+  color: #2563eb;
+  opacity: 1;
+}
+
+.titan-table-filter-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 50%;
+  min-width: 190px;
+  max-width: 240px;
+  padding: 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+  transform: translateX(-50%);
+  text-align: left;
+}
+
+.titan-table-filter-popover input[type="search"] {
+  width: 100%;
+  height: 32px;
+  margin-bottom: 8px;
+  padding: 0 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  outline: 0;
+}
+
+.titan-table-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.titan-table-filter-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.titan-table-filter-clear {
+  width: 100%;
+  height: 30px;
+  margin-top: 8px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.titan-table-filter-clear:hover {
+  background: #f8fafc;
+}

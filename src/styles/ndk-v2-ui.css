@@ -1,0 +1,412 @@
+/**
+ * NDK QMS Professional V2.0 — Official UI Design Standard
+ * Simple ERP/MES · white cards · pastel accents · generous spacing
+ * Use shared components in src/components/ui/ — do not create page-specific styles.
+ */
+
+:root {
+  /* Semantic palette — NDK QMS V2.0 Design Guide */
+  --ndk-primary: #2563eb;
+  --ndk-primary-hover: #1d4ed8;
+  --ndk-success: #10b981;
+  --ndk-warning: #f97316;
+  --ndk-complete: #8b5cf6;
+  --ndk-danger: #ef4444;
+  --ndk-neutral: #94a3b8;
+
+  --ndk-bg: var(--titan-bg, #f8fafc);
+  --ndk-surface: var(--titan-surface, #ffffff);
+  --ndk-text: var(--titan-text, #0f172a);
+  --ndk-text-muted: var(--titan-text-muted, #64748b);
+  --ndk-border: var(--titan-border, #e2e8f0);
+
+  --ndk-card-radius: 12px;
+  --ndk-card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(15, 23, 42, 0.04);
+  --ndk-card-padding: 14px 16px;
+
+  --ndk-btn-h: 36px;
+  --ndk-btn-radius: 8px;
+  --ndk-table-row-min-h: 44px;
+
+  /* Alias legacy tokens for backward compatibility */
+  --titan-point: var(--ndk-primary);
+  --titan-point-hover: var(--ndk-primary-hover);
+}
+
+/* ── Panel (base card shell) ── */
+.ndk-panel,
+.ndk-panel.panel {
+  background: var(--ndk-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--ndk-card-radius);
+  padding: var(--ndk-card-padding);
+  box-shadow: var(--ndk-card-shadow);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ── Section title ── */
+.ndk-section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.ndk-section-title__text h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ndk-text);
+  letter-spacing: -0.02em;
+}
+
+.ndk-section-title__text p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ndk-text-muted);
+}
+
+.ndk-section-title__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ── */
+.ndk-btn {
+  height: var(--ndk-btn-h);
+  padding: 0 14px;
+  border-radius: var(--ndk-btn-radius);
+  border: 1px solid var(--ndk-border);
+  background: var(--ndk-surface);
+  color: var(--ndk-text);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.ndk-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #c7d7ea;
+}
+
+.ndk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ndk-btn--primary {
+  background: var(--ndk-primary);
+  border-color: var(--ndk-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+
+.ndk-btn--primary:hover:not(:disabled) {
+  background: var(--ndk-primary-hover);
+  border-color: var(--ndk-primary-hover);
+}
+
+.ndk-btn--secondary {
+  background: var(--ndk-surface);
+  border-color: #bfdbfe;
+  color: var(--ndk-primary);
+}
+
+.ndk-btn--secondary:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: var(--ndk-primary-hover);
+}
+
+.ndk-btn--success {
+  background: #eef7f1;
+  border-color: #c8e6d0;
+  color: #3f7a51;
+}
+
+.ndk-btn--success.ndk-btn--solid {
+  background: var(--ndk-success);
+  border-color: var(--ndk-success);
+  color: #ffffff;
+}
+
+.ndk-btn--danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #8f3d3d;
+}
+
+.ndk-btn--danger.ndk-btn--solid {
+  background: var(--ndk-danger);
+  border-color: var(--ndk-danger);
+  color: #ffffff;
+}
+
+.ndk-btn--block {
+  width: 100%;
+}
+
+/* Map legacy toolbar/search buttons to V2 tokens */
+.titan-page .toolbar-btn.primary,
+.search-btn.primary {
+  background: var(--ndk-primary);
+  border-color: var(--ndk-primary);
+}
+
+.titan-page .toolbar-btn.primary:hover,
+.search-btn.primary:hover {
+  background: var(--ndk-primary-hover);
+  border-color: var(--ndk-primary-hover);
+}
+
+/* ── Summary cards (top KPI row) ── */
+.ndk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--titan-page-gap, 10px);
+  flex-shrink: 0;
+}
+
+.ndk-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--ndk-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--ndk-card-radius);
+  box-shadow: var(--ndk-card-shadow);
+  min-width: 0;
+}
+
+.ndk-summary-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ndk-summary-card__body {
+  min-width: 0;
+}
+
+.ndk-summary-card__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ndk-text-muted);
+  margin-bottom: 4px;
+}
+
+.ndk-summary-card__value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--ndk-text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.ndk-summary-card__value small {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ndk-text-muted);
+}
+
+.ndk-summary-card__note {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ndk-text-muted);
+}
+
+.ndk-summary-card--blue .ndk-summary-card__icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.ndk-summary-card--blue .ndk-summary-card__value {
+  color: #1e40af;
+}
+
+.ndk-summary-card--green .ndk-summary-card__icon {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.ndk-summary-card--green .ndk-summary-card__value {
+  color: #047857;
+}
+
+.ndk-summary-card--orange .ndk-summary-card__icon {
+  background: #ffedd5;
+  color: #f97316;
+}
+
+.ndk-summary-card--orange .ndk-summary-card__value {
+  color: #c2410c;
+}
+
+.ndk-summary-card--purple .ndk-summary-card__icon {
+  background: #ede9fe;
+  color: #8b5cf6;
+}
+
+.ndk-summary-card--purple .ndk-summary-card__value {
+  color: #6d28d9;
+}
+
+.ndk-summary-card--gray .ndk-summary-card__icon {
+  background: #f3f4f6;
+  color: #64748b;
+}
+
+.ndk-summary-card--gray .ndk-summary-card__value {
+  color: #64748b;
+}
+
+/* ── Search card ── */
+.ndk-search-card {
+  flex-shrink: 0;
+}
+
+.ndk-search-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #eef2f7;
+}
+
+/* ── Table card ── */
+.ndk-table-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding-bottom: 10px;
+}
+
+.ndk-table-card .erp-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ndk-table-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid #eef2f7;
+  flex-shrink: 0;
+}
+
+/* ── Info card (right panel) ── */
+.ndk-info-card {
+  background: var(--ndk-surface);
+  border: 1px solid #e3e9f3;
+  border-radius: var(--ndk-card-radius);
+  padding: 14px;
+  box-shadow: var(--ndk-card-shadow);
+}
+
+.ndk-info-card__title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ndk-text);
+}
+
+.ndk-info-card__required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+/* ── Pagination ── */
+.ndk-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ndk-pagination__btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--ndk-border);
+  border-radius: 6px;
+  background: var(--ndk-surface);
+  color: var(--ndk-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ndk-pagination__btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #c7d7ea;
+}
+
+.ndk-pagination__btn.is-active {
+  background: var(--ndk-primary);
+  border-color: var(--ndk-primary);
+  color: #ffffff;
+}
+
+.ndk-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ndk-pagination__ellipsis {
+  color: var(--ndk-text-muted);
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.ndk-pagination__total {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ndk-text-muted);
+}
+
+.ndk-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+/* ── Guide / notice box (inline help, not HOME notice card) ── */
+.ndk-guide-box {
+  padding: 10px 12px;
+  border: 1px solid #f0e6b8;
+  border-radius: 10px;
+  background: #fffbea;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b5a2a;
+  line-height: 1.5;
+}

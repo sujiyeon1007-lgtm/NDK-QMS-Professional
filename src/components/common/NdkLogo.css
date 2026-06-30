@@ -1,0 +1,40 @@
+.ndk-logo {
+  display: block;
+  height: auto;
+  object-fit: contain;
+}
+
+.ndk-logo--sidebar {
+  width: auto;
+  max-width: 128px;
+  max-height: var(--titan-sidebar-logo-max-h, 28px);
+  margin-bottom: 6px;
+  display: block;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
+}
+
+.ndk-logo--header {
+  height: 40px;
+  width: auto;
+}
+
+.ndk-logo--sheet {
+  width: auto;
+  height: 36px;
+  margin: 0 auto 8px;
+}
+
+.ndk-logo--sheet-lg {
+  width: auto;
+  height: 40px;
+  margin: 0 auto 8px;
+}
+
+.ndk-logo--print {
+  width: auto;
+  height: 68px;
+  max-width: 42mm;
+  margin: 0;
+}

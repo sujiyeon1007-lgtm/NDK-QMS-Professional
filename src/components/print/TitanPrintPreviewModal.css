@@ -1,0 +1,357 @@
+.titan-print-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.78);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 20px;
+}
+
+body.titan-print-modal-open {
+  overflow: hidden;
+}
+
+.titan-print-modal {
+  width: min(1480px, 100%);
+  height: min(920px, calc(100vh - 40px));
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.35);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.titan-print-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.titan-print-modal-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #2563eb;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.titan-print-modal-title-block h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.titan-print-modal-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.titan-print-modal-icon-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.titan-print-modal-icon-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #c7d7ea;
+  color: #1d4ed8;
+}
+
+.titan-print-modal-icon-btn.close:hover {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.titan-print-modal-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.titan-print-modal-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  overflow: hidden;
+}
+
+.titan-print-modal-viewport-wrap {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.titan-print-modal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.titan-print-modal-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.titan-print-modal-tool-btn {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.titan-print-modal-tool-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.titan-print-modal-tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.titan-print-modal-zoom-label,
+.titan-print-modal-page-indicator {
+  min-width: 52px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #475569;
+}
+
+.titan-print-modal-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #64748b;
+  padding: 28px;
+}
+
+.titan-print-modal-document-stage {
+  margin: 0 auto;
+  position: relative;
+}
+
+.titan-print-modal-document-wrap {
+  transform-origin: top center;
+}
+
+.titan-print-modal-document-wrap .titan-print-document {
+  gap: 16px;
+}
+
+.titan-print-modal-document-wrap .titan-print-page {
+  margin: 0 auto;
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.12),
+    0 16px 40px rgba(15, 23, 42, 0.22);
+}
+
+.titan-print-modal-margin-normal .titan-print-modal-document-wrap .titan-print-page {
+  padding: 12mm 14mm 14mm;
+}
+
+.titan-print-modal-margin-narrow .titan-print-modal-document-wrap .titan-print-page {
+  padding: 8mm 10mm 10mm;
+}
+
+.titan-print-modal-margin-wide .titan-print-modal-document-wrap .titan-print-page {
+  padding: 16mm 18mm 18mm;
+}
+
+.titan-print-modal-settings {
+  padding: 16px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  overflow: auto;
+}
+
+.titan-print-modal-settings h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.titan-print-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.titan-print-modal-field > span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.titan-print-modal-field select,
+.titan-print-modal-field input[type="range"] {
+  width: 100%;
+}
+
+.titan-print-modal-field select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.titan-print-modal-field-hint {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.titan-print-modal-scale-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.titan-print-modal-scale-row strong {
+  font-size: 12px;
+  font-weight: 900;
+  color: #334155;
+  min-width: 42px;
+  text-align: right;
+}
+
+.titan-print-modal-fieldset {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.titan-print-modal-fieldset legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.titan-print-modal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.titan-print-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.titan-print-modal-footer-btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.titan-print-modal-footer-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.titan-print-modal-footer-btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.titan-print-modal-footer-btn.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.titan-print-modal-footer-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1100px) {
+  .titan-print-modal-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .titan-print-modal-settings {
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 720px) {
+  .titan-print-modal-overlay {
+    padding: 0;
+  }
+
+  .titan-print-modal {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+}

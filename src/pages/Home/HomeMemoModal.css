@@ -1,0 +1,128 @@
+.home-memo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+body.home-memo-modal-open {
+  overflow: hidden;
+}
+
+.home-memo-modal {
+  width: min(360px, 100%);
+  background: #ffffff;
+  border: 1px solid #e3e9f3;
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+}
+
+.home-memo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.home-memo-modal-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.home-memo-modal-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.home-memo-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-memo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-memo-field > span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.home-memo-field textarea,
+.home-memo-field input {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.home-memo-field input {
+  height: 38px;
+}
+
+.home-memo-field textarea:focus,
+.home-memo-field input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.home-memo-error {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.home-memo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.home-memo-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-memo-btn.ghost {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+}
+
+.home-memo-btn.primary {
+  border: none;
+  background: #1d4ed8;
+  color: #ffffff;
+}

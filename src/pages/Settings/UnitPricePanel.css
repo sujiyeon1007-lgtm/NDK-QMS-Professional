@@ -1,0 +1,177 @@
+.unit-price-panel {
+  margin-top: var(--titan-page-gap, 10px);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.unit-price-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+}
+
+.unit-price-list-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.unit-price-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unit-price-item {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.unit-price-item.active {
+  border-color: #a9c7ee;
+  background: #edf4fd;
+  box-shadow: 0 0 0 2px rgba(169, 199, 238, 0.22);
+}
+
+.unit-price-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.unit-price-item span {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.unit-price-item em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
+  color: #2563eb;
+  margin-top: 4px;
+}
+
+.unit-price-detail h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.unit-price-sub {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.unit-price-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.unit-price-history-table th,
+.unit-price-history-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e8eef5;
+  font-size: 12px;
+  text-align: left;
+}
+
+.unit-price-history-table th {
+  background: #f8fafc;
+  font-weight: 800;
+  color: #334155;
+  border-bottom: 2px solid #94a3b8;
+}
+
+.unit-price-history-table th:hover {
+  background: #eff6ff;
+}
+
+.unit-price-form,
+.unit-price-new {
+  padding: 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e8eef5;
+  margin-bottom: 12px;
+}
+
+.unit-price-form > p,
+.unit-price-new > p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.unit-price-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.unit-price-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unit-price-form-grid label.span-2 {
+  grid-column: span 2;
+}
+
+.unit-price-form-grid span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.unit-price-form-grid input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.unit-price-add-btn {
+  height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unit-price-empty {
+  padding: 20px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .unit-price-layout {
+    grid-template-columns: 1fr;
+  }
+}

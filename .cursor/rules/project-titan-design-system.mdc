@@ -1,0 +1,175 @@
+---
+description: Project TITAN V1.0 — PM menu structure, UI baseline, Design Tokens (companion to development-standard rule)
+alwaysApply: true
+---
+
+# Project TITAN V1.0 — UI & Menu Baseline
+
+**Companion rule:** See `project-titan-development-standard.mdc` for full Development Standard (PM Final).
+
+**Status:** Menu structure PM-approved (8 sidebar items). HOME implemented. Next: 입출고관리 screen design.
+
+## Development Workflow (Mandatory)
+
+See `DEVELOPMENT_PROCESS` in `src/config/developmentStandard.js`:
+
+기획 → 화면 설계 → PM 승인 → Cursor 개발 → 테스트 → 수정 → 다음 화면
+
+## Menu Architecture (Fixed — 8 Sidebar Items)
+
+### Sidebar — 1Depth only
+
+`HOME` · `입출고관리` · `생산관리` · `품질관리` · `개인업무` · `통계자료` · `기준정보관리` · `환경설정`
+
+Source: `src/config/menuStructure.js` → `SIDEBAR_MENU`
+
+**No separate 출고관리 in sidebar** — merged under 입출고관리.
+
+### Sub-functions — Top tabs per section
+
+| Section | Tabs |
+|---------|------|
+| 입출고관리 | 입고관리 · 출고관리 |
+| 생산관리 | **생산일보** · 생산실적관리 |
+| 품질관리 | 검사일지 · 성적서관리 |
+| 개인업무 | 업무대기 · 진행현황 · 업무일지 |
+| 통계자료 | 이력조회 · 영업실적 |
+| 기준정보관리 | 업체 · 품목 · 작업자 · 설비 · 코드 |
+| 환경설정 | 프로그램 · 저장경로 · 사용자 · 백업 / 복원 · 시스템정보 |
+
+입출고관리 탭 내 기능(화면 설계 시 구현): see `INOUT_TAB_FEATURES` in `menuStructure.js`.
+
+Future features are added as **tabs only** — sidebar does not change.
+
+## Official Workflow
+
+입고 등록 → 작업지시서 출력 → 생산부 전달 → 생산정보 등록 → 검사일지 → 성적서 발행 → 출고 → 이력조회
+
+## UI Principles
+
+- Sidebar: **1Depth only** · sub-functions: **top Tab menu**
+- List-first (~86% list / side max ~240px)
+- Search: essential only · **"추가 옵션"** for advanced (collapsed)
+- Detail: collapse panel, default expanded
+- Right panel: optional, not fixed on every screen
+- Design freeze after PM approval
+
+## Screen Build Order
+
+✅ HOME · ✅ 메뉴 구조 → **입출고관리** (next) → 생산관리 → …
+
+## Foundation Paths
+
+| Area | Path |
+|------|------|
+| Menu config | `src/config/menuStructure.js` |
+| Router | `src/router/AppRouter.jsx` |
+| Routes prefix | `/inout`, `/production`, `/quality`, … |
+
+## Table (TitanDataTable — PM 공통 리스트)
+
+- **All list screens** must use `TitanDataTable` from `src/foundation/components/DataTable.jsx`.
+- **CSS:** `.titan-table*` classes in `src/foundation/components/components.css` + tokens in `src/foundation/styles/tokens.css`.
+- **Do not** create page-specific table CSS (no `.inbound-table`, per-page hover borders, etc.).
+
+### Style rules
+
+| Element | Rule |
+|---------|------|
+| Header bg | `#e3e9f0` (`--titan-table-header`, PM 3차) |
+| Header border | `#d5dee8` (`--titan-table-header-border`) |
+| Header text | `#1e293b` (`--titan-table-header-text`) |
+| Row bg | White (`--titan-surface`) |
+| Border | `#dde6f0` (`--titan-table-border`) |
+| Hover | Background only `#f3f7fc` — **no border/outline on hover** |
+| Selected/active row | Background `#edf4fd` only — **no border emphasis** |
+| Checkbox | `.titan-table__checkbox` — selection state via checkbox + light blue row bg |
+
+### Usage
+
+```jsx
+import TitanDataTable from "../../foundation/components/DataTable";
+// or: import { TitanDataTable } from "../../foundation";
+```
+
+Future screens (출고관리, 생산관리, 품질관리, 통계자료, 기준정보관리): use `TitanDataTable` + shared `Pagination` only.
+
+## Search Panel (TitanSearchPanel — 공통 CRUD)
+
+- **Basic search (always visible):** 업체명 · 품명 · 품번 · 재질 (4 fields, fixed height)
+- **Actions (right):** `[조회]` · `[초기화]` · `[▼ 상세검색]` / `[▲ 상세검색 닫기]`
+- **Advanced:** page-specific fields in `TitanAdvancedSearch` (collapse/expand, ~0.25s animation)
+- **State persistence:** `useAdvancedSearchOpen(storageKey)` — sessionStorage for open/closed
+- Config: `src/config/listSearchStandard.js`
+
+## List Footer (TitanTableFooter)
+
+All list screens use identical footer layout:
+
+| Left | Center | Right |
+|------|--------|-------|
+| 총 N건 | ◀ 1 2 3 ▶ | 페이지당 [10▼] 건 |
+
+- Column widths: `src/config/tableColumnPresets.js` — **widthPercent (%) only**, no per-page px widths
+- Key ratios (PM 3차): 업체명 13% · 품명 22% · 품번 14%
+
+- Page sizes: 10 · 20 · 30 · 50 · 100
+- Hook: `useListPagination(items)` for paging logic
+
+## Right Panel (TitanDetailPanel — list-centered screens)
+
+Order is fixed for all management screens with a right panel:
+
+1. **상세정보** (CollapsePanel, default open)
+2. Divider
+3. **Screen action button** (100% width, shared PrimaryButton style)
+4. Divider
+5. **공정 흐름도** (vertical flow, bottom of panel)
+
+Component: `src/foundation/components/TitanDetailPanel.jsx`
+
+Screen buttons: 입고관리 `작업지시서 출력` · 출고관리 `거래명세서 출력` · 생산일보 `생산일보 출력` · 검사일지/성적서관리 per screen purpose.
+
+## Product List Column Standard (생산일보 기준)
+
+Default column order: 관리번호 · LOT.NO · 업체명 · 품명 · 품번 · 재질 · 수량 · 공정 · 작업일 · 현재상태 · 등록일
+
+- List column **수량** only (not 입고수량/출고수량/작업수량); detail panel may use typed qty labels.
+- **LOT.NO** is the only LOT label in lists/search.
+- **공정** dropdown: 이온질화 · 연질화 (extensible via code management).
+- Helper: `buildStandardProductListColumns()` in `src/config/standardProductList.js`
+
+## Terminology
+
+- **공정 흐름표** → **공정 흐름도** (project-wide)
+- Do not use `오늘` in user-facing text; use `금일`, `전일`, etc.
+
+## Register Modal (TitanRegisterModal — 공통 등록)
+
+- All register actions use modal popup on current page (no navigation).
+- Component: `src/foundation/components/TitanRegisterModal.jsx`
+- Labels: `src/config/registerModalStandard.js`
+- Footer: `[취소]` · `[등록]` — register saves, refreshes list, closes modal.
+- Modal: ~78vw max 960px, semi-transparent overlay, ESC / X to close.
+
+Inbound labels: `입고 등록` · print button `입고 리스트 (열처리 작업 요청 리스트)`.
+
+## Text Wrap (단어 단위 줄바꿈)
+
+- Buttons, titles, cards use **word-based** line breaks — never mid-character (`word-break: keep-all`).
+- Long button labels use intentional 2-line design via `\n` in `registerModalStandard.js`.
+- Component: `TitanMultilineText` · helper: `formatTitanButtonLabel()` in `src/utils/titanTextWrap.js`.
+- `PrimaryButton` / `SecondaryButton` auto-wrap string children.
+- Parentheses stay together: `입고 리스트` + newline + `(열처리 작업 요청 리스트)`.
+- Button height grows up to ~2 lines; do not shrink font size to fit.
+
+## Register Modal Summary Card
+
+- Component: `TitanRegisterSummaryText` · helper: `formatTitanSummaryText()`.
+- Wrapper class: `.titan-register-summary` on summary aside/card.
+- Parentheses on own line: `자동 생성 예정` + `(업체코드_날짜_순번)`.
+- `word-break: keep-all` · card height auto-grows · no font shrinking.
+
+## Legacy
+
+- Legacy `/incoming`, `/shipment` routes redirect to `/inout/incoming`, `/inout/shipment`

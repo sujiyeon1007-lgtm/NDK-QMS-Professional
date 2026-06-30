@@ -1,0 +1,71 @@
+.quality-register-fieldset {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fafbfd;
+}
+
+.quality-register-fieldset legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.quality-register-checks,
+.quality-register-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.quality-register-check,
+.quality-register-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.quality-register-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.quality-register-file {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.quality-register-file em {
+  font-style: normal;
+  font-size: 12px;
+  color: #2563eb;
+}
+
+.quality-file-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.quality-file-mark.is-empty {
+  color: #94a3b8;
+}
+
+.quality-page .production-kpi-panel__grid--4 .production-metric-card__value small {
+  margin-left: 2px;
+  font-size: 14px;
+  font-weight: 700;
+}

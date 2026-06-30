@@ -1,0 +1,262 @@
+/**
+ * Project TITAN — Official baseline environment
+ * Resolution: 1920×1080+
+ * Windows display scale: 100%
+ * Browser / Electron zoom: 100%
+ *
+ * Balanced spacing: sidebar fits without scroll, main content maximized,
+ * page chrome readable without over-compression.
+ */
+
+:root {
+  /* V2.0 Design Guide — official palette */
+  --titan-bg: #f8fafc;
+  --titan-surface: #ffffff;
+  --titan-text: #0f172a;
+  --titan-text-muted: #64748b;
+  --titan-point: #2563eb;
+  --titan-point-hover: #1d4ed8;
+  --titan-table-header-bg: #f1f5f9;
+  --titan-border: #e2e8f0;
+
+  --titan-layout-header-h: 60px;
+  --titan-layout-footer-h: 34px;
+  --titan-sidebar-width: 196px;
+  --titan-main-padding-y: 8px;
+  --titan-main-padding-x: 12px;
+  --titan-page-gap: 8px;
+  --titan-page-top-bar-min-h: 0;
+  --titan-page-top-bar-padding: 8px 14px;
+  --titan-page-top-bar-radius: 14px;
+  --titan-panel-padding-y: 12px;
+  --titan-panel-padding-x: 14px;
+  --titan-panel-radius: 12px;
+  --titan-kpi-height: 118px;
+  --titan-kpi-summary-height: 108px;
+  --titan-status-card-h: 52px;
+  --titan-list-ratio-primary: 8.6fr;
+  --titan-list-ratio-side: 1.4fr;
+  --titan-list-columns: minmax(0, var(--titan-list-ratio-primary))
+    minmax(180px, min(240px, var(--titan-list-ratio-side)));
+  --titan-table-th-padding: 10px 10px;
+  --titan-table-td-padding: 9px 10px;
+  --titan-toolbar-btn-h: 36px;
+  --titan-search-field-h: 34px;
+  --titan-search-btn-h: 34px;
+
+  /* Sidebar — official layout tokens (adjust here when menus grow) */
+  --titan-sidebar-brand-max-h: 64px;
+  --titan-sidebar-logo-max-h: 26px;
+  --titan-sidebar-nav-padding-y: 7px;
+  --titan-sidebar-nav-padding-x: 6px;
+  --titan-sidebar-group-label-h: 25px;
+  --titan-sidebar-link-min-h: 32px;
+  --titan-sidebar-link-gap: 8px;
+  --titan-sidebar-item-gap: 3px;
+  --titan-sidebar-group-gap: 6px;
+  --titan-sidebar-group-divider-pad: 7px;
+}
+
+/* ── Common page shell (all work screens) ── */
+.titan-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-page-gap);
+  min-height: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.titan-page--fill {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.titan-work-main {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ── Page top bar (title + breadcrumb + toolbar) ── */
+.titan-page .page-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  min-height: var(--titan-page-top-bar-min-h);
+  padding: var(--titan-page-top-bar-padding);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--titan-page-top-bar-radius);
+  background: #ffffff;
+  box-shadow: var(--ndk-card-shadow, 0 1px 3px rgba(15, 23, 42, 0.06));
+  box-sizing: border-box;
+}
+
+.titan-page .page-title-block {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.titan-page .page-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--titan-point, #2563eb);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.titan-page .page-title-block h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 900;
+  color: var(--ndk-text, #37474f);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.titan-page .page-description {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ndk-text-muted, #64748b);
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+.titan-page .breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titan-page .breadcrumb a {
+  color: var(--titan-point, #4682b4);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.titan-page .breadcrumb a:hover {
+  color: #1d4ed8;
+}
+
+.titan-page .breadcrumb span {
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.titan-page .toolbar-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.titan-page .toolbar-btn {
+  height: var(--titan-toolbar-btn-h);
+  padding: 0 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.titan-page .toolbar-btn:hover {
+  background: #f8fafc;
+  border-color: #c7d7ea;
+}
+
+.titan-page .toolbar-btn.primary {
+  background: var(--titan-point, #2563eb);
+  border-color: var(--titan-point, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+
+.titan-page .toolbar-btn.primary:hover {
+  background: var(--titan-point-hover, #1d4ed8);
+  border-color: var(--titan-point-hover, #1d4ed8);
+}
+
+/* ── Shared panel + search (list-heavy pages) ── */
+.titan-page .panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--titan-panel-radius);
+  padding: var(--titan-panel-padding-y) var(--titan-panel-padding-x);
+  box-shadow: var(--ndk-card-shadow, 0 1px 3px rgba(15, 23, 42, 0.06));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 안내 박스 · 배너 — 부모 영역 밖으로 튀어나오지 않도록 */
+.titan-page :is(
+  .settings-banner,
+  .environment-banner,
+  .settings-usage-hint,
+  .settings-selected-preview,
+  .cert-chain-banner,
+  .hist-chain-banner,
+  .ship-chain-banner
+) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.titan-page .settings-usage-hint,
+.titan-page .settings-selected-preview {
+  flex-wrap: wrap;
+}
+
+.titan-page .search-field input,
+.titan-page .search-field select {
+  height: var(--titan-search-field-h);
+}
+
+.titan-page .search-btn {
+  height: var(--titan-search-btn-h);
+}
+
+@media (max-width: 960px) {
+  .titan-page .page-top-bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-height: 0;
+  }
+
+  .titan-page .page-title-block h2 {
+    white-space: normal;
+  }
+
+  .titan-page .breadcrumb {
+    white-space: normal;
+    flex-wrap: wrap;
+  }
+
+  .titan-page .toolbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
