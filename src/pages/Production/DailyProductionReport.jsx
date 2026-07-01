@@ -1,10 +1,18 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import Input from "../../foundation/components/Input";
+import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import {
+  DateRangeField,
+  EquipmentField,
+  LotNoField,
+  ManagementIdField,
+  ProcessField,
+  StatusSelectField,
+  WorkerField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
@@ -20,13 +28,11 @@ import {
   getProductionProcessName,
 } from "../../config/productionProcessCodes";
 import { buildStandardProductListColumns } from "../../config/standardProductList";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
-  addSessionProductionRecord,
   getSessionProductionRecords,
-  updateSessionProductionRecord,
 } from "../../utils/productionRecords";
 import {
   APPROVAL_STATUS_OPTIONS,
@@ -36,21 +42,19 @@ import {
   getProductionDailyReportStatus,
 } from "../../utils/productionDailyReportStatus";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
-import { buildProductionDailyStatusCounts } from "../../utils/productionAnalytics";
+import { validateLotNoForDailyReportRegister } from "../../utils/lotFormatValidation";
+import { onDailyReportSaved } from "../../utils/titanWorkflowStatus";
 import { PRODUCTION_DAILY_REGISTER_LABEL, PRODUCTION_DAILY_PRINT_LABEL } from "../../config/registerModalStandard";
-import { mapRowsToProductionDailyPrintRows } from "../../utils/productionDailyReportPrintLayout";
+import { mapStandardRowsToInOutPrintRows } from "../../utils/inOutListPrintRows";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
-import ProductionKpiPanel from "../../foundation/components/ProductionKpiPanel";
-import {
-  PRODUCTION_DAILY_STATUS_CARDS,
-  PRODUCTION_DAILY_STATUS_PANEL,
-} from "../../config/productionDashboard";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
 import DailyProductionReportRegisterModal from "./DailyProductionReportRegisterModal";
 import "../InOut/InboundManagement.css";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./ProductionManagement.css";
-
-const EMPTY_SEARCH = createEmptyProductionDailyReportSearch();
 
 function matchesProductionDailyReportSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
@@ -84,25 +88,31 @@ function mapRecordToRow(record) {
 export default function DailyProductionReport() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-production-daily-advanced");
+  const [registerInitialId, setRegisterInitialId] = useState("");
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyProductionDailyReportSearch, { storageKey: "production-daily" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [dailyPrintOpen, setDailyPrintOpen] = useState(false);
   const [dailyPrintBusy, setDailyPrintBusy] = useState(false);
+  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const { activeChipId, handleChipClick } = useWorkflowChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+  });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const equipmentList = useMemo(() => getMasterDataByCategory("equipment"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-
-  const dailyStatusCards = useMemo(() => {
-    const counts = buildProductionDailyStatusCounts(getSessionProductionRecords());
-    return PRODUCTION_DAILY_STATUS_CARDS.map((card) => ({
-      ...card,
-      count: counts[card.id] ?? 0,
-    }));
-  }, [refreshKey]);
+  const searchRecords = useMemo(
+    () => filterProductionDailyReportRecords(getSessionProductionRecords()),
+    [refreshKey]
+  );
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+    equipment: equipmentList.map((item) => item.name ?? item.code),
+  });
 
   const rows = useMemo(() => {
     const records = filterProductionDailyReportRecords(getSessionProductionRecords());
@@ -137,9 +147,15 @@ export default function DailyProductionReport() {
 
   const dailyPrintProps = useMemo(() => {
     if (printTargetRows.length === 0) return null;
+    const primary = printTargetRows[0]?.record ?? printTargetRows[0];
     return {
-      rows: mapRowsToProductionDailyPrintRows(printTargetRows),
-      reportDate: getJournalReferenceDate(),
+      rows: mapStandardRowsToInOutPrintRows(printTargetRows),
+      listNo: primary?.htlNo || "",
+      workDate: primary?.workDate || getJournalReferenceDate(),
+      heatTreatmentConditions: printTargetRows
+        .map((row) => row.record?.heatTreatmentConditions ?? row.heatTreatmentConditions)
+        .filter(Boolean)
+        .join(" / "),
     };
   }, [printTargetRows]);
 
@@ -200,179 +216,121 @@ export default function DailyProductionReport() {
     }
   };
 
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
-  };
-
   const handleRegister = (form) => {
     const managementId = form.managementId.trim();
     if (!managementId) return;
+
+    const existing = getSessionProductionRecords().find((r) => r.id === managementId);
+    if (!existing) {
+      window.alert("입고 등록된 관리번호만 생산일보 등록이 가능합니다.");
+      return;
+    }
+    if (!existing.htlNo?.trim()) {
+      window.alert("열처리 작업 요청 리스트 출력 후 생산일보를 등록할 수 있습니다.");
+      return;
+    }
+
+    const lotCheck = validateLotNoForDailyReportRegister(form.lotNo, existing);
+    if (!lotCheck.ok) {
+      window.alert(lotCheck.message);
+      return;
+    }
 
     const now = new Date().toISOString();
     const today = now.slice(0, 10);
     const qty = Number(form.qty) || 0;
     const patch = {
-      company: form.company.trim() || "—",
-      lotNo: form.lotNo.trim(),
-      heatTreatment: form.process,
-      partName: form.partName.trim(),
-      partNo: form.partNo.trim(),
-      material: form.material.trim(),
-      qty,
+      company: form.company.trim() || existing.company || "—",
+      lotNo: lotCheck.lotNo,
+      heatTreatment: form.process || existing.heatTreatment,
+      partName: form.partName.trim() || existing.partName,
+      partNo: form.partNo.trim() || existing.partNo,
+      material: form.material.trim() || existing.material,
+      qty: qty || existing.qty,
       workDate: form.workDate || today,
       equipment: form.equipment,
       registrar: form.worker.trim() || "관리자",
+      heatTreatmentConditions: form.heatTreatmentConditions?.trim() || "",
       note: form.note.trim(),
       registered: true,
-      completionStatus: "생산완료",
-      lotCreatedAt: now,
+      lotCreatedAt: existing.lotCreatedAt || now,
       updatedAt: now,
     };
 
-    const existing = getSessionProductionRecords().find((r) => r.id === managementId);
-    if (existing) {
-      updateSessionProductionRecord(managementId, patch);
-    } else {
-      addSessionProductionRecord({
-        id: managementId,
-        unit: "EA",
-        incomingDate: today,
-        dueDate: form.workDate || today,
-        incomingRegistered: true,
-        shipmentStatus: "출고대기",
-        certificateStatus: "미발행",
-        ...patch,
-      });
-    }
+    onDailyReportSaved(managementId, patch);
 
     setActiveId(managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
   };
 
+  const openRegisterModal = (managementId = "") => {
+    setRegisterInitialId(managementId);
+    setRegisterOpen(true);
+  };
+
+  const handleRowDoubleClick = (row) => {
+    const record = row.record;
+    if (!record?.htlNo?.trim()) return;
+    if (record.registered && record.lotNo?.trim()) return;
+    openRegisterModal(record.id);
+  };
+
   return (
     <div className="inbound-page production-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">생산일보</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
-            <Plus size={14} aria-hidden="true" />
-            {PRODUCTION_DAILY_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button" onClick={openDailyPrintPreview} disabled={printTargetRows.length === 0}>
-            <Printer size={14} aria-hidden="true" />
-            {PRODUCTION_DAILY_PRINT_LABEL}
-          </SecondaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={() => openRegisterModal()}>
+          <Plus size={14} aria-hidden="true" />
+          {PRODUCTION_DAILY_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={openDailyPrintPreview} disabled={printTargetRows.length === 0}>
+          <Printer size={14} aria-hidden="true" />
+          {PRODUCTION_DAILY_PRINT_LABEL}
+        </SecondaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
 
-      <ProductionKpiPanel
-        title={PRODUCTION_DAILY_STATUS_PANEL.title}
-        titleIcon={PRODUCTION_DAILY_STATUS_PANEL.titleIcon}
-        cards={dailyStatusCards}
-      />
+      <TitanKpiBarSlot ariaLabel="생산 현황" className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          chipSetId="production"
+          records={chipRecords}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">공정</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
-              >
-                <option value="">전체</option>
-                {processCodes.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">작업일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.workDateFrom}
-                  onChange={(e) => setDraft({ ...draft, workDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.workDateTo}
-                  onChange={(e) => setDraft({ ...draft, workDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">설비</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.equipment}
-                onChange={(e) => setDraft({ ...draft, equipment: e.target.value })}
-              >
-                <option value="">전체</option>
-                {equipmentList.map((item) => (
-                  <option key={item.id} value={item.name ?? item.code}>
-                    {item.name ?? item.code}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">작업자</span>
-              <Input
-                value={draft.worker}
-                onChange={(e) => setDraft({ ...draft, worker: e.target.value })}
-                placeholder="작업자"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">승인상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.approvalStatus}
-                onChange={(e) => setDraft({ ...draft, approvalStatus: e.target.value })}
-              >
-                <option value="">전체</option>
-                {APPROVAL_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <DateRangeField
+              label="작업일"
+              fromKey="workDateFrom"
+              toKey="workDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+            <EquipmentField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <WorkerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <StatusSelectField
+              label="승인상태"
+              value={draft.approvalStatus}
+              onChange={(e) => onDraftChange({ ...draft, approvalStatus: e.target.value })}
+              options={APPROVAL_STATUS_OPTIONS}
+            />
           </div>
         }
       />
@@ -394,6 +352,7 @@ export default function DailyProductionReport() {
               onToggleAll={toggleAll}
               activeRowId={activeRow?.id}
               onRowClick={(row) => setActiveId(row.id)}
+              onRowDoubleClick={handleRowDoubleClick}
               emptyMessage="표시할 생산일보가 없습니다."
             />
 
@@ -478,7 +437,11 @@ export default function DailyProductionReport() {
 
       <DailyProductionReportRegisterModal
         open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
+        initialManagementId={registerInitialId}
+        onClose={() => {
+          setRegisterOpen(false);
+          setRegisterInitialId("");
+        }}
         onRegister={handleRegister}
       />
 

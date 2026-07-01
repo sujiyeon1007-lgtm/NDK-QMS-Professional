@@ -1,32 +1,17 @@
 /**
- * Project TITAN V1.0 — 단어 단위 줄바꿈 (버튼 · 제목 · 카드)
+ * Project TITAN V1.0 — 텍스트 줄바꿈 유틸
+ *
+ * V1.0 Lock: 버튼 라벨은 한 줄 (formatTitanButtonLabel — 분리 없음)
+ * 등록 모달 Summary 카드만 formatTitanSummaryText 줄바꿈 허용
  */
 
-const ACTION_SUFFIXES = ["출력", "등록", "발행"];
-
 /**
- * 버튼 라벨을 2줄 형식으로 변환 (단어/괄호 단위)
  * @param {string | undefined | null} text
  * @returns {string}
  */
 export function formatTitanButtonLabel(text) {
   if (!text || typeof text !== "string") return text ?? "";
-
-  if (text.includes("\n")) return text;
-
-  const parenIndex = text.indexOf(" (");
-  if (parenIndex > 0 && text.endsWith(")")) {
-    return `${text.slice(0, parenIndex)}\n${text.slice(parenIndex + 1)}`;
-  }
-
-  for (const suffix of ACTION_SUFFIXES) {
-    if (text.endsWith(suffix)) {
-      const prefix = text.slice(0, -suffix.length).trim();
-      if (prefix) return `${prefix}\n${suffix}`;
-    }
-  }
-
-  return text;
+  return text.replace(/\s*\n\s*/g, " ").trim();
 }
 
 /**

@@ -1,0 +1,213 @@
+/**
+ * Project TITAN — Color Palettes
+ *
+ * 1) Workflow tone (.titan-process--*) — KPI Bar · HOME 공정 진행 (UI Freeze)
+ * 2) Heat treatment (.titan-ht-process--*) — 열처리 공정 Chip 전용 (Pastel)
+ *
+ * Status Chip(리스트 현재상태)는 components.css · StatusChip.jsx — 본 파일과 분리
+ */
+
+/* ── Workflow tone (HOME KPI · Step Track · KPI Bar) ── */
+.titan-process--incoming {
+  --titan-process-dot: #3b82f6;
+  --titan-process-icon: #3b82f6;
+  --titan-process-text: #1d4ed8;
+  --titan-process-bar: #93c5fd;
+  --titan-process-bar-active: #3b82f6;
+  --titan-process-chip-hover: #eff6ff;
+}
+
+.titan-process--production {
+  --titan-process-dot: #ea580c;
+  --titan-process-icon: #ea580c;
+  --titan-process-text: #c2410c;
+  --titan-process-bar: #fdba74;
+  --titan-process-bar-active: #ea580c;
+  --titan-process-chip-hover: #fff7ed;
+}
+
+.titan-process--inspection,
+.titan-process--inspect {
+  --titan-process-dot: #d97706;
+  --titan-process-icon: #d97706;
+  --titan-process-text: #b45309;
+  --titan-process-bar: #fcd34d;
+  --titan-process-bar-active: #d97706;
+  --titan-process-chip-hover: #fffbeb;
+}
+
+.titan-process--certificate {
+  --titan-process-dot: #9333ea;
+  --titan-process-icon: #9333ea;
+  --titan-process-text: #7e22ce;
+  --titan-process-bar: #d8b4fe;
+  --titan-process-bar-active: #9333ea;
+  --titan-process-chip-hover: #faf5ff;
+}
+
+.titan-process--shipment {
+  --titan-process-dot: #16a34a;
+  --titan-process-icon: #16a34a;
+  --titan-process-text: #15803d;
+  --titan-process-bar: #86efac;
+  --titan-process-bar-active: #16a34a;
+  --titan-process-chip-hover: #ecfdf5;
+}
+
+.titan-process--rework {
+  --titan-process-dot: #ef4444;
+  --titan-process-icon: #ef4444;
+  --titan-process-text: #b91c1c;
+  --titan-process-bar: #fecaca;
+  --titan-process-bar-active: #ef4444;
+  --titan-process-chip-hover: #fef2f2;
+}
+
+.titan-process--complete {
+  --titan-process-dot: #10b981;
+  --titan-process-icon: #10b981;
+  --titan-process-text: #047857;
+  --titan-process-bar: #a7f3d0;
+  --titan-process-bar-active: #10b981;
+  --titan-process-chip-hover: #ecfdf5;
+}
+
+.titan-process--prod-wait {
+  --titan-process-dot: #64748b;
+  --titan-process-icon: #64748b;
+  --titan-process-text: #475569;
+  --titan-process-bar: #cbd5e1;
+  --titan-process-bar-active: #94a3b8;
+  --titan-process-chip-hover: #f8fafc;
+}
+
+.titan-process--hold {
+  --titan-process-dot: #94a3b8;
+  --titan-process-icon: #94a3b8;
+  --titan-process-text: #64748b;
+  --titan-process-bar: #e2e8f0;
+  --titan-process-bar-active: #94a3b8;
+  --titan-process-chip-hover: #f1f5f9;
+}
+
+/* ── Heat treatment process (리스트 공정 Chip 전용 · Pastel) ── */
+.titan-ht-process--gas-nitriding {
+  --titan-ht-process-dot: #a16207;
+  --titan-ht-process-icon: #92400e;
+  --titan-ht-process-text: #78350f;
+  --titan-ht-process-chip-hover: #fef9c3;
+}
+
+.titan-ht-process--ion-nitriding {
+  --titan-ht-process-dot: #6366f1;
+  --titan-ht-process-icon: #4f46e5;
+  --titan-ht-process-text: #4338ca;
+  --titan-ht-process-chip-hover: #eef2ff;
+}
+
+.titan-ht-process--carburizing {
+  --titan-ht-process-dot: #34d399;
+  --titan-ht-process-icon: #059669;
+  --titan-ht-process-text: #047857;
+  --titan-ht-process-chip-hover: #ecfdf5;
+}
+
+.titan-ht-process--induction-hardening {
+  --titan-ht-process-dot: #a855f7;
+  --titan-ht-process-icon: #7e22ce;
+  --titan-ht-process-text: #6b21a8;
+  --titan-ht-process-chip-hover: #faf5ff;
+}
+
+.titan-ht-process--salt-bath-nitriding {
+  --titan-ht-process-dot: #94a3b8;
+  --titan-ht-process-icon: #64748b;
+  --titan-ht-process-text: #475569;
+  --titan-ht-process-chip-hover: #f8fafc;
+}
+
+.titan-ht-process--vacuum-heat-treat {
+  --titan-ht-process-dot: #64748b;
+  --titan-ht-process-icon: #475569;
+  --titan-ht-process-text: #334155;
+  --titan-ht-process-chip-hover: #f1f5f9;
+}
+
+.titan-ht-process--annealing {
+  --titan-ht-process-dot: #d4a574;
+  --titan-ht-process-icon: #b45309;
+  --titan-ht-process-text: #92400e;
+  --titan-ht-process-chip-hover: #fffbeb;
+}
+
+.titan-ht-process--normalizing {
+  --titan-ht-process-dot: #38bdf8;
+  --titan-ht-process-icon: #0284c7;
+  --titan-ht-process-text: #0369a1;
+  --titan-ht-process-chip-hover: #f0f9ff;
+}
+
+.titan-ht-process--quench-temper {
+  --titan-ht-process-dot: #fb7185;
+  --titan-ht-process-icon: #e11d48;
+  --titan-ht-process-text: #be123c;
+  --titan-ht-process-chip-hover: #fff1f2;
+}
+
+.titan-ht-process--soft-nitriding {
+  --titan-ht-process-dot: #cbd5e1;
+  --titan-ht-process-icon: #94a3b8;
+  --titan-ht-process-text: #64748b;
+  --titan-ht-process-chip-hover: #f8fafc;
+}
+
+.titan-ht-process--default {
+  --titan-ht-process-dot: #94a3b8;
+  --titan-ht-process-icon: #64748b;
+  --titan-ht-process-text: #475569;
+  --titan-ht-process-chip-hover: #f8fafc;
+}
+
+/* 열처리 공정 Chip — 한 줄 표시 · Pastel dot */
+.titan-ht-process-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  width: max-content;
+  min-width: max-content;
+  max-width: none;
+  padding: 4px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  background: #fff;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.titan-ht-process-chip:hover {
+  background: var(--titan-ht-process-chip-hover, #f8fafc);
+  border-color: #cbd5e1;
+}
+
+.titan-ht-process-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--titan-ht-process-dot, #64748b);
+  flex-shrink: 0;
+}
+
+.titan-ht-process-chip__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-ht-process-text, #334155);
+  line-height: 1;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}

@@ -3,10 +3,12 @@
   height: var(--titan-footer-h);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 14px;
   background: var(--titan-surface);
   border-top: 1px solid var(--titan-border);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--titan-text-muted);
 }

@@ -1,0 +1,42 @@
+/**
+ * Project TITAN — 메뉴 전용 Toolbar (Header 아래 · Tab 좌 · Action 우)
+ */
+
+.titan-menu-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 10px 14px;
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius);
+  box-sizing: border-box;
+}
+
+.titan-menu-toolbar__tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.titan-menu-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.titan-menu-toolbar__actions--empty {
+  display: none;
+}
+
+.titan-menu-toolbar__actions .titan-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  max-width: none;
+  overflow: visible;
+}

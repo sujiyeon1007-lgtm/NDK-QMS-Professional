@@ -1,23 +1,32 @@
 import { useState } from "react";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import {
   INSPECTION_CATEGORIES,
   INSPECTION_JUDGMENTS,
 } from "../../utils/inspectionLogSession";
+import { getActiveMasterNames, getActiveWorkers } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { getCurrentTitanUser } from "../../utils/titanHistorySession";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { getProductUnitOptions, normalizeProductUnit } from "../../utils/productUnits";
 import "./InspectionLogEntryModal.css";
 
+const emptyProductFields = {
+  partName: "",
+  partNo: "",
+  drawingNo: "",
+  material: "",
+  spec: "",
+  unitPrice: "",
+};
+
 const emptyForm = () => ({
   inspectionDate: getJournalReferenceDate(),
   category: "양산",
   managementId: "",
   company: "",
-  partName: "",
-  partNo: "",
-  drawingNo: "",
-  material: "",
+  ...emptyProductFields,
   lotNo: "",
   qty: "",
   unit: "EA",
@@ -36,9 +45,42 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
     initialData ? { ...emptyForm(), ...initialData } : emptyForm()
   );
   const unitOptions = getProductUnitOptions();
+  const companyOptions = getActiveMasterNames("companies");
+  const workerOptions = getActiveWorkers();
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      ...emptyProductFields,
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+        drawingNo: autofill.drawingNo,
+        material: autofill.material,
+        spec: autofill.spec,
+        unitPrice: autofill.unitPrice,
+        unit: autofill.unit || prev.unit,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+      drawingNo: selection.drawingNo,
+    }));
   };
 
   const handleManagementIdBlur = () => {
@@ -54,6 +96,8 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
       partNo: record.partNo,
       drawingNo: record.drawingNo || "",
       material: record.material,
+      spec: record.spec || "",
+      unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
       lotNo: record.lotNo || prev.lotNo,
       qty: String(record.qty ?? ""),
       unit: record.unit || "EA",
@@ -132,44 +176,33 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
             </label>
             <label>
               <span>업체명</span>
-              <input
-                type="text"
-                value={form.company}
-                onChange={(event) => handleChange("company", event.target.value)}
-              />
+              <select value={form.company} onChange={(event) => handleCompanyChange(event.target.value)}>
+                <option value="">업체 선택</option>
+                {companyOptions.map((company) => (
+                  <option key={company} value={company}>
+                    {company}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label>
-              <span>품명</span>
-              <input
-                type="text"
-                value={form.partName}
-                onChange={(event) => handleChange("partName", event.target.value)}
-              />
-            </label>
-            <label>
-              <span>품번</span>
-              <input
-                type="text"
-                value={form.partNo}
-                onChange={(event) => handleChange("partNo", event.target.value)}
-              />
-            </label>
-            <label>
-              <span>도번</span>
-              <input
-                type="text"
-                value={form.drawingNo}
-                onChange={(event) => handleChange("drawingNo", event.target.value)}
-              />
-            </label>
-            <label>
-              <span>재질</span>
-              <input
-                type="text"
-                value={form.material}
-                onChange={(event) => handleChange("material", event.target.value)}
-              />
-            </label>
+            <TitanCascadeProductPicker
+              inline
+              company={form.company}
+              value={{
+                partName: form.partName,
+                partNo: form.partNo,
+                drawingNo: form.drawingNo,
+              }}
+              onChange={handleCascadeChange}
+              autoFields={{
+                material: form.material,
+                spec: form.spec,
+                unitPrice: form.unitPrice,
+                drawingNo: form.drawingNo,
+              }}
+              fieldClassName=""
+              kicker="검사 등록"
+            />
             <label>
               <span>수량</span>
               <div className="inspection-log-qty-unit">
@@ -193,11 +226,18 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
             </label>
             <label>
               <span>담당자</span>
-              <input
-                type="text"
+              <select
                 value={form.assignee}
                 onChange={(event) => handleChange("assignee", event.target.value)}
-              />
+              >
+                <option value="">작업자 선택</option>
+                {workerOptions.map((worker) => (
+                  <option key={worker.id} value={worker.name}>
+                    {worker.name}
+                    {worker.department ? ` · ${worker.department}` : ""}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
         </section>

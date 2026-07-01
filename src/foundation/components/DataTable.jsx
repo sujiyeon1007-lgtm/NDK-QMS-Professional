@@ -3,14 +3,20 @@
  * 모든 리스트 화면에서 동일한 마크업 · CSS 사용
  */
 
+import { Fragment } from "react";
+
 import { resolveColumnWidth, TITAN_COLUMN_WIDTHS } from "../../config/tableColumnPresets";
 
-function buildRowClassName(row, { activeRowId, selectedRowIds }) {
+function buildRowClassName(rowId, { activeRowId, selectedRowIds, clickable, isExpanded }) {
   const classes = ["titan-table__row"];
-  if (activeRowId != null && row.id === activeRowId) {
+  if (clickable) {
+    classes.push("titan-table__row--clickable");
+  }
+  const effectiveActiveId = isExpanded ? rowId : activeRowId;
+  if (effectiveActiveId != null && rowId === effectiveActiveId) {
     classes.push("titan-table__row--active");
   }
-  if (selectedRowIds?.includes(row.id)) {
+  if (selectedRowIds?.includes(rowId)) {
     classes.push("titan-table__row--selected");
   }
   return classes.join(" ");
@@ -32,15 +38,23 @@ export default function TitanDataTable({
   rows,
   emptyMessage = "표시할 데이터가 없습니다.",
   className = "",
+  wrapClassName = "",
   selectable = false,
   selectedRowIds = [],
   onToggleRow,
   onToggleAll,
   activeRowId,
   onRowClick,
+  onRowDoubleClick,
   getRowId = (row) => row.id,
+  expandedRowId,
+  onExpandedRowChange,
+  renderExpandedRow,
+  ariaLabel = "데이터 목록",
 }) {
   const allSelected = rows.length > 0 && selectedRowIds.length === rows.length;
+  const expandable = typeof renderExpandedRow === "function";
+  const clickable = Boolean(onRowClick || onRowDoubleClick || expandable);
 
   const tableColumns = (selectable
     ? [
@@ -72,9 +86,22 @@ export default function TitanDataTable({
     : columns
   ).map(resolveColDefinition);
 
+  const colCount = tableColumns.length;
+
+  const handleRowClick = (row) => {
+    const rowId = getRowId(row);
+    if (expandable && onExpandedRowChange) {
+      onExpandedRowChange(expandedRowId === rowId ? null : rowId);
+    }
+    onRowClick?.(row);
+  };
+
   return (
-    <div className={`titan-table-wrap ${className}`.trim()}>
-      <table className="titan-table titan-table--ratio">
+    <div className={`titan-table-wrap ${wrapClassName}`.trim()}>
+      <table
+        className={`titan-table titan-table--ratio ${className}`.trim()}
+        aria-label={ariaLabel}
+      >
         <colgroup>
           {tableColumns.map((col) => (
             <col key={col.key} style={{ width: resolveColumnWidth(col) }} />
@@ -95,37 +122,52 @@ export default function TitanDataTable({
         <tbody className="titan-table__body">
           {rows.length === 0 ? (
             <tr className="titan-table__row titan-table__row--empty">
-              <td colSpan={tableColumns.length} className="titan-table__cell titan-table__empty">
+              <td colSpan={colCount} className="titan-table__cell titan-table__empty">
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             rows.map((row) => {
               const rowId = getRowId(row);
+              const isExpanded = expandable && expandedRowId === rowId;
+
               return (
-                <tr
-                  key={rowId}
-                  className={buildRowClassName(
-                    { id: rowId },
-                    { activeRowId, selectedRowIds }
-                  )}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  style={onRowClick ? { cursor: "pointer" } : undefined}
-                >
-                  {tableColumns.map((col) => (
-                    <td
-                      key={col.key}
-                      className={`titan-table__cell titan-table__cell--${col.key}`}
-                      title={
-                        col.render || col.key === "__select"
-                          ? undefined
-                          : String(row[col.key] ?? "")
-                      }
-                    >
-                      {col.render ? col.render(row) : row[col.key]}
-                    </td>
-                  ))}
-                </tr>
+                <Fragment key={rowId}>
+                  <tr
+                    className={buildRowClassName(rowId, {
+                      activeRowId,
+                      selectedRowIds,
+                      clickable,
+                      isExpanded,
+                    })}
+                    onClick={clickable ? () => handleRowClick(row) : undefined}
+                    onDoubleClick={
+                      onRowDoubleClick ? () => onRowDoubleClick(row) : undefined
+                    }
+                    aria-expanded={expandable ? isExpanded : undefined}
+                  >
+                    {tableColumns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={`titan-table__cell titan-table__cell--${col.key}`}
+                        title={
+                          col.render || col.key === "__select"
+                            ? undefined
+                            : String(row[col.key] ?? "")
+                        }
+                      >
+                        {col.render ? col.render(row) : row[col.key]}
+                      </td>
+                    ))}
+                  </tr>
+                  {isExpanded ? (
+                    <tr className="titan-standard-list__expand-row">
+                      <td colSpan={colCount} className="titan-standard-list__expand-cell">
+                        {renderExpandedRow(row)}
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
               );
             })
           )}

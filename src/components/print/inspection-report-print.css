@@ -1,0 +1,35 @@
+.inspection-report-print .ir-document--print {
+  gap: 8px;
+}
+
+.inspection-report-print .ir-section {
+  padding: 6px 8px;
+  break-inside: avoid;
+}
+
+.inspection-report-print .ir-table--print {
+  font-size: 10px;
+}
+
+.inspection-report-print .ir-table--print th,
+.inspection-report-print .ir-table--print td {
+  padding: 3px 4px;
+}
+
+.inspection-report-print .ir-hv-chart__title {
+  font-size: 10px;
+}
+
+.inspection-report-print .ir-judgment {
+  min-width: 40px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+.inspection-report-print .ir-final-block .ir-judgment {
+  min-width: 48px;
+}
+
+.inspection-report-print .ir-section:not(.ir-section--has-micro) .ir-micro-hidden {
+  display: none;
+}

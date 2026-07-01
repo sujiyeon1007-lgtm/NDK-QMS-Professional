@@ -1,29 +1,33 @@
 import { useMemo } from "react";
 import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
-import {
-  buildProductionDailyPrintLayout,
-  PRODUCTION_DAILY_PRINT_TITLE,
-} from "../../utils/productionDailyReportPrintLayout";
+import { buildHtlPrintLayout, HTL_PRINT_TITLE } from "../../utils/htlWorkListPrintLayout";
 import { PRINT_ORIENTATION } from "../../utils/titanPrintLayout";
 import TitanPrintPage from "./TitanPrintPage";
 import TitanPrintPageHeader from "./TitanPrintPageHeader";
 import TitanPrintTable from "./TitanPrintTable";
 import "./titan-print.css";
 
+/**
+ * 생산일보 출력 — 열처리 작업 요청 리스트 양식 + 상단 열처리 조건 (V1.0)
+ */
 function ProductionDailyReportPrint({
   rows,
-  reportDate = "",
-  reportMemo = "",
+  listNo = "",
+  printDate = "",
+  workDate = "",
+  workMemo = "",
+  heatTreatmentConditions = "",
   printDateTime = "",
   printUser = "",
 }) {
   const resolvedPrintDateTime = printDateTime || getPrintDateTime();
   const resolvedPrintUser = printUser || getPrintUser();
-  const trimmedMemo = reportMemo.trim();
+  const trimmedMemo = workMemo.trim();
+  const trimmedConditions = heatTreatmentConditions.trim();
 
   const layout = useMemo(
-    () => buildProductionDailyPrintLayout(rows, { reportMemo: trimmedMemo }),
-    [rows, trimmedMemo]
+    () => buildHtlPrintLayout(rows, workDate, { workMemo: trimmedMemo }),
+    [rows, workDate, trimmedMemo]
   );
   const { columns, columnWidths, orientation, pages } = layout;
   const totalPages = pages.length;
@@ -31,7 +35,7 @@ function ProductionDailyReportPrint({
 
   return (
     <div
-      className={`titan-print-document production-daily-report-print${
+      className={`titan-print-document htl-work-list-print production-daily-report-print${
         isLandscape ? " titan-print-landscape" : ""
       }`}
       data-print-orientation={orientation}
@@ -47,21 +51,35 @@ function ProductionDailyReportPrint({
           printUser={resolvedPrintUser}
           orientation={orientation}
         >
-          <TitanPrintPageHeader title={PRODUCTION_DAILY_PRINT_TITLE} />
+          <TitanPrintPageHeader title={HTL_PRINT_TITLE} />
 
-          {reportDate && (
+          {(listNo || printDate) && (
             <div className="titan-print-meta">
-              <span>
-                보고 기준일 <strong>{reportDate}</strong>
-              </span>
+              {listNo && (
+                <span>
+                  리스트 No. <strong>{listNo}</strong>
+                </span>
+              )}
+              {printDate && (
+                <span>
+                  작업일 <strong>{printDate}</strong>
+                </span>
+              )}
             </div>
           )}
+
+          {pageIndex === 0 && trimmedConditions ? (
+            <section className="titan-print-memo" aria-label="열처리 조건">
+              <h2>열처리 조건</h2>
+              <p>{trimmedConditions}</p>
+            </section>
+          ) : null}
 
           <TitanPrintTable columns={columns} rows={pageRows} columnWidths={columnWidths} />
 
           {pageIndex === totalPages - 1 && trimmedMemo && (
-            <section className="titan-print-memo" aria-label="특이사항">
-              <h2>특이사항</h2>
+            <section className="titan-print-memo" aria-label="전달사항">
+              <h2>전달사항</h2>
               <p>{trimmedMemo}</p>
             </section>
           )}

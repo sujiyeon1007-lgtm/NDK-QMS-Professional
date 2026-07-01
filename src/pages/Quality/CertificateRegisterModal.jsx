@@ -1,17 +1,31 @@
 import { useEffect, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import { createEmptyCertificateRegister } from "../../config/listSearchStandard";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
-import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
+import { getProductionProcessName } from "../../config/productionProcessCodes";
 import { getMasterDataByCategory } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+
+const emptyProductFields = {
+  lotNo: "",
+  partName: "",
+  partNo: "",
+  drawingNo: "",
+  material: "",
+  spec: "",
+  unitPrice: "",
+  process: "",
+  qty: "",
+  unit: "EA",
+};
 
 export default function CertificateRegisterModal({ open, onClose, onRegister, initialData = null }) {
   const [form, setForm] = useState(createEmptyCertificateRegister());
 
   const companies = getMasterDataByCategory("companies");
-  const processCodes = getProductionProcessCodes();
 
   useEffect(() => {
     if (!open) return;
@@ -27,6 +41,38 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
     setForm(createEmptyCertificateRegister());
   }, [open, initialData]);
 
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      ...emptyProductFields,
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+        drawingNo: autofill.drawingNo,
+        material: autofill.material,
+        spec: autofill.spec,
+        unitPrice: autofill.unitPrice,
+        process: autofill.process || prev.process,
+        unit: autofill.unit || prev.unit,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+      drawingNo: selection.drawingNo,
+    }));
+  };
+
   const updateField = (key, value) => {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
@@ -39,7 +85,11 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
             lotNo: existing.lotNo?.trim() || prev.lotNo,
             partName: existing.partName || prev.partName,
             partNo: existing.partNo || prev.partNo,
+            drawingNo: existing.drawingNo || prev.drawingNo,
             material: existing.material || prev.material,
+            spec: existing.spec || prev.spec,
+            unitPrice:
+              existing.unitPrice != null ? String(existing.unitPrice) : prev.unitPrice,
             process: getProductionProcessName(existing) !== "—" ? getProductionProcessName(existing) : prev.process,
             qty: existing.qty != null ? String(existing.qty) : prev.qty,
             unit: existing.unit || prev.unit,
@@ -87,7 +137,7 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
         </label>
         <label className="titan-modal__field">
           <span>업체명</span>
-          <select value={form.company} onChange={(e) => updateField("company", e.target.value)}>
+          <select value={form.company} onChange={(e) => handleCompanyChange(e.target.value)}>
             <option value="">선택</option>
             {companies.map((company) => (
               <option key={company.id} value={company.name}>
@@ -96,29 +146,27 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
             ))}
           </select>
         </label>
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <Input value={form.partName} onChange={(e) => updateField("partName", e.target.value)} />
-        </label>
-        <label className="titan-modal__field">
-          <span>품번</span>
-          <Input value={form.partNo} onChange={(e) => updateField("partNo", e.target.value)} />
-        </label>
-        <label className="titan-modal__field">
-          <span>재질</span>
-          <Input value={form.material} onChange={(e) => updateField("material", e.target.value)} />
-        </label>
-        <label className="titan-modal__field">
-          <span>공정</span>
-          <select value={form.process} onChange={(e) => updateField("process", e.target.value)}>
-            <option value="">선택</option>
-            {processCodes.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+
+        <TitanCascadeProductPicker
+          inline
+          company={form.company}
+          value={{
+            partName: form.partName,
+            partNo: form.partNo,
+            drawingNo: form.drawingNo,
+          }}
+          onChange={handleCascadeChange}
+          autoFields={{
+            material: form.material,
+            spec: form.spec,
+            unitPrice: form.unitPrice,
+            process: form.process,
+            drawingNo: form.drawingNo,
+          }}
+          fieldClassName="titan-modal__field"
+          kicker="성적서 등록"
+        />
+
         <label className="titan-modal__field">
           <span>수량</span>
           <Input value={form.qty} onChange={(e) => updateField("qty", e.target.value)} />

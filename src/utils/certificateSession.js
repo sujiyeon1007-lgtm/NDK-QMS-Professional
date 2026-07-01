@@ -6,8 +6,7 @@
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getProductionProcessName } from "../config/productionProcessCodes";
-import { updateSessionProductionRecord } from "./productionRecords";
-import { CERTIFICATE_STATUS } from "./ndkWorkflow";
+import { onCertificateIssued } from "./titanWorkflowStatus";
 
 const STORAGE_KEY = "project-titan-certificate-files-v1";
 
@@ -152,9 +151,7 @@ export function upsertCertificateFileEntry(payload) {
 
   const saved = getCertificateEntryByManagementId(base.managementId);
   if (saved && saved.excelFile?.name && saved.pdfFile?.name) {
-    updateSessionProductionRecord(saved.managementId, {
-      certificateStatus: CERTIFICATE_STATUS.ISSUED,
-    });
+    onCertificateIssued(saved.managementId);
   }
 
   return saved;

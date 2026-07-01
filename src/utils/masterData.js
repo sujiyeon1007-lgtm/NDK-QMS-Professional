@@ -1,71 +1,341 @@
 /**
- * 기준정보 Mock (UI · Sprint 10)
- * 향후 SQLite master 테이블로 연동 · 영구 CRUD는 후속 Sprint
+ * Project TITAN V1.0 — 기준정보 Master Data
+ * SessionStorage 영속 · SQLite 연동 준비 CRUD 구조
  */
+
+import { canDeleteProduct } from "./productUsage";
+
+const STORAGE_KEY = "project-titan-master-data-v1";
 
 export const MASTER_CATEGORIES = [
   { key: "companies", label: "업체", desc: "입고·생산·성적서 공통 업체" },
-  { key: "productCategory", label: "품목", desc: "품목·제품 분류" },
-  { key: "workers", label: "작업자", desc: "생산·검사 담당 작업자" },
+  { key: "products", label: "제품", desc: "제품 마스터 · 품번·재질·공정 · 기본단가 기준" },
+  { key: "workers", label: "작업자", desc: "생산일보 · 검사 · 성적서 공통 작업자 Master" },
+  { key: "employees", label: "직원", desc: "Project TITAN 사용 직원 마스터" },
   { key: "materials", label: "재질", desc: "제품 재질 코드" },
-  { key: "heatTreatment", label: "열처리 공정", desc: "가스질화 · 침탄 등" },
-  { key: "status", label: "상태 코드", desc: "Workflow 상태 코드" },
-  { key: "equipment", label: "설비", desc: "열처리 설비 (생산부)" },
-  { key: "units", label: "단위", desc: "입고·출고·거래명세서 공통 단위 (EA · LOT · KG · SET 등)" },
-  { key: "other", label: "기타 기준정보", desc: "QR · 관리번호 규칙 등" },
+  { key: "heatTreatment", label: "공정", desc: "열처리 · 가공 공정" },
+  { key: "equipment", label: "설비", desc: "열처리 설비" },
+  { key: "inspectionCriteria", label: "검사기준", desc: "제품별 검사기준 · 도면 (별도 Session)" },
+  { key: "customCodes", label: "사용자정의코드", desc: "상태 · 단위 · 부서 등 공통 코드" },
+  { key: "productCategory", label: "품목분류", desc: "품목·제품 분류 (레거시)" },
+  { key: "status", label: "상태 코드", desc: "Workflow 상태 (customCodes 연동)" },
+  { key: "units", label: "단위", desc: "입출고 단위 (customCodes 연동)" },
+  { key: "other", label: "기타", desc: "QR · 관리번호 규칙" },
 ];
-
-/** Sidebar · Settings 좌측 nav에 표시하는 기준정보 분류 (V1.0) */
-export const MASTER_DATA_NAV_KEYS = [
-  "companies",
-  "productCategory",
-  "workers",
-  "equipment",
-  "status",
-];
-
-export function getMasterNavCategories() {
-  return MASTER_CATEGORIES.filter((item) => MASTER_DATA_NAV_KEYS.includes(item.key));
-}
 
 export const STATUS_GROUPS = ["입고", "생산", "성적서", "출고", "기타"];
 
+const CODE_GROUP_ALIASES = {
+  status: "상태",
+  units: "단위",
+};
+
+export const EMPLOYMENT_STATUSES = ["재직", "휴직", "퇴사"];
+
+export const EMPLOYEE_ROLES = ["관리자", "품질", "생산", "영업", "조회 전용"];
+
+const CATEGORY_ALIASES = {
+  items: "products",
+};
+
+function resolveCategoryKey(categoryKey) {
+  return CATEGORY_ALIASES[categoryKey] ?? categoryKey;
+}
+
 export const MASTER_DATA = {
   companies: [
-    { id: "c1", code: "DH", name: "대한정밀", note: "", active: true },
-    { id: "c2", code: "SE", name: "삼성부품", note: "", active: true },
-    { id: "c3", code: "WS", name: "우성기계", note: "", active: true },
-    { id: "c4", code: "HA", name: "한국금속", note: "", active: true },
-    { id: "c5", code: "SH", name: "신화산업", note: "", active: true },
-    { id: "c6", code: "SW", name: "성우정밀", note: "긴급 대응", active: true },
+    {
+      id: "c1",
+      code: "DH",
+      name: "대한정밀",
+      bizNo: "123-45-67890",
+      manager: "김담당",
+      phone: "031-111-2222",
+      email: "dh@example.com",
+      address: "경기도 안산시",
+      note: "",
+      active: true,
+    },
+    {
+      id: "c2",
+      code: "SE",
+      name: "삼성부품",
+      bizNo: "234-56-78901",
+      manager: "이담당",
+      phone: "031-222-3333",
+      email: "se@example.com",
+      address: "경기도 시흥시",
+      note: "",
+      active: true,
+    },
+    {
+      id: "c3",
+      code: "WS",
+      name: "우성기계",
+      bizNo: "345-67-89012",
+      manager: "홍길동",
+      phone: "031-333-4444",
+      email: "ws@example.com",
+      address: "경기도 화성시",
+      note: "",
+      active: true,
+    },
+    {
+      id: "c4",
+      code: "HA",
+      name: "한국금속",
+      bizNo: "456-78-90123",
+      manager: "박담당",
+      phone: "031-444-5555",
+      email: "ha@example.com",
+      address: "경기도 수원시",
+      note: "",
+      active: true,
+    },
+    {
+      id: "c5",
+      code: "SH",
+      name: "신화산업",
+      bizNo: "567-89-01234",
+      manager: "최담당",
+      phone: "031-555-6666",
+      email: "sh@example.com",
+      address: "경기도 평택시",
+      note: "",
+      active: true,
+    },
+    {
+      id: "c6",
+      code: "SW",
+      name: "성우정밀",
+      bizNo: "678-90-12345",
+      manager: "정담당",
+      phone: "031-666-7777",
+      email: "sw@example.com",
+      address: "경기도 안양시",
+      note: "긴급 대응",
+      active: true,
+    },
+  ],
+  products: [
+    {
+      id: "i1",
+      code: "PRD-001",
+      name: "Pinion Gear",
+      partNo: "WS-2210-F",
+      company: "우성기계",
+      drawingNo: "204B1144P0001",
+      material: "SCM440",
+      unit: "EA",
+      process: "이온질화",
+      description: "Pinion gear heat treatment",
+      note: "",
+      active: true,
+    },
+    {
+      id: "i2",
+      code: "PRD-002",
+      name: "기어 블랭크",
+      partNo: "HK-3305-B",
+      company: "한국금속",
+      drawingNo: "DW-3305-02",
+      material: "SNCM220",
+      unit: "EA",
+      process: "이온질화",
+      description: "",
+      note: "",
+      active: true,
+    },
+    {
+      id: "i3",
+      code: "PRD-003",
+      name: "샤프트",
+      partNo: "SE-1102-A",
+      company: "삼성부품",
+      drawingNo: "SE-1102",
+      material: "S45C",
+      unit: "EA",
+      process: "연질화",
+      description: "",
+      note: "",
+      active: true,
+    },
+  ],
+  workers: [
+    { id: "w1", code: "W001", name: "김작업", department: "생산부", note: "", active: true },
+    { id: "w2", code: "W002", name: "한생산", department: "생산부", note: "", active: true },
+    { id: "w3", code: "W003", name: "이검사", department: "품질부", note: "", active: true },
+    { id: "w4", code: "W004", name: "박품질", department: "품질부", note: "", active: true },
+    { id: "w5", code: "W005", name: "최열처리", department: "생산부", note: "야간조", active: true },
+  ],
+  employees: [
+    {
+      id: "em1",
+      code: "E001",
+      name: "김작업",
+      department: "생산부",
+      position: "주임",
+      phone: "010-1111-2222",
+      email: "kim.work@ndk.co.kr",
+      hireDate: "2018-03-15",
+      employmentStatus: "재직",
+      role: "생산",
+      note: "",
+      active: true,
+    },
+    {
+      id: "em2",
+      code: "E002",
+      name: "이검사",
+      department: "품질부",
+      position: "대리",
+      phone: "010-2222-3333",
+      email: "lee.qc@ndk.co.kr",
+      hireDate: "2019-07-01",
+      employmentStatus: "재직",
+      role: "품질",
+      note: "",
+      active: true,
+    },
+    {
+      id: "em3",
+      code: "E003",
+      name: "박영업",
+      department: "영업부",
+      position: "과장",
+      phone: "010-3333-4444",
+      email: "park.sales@ndk.co.kr",
+      hireDate: "2015-01-10",
+      employmentStatus: "재직",
+      role: "영업",
+      note: "",
+      active: true,
+    },
+    {
+      id: "em4",
+      code: "E004",
+      name: "최관리",
+      department: "경영지원",
+      position: "부장",
+      phone: "010-4444-5555",
+      email: "choi.admin@ndk.co.kr",
+      hireDate: "2010-05-20",
+      employmentStatus: "재직",
+      role: "관리자",
+      note: "",
+      active: true,
+    },
+    {
+      id: "em5",
+      code: "E005",
+      name: "정조회",
+      department: "경영지원",
+      position: "사원",
+      phone: "010-5555-6666",
+      email: "jung.view@ndk.co.kr",
+      hireDate: "2022-11-01",
+      employmentStatus: "재직",
+      role: "조회 전용",
+      note: "",
+      active: true,
+    },
+    {
+      id: "em6",
+      code: "E006",
+      name: "한생산",
+      department: "생산부",
+      position: "사원",
+      phone: "010-6666-7777",
+      email: "han.prod@ndk.co.kr",
+      hireDate: "2023-04-01",
+      employmentStatus: "휴직",
+      role: "생산",
+      note: "육아휴직",
+      active: false,
+    },
   ],
   materials: [
-    { id: "m1", code: "SCM440", name: "SCM440", note: "", active: true },
-    { id: "m2", code: "S45C", name: "S45C", note: "", active: true },
-    { id: "m3", code: "SNCM220", name: "SNCM220", note: "", active: true },
-    { id: "m4", code: "SUJ2", name: "SUJ2", note: "", active: true },
+    { id: "m1", code: "SCM440", name: "SCM440", spec: "합금강", note: "", active: true },
+    { id: "m2", code: "SCM415", name: "SCM415", spec: "합금강", note: "", active: true },
+    { id: "m3", code: "S45C", name: "S45C", spec: "탄소강", note: "", active: true },
+    { id: "m4", code: "SNCM220", name: "SNCM220", spec: "니켈합금강", note: "", active: true },
+    { id: "m5", code: "SACM645", name: "SACM645", spec: "니켈합금강", note: "", active: true },
+    { id: "m6", code: "SUJ2", name: "SUJ2", spec: "베어링강", note: "", active: true },
+    { id: "m7", code: "SUS304", name: "SUS304", spec: "스테인리스", note: "", active: true },
   ],
   equipment: [
-    { id: "e1", code: "ION-01", name: "ION-01", note: "이온질화", active: true },
-    { id: "e2", code: "ION-02", name: "ION-02", note: "", active: true },
-    { id: "e3", code: "ION-03", name: "ION-03", note: "", active: true },
-    { id: "e4", code: "GAS-01", name: "GAS-01", note: "가스질화", active: true },
-    { id: "e5", code: "GAS-02", name: "GAS-02", note: "가스질화", active: true },
+    {
+      id: "e1",
+      code: "ION-01",
+      name: "1호기",
+      equipType: "이온질화",
+      location: "1공장",
+      note: "",
+      active: true,
+    },
+    {
+      id: "e2",
+      code: "ION-02",
+      name: "2호기",
+      equipType: "이온질화",
+      location: "1공장",
+      note: "",
+      active: true,
+    },
+    {
+      id: "e3",
+      code: "ION-03",
+      name: "3호기",
+      equipType: "이온질화",
+      location: "1공장",
+      note: "",
+      active: true,
+    },
+    {
+      id: "e4",
+      code: "GAS-01",
+      name: "GAS-01",
+      equipType: "가스질화",
+      location: "2공장",
+      note: "",
+      active: true,
+    },
+    {
+      id: "e5",
+      code: "GAS-02",
+      name: "GAS-02",
+      equipType: "가스질화",
+      location: "2공장",
+      note: "",
+      active: true,
+    },
   ],
   heatTreatment: [
-    { id: "h1", code: "HT-GN", name: "가스질화", note: "", active: true },
-    { id: "h2", code: "HT-IN", name: "이온질화", note: "", active: true },
-    { id: "h2b", code: "HT-SOFT", name: "연질화", note: "", active: true },
-    { id: "h3", code: "HT-SB", name: "염욕질화", note: "", active: true },
-    { id: "h4", code: "HT-CP", name: "침탄", note: "", active: true },
-    { id: "h5", code: "HT-HF", name: "고주파", note: "", active: true },
+    { id: "h1", code: "HT-GN", name: "가스질화", description: "가스 질화 열처리", active: true },
+    { id: "h2", code: "HT-IN", name: "이온질화", description: "이온 질화 열처리", active: true },
+    { id: "h2b", code: "HT-SOFT", name: "연질화", description: "연질화 열처리", active: true },
+    { id: "h3", code: "HT-SB", name: "염욕질화", description: "염욕 질화", active: true },
+    { id: "h4", code: "HT-CP", name: "침탄", description: "침탄 열처리", active: true },
+    { id: "h5", code: "HT-HF", name: "고주파", description: "고주파 열처리", active: true },
   ],
-  status: [
-    { id: "s1", code: "IN-DONE", name: "입고완료", group: "입고", active: true },
-    { id: "s2", code: "PR-DONE", name: "생산완료", group: "생산", active: true },
-    { id: "s3", code: "CT-ISSUE", name: "성적서 발행완료", group: "성적서", active: true },
-    { id: "s4", code: "SH-WAIT", name: "출고대기", group: "출고", active: true },
-    { id: "s5", code: "SH-DONE", name: "출고완료", group: "출고", active: true },
+  inspectionCriteria: [],
+  customCodes: [
+    { id: "s1", code: "IN-DONE", name: "입고완료", group: "상태", note: "", active: true },
+    { id: "s2", code: "PR-DONE", name: "생산완료", group: "상태", note: "", active: true },
+    { id: "s3", code: "CT-ISSUE", name: "성적서 발행완료", group: "상태", note: "", active: true },
+    { id: "s4", code: "SH-WAIT", name: "출고대기", group: "상태", note: "", active: true },
+    { id: "s5", code: "SH-DONE", name: "출고완료", group: "상태", note: "", active: true },
+    { id: "u1", code: "EA", name: "EA", group: "단위", note: "개", active: true },
+    { id: "u2", code: "LOT", name: "LOT", group: "단위", note: "로트", active: true },
+    { id: "u3", code: "KG", name: "KG", group: "단위", note: "킬로그램", active: true },
+    { id: "u4", code: "SET", name: "SET", group: "단위", note: "세트", active: true },
+    { id: "cc1", code: "URG-Y", name: "긴급", group: "긴급", note: "", active: true },
+    { id: "cc2", code: "URG-N", name: "일반", group: "긴급", note: "", active: true },
+    { id: "cc3", code: "PRI-H", name: "높음", group: "우선순위", note: "", active: true },
+    { id: "cc4", code: "PRI-M", name: "보통", group: "우선순위", note: "", active: true },
+    { id: "cc5", code: "DEPT-PR", name: "생산부", group: "부서", note: "", active: true },
+    { id: "cc6", code: "DEPT-QC", name: "품질부", group: "부서", note: "", active: true },
+    { id: "cc7", code: "DEPT-SL", name: "영업부", group: "부서", note: "", active: true },
   ],
   productCategory: [
     { id: "p1", code: "FORGE", name: "단조품", note: "", active: true },
@@ -73,28 +343,109 @@ export const MASTER_DATA = {
     { id: "p3", code: "AUTO", name: "자동차부품", note: "", active: true },
     { id: "p4", code: "GEAR", name: "기어류", note: "", active: true },
   ],
-  workers: [
-    { id: "w1", code: "OP01", name: "김작업", note: "생산부", active: true },
-    { id: "w2", code: "OP02", name: "이작업", note: "생산부", active: true },
-    { id: "w3", code: "QC01", name: "박검사", note: "품질부", active: true },
-    { id: "w4", code: "QC02", name: "최검사", note: "품질부", active: true },
-  ],
-  units: [
-    { id: "u1", code: "EA", name: "EA", note: "개", active: true },
-    { id: "u2", code: "LOT", name: "LOT", note: "로트", active: true },
-    { id: "u3", code: "KG", name: "KG", note: "킬로그램", active: true },
-    { id: "u4", code: "SET", name: "SET", note: "세트", active: true },
-  ],
+  status: [],
+  units: [],
   other: [
-    { id: "o1", code: "QR-FMT", name: "QR 포맷", note: "LOT 번호만 저장 · NDK|LOT|{lotNo} 표시용", active: true },
+    { id: "o1", code: "QR-FMT", name: "QR 포맷", note: "LOT 번호만 저장", active: true },
     { id: "o2", code: "MGMT-FMT", name: "관리번호 규칙", note: "업체코드_YYYYMMDD_순번", active: true },
   ],
 };
 
-/** @type {Record<string, Array<{ id: string, code: string, name: string, note?: string, group?: string, active: boolean }>>} */
-let sessionMasterData = Object.fromEntries(
-  Object.entries(MASTER_DATA).map(([key, rows]) => [key, rows.map((row) => ({ ...row }))])
-);
+function cloneMasterData(source) {
+  return Object.fromEntries(
+    Object.entries(source).map(([key, rows]) => [key, rows.map((row) => ({ ...row }))])
+  );
+}
+
+function migrateLegacyProducts(rows = []) {
+  return rows.map((row) => ({
+    ...row,
+    company: row.company ?? "",
+    drawingNo:
+      row.drawingNo?.trim() ||
+      row.internalDrawingNo?.trim() ||
+      row.customerDrawingNo?.trim() ||
+      "",
+    description: row.description ?? "",
+  }));
+}
+
+function migrateWorkerMaster(rows = []) {
+  return rows.map((row) => ({
+    id: row.id,
+    code: row.code ?? "",
+    name: row.name ?? "",
+    department: row.department ?? "",
+    note: row.note ?? "",
+    active: row.active !== false,
+  }));
+}
+
+function migrateLegacyWorkers(rows = []) {
+  return rows.map((row) => ({
+    ...row,
+    email: row.email ?? "",
+    hireDate: row.hireDate ?? "",
+    employmentStatus: row.employmentStatus ?? (row.active === false ? "퇴사" : "재직"),
+    role: row.role ?? "",
+    active: row.employmentStatus ? row.employmentStatus === "재직" : row.active !== false,
+  }));
+}
+
+function loadMasterDataFromStorage() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return cloneMasterData(MASTER_DATA);
+    const parsed = JSON.parse(raw);
+    const merged = cloneMasterData(MASTER_DATA);
+    Object.keys(merged).forEach((key) => {
+      if (Array.isArray(parsed[key])) {
+        merged[key] = parsed[key];
+      }
+    });
+    if (Array.isArray(parsed.items) && (!parsed.products || parsed.products.length === 0)) {
+      merged.products = migrateLegacyProducts(parsed.items);
+    } else if (Array.isArray(merged.products)) {
+      merged.products = migrateLegacyProducts(merged.products);
+    }
+    if (Array.isArray(parsed.workers)) {
+      merged.workers = migrateWorkerMaster(parsed.workers);
+    } else if (Array.isArray(merged.workers)) {
+      merged.workers = migrateWorkerMaster(merged.workers);
+    }
+    if (Array.isArray(parsed.employees)) {
+      merged.employees = migrateLegacyWorkers(parsed.employees);
+    } else if (Array.isArray(merged.employees)) {
+      merged.employees = migrateLegacyWorkers(merged.employees);
+    }
+    delete merged.items;
+    return merged;
+  } catch {
+    return cloneMasterData(MASTER_DATA);
+  }
+}
+
+/** @type {typeof MASTER_DATA} */
+let sessionMasterData = loadMasterDataFromStorage();
+
+function persistMasterData() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
+  } catch {
+    /* ignore quota errors in UI mode */
+  }
+}
+
+function resolveStorageCategory(categoryKey) {
+  const resolved = resolveCategoryKey(categoryKey);
+  if (resolved === "products" && categoryKey === "items") return "products";
+  if (CODE_GROUP_ALIASES[resolved]) return "customCodes";
+  return resolved;
+}
+
+function filterByCodeGroup(rows, groupLabel) {
+  return rows.filter((row) => row.group === groupLabel);
+}
 
 export function getMasterCategories() {
   return MASTER_CATEGORIES;
@@ -105,38 +456,63 @@ export function getMasterCategoryMeta(categoryKey) {
 }
 
 export function getMasterDataByCategory(categoryKey) {
-  return sessionMasterData[categoryKey] ?? [];
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  if (CODE_GROUP_ALIASES[resolvedKey]) {
+    return filterByCodeGroup(sessionMasterData.customCodes ?? [], CODE_GROUP_ALIASES[resolvedKey]);
+  }
+  return sessionMasterData[resolvedKey] ?? [];
 }
 
 export function searchMasterData(categoryKey, keyword) {
   const rows = getMasterDataByCategory(categoryKey);
   if (!keyword?.trim()) return rows;
   const q = keyword.trim().toLowerCase();
-  return rows.filter(
-    (row) =>
-      row.code.toLowerCase().includes(q) ||
-      row.name.toLowerCase().includes(q) ||
-      row.note?.toLowerCase().includes(q) ||
-      row.group?.toLowerCase().includes(q)
+  return rows.filter((row) =>
+    Object.values(row).some((value) =>
+      String(value ?? "")
+        .toLowerCase()
+        .includes(q)
+    )
   );
 }
 
 export function getActiveMasterNames(categoryKey) {
+  const resolvedKey = resolveCategoryKey(categoryKey);
   return getMasterDataByCategory(categoryKey)
-    .filter((row) => row.active)
+    .filter((row) => {
+      if (resolvedKey === "employees") {
+        const status = row.employmentStatus ?? (row.active === false ? "퇴사" : "재직");
+        return status === "재직";
+      }
+      return row.active !== false;
+    })
     .map((row) => row.name);
+}
+
+/** 생산일보 · 검사 · 성적서 — 사용 중인 작업자 Master */
+export function getActiveWorkers() {
+  return getMasterDataByCategory("workers").filter((row) => row.active !== false);
+}
+
+/** 생산일보 — 사용 중인 설비 Master */
+export function getActiveEquipment() {
+  return getMasterDataByCategory("equipment").filter((row) => row.active !== false);
+}
+
+export function getActiveWorkerNames() {
+  return getActiveWorkers().map((row) => row.name).filter(Boolean);
 }
 
 export function getCompanyCodeMap() {
   return Object.fromEntries(
     getMasterDataByCategory("companies")
-      .filter((row) => row.active)
+      .filter((row) => row.active !== false)
       .map((row) => [row.name, row.code])
   );
 }
 
 function nextMasterRowId(categoryKey) {
-  const prefix = categoryKey.slice(0, 1);
+  const prefix = categoryKey.slice(0, 2);
   const rows = getMasterDataByCategory(categoryKey);
   const maxNum = rows.reduce((max, row) => {
     const match = row.id.match(/(\d+)$/);
@@ -145,109 +521,533 @@ function nextMasterRowId(categoryKey) {
   return `${prefix}${maxNum + 1}`;
 }
 
+function normalizePayload(categoryKey, payload) {
+  const base = {
+    code: payload.code?.trim() ?? "",
+    name: payload.name?.trim() ?? "",
+    note: payload.note?.trim() ?? "",
+    active: payload.active !== false,
+  };
+
+  if (categoryKey === "companies") {
+    return {
+      ...base,
+      bizNo: payload.bizNo?.trim() ?? "",
+      manager: payload.manager?.trim() ?? "",
+      phone: payload.phone?.trim() ?? "",
+      mobile: payload.mobile?.trim() ?? "",
+      email: payload.email?.trim() ?? "",
+      address: payload.address?.trim() ?? "",
+    };
+  }
+  if (categoryKey === "products" || categoryKey === "items") {
+    const unitPriceRaw = payload.unitPrice;
+    const unitPrice =
+      unitPriceRaw === "" || unitPriceRaw == null
+        ? null
+        : Number(String(unitPriceRaw).replace(/,/g, "")) || null;
+    return {
+      ...base,
+      company: payload.company?.trim() ?? "",
+      partNo: payload.partNo?.trim() ?? "",
+      drawingNo: payload.drawingNo?.trim() ?? "",
+      material: payload.material?.trim() ?? "",
+      spec: payload.spec?.trim() ?? "",
+      unitPrice,
+      unit: payload.unit?.trim() ?? "EA",
+      process: payload.process?.trim() ?? "",
+      description: payload.description?.trim() ?? "",
+    };
+  }
+  if (categoryKey === "materials") {
+    const description = payload.description?.trim() ?? payload.spec?.trim() ?? "";
+    return { ...base, spec: description };
+  }
+  if (categoryKey === "heatTreatment") {
+    return {
+      ...base,
+      description: payload.description?.trim() ?? payload.note?.trim() ?? "",
+    };
+  }
+  if (categoryKey === "equipment") {
+    return {
+      ...base,
+      equipType: payload.equipType?.trim() ?? "",
+      location: payload.location?.trim() ?? "",
+    };
+  }
+  if (categoryKey === "employees" || categoryKey === "workers") {
+    const employmentStatus = payload.employmentStatus?.trim() || "재직";
+    if (categoryKey === "workers") {
+      return {
+        ...base,
+        department: payload.department?.trim() ?? "",
+      };
+    }
+    return {
+      ...base,
+      department: payload.department?.trim() ?? "",
+      position: payload.position?.trim() ?? "",
+      phone: payload.phone?.trim() ?? "",
+      email: payload.email?.trim() ?? "",
+      hireDate: payload.hireDate?.trim() ?? "",
+      employmentStatus,
+      role: payload.role?.trim() ?? "",
+      active: employmentStatus === "재직",
+    };
+  }
+  if (categoryKey === "inspectionCriteria") {
+    return {
+      ...base,
+      targetType: payload.targetType?.trim() ?? "",
+      standardValue: payload.standardValue?.trim() ?? "",
+      unit: payload.unit?.trim() ?? "",
+    };
+  }
+  if (categoryKey === "customCodes") {
+    return { ...base, group: payload.group?.trim() ?? "" };
+  }
+
+  return {
+    ...base,
+    group: payload.group?.trim() ?? undefined,
+  };
+}
+
 export function validateMasterRow(categoryKey, row, mode, existingId) {
-  const code = row.code?.trim() ?? "";
-  const name = row.name?.trim() ?? "";
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  const normalized = normalizePayload(resolvedKey, row);
+  const storageKey = resolveStorageCategory(resolvedKey);
 
-  if (!code) {
-    return { ok: false, message: "코드를 입력하세요." };
+  if (!normalized.code) {
+    return {
+      ok: false,
+      message:
+        resolvedKey === "employees"
+          ? "사번을 입력하세요."
+          : resolvedKey === "workers"
+            ? "작업자 코드를 입력하세요."
+            : "코드를 입력하세요.",
+    };
   }
-  if (!name) {
-    return { ok: false, message: "명칭을 입력하세요." };
+  if (!normalized.name) {
+    return {
+      ok: false,
+      message:
+        resolvedKey === "employees"
+          ? "성명을 입력하세요."
+          : resolvedKey === "workers"
+            ? "작업자명을 입력하세요."
+            : "명칭을 입력하세요.",
+    };
   }
 
-  const rows = getMasterDataByCategory(categoryKey);
+  const rows = getMasterDataByCategory(resolvedKey);
   const codeDup = rows.some(
-    (item) => item.code.toLowerCase() === code.toLowerCase() && item.id !== existingId
+    (item) => item.code.toLowerCase() === normalized.code.toLowerCase() && item.id !== existingId
   );
   if (codeDup) {
-    return { ok: false, message: "이미 사용 중인 코드입니다." };
+    return {
+      ok: false,
+      message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 코드입니다.",
+    };
   }
 
-  if (categoryKey === "status" && !row.group?.trim()) {
-    return { ok: false, message: "상태 코드는 구분을 선택하세요." };
+  if (resolvedKey === "products" && normalized.partNo && normalized.company) {
+    const partDup = rows.some(
+      (item) =>
+        String(item.company ?? "").trim().toLowerCase() === normalized.company.toLowerCase() &&
+        item.partNo?.toLowerCase() === normalized.partNo.toLowerCase() &&
+        item.id !== existingId
+    );
+    if (partDup) {
+      return { ok: false, message: "이미 등록된 업체·품번 제품입니다." };
+    }
+  }
+
+  if (storageKey === "customCodes" && !normalized.group) {
+    return { ok: false, message: "코드 분류를 선택하세요." };
   }
 
   if (mode === "edit" && !existingId) {
     return { ok: false, message: "수정 대상을 선택하세요." };
   }
 
-  return { ok: true, code, name };
+  return { ok: true, normalized, storageKey, categoryKey: resolvedKey };
 }
 
-export function stageMasterAdd(categoryKey, payload) {
-  const validation = validateMasterRow(categoryKey, payload, "add");
+export function stageMasterAdd(categoryKey, payload, { skipValidation = false } = {}) {
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  const validation = skipValidation
+    ? {
+        ok: true,
+        normalized: normalizePayload(resolvedKey, payload),
+        storageKey: resolveStorageCategory(resolvedKey),
+        categoryKey: resolvedKey,
+      }
+    : validateMasterRow(resolvedKey, payload, "add");
   if (!validation.ok) {
     return { ok: false, message: validation.message };
   }
 
   const newRow = {
-    id: nextMasterRowId(categoryKey),
-    code: validation.code,
-    name: validation.name,
-    note: payload.note?.trim() ?? "",
-    group: categoryKey === "status" ? payload.group?.trim() ?? "" : undefined,
-    active: payload.active !== false,
+    id: payload.id ?? nextMasterRowId(validation.categoryKey),
+    ...validation.normalized,
   };
 
-  sessionMasterData[categoryKey] = [...getMasterDataByCategory(categoryKey), newRow];
-  console.log("[UI] 기준정보 추가 (세션 UI · SQLite 미연동)", { category: categoryKey, row: newRow });
+  const storageKey = validation.storageKey;
+  sessionMasterData[storageKey] = [...(sessionMasterData[storageKey] ?? []), newRow];
+  persistMasterData();
   return { ok: true, row: newRow };
 }
 
 export function stageMasterUpdate(categoryKey, rowId, payload) {
-  const validation = validateMasterRow(categoryKey, payload, "edit", rowId);
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  const validation = validateMasterRow(resolvedKey, payload, "edit", rowId);
   if (!validation.ok) {
     return { ok: false, message: validation.message };
   }
 
-  const rows = getMasterDataByCategory(categoryKey);
+  const storageKey = validation.storageKey;
+  const rows = sessionMasterData[storageKey] ?? [];
   const index = rows.findIndex((row) => row.id === rowId);
   if (index < 0) {
     return { ok: false, message: "수정 대상을 찾을 수 없습니다." };
   }
 
-  const updated = {
-    ...rows[index],
-    code: validation.code,
-    name: validation.name,
-    note: payload.note?.trim() ?? "",
-    group: categoryKey === "status" ? payload.group?.trim() ?? "" : rows[index].group,
-    active: payload.active !== false,
-  };
-
-  sessionMasterData[categoryKey] = rows.map((row, i) => (i === index ? updated : row));
-  console.log("[UI] 기준정보 수정 (세션 UI · SQLite 미연동)", {
-    category: categoryKey,
-    rowId,
-    row: updated,
-  });
+  const updated = { ...rows[index], ...validation.normalized };
+  sessionMasterData[storageKey] = rows.map((row, i) => (i === index ? updated : row));
+  persistMasterData();
   return { ok: true, row: updated };
 }
 
 export function stageMasterDelete(categoryKey, rowId) {
-  const rows = getMasterDataByCategory(categoryKey);
+  const storageKey = resolveStorageCategory(categoryKey);
+  const rows = sessionMasterData[storageKey] ?? [];
   const target = rows.find((row) => row.id === rowId);
   if (!target) {
     return { ok: false, message: "삭제 대상을 찾을 수 없습니다." };
   }
 
-  sessionMasterData[categoryKey] = rows.filter((row) => row.id !== rowId);
-  console.log("[UI] 기준정보 삭제 (세션 UI · SQLite 미연동)", {
-    category: categoryKey,
-    row: target,
-  });
+  if (resolveCategoryKey(categoryKey) === "products" && target.partNo) {
+    const guard = canDeleteProduct(target.partNo);
+    if (!guard.ok) {
+      return { ok: false, message: guard.message };
+    }
+  }
+
+  if (resolveCategoryKey(categoryKey) === "workers") {
+    const updated = { ...target, active: false };
+    sessionMasterData[storageKey] = rows.map((row) => (row.id === rowId ? updated : row));
+    persistMasterData();
+    return { ok: true, row: updated, soft: true };
+  }
+
+  sessionMasterData[storageKey] = rows.filter((row) => row.id !== rowId);
+  persistMasterData();
   return { ok: true, row: target };
+}
+
+export function formatMasterRowForDisplay(row) {
+  if (!row) return row;
+  const employmentStatus =
+    row.employmentStatus ?? (row.active === false ? "퇴사" : row.department ? "재직" : undefined);
+  return {
+    ...row,
+    activeLabel: row.active === false ? "미사용" : "사용",
+    employmentStatusLabel: employmentStatus ?? "—",
+    description: row.description ?? row.note ?? "",
+    unitPriceLabel:
+      row.unitPrice != null && row.unitPrice !== ""
+        ? Number(row.unitPrice).toLocaleString()
+        : "—",
+  };
+}
+
+export function findMasterRowByName(categoryKey, name) {
+  const q = String(name ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return (
+    getMasterDataByCategory(categoryKey).find(
+      (row) =>
+        row.active !== false &&
+        (row.name.toLowerCase() === q ||
+          row.name.toLowerCase().includes(q) ||
+          row.code?.toLowerCase() === q)
+    ) ?? null
+  );
+}
+
+export function findProductByPartNo(partNo) {
+  const q = String(partNo ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return (
+    getMasterDataByCategory("products").find(
+      (row) => row.active !== false && row.partNo?.toLowerCase() === q
+    ) ?? null
+  );
+}
+
+/** 관리번호(제품코드) 기준 제품 조회 */
+export function findProductByCode(code) {
+  const q = String(code ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return (
+    getMasterDataByCategory("products").find((row) => row.code?.toLowerCase() === q) ?? null
+  );
+}
+
+/** 업체 + 품번 기준 제품 조회 (입고 자동완성) */
+export function findProductByCompanyAndPartNo(company, partNo) {
+  const partKey = String(partNo ?? "").trim().toLowerCase();
+  if (!partKey) return null;
+  const companyKey = String(company ?? "").trim().toLowerCase();
+  const rows = getMasterDataByCategory("products").filter((row) => row.active !== false);
+  if (companyKey) {
+    const scoped = rows.find(
+      (row) =>
+        row.partNo?.toLowerCase() === partKey &&
+        String(row.company ?? "").trim().toLowerCase() === companyKey
+    );
+    if (scoped) return scoped;
+  }
+  return rows.find((row) => row.partNo?.toLowerCase() === partKey) ?? null;
+}
+
+/** 업체코드_YYYYMMDD_순번 — ProductMaster Excel Import */
+export function generateProductManagementCode(companyName, existingCodes = null) {
+  const codeMap = getCompanyCodeMap();
+  const companyCode =
+    codeMap[companyName] ??
+    (String(companyName ?? "")
+      .trim()
+      .slice(0, 2)
+      .toUpperCase() || "XX");
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const prefix = `${companyCode}_${datePart}_`;
+  const codes =
+    existingCodes ??
+    getMasterDataByCategory("products").map((row) => String(row.code ?? ""));
+  const maxSeq = codes.reduce((max, code) => {
+    if (!code.startsWith(prefix)) return max;
+    const seq = Number(code.slice(prefix.length));
+    return Number.isFinite(seq) ? Math.max(max, seq) : max;
+  }, 0);
+  return `${prefix}${String(maxSeq + 1).padStart(3, "0")}`;
+}
+
+export function findCompanyByCode(code) {
+  const q = String(code ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return getMasterDataByCategory("companies").find((row) => row.code?.toLowerCase() === q) ?? null;
+}
+
+export function findMaterialByCode(code) {
+  const q = String(code ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return getMasterDataByCategory("materials").find((row) => row.code?.toLowerCase() === q) ?? null;
+}
+
+export function findProcessByCode(code) {
+  const q = String(code ?? "").trim().toLowerCase();
+  if (!q) return null;
+  return getMasterDataByCategory("heatTreatment").find((row) => row.code?.toLowerCase() === q) ?? null;
+}
+
+/** Import Undo — revert last batch per master type */
+export function revertMasterImport(categoryKey, undoSnapshot) {
+  if (!undoSnapshot) return { ok: false, message: "Undo 대상이 없습니다." };
+  const storageKey = resolveStorageCategory(categoryKey);
+  const rows = [...(sessionMasterData[storageKey] ?? [])];
+
+  (undoSnapshot.updatedRecords ?? []).forEach(({ id, previousData }) => {
+    const index = rows.findIndex((row) => row.id === id);
+    if (index >= 0 && previousData) {
+      rows[index] = { ...previousData };
+    }
+  });
+
+  const createdIds = new Set(undoSnapshot.createdIds ?? []);
+  sessionMasterData[storageKey] = rows.filter((row) => !createdIds.has(row.id));
+  persistMasterData();
+  return { ok: true };
+}
+
+const PRODUCT_COMPARE_FIELDS = [
+  { key: "name", label: "품명" },
+  { key: "company", label: "업체명" },
+  { key: "material", label: "재질" },
+  { key: "spec", label: "규격" },
+  { key: "unitPrice", label: "기본단가" },
+  { key: "note", label: "비고" },
+];
+
+/** Excel Import — 기존 ProductMaster와 변경 항목 비교 */
+export function compareProductMasterChanges(existing, incoming) {
+  if (!existing || !incoming) return [];
+  return PRODUCT_COMPARE_FIELDS.filter(({ key }) => {
+    const left = existing[key];
+    const right = incoming[key];
+    if (key === "unitPrice") {
+      return Number(left ?? 0) !== Number(right ?? 0);
+    }
+    return String(left ?? "").trim() !== String(right ?? "").trim();
+  }).map(({ key, label }) => ({
+    key,
+    label,
+    from: existing[key],
+    to: incoming[key],
+  }));
+}
+
+export function compareCompanyMasterChanges(existing, incoming) {
+  const fields = [
+    { key: "name", label: "업체명" },
+    { key: "manager", label: "담당자" },
+    { key: "phone", label: "전화번호" },
+    { key: "mobile", label: "휴대전화" },
+    { key: "email", label: "이메일" },
+    { key: "address", label: "주소" },
+    { key: "note", label: "비고" },
+  ];
+  return fields
+    .filter(({ key }) => String(existing[key] ?? "").trim() !== String(incoming[key] ?? "").trim())
+    .map(({ key, label }) => ({ key, label, from: existing[key], to: incoming[key] }));
+}
+
+export function compareMaterialMasterChanges(existing, incoming) {
+  const fields = [
+    { key: "name", label: "재질명" },
+    { key: "spec", label: "설명" },
+    { key: "note", label: "비고" },
+  ];
+  return fields
+    .filter(({ key }) => String(existing[key] ?? "").trim() !== String(incoming[key] ?? "").trim())
+    .map(({ key, label }) => ({ key, label, from: existing[key], to: incoming[key] }));
+}
+
+export function compareProcessMasterChanges(existing, incoming) {
+  const fields = [
+    { key: "name", label: "공정명" },
+    { key: "description", label: "설명" },
+    { key: "note", label: "비고" },
+  ];
+  return fields
+    .filter(({ key }) => String(existing[key] ?? "").trim() !== String(incoming[key] ?? "").trim())
+    .map(({ key, label }) => ({ key, label, from: existing[key], to: incoming[key] }));
+}
+
+/** 품번 · 품명 · 도번 기준 제품 조회 (자동완성 · 자동입력) */
+export function resolveProductByQuery(query, { includeInactive = false } = {}) {
+  const q = String(query ?? "").trim().toLowerCase();
+  if (!q) return null;
+
+  const rows = getMasterDataByCategory("products").filter(
+    (row) => includeInactive || row.active !== false
+  );
+
+  const exact = rows.find(
+    (row) =>
+      row.partNo?.toLowerCase() === q ||
+      row.name?.toLowerCase() === q ||
+      row.drawingNo?.toLowerCase() === q ||
+      row.code?.toLowerCase() === q
+  );
+  if (exact) return exact;
+
+  const partNoPrefix = rows.find((row) => row.partNo?.toLowerCase().startsWith(q));
+  if (partNoPrefix) return partNoPrefix;
+
+  const drawingPrefix = rows.find((row) => row.drawingNo?.toLowerCase().includes(q));
+  if (drawingPrefix) return drawingPrefix;
+
+  const nameMatch = rows.find((row) => row.name?.toLowerCase().includes(q));
+  if (nameMatch) return nameMatch;
+
+  return (
+    rows.find((row) =>
+      [row.code, row.partNo, row.name, row.drawingNo].some((value) =>
+        String(value ?? "")
+          .toLowerCase()
+          .includes(q)
+      )
+    ) ?? null
+  );
+}
+
+/** 품번 기준 제품 마스터 자동입력 필드 */
+export function getProductAutofillByPartNo(partNo, company = "") {
+  const product =
+    findProductByCompanyAndPartNo(company, partNo) ??
+    resolveProductByQuery(partNo) ??
+    findProductByPartNo(partNo);
+  if (!product) return null;
+  return {
+    partNo: product.partNo ?? "",
+    partName: product.name ?? "",
+    name: product.name ?? "",
+    company: product.company ?? "",
+    drawingNo: product.drawingNo ?? "",
+    material: product.material ?? "",
+    spec: product.spec ?? "",
+    unitPrice: product.unitPrice ?? null,
+    process: product.process ?? "",
+    unit: product.unit ?? "EA",
+  };
+}
+
+/** @deprecated use findProductByPartNo */
+export function findItemByPartNo(partNo) {
+  return findProductByPartNo(partNo);
+}
+
+export function getMasterSuggestions(categoryKey, query, limit = 8) {
+  const q = String(query ?? "").trim().toLowerCase();
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  const rows = getMasterDataByCategory(categoryKey).filter((row) => {
+    if (resolvedKey === "employees") {
+      const status = row.employmentStatus ?? (row.active === false ? "퇴사" : "재직");
+      return status === "재직";
+    }
+    return row.active !== false;
+  });
+  if (!q) return rows.slice(0, limit);
+  return rows
+    .filter((row) =>
+      [row.code, row.name, row.partNo, row.drawingNo, row.manager, row.department, row.email, row.role]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q))
+    )
+    .slice(0, limit);
 }
 
 export const MASTER_FIELD_LINKS = {
   companies: { label: "업체명", screens: ["입고관리", "생산작업계획", "성적서관리"] },
+  products: { label: "제품", screens: ["입고관리", "생산관리", "출고관리", "검사기준관리", "거래명세서"] },
   materials: { label: "재질", screens: ["입고관리", "생산일보"] },
-  heatTreatment: { label: "열처리 공정", screens: ["입고관리", "생산작업계획"] },
-  productCategory: { label: "품목", screens: ["입고관리", "통계 대시보드"] },
-  workers: { label: "작업자", screens: ["생산일보", "검사일지"] },
-  status: { label: "상태 코드", screens: ["HOME", "이력조회", "출고관리"] },
+  heatTreatment: { label: "공정", screens: ["입고관리", "생산작업계획"] },
+  workers: { label: "작업자", screens: ["생산일보", "검사일지", "성적서관리"] },
+  employees: {
+    label: "직원",
+    screens: ["생산일보", "검사일지", "출고관리", "부서별 업무", "통계자료"],
+  },
   equipment: { label: "설비", screens: ["생산일보", "열처리 작업 리스트"] },
-  units: { label: "단위", screens: ["입고관리", "출고관리", "거래명세서", "이력조회"] },
-  other: { label: "기타", screens: ["QR", "관리번호"] },
+  customCodes: { label: "공통코드", screens: ["전체 메뉴"] },
+  units: { label: "단위", screens: ["입고관리", "출고관리", "거래명세서"] },
+  status: { label: "상태 코드", screens: ["HOME", "출고관리"] },
 };
+
+export const MASTER_DATA_NAV_KEYS = [
+  "companies",
+  "products",
+  "materials",
+  "heatTreatment",
+  "equipment",
+  "workers",
+  "employees",
+  "customCodes",
+];
+
+export function getMasterNavCategories() {
+  return MASTER_CATEGORIES.filter((item) => MASTER_DATA_NAV_KEYS.includes(item.key));
+}

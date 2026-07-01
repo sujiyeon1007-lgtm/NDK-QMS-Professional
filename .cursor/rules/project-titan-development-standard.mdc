@@ -23,15 +23,21 @@ alwaysApply: true
 Every screen follows this sequence. **No coding before design is complete.**
 
 ```text
-기획 → 화면 설계 → PM 승인 → Cursor 개발 → 테스트 → 수정 → 다음 화면
+기획 → 화면 설계 → PM 승인 → Cursor 개발 → 테스트 → Git Commit → Git Push
 ```
+
+**Completion criteria:** Sidebar → Router → Layout → Tab → click test → Console/Terminal Error = 0. **Build success alone is not completion.**
+
+See also: `.cursor/rules/project-titan-progress-v1.mdc` for menu status and next priorities.
 
 ## 3. Screen Build Order (One at a Time)
 
 Build **one screen at a time**. Do not start the next screen until the current one is **PM-approved**.
 
+**Current priority:** ① 품질관리 (검사일지 · 성적서) → ② 불량이력 → ③ 부서별 업무 (V1.0) → …
+
 ```text
-HOME → 입출고관리 → 생산관리 → 품질관리 → 개인업무 → 통계자료 → 기준정보관리 → 환경설정
+HOME → 입출고관리 → 생산관리 → 품질관리 → 부서별 업무 → 통계자료 → 기준정보관리 → 환경설정
 ```
 
 ## 4. UI Development Rules
@@ -118,7 +124,10 @@ See `WORKFLOW_STEPS` in `src/config/menuStructure.js`.
 
 ## 12. Test Checklist (Every New Feature)
 
+- Sidebar navigation · Router · Layout · Tab
 - UI layout intact · responsive behavior · data binding · button actions · search · CRUD · workflow links
+- **Console Error = 0 · Terminal Error = 0**
+- Actual click test in browser — not build-only verification
 
 ## 13. Cursor Rules (Strict)
 

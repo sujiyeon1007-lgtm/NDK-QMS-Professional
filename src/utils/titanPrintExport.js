@@ -3,6 +3,9 @@ import { jsPDF } from "jspdf";
 import { buildHtlPrintLayout, HTL_PRINT_TITLE } from "./htlWorkListPrintLayout";
 import { buildOutboundPrintLayout, OUTBOUND_PRINT_TITLE } from "./outboundListPrintLayout";
 import { formatQtyWithUnit } from "./productUnits";
+import { migrateHardeningDepthRows } from "./hardeningDepthModel";
+import { getReportDepthOutputRows } from "./heatTreatmentCalculationEngine";
+import { getInspectionScope } from "./inspectionScope";
 import {
   findPrintDocument,
   getDocumentOrientation,
@@ -266,6 +269,134 @@ export async function exportOutboundListXlsx({
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "출고리스트");
+  XLSX.writeFile(workbook, filename);
+}
+
+/** 검사 리포트 — Final Design v1.0 Excel 출력 */
+export async function exportInspectionReportXlsx({
+  report,
+  printDateTime = "",
+  printUser = "",
+  filename = "검사리포트.xlsx",
+}) {
+  if (!report) return;
+
+  const XLSX = await import("xlsx");
+  const scope = getInspectionScope(report.appliedSpecification);
+
+  const sheetRows = [
+    ["검사 리포트", report.reportNo || ""],
+    [],
+    ["① 기본정보"],
+    ["업체명", report.company, "품명", report.partName, "품번", report.partNo],
+    ["도번", report.drawingNo, "LOT", report.lotNo, "관리번호", report.managementId],
+    ["재질", report.material, "열처리 공정", report.process, "수량", `${report.qty} ${report.unit}`],
+    ["검사일", report.inspectionDate, "검사자", report.inspector, "승인자", report.approver],
+    [],
+    ["② 검사 기준 (Specification)"],
+    ["항목", "기준", "단위", "비고"],
+    ...report.specifications.map((row) => [row.item, row.spec, row.unit, row.note]),
+    [],
+    ["③ 검사 결과 (Result Summary)"],
+    ["구분", "결과", "비고"],
+    ...report.resultSummary.map((row) => [row.category, row.result, row.note]),
+  ];
+
+  if (scope.hardeningDepth) {
+    const depthOutputRows = getReportDepthOutputRows(
+      report.heatTreatmentCalculations,
+      report.appliedSpecification
+    );
+
+    sheetRows.push(
+      [],
+      ["④ 경화깊이 데이터 (HV)"],
+      ["깊이(mm)", "Hv"],
+      ...migrateHardeningDepthRows(report).map((row) => [
+        row.isCore ? "CORE" : row.depth,
+        row.hv === "" ? "" : row.hv,
+      ]),
+      [],
+      ["⑤ 열처리 계산 (자동 · 최종)"]
+    );
+
+    if (depthOutputRows.length > 0) {
+      sheetRows.push(
+        ["항목", "자동 계산(mm)", "최종 적용(mm)"],
+        ...depthOutputRows.map((row) => {
+          const calc = report.heatTreatmentCalculations?.[row.key];
+          return [row.label, calc?.auto ?? "", calc?.final ?? ""];
+        })
+      );
+    } else {
+      sheetRows.push(
+        ["유효경화깊이(mm)", report.effectiveDepthMm ?? ""],
+        ["390Hv 기준 경화깊이(mm)", report.hardeningDepth390 ?? ""]
+      );
+    }
+  }
+
+  if (scope.appearance) {
+    sheetRows.push(
+      [],
+      ["⑥ 외관검사"],
+      ["항목", "기준", "결과", "판정"],
+      ...report.appearanceRows.map((row) => [row.item, row.standard || "—", row.result, row.judgment]),
+      ["외관검사 종합 판정", report.appearanceSummary]
+    );
+  }
+
+  if (scope.hardness) {
+    sheetRows.push(
+      [],
+      ["⑦ 경도검사 (측정값)"],
+      ["항목", "스펙", "측정값", "단위", "판정"],
+      ...report.hardnessRows.map((row) => [row.item, row.spec, row.measured, row.unit || "—", row.judgment]),
+      ["경도검사 종합 판정", report.hardnessSummary]
+    );
+  }
+
+  if (scope.dimension) {
+    sheetRows.push(
+      [],
+      ["⑧ 치수검사"],
+      ["항목", "스펙", "측정값", "단위", "판정"],
+      ...report.dimensionRows.map((row) => [row.item, row.spec, row.measured, row.unit || "mm", row.judgment]),
+      ["치수검사 종합 판정", report.dimensionSummary]
+    );
+  }
+
+  if (scope.microstructure && report.hasMicrostructurePhoto) {
+    sheetRows.push(
+      [],
+      ["⑨ 조직검사"],
+      ["조직사진", "있음"],
+      ["조직판정", report.microstructureJudgment],
+      ["조직검사 판정", report.microstructureSummary]
+    );
+  }
+
+  if (scope.other) {
+    sheetRows.push(
+      [],
+      ["⑩ 기타검사"],
+      ["항목", "결과", "비고"],
+      ...report.otherRows.map((row) => [row.item, row.result, row.note])
+    );
+  }
+
+  sheetRows.push(
+    [],
+    ["⑪ 비고", report.remarks],
+    [],
+    ["⑫ 최종판정", report.finalJudgment],
+    [],
+    [printDateTime ? `출력일시 ${printDateTime}` : "", printUser ? `출력 사용자 ${printUser}` : ""]
+  );
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetRows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "검사리포트");
   XLSX.writeFile(workbook, filename);
 }
 

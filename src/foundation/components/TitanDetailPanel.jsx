@@ -1,5 +1,5 @@
 import CollapsePanel from "./CollapsePanel";
-import { PrimaryButton } from "./Button";
+import { PrimaryButton, SecondaryButton } from "./Button";
 import TitanMultilineText from "./TitanMultilineText";
 import { PROCESS_FLOW_PANEL_TITLE } from "../../utils/processFlow";
 
@@ -12,7 +12,11 @@ export default function TitanDetailPanel({
   actionLabel,
   actionIcon: ActionIcon,
   onAction,
+  secondaryActionLabel,
+  secondaryActionIcon: SecondaryActionIcon,
+  onSecondaryAction,
   processFlowSteps = [],
+  showProcessFlow = true,
   className = "",
 }) {
   return (
@@ -25,21 +29,38 @@ export default function TitanDetailPanel({
 
       <PrimaryButton type="button" className="titan-detail-panel__action" onClick={onAction}>
         {ActionIcon ? <ActionIcon size={14} aria-hidden="true" className="titan-btn__icon" /> : null}
-        <TitanMultilineText text={actionLabel} />
+        <TitanMultilineText text={actionLabel} format={false} />
       </PrimaryButton>
 
-      <hr className="titan-detail-panel__divider" />
+      {secondaryActionLabel && onSecondaryAction ? (
+        <SecondaryButton
+          type="button"
+          className="titan-detail-panel__action titan-detail-panel__action--secondary"
+          onClick={onSecondaryAction}
+        >
+          {SecondaryActionIcon ? (
+            <SecondaryActionIcon size={14} aria-hidden="true" className="titan-btn__icon" />
+          ) : null}
+          <TitanMultilineText text={secondaryActionLabel} format={false} />
+        </SecondaryButton>
+      ) : null}
 
-      <CollapsePanel title={PROCESS_FLOW_PANEL_TITLE} defaultOpen>
-        <ol className="inbound-tasks">
-          {processFlowSteps.map((task) => (
-            <li key={task.id} className={`inbound-tasks__item inbound-tasks__item--${task.state}`}>
-              <strong>{task.label}</strong>
-              <span>{task.desc}</span>
-            </li>
-          ))}
-        </ol>
-      </CollapsePanel>
+      {showProcessFlow ? (
+        <>
+          <hr className="titan-detail-panel__divider" />
+
+          <CollapsePanel title={PROCESS_FLOW_PANEL_TITLE} defaultOpen>
+            <ol className="inbound-tasks">
+              {processFlowSteps.map((task) => (
+                <li key={task.id} className={`inbound-tasks__item inbound-tasks__item--${task.state}`}>
+                  <strong>{task.label}</strong>
+                  <span>{task.desc}</span>
+                </li>
+              ))}
+            </ol>
+          </CollapsePanel>
+        </>
+      ) : null}
     </aside>
   );
 }

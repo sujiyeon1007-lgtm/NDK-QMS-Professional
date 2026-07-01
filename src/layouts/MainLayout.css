@@ -1,6 +1,6 @@
 .app-shell {
-  --layout-header-h: var(--titan-layout-header-h, 60px);
-  --layout-footer-h: var(--titan-layout-footer-h, 34px);
+  --layout-header-h: var(--titan-layout-header-h, 52px);
+  --layout-footer-h: var(--titan-layout-footer-h, 28px);
   min-height: 100vh;
   height: 100vh;
   max-height: 100vh;

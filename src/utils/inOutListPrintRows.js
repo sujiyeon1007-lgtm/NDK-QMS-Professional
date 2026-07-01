@@ -1,4 +1,6 @@
 import { getJournalReferenceDate } from "./workJournalData";
+import { getSessionProductionRecords } from "./productionRecords";
+import { generateHtlNo, resolveHtlNoForPrintRows } from "./titanWorkflowStatus";
 
 /** @typedef {{ no: number, company: string, partName: string, partNo: string, material: string, qty: number, unit: string, note: string, lotNo: string }} InOutPrintRow */
 
@@ -23,25 +25,32 @@ export function mapStandardRowsToInOutPrintRows(rows = []) {
   });
 }
 
+/** @deprecated generateHtlNo() — HTL-YYYYMMDD-NNN sequential format */
 export function buildInOutListNo(prefix = "HTL") {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10).replace(/-/g, "");
-  const time = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-  return `${prefix}-${date}-${time}`;
+  if (prefix !== "HTL") {
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const time = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    return `${prefix}-${date}-${time}`;
+  }
+  return generateHtlNo();
 }
 
 /**
  * @param {Array<object>} rows
- * @param {{ listNoPrefix?: string, workDate?: string, workMemo?: string }} [options]
+ * @param {{ listNoPrefix?: string, workDate?: string, workMemo?: string, records?: object[] }} [options]
  */
 export function buildInOutListPrintProps(rows = [], options = {}) {
-  const { listNoPrefix = "HTL", workDate = "", workMemo = "" } = options;
+  const { listNoPrefix = "HTL", workDate = "", workMemo = "", records = getSessionProductionRecords() } =
+    options;
   const printRows = mapStandardRowsToInOutPrintRows(rows);
   const resolvedWorkDate = workDate || getJournalReferenceDate();
+  const listNo =
+    listNoPrefix === "HTL" ? resolveHtlNoForPrintRows(rows, records) : buildInOutListNo(listNoPrefix);
 
   return {
     rows: printRows,
-    listNo: buildInOutListNo(listNoPrefix),
+    listNo,
     printDate: resolvedWorkDate,
     workDate: resolvedWorkDate,
     workMemo,

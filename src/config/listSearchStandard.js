@@ -81,7 +81,9 @@ export function createEmptyProductionDailyReportRegister() {
     workDate: "",
     equipment: "",
     worker: "",
+    heatTreatmentConditions: "",
     note: "",
+    htlNo: "",
   };
 }
 
@@ -132,6 +134,7 @@ export function createEmptyInspectionLogRegister() {
     company: "",
     partName: "",
     partNo: "",
+    drawingNo: "",
     material: "",
     process: "",
     qty: "",
@@ -141,6 +144,13 @@ export function createEmptyInspectionLogRegister() {
     inspectionItems: [],
     judgment: "합격",
     note: "",
+    appliedSpecification: null,
+    hardnessMeasurements: [],
+    dimensionMeasurements: [],
+    appearanceMeasurements: [],
+    hasMicrostructurePhoto: false,
+    microstructureJudgment: "이상없음",
+    hardeningDepthHv: [],
   };
 }
 
@@ -173,9 +183,80 @@ export function createEmptyCertificateRegister() {
   };
 }
 
+export function createEmptyHomeSearch() {
+  return {
+    ...EMPTY_BASIC_SEARCH,
+    drawingNo: "",
+    managementId: "",
+    lotNo: "",
+    process: "",
+    status: "",
+    manager: "",
+    dueDateFrom: "",
+    dueDateTo: "",
+  };
+}
+
+export function createEmptyDepartmentWorkSearch() {
+  return {
+    ...EMPTY_BASIC_SEARCH,
+    title: "",
+    assignee: "",
+    status: "",
+    priority: "",
+    requestDateFrom: "",
+    requestDateTo: "",
+    dueDateFrom: "",
+    dueDateTo: "",
+  };
+}
+
+export function matchesExtendedSearch(search, record) {
+  if (!matchesBasicSearch(search, record)) return false;
+
+  const includes = (value, query) =>
+    !query?.trim() ||
+    String(value ?? "")
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
+
+  if (!includes(record.drawingNo, search.drawingNo)) return false;
+  if (!includes(record.managementId ?? record.id, search.managementId)) return false;
+  if (!includes(record.lotNo, search.lotNo)) return false;
+  if (
+    search.process &&
+    !includes(record.process ?? record.heatTreatment ?? record.processName, search.process)
+  ) {
+    return false;
+  }
+  if (search.status) {
+    const statusText = String(record.statusLabel ?? record.status ?? record.currentProcess ?? "").trim();
+    const q = search.status.trim().toLowerCase();
+    if (statusText && !statusText.toLowerCase().includes(q)) return false;
+    if (!statusText) return false;
+  }
+  if (
+    search.manager &&
+    !includes(record.managerLabel ?? record.manager ?? record.registrar, search.manager)
+  ) {
+    return false;
+  }
+  const dueDate = record.dueDate ?? record.dueDateLabel ?? "";
+  if (search.dueDateFrom && dueDate && dueDate !== "—" && dueDate < search.dueDateFrom) return false;
+  if (search.dueDateTo && dueDate && dueDate !== "—" && dueDate > search.dueDateTo) return false;
+  return true;
+}
+
 /** @param {Record<string, string>} search @param {object} record */
 export function matchesBasicSearch(search, record) {
-  if (search.company && record.company !== search.company) return false;
+  if (
+    search.company &&
+    !String(record.company ?? "")
+      .toLowerCase()
+      .includes(search.company.toLowerCase())
+  ) {
+    return false;
+  }
   if (
     search.partName &&
     !String(record.partName ?? "")

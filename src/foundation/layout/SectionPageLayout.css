@@ -18,6 +18,7 @@
   font-size: 16px;
   font-weight: 800;
   color: var(--titan-text);
+  white-space: nowrap;
 }
 
 .titan-section-page__desc {
@@ -30,7 +31,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .titan-section-tabs__link {
@@ -45,6 +46,7 @@
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .titan-section-tabs__link:hover {

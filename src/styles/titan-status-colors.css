@@ -1,0 +1,109 @@
+/**
+ * Project TITAN V1.0 Lock — Status Color Palette
+ *
+ * 현재상태 전용 · 선명한 톤 (공정 Pastel과 분리)
+ * KPI Chip Bar: titan-status-tone--{key}
+ * 리스트 StatusChip: titan-status-chip--{key}
+ */
+
+.titan-status-tone--incoming-reg,
+.titan-status-chip--incoming-reg {
+  --titan-status-icon: #2563eb;
+  --titan-status-text: #1d4ed8;
+  --titan-status-bg: #dbeafe;
+  --titan-status-chip-hover: #eff6ff;
+}
+
+.titan-status-tone--prod-wait,
+.titan-status-chip--prod-wait {
+  --titan-status-icon: #7c3aed;
+  --titan-status-text: #6d28d9;
+  --titan-status-bg: #ede9fe;
+  --titan-status-chip-hover: #f5f3ff;
+}
+
+.titan-status-tone--prod-progress,
+.titan-status-chip--prod-progress {
+  --titan-status-icon: #ea580c;
+  --titan-status-text: #c2410c;
+  --titan-status-bg: #ffedd5;
+  --titan-status-chip-hover: #fff7ed;
+}
+
+.titan-status-tone--inspect-wait,
+.titan-status-chip--inspect-wait {
+  --titan-status-icon: #d97706;
+  --titan-status-text: #b45309;
+  --titan-status-bg: #fef3c7;
+  --titan-status-chip-hover: #fffbeb;
+}
+
+.titan-status-tone--inspect-progress,
+.titan-status-chip--inspect-progress {
+  --titan-status-icon: #0891b2;
+  --titan-status-text: #0e7490;
+  --titan-status-bg: #cffafe;
+  --titan-status-chip-hover: #ecfeff;
+}
+
+.titan-status-tone--cert-wait,
+.titan-status-chip--cert-wait {
+  --titan-status-icon: #db2777;
+  --titan-status-text: #be185d;
+  --titan-status-bg: #fce7f3;
+  --titan-status-chip-hover: #fdf2f8;
+}
+
+.titan-status-tone--ship-wait,
+.titan-status-chip--ship-wait {
+  --titan-status-icon: #dc2626;
+  --titan-status-text: #b91c1c;
+  --titan-status-bg: #fee2e2;
+  --titan-status-chip-hover: #fef2f2;
+}
+
+.titan-status-tone--ship-done,
+.titan-status-chip--ship-done {
+  --titan-status-icon: #16a34a;
+  --titan-status-text: #15803d;
+  --titan-status-bg: #dcfce7;
+  --titan-status-chip-hover: #ecfdf5;
+}
+
+/* HOME · Workflow phase alias (Status tone 동일) */
+.titan-status-tone--incoming {
+  --titan-status-icon: #2563eb;
+  --titan-status-text: #1d4ed8;
+  --titan-status-bg: #dbeafe;
+  --titan-status-chip-hover: #eff6ff;
+}
+
+.titan-status-tone--production {
+  --titan-status-icon: #ea580c;
+  --titan-status-text: #c2410c;
+  --titan-status-bg: #ffedd5;
+  --titan-status-chip-hover: #fff7ed;
+}
+
+.titan-status-tone--inspect {
+  --titan-status-icon: #d97706;
+  --titan-status-text: #b45309;
+  --titan-status-bg: #fef3c7;
+  --titan-status-chip-hover: #fffbeb;
+}
+
+.titan-status-tone--cert,
+.titan-status-tone--certificate {
+  --titan-status-icon: #db2777;
+  --titan-status-text: #be185d;
+  --titan-status-bg: #fce7f3;
+  --titan-status-chip-hover: #fdf2f8;
+}
+
+.titan-status-tone--ship,
+.titan-status-tone--shipment {
+  --titan-status-icon: #dc2626;
+  --titan-status-text: #b91c1c;
+  --titan-status-bg: #fee2e2;
+  --titan-status-chip-hover: #fef2f2;
+}

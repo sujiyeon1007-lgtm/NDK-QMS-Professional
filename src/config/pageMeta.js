@@ -49,12 +49,12 @@ export const PAGE_META = {
   settings: {
     kicker: "기준정보",
     title: "기준정보관리",
-    description: "업체·품목·작업자·설비·코드 등 업무 기준 데이터를 관리합니다.",
+    description: "업체·제품·재질·공정·설비·직원·검사기준·코드 등 마스터 데이터를 통합 관리합니다.",
   },
   environment: {
     kicker: "시스템",
     title: "환경설정",
-    description: "프로그램 및 사용자 환경 설정을 관리합니다.",
+    description: "회사정보 · 사용자 · 권한 · 백업 · 로그 등 시스템 전반 설정을 관리합니다.",
   },
   statistics: {
     kicker: "경영분석",

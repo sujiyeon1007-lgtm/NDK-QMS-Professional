@@ -4,8 +4,20 @@ import { PrimaryButton, SecondaryButton } from "../../foundation/components/Butt
 import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
+import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import {
+  DateRangeField,
+  LotNoField,
+  ManagementIdField,
+  ManagerField,
+  NoteField,
+  ProcessField,
+  StatusSelectField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
@@ -18,10 +30,11 @@ import {
   getProductionProcessCodes,
   getProductionProcessName,
 } from "../../config/productionProcessCodes";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { SHIPMENT_STATUS } from "../../utils/ndkWorkflow";
 import {
   OUTBOUND_STATUS_LABELS,
   filterOutboundManagementRecords,
@@ -39,9 +52,25 @@ import { buildTransactionStatementPrintProps } from "../../utils/titanPrintPrevi
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import OutboundRegisterModal, { applyOutboundRegister } from "./OutboundRegisterModal";
 import "./InboundManagement.css";
+import "./OutboundManagement.css";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 
-const EMPTY_SEARCH = createEmptyOutboundSearch();
 const OUTBOUND_STATUS_OPTIONS = Object.values(OUTBOUND_STATUS_LABELS);
+
+function mapOutboundListRow(record) {
+  if (record.shipmentStatus === SHIPMENT_STATUS.DONE) {
+    return mapStandardProductListRow(record, { label: "출고완료", variant: "complete" });
+  }
+  return mapStandardProductListRow(record, getOutboundManagementStatus(record));
+}
+
+function resolveOutboundListRecords(search) {
+  const all = getSessionProductionRecords();
+  if (search.__chipProductShipDone) {
+    return all.filter((record) => record.shipmentStatus === SHIPMENT_STATUS.DONE);
+  }
+  return filterOutboundManagementRecords(all);
+}
 
 function matchesOutboundSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
@@ -60,6 +89,12 @@ function matchesOutboundSearch(record, row, search) {
   }
   if (search.manager && !row.manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
+  if (search.__chipProductShipWait && row.statusLabel !== OUTBOUND_STATUS_LABELS.SHIP_WAIT) {
+    return false;
+  }
+  if (search.__chipProductShipDone && row.statusLabel !== "출고완료") {
+    return false;
+  }
   if (search.note && !String(record.note ?? "").includes(search.note)) return false;
   const shipDate = getOutboundShipDate(record);
   if (search.shipDateFrom && shipDate < search.shipDateFrom) return false;
@@ -70,24 +105,36 @@ function matchesOutboundSearch(record, row, search) {
 export default function OutboundManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-outbound-advanced");
+  const [registerInitialId, setRegisterInitialId] = useState("");
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyOutboundSearch, { storageKey: "outbound" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [outboundListPrintOpen, setOutboundListPrintOpen] = useState(false);
   const [statementPrintOpen, setStatementPrintOpen] = useState(false);
   const [statementPrintBusy, setStatementPrintBusy] = useState(false);
+  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const { activeChipId, handleChipClick } = useWorkflowChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+  });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
+  const searchRecords = useMemo(
+    () => filterOutboundManagementRecords(getSessionProductionRecords()),
+    [refreshKey]
+  );
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+  });
 
   const rows = useMemo(() => {
-    const records = filterOutboundManagementRecords(getSessionProductionRecords());
+    const records = resolveOutboundListRecords(search);
     return records
       .map((record) => {
-        const status = getOutboundManagementStatus(record);
-        const base = mapStandardProductListRow(record, status);
+        const base = mapOutboundListRow(record);
         return {
           ...base,
           qty: getOutboundShipQty(record),
@@ -201,10 +248,15 @@ export default function OutboundManagement() {
     []
   );
 
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
+  const openRegisterModal = (managementId = "") => {
+    setRegisterInitialId(managementId);
+    setRegisterOpen(true);
+  };
+
+  const handleRowDoubleClick = (row) => {
+    const managementId = row.managementId ?? row.id;
+    if (!managementId) return;
+    openRegisterModal(managementId);
   };
 
   const handleOutboundRegister = (form) => {
@@ -217,124 +269,71 @@ export default function OutboundManagement() {
 
   return (
     <div className="inbound-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">출고관리</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
-            <Plus size={14} aria-hidden="true" />
-            {OUTBOUND_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button" onClick={openOutboundListPrintPreview} disabled={printTargetRows.length === 0}>
-            <Printer size={14} aria-hidden="true" />
-            {OUTBOUND_LIST_LABEL}
-          </SecondaryButton>
-          <SecondaryButton type="button" onClick={openStatementPrintPreview} disabled={!statementPrintProps}>
-            <Printer size={14} aria-hidden="true" />
-            {OUTBOUND_STATEMENT_LABEL}
-          </SecondaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={() => openRegisterModal()}>
+          <Plus size={14} aria-hidden="true" />
+          {OUTBOUND_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={openOutboundListPrintPreview} disabled={printTargetRows.length === 0}>
+          <Printer size={14} aria-hidden="true" />
+          {OUTBOUND_LIST_LABEL}
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={openStatementPrintPreview} disabled={!statementPrintProps}>
+          <Printer size={14} aria-hidden="true" />
+          {OUTBOUND_STATEMENT_LABEL}
+        </SecondaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
+
+      <TitanKpiBarSlot ariaLabel="출고 현황" className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          chipSetId="outbound"
+          records={chipRecords}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">출고일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.shipDateFrom}
-                  onChange={(e) => setDraft({ ...draft, shipDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.shipDateTo}
-                  onChange={(e) => setDraft({ ...draft, shipDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">공정</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
-              >
-                <option value="">전체</option>
-                {processCodes.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <DateRangeField
+              label="출고일"
+              fromKey="shipDateFrom"
+              toKey="shipDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">수량</span>
               <Input
                 value={draft.qty}
-                onChange={(e) => setDraft({ ...draft, qty: e.target.value })}
+                onChange={(e) => onDraftChange({ ...draft, qty: e.target.value })}
                 placeholder="수량"
               />
             </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">담당자</span>
-              <Input
-                value={draft.manager}
-                onChange={(e) => setDraft({ ...draft, manager: e.target.value })}
-                placeholder="담당자"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.status}
-                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-              >
-                <option value="">전체</option>
-                {OUTBOUND_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">비고</span>
-              <Input
-                value={draft.note}
-                onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-                placeholder="비고"
-              />
-            </label>
+            <ManagerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <StatusSelectField
+              label="상태"
+              value={draft.status}
+              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
+              options={OUTBOUND_STATUS_OPTIONS}
+            />
+            <NoteField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
           </div>
         }
       />
@@ -370,6 +369,7 @@ export default function OutboundManagement() {
             onToggleAll={toggleAll}
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
+            onRowDoubleClick={handleRowDoubleClick}
             emptyMessage="출고 가능한 제품이 없습니다."
           />
 
@@ -453,7 +453,11 @@ export default function OutboundManagement() {
 
       <OutboundRegisterModal
         open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
+        initialManagementId={registerInitialId}
+        onClose={() => {
+          setRegisterOpen(false);
+          setRegisterInitialId("");
+        }}
         onRegister={handleOutboundRegister}
       />
 

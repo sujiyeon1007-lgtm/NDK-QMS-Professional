@@ -3,32 +3,38 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { X, Sparkles } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import {
   getActiveMasterNames,
   getCompanyCodeMap,
 } from "../../utils/masterData";
-import { getProductUnitOptions, normalizeProductUnit, parseQtyWithUnit } from "../../utils/productUnits";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
+import { getProductUnitOptions, parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { INBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
 import TitanRegisterSummaryText from "../../foundation/components/TitanRegisterSummaryText";
 import "./IncomingRegistrationModal.css";
 
 const ADMIN_CATEGORY_MAP = {
-  "업체명": "companies",
-  "재질": "materials",
-  "열처리 종류": "heatTreatment",
+  "업체명": "/settings/companies",
 };
 
-const emptyForm = {
-  company: "",
+const emptyProductFields = {
   partName: "",
   partNo: "",
   drawingNo: "",
   material: "",
+  spec: "",
+  unitPrice: "",
+  heatTreatment: "",
+};
+
+const emptyForm = {
+  company: "",
+  ...emptyProductFields,
   qty: "",
   unit: "EA",
   dueDate: "",
-  heatTreatment: "가스질화",
   urgent: false,
   note: "",
 };
@@ -68,20 +74,25 @@ function AdminSelectField({
   );
 }
 
-function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: companyCodeMapProp }) {
+function IncomingRegistrationModal({
+  onClose,
+  onRegister,
+  companyCodeMap: companyCodeMapProp,
+  initialForm = null,
+}) {
   const navigate = useNavigate();
   const companyCodeMap = useMemo(
     () => companyCodeMapProp ?? getCompanyCodeMap(),
     [companyCodeMapProp]
   );
   const companyOptions = useMemo(() => getActiveMasterNames("companies"), []);
-  const materialOptions = useMemo(() => getActiveMasterNames("materials"), []);
-  const heatOptions = useMemo(() => getActiveMasterNames("heatTreatment"), []);
   const unitOptions = useMemo(() => getProductUnitOptions(), []);
 
   const [autoId, setAutoId] = useState(true);
   const [manualId, setManualId] = useState("");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() =>
+    initialForm ? { ...emptyForm, ...initialForm } : emptyForm
+  );
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -114,6 +125,46 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      ...emptyProductFields,
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+        drawingNo: autofill.drawingNo,
+        material: autofill.material,
+        spec: autofill.spec,
+        unitPrice: autofill.unitPrice,
+        heatTreatment: autofill.process || prev.heatTreatment,
+        unit: autofill.unit || prev.unit,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+      drawingNo: selection.drawingNo,
+      ...(selection.partNo
+        ? {}
+        : {
+            material: "",
+            spec: "",
+            unitPrice: "",
+            heatTreatment: prev.heatTreatment,
+          }),
+    }));
+  };
+
   const handleQtyBlur = () => {
     const parsed = parseQtyWithUnit(form.qty, form.unit);
     setForm((prev) => ({
@@ -124,10 +175,9 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
   };
 
   const handleAdminManage = (type) => {
-    const category = ADMIN_CATEGORY_MAP[type];
-    console.log("[UI] 기준정보관리 이동", { field: type, category });
+    const path = ADMIN_CATEGORY_MAP[type];
     onClose();
-    navigate(category ? `/settings?category=${category}` : "/settings");
+    navigate(path ?? "/settings/companies");
   };
 
   const handleRegisterClick = () => {
@@ -209,7 +259,7 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
         <div className="incoming-modal-body">
           <section className="incoming-form-section">
             <h3>기본정보</h3>
-            <p className="incoming-form-desc">필수 항목만 빠르게 입력하세요</p>
+            <p className="incoming-form-desc">업체 선택 후 Product Master에서 제품을 선택하세요</p>
 
             <div className="incoming-form-grid">
               <AdminSelectField
@@ -218,47 +268,28 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
                 value={form.company}
                 options={companyOptions}
                 placeholder="업체 선택"
-                onChange={(value) => updateField("company", value)}
+                onChange={handleCompanyChange}
                 onAdminClick={() => handleAdminManage("업체명")}
               />
 
-              <label className="form-field">
-                <span>품명</span>
-                <input
-                  type="text"
-                  placeholder="품명"
-                  value={form.partName}
-                  onChange={(event) => updateField("partName", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>품번</span>
-                <input
-                  type="text"
-                  placeholder="품번"
-                  value={form.partNo}
-                  onChange={(event) => updateField("partNo", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>도번</span>
-                <input
-                  type="text"
-                  placeholder="도번"
-                  value={form.drawingNo}
-                  onChange={(event) => updateField("drawingNo", event.target.value)}
-                />
-              </label>
-
-              <AdminSelectField
-                label="재질"
-                value={form.material}
-                options={materialOptions}
-                placeholder="재질 선택"
-                onChange={(value) => updateField("material", value)}
-                onAdminClick={() => handleAdminManage("재질")}
+              <TitanCascadeProductPicker
+                inline
+                company={form.company}
+                value={{
+                  partName: form.partName,
+                  partNo: form.partNo,
+                  drawingNo: form.drawingNo,
+                }}
+                onChange={handleCascadeChange}
+                autoFields={{
+                  material: form.material,
+                  spec: form.spec,
+                  unitPrice: form.unitPrice,
+                  process: form.heatTreatment,
+                  drawingNo: form.drawingNo,
+                }}
+                fieldClassName="form-field"
+                kicker="입고 등록"
               />
 
               <label className="form-field">
@@ -294,15 +325,6 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
                   onChange={(event) => updateField("dueDate", event.target.value)}
                 />
               </label>
-
-              <AdminSelectField
-                label="열처리 종류"
-                value={form.heatTreatment}
-                options={heatOptions}
-                placeholder="열처리 선택"
-                onChange={(value) => updateField("heatTreatment", value)}
-                onAdminClick={() => handleAdminManage("열처리 종류")}
-              />
 
               <label className="form-field toggle-field">
                 <span>긴급 여부</span>
@@ -344,7 +366,7 @@ function IncomingRegistrationModal({ onClose, onRegister, companyCodeMap: compan
             <div className="summary-block">
               <p>업체 / 품번</p>
               <TitanRegisterSummaryText text={form.company || "-"} as="strong" />
-              <TitanRegisterSummaryText text={form.partNo || "품번 미입력"} />
+              <TitanRegisterSummaryText text={form.partNo || "품번 미선택"} />
             </div>
 
             <div className="summary-divider" />

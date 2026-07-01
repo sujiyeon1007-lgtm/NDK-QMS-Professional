@@ -12,8 +12,8 @@
   --sidebar-active: #2563eb;
   --sidebar-divider: rgba(255, 255, 255, 0.08);
 
-  width: var(--titan-sidebar-width, 196px);
-  flex: 0 0 var(--titan-sidebar-width, 196px);
+  width: var(--titan-sidebar-width, 168px);
+  flex: 0 0 var(--titan-sidebar-width, 168px);
   align-self: stretch;
   min-height: 0;
   max-height: 100%;
@@ -30,8 +30,8 @@
 
 .sidebar-brand {
   flex: 0 0 auto;
-  max-height: var(--titan-sidebar-brand-max-h, 68px);
-  padding: 14px 12px 10px;
+  max-height: var(--titan-sidebar-brand-max-h, 52px);
+  padding: 10px 10px 8px;
   background: transparent;
   border-bottom: 1px solid var(--sidebar-divider);
   overflow: hidden;
@@ -73,7 +73,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 10px 8px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -96,9 +96,9 @@
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: var(--titan-sidebar-link-gap, 10px);
-  min-height: 38px;
-  padding: 0 12px;
+  gap: var(--titan-sidebar-link-gap, 8px);
+  min-height: 32px;
+  padding: 0 10px;
   border-radius: 8px;
   color: var(--sidebar-text);
   text-decoration: none;
@@ -191,7 +191,7 @@
 
 .sidebar-footer {
   flex: 0 0 auto;
-  padding: 10px 12px 12px;
+  padding: 7px 10px 8px;
   border-top: 1px solid var(--sidebar-divider);
   font-size: 10px;
   font-weight: 600;
@@ -202,6 +202,6 @@
 
 @media (max-width: 1200px) {
   .app-sidebar {
-    flex-basis: var(--titan-sidebar-width, 196px);
+    flex-basis: var(--titan-sidebar-width, 168px);
   }
 }

@@ -1,0 +1,66 @@
+/**
+ * Project TITAN V1.0 Lock — UI 품질 기준 (한 줄 표시)
+ *
+ * Foundation 전역 · HOME Protected UI와 공존
+ */
+
+/* Button — Toolbar · Action · Popup · Header */
+.titan-btn {
+  white-space: nowrap;
+}
+
+.titan-btn .titan-text-wrap {
+  display: inline;
+  max-width: none;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* Status Chip (리스트 현재상태 · KPI Bar 공통 — 한 줄) */
+.titan-status-chip {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+/* Heat treatment Process Chip */
+.titan-ht-process-chip,
+.titan-ht-process-chip__label {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.titan-ht-process-chip {
+  width: max-content;
+  min-width: max-content;
+  max-width: none;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+/* Table — 공정 · Header */
+.titan-table__cell--head {
+  white-space: nowrap;
+}
+
+.titan-table__cell--process,
+.titan-table__cell--processName {
+  white-space: nowrap;
+  min-width: 92px;
+  overflow: visible;
+}
+
+.titan-table__cell--process .titan-ht-process-chip,
+.titan-table__cell--processName .titan-ht-process-chip {
+  vertical-align: middle;
+}
+
+.titan-table__cell--status {
+  white-space: nowrap;
+}
+
+/* KPI Bar — Chip label */
+.titan-status-chip-bar .titan-status-chip__label {
+  white-space: nowrap;
+}

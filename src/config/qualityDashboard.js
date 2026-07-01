@@ -35,7 +35,7 @@ export const INSPECTION_STATUS_CARDS = [
   {
     id: "monthInspect",
     label: "월간 검사",
-    subLabel: "금월 검사 건",
+    subLabel: "이번 달 검사건",
     icon: CircleCheck,
     tone: "purple",
     to: "/quality/inspection",

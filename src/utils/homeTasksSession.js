@@ -65,7 +65,30 @@ function sortHomeTasks(tasks) {
 }
 
 export function getUserTodayTasks() {
-  return sortHomeTasks(safeRead());
+  const stored = sortHomeTasks(safeRead());
+  if (stored.length > 0) return stored;
+  return sortHomeTasks([
+    {
+      id: "seed-task-1",
+      title: "검사일지 작성",
+      assignee: getCurrentTitanUser(),
+      time: "10:00",
+      priority: "high",
+      status: HOME_TASK_STATUS.IN_PROGRESS,
+      completed: false,
+      source: "seed",
+    },
+    {
+      id: "seed-task-2",
+      title: "성적서 등록",
+      assignee: getCurrentTitanUser(),
+      time: "11:30",
+      priority: "normal",
+      status: HOME_TASK_STATUS.DONE,
+      completed: true,
+      source: "seed",
+    },
+  ]);
 }
 
 export function addUserHomeTask({ title, assignee, time, priority, memo }) {

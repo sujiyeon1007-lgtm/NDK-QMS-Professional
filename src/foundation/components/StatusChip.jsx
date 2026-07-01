@@ -10,9 +10,34 @@ const STATUS_VARIANTS = {
   "prod-wait": "titan-status-chip--prod-wait",
   inspect: "titan-status-chip--inspect",
   "ship-wait": "titan-status-chip--ship-wait",
+  "ship-done": "titan-status-chip--complete",
 };
 
-export default function StatusChip({ children, variant = "wait", className = "" }) {
+const HT_PROCESS_VARIANTS = {
+  "gas-nitriding": "titan-ht-process--gas-nitriding",
+  "ion-nitriding": "titan-ht-process--ion-nitriding",
+  carburizing: "titan-ht-process--carburizing",
+  "induction-hardening": "titan-ht-process--induction-hardening",
+  "salt-bath-nitriding": "titan-ht-process--salt-bath-nitriding",
+  "vacuum-heat-treat": "titan-ht-process--vacuum-heat-treat",
+  annealing: "titan-ht-process--annealing",
+  normalizing: "titan-ht-process--normalizing",
+  "quench-temper": "titan-ht-process--quench-temper",
+  "soft-nitriding": "titan-ht-process--soft-nitriding",
+  default: "titan-ht-process--default",
+};
+
+export default function StatusChip({ children, variant = "wait", kind = "status", className = "" }) {
+  if (kind === "process" || HT_PROCESS_VARIANTS[variant]) {
+    const processTone = HT_PROCESS_VARIANTS[variant] ?? HT_PROCESS_VARIANTS.default;
+    return (
+      <span className={`titan-ht-process-chip ${processTone} ${className}`.trim()}>
+        <span className="titan-ht-process-chip__dot" aria-hidden="true" />
+        <span className="titan-ht-process-chip__label">{children}</span>
+      </span>
+    );
+  }
+
   const tone = STATUS_VARIANTS[variant] ?? STATUS_VARIANTS.wait;
   return (
     <span className={`titan-status-chip ${tone} ${className}`.trim()}>{children}</span>

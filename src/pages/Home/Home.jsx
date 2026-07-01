@@ -1,54 +1,50 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import PageTopBar from "../../foundation/layout/PageTopBar";
-import StatusSummaryGroup from "../../foundation/components/StatusSummaryGroup";
-import TitanDataTable from "../../foundation/components/DataTable";
-import TitanTableFooter from "../../foundation/components/TitanTableFooter";
-import StatusChip from "../../foundation/components/StatusChip";
-import Card from "../../foundation/components/Card";
-import { HOME_PAGE_META, HOME_RECENT_LIST_TITLE } from "../../config/homeDashboard";
-import { buildHomeStatusGroups, buildRecentWorkList } from "../../utils/homeDashboardData";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { HOME_INTEGRATED_SEARCH_CONFIG } from "../../config/homeIntegratedSearch";
+import { HOME_PAGE_META } from "../../config/homeDashboard";
+import { buildProductWorkflowPreview } from "../../utils/homeDashboardData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import { useListPagination } from "../../foundation/hooks/useListPagination";
-import { buildStandardProductListColumns } from "../../config/standardProductList";
-import { getProcessChipVariant } from "../../config/productionProcessCodes";
+import { getMasterDataByCategory } from "../../utils/masterData";
+import { setTitanErrorContext, clearTitanErrorContext } from "../../utils/titanErrorContext";
+import {
+  HomeIntegratedSearchPanel,
+  HomeNoticePanel,
+  HomeProductWorkflowPanel,
+  HomeWorkSchedulePanel,
+} from "./HomeDashboardPanels";
+import { useHomeIntegratedSearch } from "./useHomeIntegratedSearch";
 import "./Home.css";
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const {
+    search,
+    draft,
+    onDraftChange,
+    onSearch,
+    onReset,
+    advancedOpen,
+    onAdvancedToggle,
+    activeChipId,
+    handleChipClick,
+  } = useHomeIntegratedSearch();
 
   const records = useMemo(() => getSessionProductionRecords(), [refreshKey]);
-  const statusGroups = useMemo(() => buildHomeStatusGroups(records), [records]);
-  const recentWorkList = useMemo(() => buildRecentWorkList(records), [records]);
-
-  const recentColumns = useMemo(
-    () =>
-      buildStandardProductListColumns({
-        renderStatus: (row) => (
-          <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
-        ),
-        renderProcess: (row) =>
-          row.processName && row.processName !== "—" ? (
-            <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
-          ) : (
-            "—"
-          ),
-      }),
-    []
+  const companies = useMemo(() => getMasterDataByCategory("companies"), []);
+  const searchRecords = useMemo(
+    () => buildProductWorkflowPreview(records, { limit: 9999 }),
+    [records]
   );
 
-  const {
-    page,
-    pageSize,
-    totalCount,
-    totalPages,
-    pagedItems: pagedRows,
-    setPage,
-    setPageSize,
-  } = useListPagination(recentWorkList);
+  useEffect(() => {
+    setTitanErrorContext({ screen: "HOME", component: "Home", path: "/" });
+    return () => clearTitanErrorContext(["screen", "component"]);
+  }, []);
 
   const handleRefresh = () => {
     setRefreshKey((k) => k + 1);
-    setPage(1);
   };
 
   return (
@@ -59,26 +55,40 @@ export default function Home() {
         onRefresh={handleRefresh}
       />
 
-      <div className="home-page__status-grid">
-        {statusGroups.map((group) => (
-          <StatusSummaryGroup key={group.id} {...group} />
-        ))}
-      </div>
+      <div className="home-board">
+        <aside className="home-board__left" aria-label="업무 지원">
+          <HomeNoticePanel refreshKey={refreshKey} />
+          <HomeWorkSchedulePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
+        </aside>
 
-      <Card className="home-page__recent">
-        <div className="home-page__recent-header">
-          <h2>{HOME_RECENT_LIST_TITLE}</h2>
+        <div className="home-board__right" aria-label="실시간 업무">
+          <div className="home-board__cell home-board__cell--kpi titan-kpi-bar-slot">
+            <TitanWorkflowStatusChipBar
+              chipSetId={HOME_INTEGRATED_SEARCH_CONFIG.chipSetId}
+              records={records}
+              activeId={activeChipId}
+              onChipClick={handleChipClick}
+            />
+          </div>
+
+          <div className="home-board__cell home-board__cell--search">
+            <HomeIntegratedSearchPanel
+              draft={draft}
+              onDraftChange={onDraftChange}
+              onSearch={onSearch}
+              onReset={onReset}
+              advancedOpen={advancedOpen}
+              onAdvancedToggle={onAdvancedToggle}
+              companies={companies}
+              searchRecords={searchRecords}
+            />
+          </div>
+
+          <div className="home-board__cell home-board__cell--workflow">
+            <HomeProductWorkflowPanel records={records} search={search} />
+          </div>
         </div>
-        <TitanDataTable columns={recentColumns} rows={pagedRows} />
-        <TitanTableFooter
-          totalCount={totalCount}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
-      </Card>
+      </div>
     </div>
   );
 }

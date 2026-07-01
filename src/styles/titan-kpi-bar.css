@@ -1,0 +1,135 @@
+/**
+ * Project TITAN V1.0 — KPI Bar · Unified Panel (HOME Baseline Foundation)
+ *
+ * Chip Shell: components.css · .titan-status-chip-bar / .titan-kpi-panel__chips
+ * (.titan-kpi-panel / .titan-kpi-card 는 HOME Dashboard 전용 — 사용 금지)
+ *
+ * Panel 1행: mode=realtime + row CSS (한글 ↑ 숫자 ↓ · Pill 유지)
+ * Panel 2행: mode=summary (한글 ↑ 숫자 ↓ · Rounded Rect)
+ */
+
+.titan-kpi-bar-slot {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Unified Panel — 내용 폭에 맞춰 Container 자동 확장 */
+.titan-kpi-bar-slot:has(.titan-kpi-unified-panel) {
+  width: fit-content;
+  min-width: 100%;
+  max-width: none;
+  overflow: visible;
+}
+
+.titan-kpi-bar-slot .titan-status-chip:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* ── 단일 KPI Bar (Realtime 전용 · HOME UI Freeze) ── */
+.titan-kpi-bar-slot > .titan-status-chip-bar,
+.titan-kpi-bar-slot > .titan-workflow-chip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--titan-status-chip-bar-gap);
+  width: 100%;
+  min-height: var(--titan-status-chip-bar-min-h);
+  max-height: var(--titan-status-chip-bar-max-h);
+  margin: 0;
+  padding: var(--titan-status-chip-bar-padding);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow);
+  box-sizing: border-box;
+}
+
+/* ── 통합 KPI Panel (단일 Panel · 1행 + 2행) ── */
+.titan-kpi-unified-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: fit-content;
+  min-width: 100%;
+  max-width: none;
+  min-height: var(--titan-status-chip-bar-min-h);
+  max-height: none;
+  margin: 0;
+  padding: var(--titan-status-chip-bar-padding);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Unified Panel 내부 — chip-bar 중첩 Panel 방지 (bare 사용 필수) */
+.titan-kpi-unified-panel .titan-status-chip-bar,
+.titan-kpi-unified-panel .titan-workflow-chip-bar {
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  max-height: none;
+  background: transparent;
+}
+
+.titan-kpi-panel__row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: min-content;
+  width: max-content;
+  max-width: none;
+}
+
+.titan-kpi-panel__row-divider {
+  align-self: stretch;
+  height: 0;
+  border: none;
+  border-top: 1px solid var(--titan-border);
+  margin: 0;
+  opacity: 0.85;
+}
+
+.titan-kpi-panel__chips {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--titan-status-chip-bar-gap);
+  width: max-content;
+  min-width: min-content;
+}
+
+/* Panel 1행 — 텍스트 순서만 (한글 ↑ 숫자 ↓) · Pill · Shell 동일 */
+.titan-kpi-panel__row--realtime .titan-status-chip[data-kpi-mode="realtime"] {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.titan-kpi-panel__row--realtime .titan-status-chip[data-kpi-mode="realtime"] .titan-status-chip__label {
+  order: 1;
+}
+
+.titan-kpi-panel__row--realtime .titan-status-chip[data-kpi-mode="realtime"] .titan-status-chip__metric {
+  order: 2;
+  margin-right: 0;
+}
+
+.titan-kpi-panel__row--realtime .titan-status-chip[data-kpi-mode="realtime"] .titan-status-chip__icon,
+.titan-kpi-panel__row--realtime .titan-status-chip[data-kpi-mode="realtime"] .titan-status-chip__icon-fallback {
+  display: none;
+}
+
+.titan-kpi-bar-slot--summary > .titan-status-chip-bar,
+.titan-status-chip-bar--summary {
+  max-height: none;
+}

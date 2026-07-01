@@ -13,39 +13,39 @@
 }
 
 .titan-sidebar__brand {
-  padding: 14px 12px 10px;
+  padding: 10px 10px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .titan-sidebar__brand strong {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .titan-sidebar__brand span {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
+  margin-top: 1px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .titan-sidebar__nav {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .titan-sidebar__link {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 10px;
-  margin-top: 2px;
+  margin-top: 1px;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
@@ -63,9 +63,9 @@
 }
 
 .titan-sidebar__footer {
-  padding: 10px 12px;
+  padding: 7px 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.4);
   text-align: center;
 }

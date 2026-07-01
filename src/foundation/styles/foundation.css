@@ -9,6 +9,9 @@
 @import "../layout/PageTopBar.css";
 @import "../layout/SectionPageLayout.css";
 @import "../components/components.css";
+@import "../../styles/titan-kpi-bar.css";
+@import "../../styles/titan-ui-quality.css";
+@import "../../styles/workflow-process-colors.css";
 
 *,
 *::before,

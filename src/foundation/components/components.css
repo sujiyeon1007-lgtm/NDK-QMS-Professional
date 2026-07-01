@@ -7,7 +7,8 @@
   gap: 6px;
   height: auto;
   min-height: 36px;
-  max-width: 100%;
+  width: auto;
+  max-width: none;
   padding: 8px 14px;
   border-radius: var(--titan-radius-sm);
   border: 1px solid var(--titan-border);
@@ -15,10 +16,12 @@
   font-weight: 700;
   line-height: 1.35;
   cursor: pointer;
-  white-space: normal;
-  word-break: keep-all;
+  white-space: nowrap;
+  word-break: normal;
   overflow-wrap: normal;
+  overflow: visible;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .titan-btn__icon {
@@ -34,6 +37,15 @@
   overflow-wrap: normal;
   line-height: 1.35;
   text-align: center;
+}
+
+.titan-btn .titan-text-wrap {
+  display: inline;
+  max-width: none;
+  white-space: nowrap;
+  word-break: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .titan-word-wrap,
@@ -70,9 +82,9 @@
 .titan-card {
   background: var(--titan-surface);
   border: 1px solid var(--titan-border);
-  border-radius: var(--titan-radius);
+  border-radius: var(--titan-card-radius, var(--titan-radius));
   box-shadow: var(--titan-shadow);
-  padding: 14px 16px;
+  padding: var(--titan-card-padding, 20px);
 }
 
 .titan-input {
@@ -85,11 +97,19 @@
 
 .titan-status-chip {
   display: inline-flex;
-  padding: 3px 8px;
-  border-radius: 999px;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: var(--titan-status-chip-radius, 8px);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* KPI workflow chips (button) — Pill · bar context에서 padding/radius 유지 */
+button.titan-status-chip {
+  border-radius: var(--titan-status-chip-radius-pill, 999px);
+  padding: var(--titan-status-chip-padding);
 }
 
 .titan-status-chip--progress {
@@ -157,6 +177,7 @@
   border: 1px solid var(--titan-border);
   border-radius: var(--titan-radius);
   box-shadow: var(--titan-shadow);
+  gap: 4px;
 }
 
 .titan-kpi-panel__head {
@@ -178,7 +199,7 @@
 .titan-kpi-panel__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 14px;
 }
 
 .titan-kpi-card {
@@ -186,21 +207,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  min-height: 132px;
-  padding: 12px 8px 10px;
+  gap: 10px;
+  min-height: 126px;
+  padding: 14px 10px 12px;
   border: 1px solid var(--titan-border);
   border-radius: var(--titan-radius-sm);
   background: var(--titan-surface);
   text-decoration: none;
   color: inherit;
   text-align: center;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .titan-kpi-card:hover {
   border-color: #bfdbfe;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
 }
 
 .titan-kpi-card__label {
@@ -215,8 +237,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   flex-shrink: 0;
 }
@@ -242,7 +264,7 @@
 }
 
 .titan-kpi-card__count {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 900;
   line-height: 1;
   color: #0f172a;
@@ -360,6 +382,10 @@
   background: var(--titan-table-row-selected);
 }
 
+.titan-table__row--clickable {
+  cursor: pointer;
+}
+
 .titan-table__checkbox {
   width: 15px;
   height: 15px;
@@ -373,6 +399,102 @@
   text-align: center;
   color: var(--titan-text-muted);
   font-weight: 600;
+}
+
+/* ── TitanStandardList (공통 리스트 · Row Expand) ── */
+.titan-standard-list-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.titan-standard-list__expand-row .titan-standard-list__expand-cell {
+  padding: 0 !important;
+  border-bottom: 1px solid var(--titan-table-border);
+  background: #f8fafc;
+}
+
+.titan-standard-list__expand-row:hover .titan-standard-list__expand-cell {
+  background: #f8fafc;
+}
+
+.titan-list-expand {
+  padding: 12px 16px;
+}
+
+.titan-list-expand__detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+/* ── Standard List · 납기일 ── */
+.titan-due-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.titan-due-date__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.titan-due-date--normal {
+  color: #15803d;
+}
+
+.titan-due-date--normal .titan-due-date__dot {
+  background: #22c55e;
+}
+
+.titan-due-date--soon {
+  color: #a16207;
+}
+
+.titan-due-date--soon .titan-due-date__dot {
+  background: #eab308;
+}
+
+.titan-due-date--delay {
+  color: #b91c1c;
+}
+
+.titan-due-date--delay .titan-due-date__dot {
+  background: #ef4444;
+}
+
+/* ── Standard List · 현재공정 (Workflow Status Chip) ── */
+.titan-process-name-cell.titan-process-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: var(--titan-status-chip-radius, 8px);
+  background: #fff;
+  white-space: nowrap;
+}
+
+.titan-process-status-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--titan-process-dot, #64748b);
+  flex-shrink: 0;
+}
+
+.titan-process-status-chip__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-process-text, #334155);
+  line-height: 1;
 }
 
 /* ── Pagination (테이블 공통) ── */
@@ -572,6 +694,223 @@
 .titan-advanced-search__date-range span {
   color: var(--titan-text-muted);
   font-size: 12px;
+}
+
+/* ── Search Autocomplete (Project TITAN 공통) ── */
+.titan-search-ac {
+  position: relative;
+  min-width: 0;
+}
+
+.titan-search-ac__input {
+  width: 100%;
+}
+
+.titan-search-ac__dropdown {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow: auto;
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  box-shadow: var(--titan-shadow);
+  padding: 4px 0;
+}
+
+.titan-search-ac__section-label {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-search-ac__option-row {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.titan-search-ac__option-row.is-active .titan-search-ac__option,
+.titan-search-ac__option.is-active {
+  background: #eff6ff;
+}
+
+.titan-search-ac__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  color: var(--titan-text);
+  cursor: pointer;
+}
+
+.titan-search-ac__option:hover {
+  background: #f8fafc;
+}
+
+.titan-search-ac__mark {
+  background: #dbeafe;
+  color: inherit;
+  padding: 0;
+}
+
+.titan-search-ac__star {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.titan-search-ac__star.is-on {
+  color: #f59e0b;
+  fill: #fef3c7;
+}
+
+.titan-search-ac__tag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.titan-search-ac__fav-btn,
+.titan-search-ac__remove,
+.titan-search-ac__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.titan-search-ac__fav-btn:hover,
+.titan-search-ac__remove:hover,
+.titan-search-ac__clear:hover {
+  color: var(--titan-text);
+  background: #f8fafc;
+}
+
+.titan-search-ac__recent-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+.titan-search-ac__clear {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.titan-search-ac.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.titan-searchable-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--titan-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.titan-searchable-select__trigger .is-placeholder {
+  color: var(--titan-text-muted);
+  font-weight: 600;
+}
+
+.titan-searchable-select__dropdown {
+  padding: 0;
+}
+
+.titan-searchable-select__search {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm) var(--titan-radius-sm) 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.titan-searchable-select__empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-searchable-select__empty p {
+  margin: 0 0 8px;
+}
+
+.titan-searchable-select__empty-action {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.titan-search-ac__option.is-selected {
+  background: #edf4fd;
+}
+
+.titan-cascade-product-picker--inline {
+  display: contents;
+}
+
+.titan-cascade-product-picker__prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.titan-cascade-product-picker__prompt p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.titan-cascade-product-picker__prompt-actions {
+  display: flex;
+  gap: 8px;
 }
 
 @media (max-width: 1100px) {
@@ -817,4 +1156,451 @@ body.titan-modal-open {
   overflow-wrap: normal;
   line-height: 1.4;
   overflow: hidden;
+}
+
+/* ── Status Chip Bar (Compact KPI · Foundation) ── */
+.titan-status-chip-bar,
+.titan-workflow-chip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--titan-status-chip-bar-gap);
+  min-height: var(--titan-status-chip-bar-min-h);
+  max-height: var(--titan-status-chip-bar-max-h);
+  padding: var(--titan-status-chip-bar-padding);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow);
+  box-sizing: border-box;
+}
+
+.titan-status-chip-bar .titan-status-chip,
+.titan-kpi-panel__chips .titan-status-chip,
+.titan-workflow-chip-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--titan-status-chip-gap);
+  min-height: var(--titan-status-chip-min-h);
+  padding: var(--titan-status-chip-padding);
+  border: 1px solid var(--titan-status-chip-border);
+  border-radius: var(--titan-status-chip-radius-pill, 999px);
+  background: var(--titan-status-chip-bg);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.titan-status-chip-bar .titan-status-chip:hover:not(:disabled),
+.titan-kpi-panel__chips .titan-status-chip:hover:not(:disabled),
+.titan-workflow-chip-bar__chip:hover {
+  background: var(--titan-status-chip-hover-bg);
+  border-color: var(--titan-status-chip-hover-border);
+}
+
+.titan-status-chip-bar .titan-status-chip.is-active,
+.titan-kpi-panel__chips .titan-status-chip.is-active,
+.titan-workflow-chip-bar__chip.is-active {
+  border-color: var(--titan-status-chip-active-border);
+  background: var(--titan-status-chip-active-bg);
+}
+
+.titan-status-chip-bar .titan-status-chip.is-disabled,
+.titan-status-chip-bar .titan-status-chip:disabled,
+.titan-kpi-panel__chips .titan-status-chip:disabled {
+  cursor: not-allowed;
+  opacity: var(--titan-status-chip-disabled-opacity);
+}
+
+/* Summary KPI — Shape만 Rounded Rect · Shell 동일 */
+.titan-status-chip--summary,
+.titan-status-chip-bar--summary .titan-status-chip--summary,
+.titan-kpi-panel__chips--summary .titan-status-chip--summary {
+  border-radius: var(--titan-status-chip-radius, 8px);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.titan-status-chip--summary .titan-status-chip__metric,
+.titan-status-chip-bar--summary .titan-status-chip--summary .titan-status-chip__metric,
+.titan-kpi-panel__chips--summary .titan-status-chip--summary .titan-status-chip__metric {
+  margin-right: 0;
+}
+
+.titan-status-chip__icon {
+  width: var(--titan-status-chip-icon-size) !important;
+  height: var(--titan-status-chip-icon-size) !important;
+  font-size: var(--titan-status-chip-icon-size) !important;
+  color: var(--titan-text-muted);
+  flex-shrink: 0;
+}
+
+.titan-status-chip__icon-fallback {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #64748b;
+  flex-shrink: 0;
+}
+
+.titan-status-chip__label,
+.titan-workflow-chip-bar__label {
+  font-size: var(--titan-status-chip-label-size);
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* Workflow tone — KPI Bar · Step Track only (not Status / list chips) */
+.titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon,
+.titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon,
+.titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__icon {
+  color: var(--titan-process-icon, var(--titan-process-dot, var(--titan-text-muted)));
+}
+
+.titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon-fallback,
+.titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon-fallback,
+.titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__icon-fallback {
+  background: var(--titan-process-dot, #64748b);
+}
+
+.titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__label,
+.titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__label,
+.titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__label {
+  color: var(--titan-process-text, #475569);
+}
+
+.titan-status-chip__metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.titan-status-chip__count,
+.titan-workflow-chip-bar__value {
+  font-size: var(--titan-status-chip-count-size);
+  font-weight: 900;
+  color: var(--titan-status-chip-count-color, #0f172a);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.titan-status-chip__count-unit {
+  font-size: var(--titan-status-chip-count-unit-size);
+  font-weight: 800;
+  color: var(--titan-status-chip-count-color, #0f172a);
+  line-height: 1;
+}
+
+.titan-workflow-chip-bar__dot {
+  display: none;
+}
+
+/* ── TitanCollapsibleSearchPanel ── */
+.titan-collapsible-search {
+  display: flex;
+  flex-direction: column;
+}
+
+.titan-collapsible-search__toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--titan-collapsible-search-min-h);
+  padding: 0 var(--titan-card-padding, 20px);
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 900;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+}
+
+.titan-collapsible-search__toggle:hover {
+  background: var(--titan-table-row-hover);
+}
+
+.titan-collapsible-search__body {
+  padding: var(--titan-collapsible-search-body-py);
+  min-width: 0;
+}
+
+/* ── TitanNoticePanel (Foundation · Sprint 1-4) ── */
+.titan-notice-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+}
+
+.titan-notice-panel--expanded {
+  overflow: visible;
+}
+
+.titan-notice-panel__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.titan-notice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-notice-item-gap, 8px);
+  overflow: visible;
+}
+
+.titan-notice-list--expanded {
+  gap: 10px;
+}
+
+.titan-notice-list__item {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--titan-surface-muted, #f8fafc);
+}
+
+.titan-notice-list--expanded .titan-notice-list__item {
+  padding: 12px 14px;
+}
+
+.titan-notice-list__item--urgent {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.titan-notice-list__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.titan-notice-list__type {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.titan-notice-list__date {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.titan-notice-list__title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.titan-notice-list__body {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.titan-notice-panel__toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--titan-primary, #1d4ed8);
+  cursor: pointer;
+}
+
+.titan-notice-panel__toggle:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}
+
+/* ── TitanWorkflowStepTrack (Foundation) ── */
+.titan-workflow-step-track-wrap {
+  margin-bottom: 12px;
+}
+
+.titan-workflow-step-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  padding: 6px 0 4px;
+}
+
+.titan-workflow-step-track__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.titan-workflow-step-track__node {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  position: relative;
+  min-height: 24px;
+}
+
+.titan-workflow-step-track__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  flex-shrink: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  transition: transform 0.2s ease;
+}
+
+.titan-workflow-step-track__line {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.titan-workflow-step-track__label {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* 대기 — 가장 작은 원 */
+.titan-workflow-step-track__item--pending .titan-workflow-step-track__dot {
+  width: 8px;
+  height: 8px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+}
+
+.titan-workflow-step-track__line {
+  left: calc(50% + 5px);
+  right: calc(-50% + 5px);
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.titan-workflow-step-track__item--pending .titan-workflow-step-track__line {
+  left: calc(50% + 5px);
+  right: calc(-50% + 5px);
+}
+
+.titan-workflow-step-track__item--pending .titan-workflow-step-track__label {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+/* 완료 — neutral gray (line은 process color 미적용) */
+.titan-workflow-step-track__item--done .titan-workflow-step-track__dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #94a3b8;
+  background: #94a3b8;
+}
+
+.titan-workflow-step-track__item--done .titan-workflow-step-track__line {
+  left: calc(50% + 6px);
+  right: calc(-50% + 6px);
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.titan-workflow-step-track__item--done .titan-workflow-step-track__label {
+  color: #64748b;
+  font-weight: 800;
+}
+
+/* 현재 진행 — Double Circle · 24px · 약한 Pulse */
+@keyframes titan-workflow-step-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--titan-process-bar-active, #3b82f6) 32%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--titan-process-bar-active, #3b82f6) 0%, transparent);
+  }
+}
+
+.titan-workflow-step-track__item--active .titan-workflow-step-track__dot {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--titan-process-bar, #93c5fd);
+  background: transparent;
+  animation: titan-workflow-step-pulse 1.9s ease-in-out infinite;
+}
+
+.titan-workflow-step-track__dot-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--titan-process-bar-active, #3b82f6);
+}
+
+.titan-workflow-step-track__item--active .titan-workflow-step-track__line {
+  left: calc(50% + 13px);
+  right: calc(-50% + 5px);
+}
+
+.titan-workflow-step-track__item--active .titan-workflow-step-track__label {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--titan-process-text, #334155);
+}
+
+.titan-workflow-step-track__captions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--titan-border, #e2e8f0);
+}
+
+.titan-workflow-step-track__caption {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.titan-workflow-step-track__caption--done,
+.titan-workflow-step-track__caption--active {
+  color: var(--titan-process-text, #475569);
+}
+
+.titan-workflow-step-track__caption--active {
+  font-weight: 900;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-workflow-step-track__item--active .titan-workflow-step-track__dot {
+    animation: none;
+  }
 }

@@ -5,6 +5,7 @@
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
 import { getStockQty } from "./inventory";
 import { isIncomingRegistered } from "./productionRecords";
+import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 /** @typedef {'incoming' | 'production' | 'complete' | 'ship-wait'} ProductionDailyReportVariant */
 
@@ -26,6 +27,24 @@ export { getProcessFlowSteps as getProductionDailyReportFlowSteps } from "./proc
  */
 export function getProductionDailyReportStatus(record) {
   if (!isIncomingRegistered(record)) return null;
+
+  const workflowStatus = getWorkflowStatus(record);
+
+  if (workflowStatus === WORKFLOW_STATUS.CERT_DONE && getStockQty(record) > 0) {
+    return { label: PRODUCTION_DAILY_REPORT_STATUS.SHIP_WAIT, variant: "ship-wait" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) {
+    return { label: "생산완료", variant: "complete" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) {
+    return { label: "생산중", variant: "production" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
+    return { label: "작업대기", variant: "incoming" };
+  }
 
   if (record.certificateStatus === CERTIFICATE_STATUS.ISSUED && getStockQty(record) > 0) {
     return { label: PRODUCTION_DAILY_REPORT_STATUS.SHIP_WAIT, variant: "ship-wait" };

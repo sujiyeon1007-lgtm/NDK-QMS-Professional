@@ -19,7 +19,11 @@ export default function ProductionKpiPanel({
       ) : null}
       <div
         className={`titan-kpi-panel__grid production-kpi-panel__grid${
-          cards.length >= 4 ? " production-kpi-panel__grid--4" : ""
+          cards.length >= 6
+            ? " production-kpi-panel__grid--6"
+            : cards.length >= 4
+              ? " production-kpi-panel__grid--4"
+              : ""
         }`}
       >
         {cards.map((card) =>

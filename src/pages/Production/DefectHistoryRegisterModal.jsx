@@ -3,7 +3,7 @@ import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { DEFECT_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveWorkers } from "../../utils/masterData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   DEFECT_HANDLING_STATUS,
@@ -16,7 +16,7 @@ export default function DefectHistoryRegisterModal({ open, onClose, onRegister }
 
   const companies = getMasterDataByCategory("companies");
   const equipmentList = getMasterDataByCategory("equipment");
-  const workerList = getMasterDataByCategory("workers");
+  const workerList = getActiveWorkers();
   const processCodes = getProductionProcessCodes();
 
   useEffect(() => {

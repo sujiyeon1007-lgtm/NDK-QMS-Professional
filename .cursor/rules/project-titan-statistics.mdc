@@ -1,0 +1,53 @@
+---
+description: Project TITAN V1.0 — 통계자료 5탭 공통 레이아웃 · Tab별 KPI · 조회기준 · 차트
+alwaysApply: true
+---
+
+# 통계자료 (Statistics)
+
+## 화면 목적
+
+- **조회 · 분석 전용** — 등록 기능 없음
+- Tab: 통계조회 · 생산통계 · 품질통계 · 출고통계 · 영업실적
+
+## 공통 레이아웃 (5탭 동일 순서)
+
+1. **현황 KPI** (조회 기간 기준 — 금일 기준 금지)
+2. **검색** (기본 4항목 + Tab별 상세검색)
+3. **조회 기준** (Tab별 차원 + 단위 선택 + 조회 기간 + 기준일)
+4. **통계 리스트**
+5. **분석 차트** (Line / Bar / Pie 자동, 통계조회는 Combo 단일)
+
+## Tab별 강조색 (레이아웃 동일 · KPI 아이콘/강조만)
+
+- 생산통계: blue (`statistics-accent--blue`)
+- 품질통계: green (`statistics-accent--green`)
+- 출고통계: orange (`statistics-accent--orange`)
+- 영업실적: purple (`statistics-accent--purple`)
+
+## 단위 규칙
+
+- 입출고 · 생산 등록 `unit` 값 그대로 사용 (`productUnits.js`)
+- **서로 다른 단위(EA / kg / LOT) 혼합 합산 금지**
+- `전체`: 업체+단위별 행 분리, KPI 생산/출고는 단위별 표시
+- 단위 선택 시: 해당 단위만 KPI · 리스트 · 차트 집계
+- **검사 건수**는 항상 **건** 단위
+
+## Tab별 KPI · 조회기준 · 차트
+
+- **생산통계**: 생산량/완료/진행/평균/설비가동/공정비율 · 업체·설비·재질·공정·작업자 · 4차트
+- **품질통계**: 검사/합격/불합격/합격률/불량률/재처리율 · 업체·재질·공정·검사자 · 4차트
+- **출고통계**: 출고량/완료/업체수/평균/명세서/출고비율 · 업체·품목·재질·담당자 · 4차트
+- **영업실적**: 총출고량/업체수/품목수/평균/업체·품목실적 · 업체·품목·재질 · 4차트
+
+## 상호작용
+
+- 리스트 행 선택 → 분석 차트 scope 자동 변경
+- 조회 기준 차원/값 변경 → 리스트 · KPI · 차트 재집계
+
+## 구현 위치
+
+- Tab 설정: `src/config/statisticsDashboard.js`
+- Tab 분석: `src/utils/statisticsTabAnalytics.js`
+- 통계조회 분석: `src/utils/statisticsAnalytics.js`
+- 화면: `src/pages/Statistics/StatisticsScreen.jsx`

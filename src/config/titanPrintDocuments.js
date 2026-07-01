@@ -16,6 +16,7 @@ export const TITAN_PRINT_DOCUMENT_TYPES = {
   TRANSACTION_STATEMENT: "transaction-statement",
   PRODUCTION_DAILY_REPORT: "production-daily-report",
   CERTIFICATE: "certificate",
+  INSPECTION_REPORT: "inspection-report",
 };
 
 /** @type {Record<string, { previewSystem: string, label: string }>} */
@@ -39,6 +40,10 @@ export const TITAN_PRINT_DOCUMENT_META = {
   [TITAN_PRINT_DOCUMENT_TYPES.CERTIFICATE]: {
     previewSystem: TITAN_PRINT_PREVIEW_SYSTEM.DEDICATED,
     label: "성적서",
+  },
+  [TITAN_PRINT_DOCUMENT_TYPES.INSPECTION_REPORT]: {
+    previewSystem: TITAN_PRINT_PREVIEW_SYSTEM.DEDICATED,
+    label: "검사 리포트",
   },
 };
 

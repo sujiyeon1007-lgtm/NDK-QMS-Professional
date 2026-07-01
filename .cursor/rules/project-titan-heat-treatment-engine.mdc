@@ -1,0 +1,110 @@
+---
+description: Project TITAN V1.0 Heat Treatment Calculation Engine — core QMS design (PM final)
+alwaysApply: true
+---
+
+# Project TITAN — Heat Treatment Calculation Engine (V1.0)
+
+Project TITAN is **not** a generic QMS. It is a **heat-treatment specialist QMS**. Do not build simple CRUD for inspection data — support real heat-treatment calculations per customer requirements.
+
+**Source of truth (code):** `src/utils/heatTreatmentCalculationEngine.js`, `src/utils/productSpecificationModel.js` (`heatTreatment` block)
+
+---
+
+## 1. Default Specification Key: Company + Part No
+
+- Do **not** manage Default Specification by material alone.
+- Manage by **업체 + 품번** (company + part number).
+- Same part number across companies may differ in: Spec, calculation method, certificate output format.
+- Product lookup: `getProductByCompanyAndPartNo(company, partNo)`.
+
+---
+
+## 2. Product Registration — Heat Treatment Settings
+
+Stored in `specification.heatTreatment`:
+
+| Field | Purpose |
+|-------|---------|
+| `effectiveDepthBasis` | `hv390` · `specifiedHv` · `corePlus50` |
+| `specifiedHv` | User-entered HV when basis is `specifiedHv` (e.g. 420, 513, 550) |
+| `grindingAllowanceMm` | Default grinding allowance (e.g. 0.10, 0.15, 0.20 mm) |
+| `certificateOutputMode` | Report/certificate depth field visibility |
+
+### Effective depth basis
+
+- **390HV**: threshold = 390
+- **지정 HV**: threshold = `specifiedHv`
+- **심부경도 +50HV**: threshold = core HV + 50 (core from CORE row or 심부경도 measurement)
+
+---
+
+## 3. Automatic Calculations
+
+The engine calculates (via `calculateHeatTreatmentCalculations` / `syncHeatTreatmentCalculations`):
+
+| Field | Rule |
+|-------|------|
+| 유효경화깊이 | HV curve interpolation at effective-depth threshold |
+| 경화깊이 | Last depth point ≥ 390HV on curve |
+| 연마여유 | Product default; editable per inspection |
+| 연마 후 경화깊이 | 경화깊이 − 연마여유 |
+
+Also: graph, auto judgment, report/certificate output per company settings.
+
+---
+
+## 4. Inspector Override + History
+
+Each depth field stores:
+
+```text
+auto (자동 계산) → edited (검사자 수정) → final (최종 적용)
+```
+
+- Persist `heatTreatmentCalculations` and `heatTreatmentEdits` on inspection log/report.
+- Inspector may round or adjust final values (e.g. 0.512 → 0.51).
+- History must remain available for future 이력조회.
+
+---
+
+## 5. Inspection Report UI
+
+In **경도검사** section, always show when hardening data exists:
+
+- 유효경화깊이 · 경화깊이 · 연마여유 · 연마 후 경화깊이
+- Auto value + editable final value columns
+- Do not remove auto-calculated values — they are part of the audit trail.
+
+---
+
+## 6. Certificate / Report Output
+
+Respect `certificateOutputMode` from product registration:
+
+- `effectiveOnly` · `caseOnly` · `afterGrindingOnly` · `caseAndAfterGrinding` · `all`
+- Use `getReportDepthOutputRows()` for Excel/print/export filtering.
+
+---
+
+## 7. Single Source of Truth Flow
+
+```text
+기준정보관리 (제품등록 · 업체+품번)
+  ↓ appliedSpecification.heatTreatment
+검사일지 / 검사 리포트 (자동 계산 + 수정)
+  ↓ heatTreatmentCalculations
+성적서 · 검사 리포트 출력 (업체별 출력 방식)
+```
+
+Register product settings **once**; inspection log, report, and certificate must all use the same basis.
+
+---
+
+## 8. Implementation Rules
+
+- Extend `heatTreatmentCalculationEngine.js` — do not duplicate calc logic in pages.
+- Wire calculations through `syncReportJudgments()` in `inspectionReportEditor.js`.
+- Sync hardness row measured values for `effectiveDepth` / `caseDepth` from engine finals when applicable.
+- Preserve Project TITAN approved UI — add calc table within existing 경도검사 section only.
+- Do not refactor unrelated screens when adding engine features.

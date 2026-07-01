@@ -4,6 +4,11 @@
 
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getJournalReferenceDate } from "./workJournalData";
+import { onInspectionComplete } from "./titanWorkflowStatus";
+import { applyProductDefaultsToForm, getProductByPartNo } from "./productRegistrationSession";
+import { cloneSpecification } from "./productSpecificationModel";
+import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
+import { migrateHardeningDepthRows, normalizeHardeningDepthRows } from "./hardeningDepthModel";
 
 const STORAGE_KEY = "project-titan-inspection-log-v1";
 
@@ -52,6 +57,14 @@ function getSeedInspectionLogs() {
       inspectionEquipment: "경도시험기",
       inspectionLocation: "품질검사실",
       note: "",
+      process: "이온질화",
+      appliedSpecification: null,
+      hardnessMeasurements: [],
+      dimensionMeasurements: [],
+      appearanceMeasurements: [],
+      hasMicrostructurePhoto: false,
+      microstructureJudgment: "이상없음",
+      hardeningDepthHv: [...DEFAULT_HARDENING_HV],
       deleted: false,
       createdAt: "2026-06-28T09:00:00.000Z",
       updatedAt: "2026-06-28T09:00:00.000Z",
@@ -94,6 +107,21 @@ function normalizeLog(log) {
     inspectionLocation: log.inspectionLocation?.trim() || "",
     process: log.process?.trim() || "",
     inspectionItems: Array.isArray(log.inspectionItems) ? log.inspectionItems : [],
+    appliedSpecification: log.appliedSpecification
+      ? cloneSpecification(log.appliedSpecification)
+      : null,
+    hardnessMeasurements: Array.isArray(log.hardnessMeasurements) ? log.hardnessMeasurements : [],
+    dimensionMeasurements: Array.isArray(log.dimensionMeasurements) ? log.dimensionMeasurements : [],
+    appearanceMeasurements: Array.isArray(log.appearanceMeasurements) ? log.appearanceMeasurements : [],
+    hasMicrostructurePhoto: Boolean(log.hasMicrostructurePhoto),
+    microstructureJudgment: log.microstructureJudgment?.trim() || "이상없음",
+    microstructurePhotos: Array.isArray(log.microstructurePhotos) ? log.microstructurePhotos : [],
+    hardeningDepthHv: Array.isArray(log.hardeningDepthHv)
+      ? log.hardeningDepthHv.map((value) => Number(value) || 0)
+      : [...DEFAULT_HARDENING_HV],
+    hardeningDepthRows: normalizeHardeningDepthRows(migrateHardeningDepthRows(log)),
+    heatTreatmentCalculations: log.heatTreatmentCalculations || null,
+    heatTreatmentEdits: log.heatTreatmentEdits || {},
     note: log.note?.trim() || "",
     attachments: Array.isArray(log.attachments) ? log.attachments : [],
     deleted: Boolean(log.deleted),
@@ -141,6 +169,9 @@ export function addInspectionLog(payload) {
   const logs = safeRead();
   logs.unshift(log);
   safeWrite(logs);
+  if (log.managementId) {
+    onInspectionComplete(log.managementId);
+  }
   return log;
 }
 
@@ -166,7 +197,7 @@ export function softDeleteInspectionLog(id) {
 
 export function buildInspectionLogFromRecord(record, overrides = {}) {
   if (!record) return null;
-  return {
+  const base = {
     inspectionDate: getJournalReferenceDate(),
     category: "양산",
     managementId: record.id,
@@ -182,6 +213,15 @@ export function buildInspectionLogFromRecord(record, overrides = {}) {
     assignee: getCurrentTitanUser(),
     judgment: "합격",
     inspectionItems: [],
+    hardeningDepthHv: [],
+    hardeningDepthRows: [],
+    hasMicrostructurePhoto: false,
+    microstructureJudgment: "이상없음",
+    hardnessMeasurements: [],
+    dimensionMeasurements: [],
+    appearanceMeasurements: [],
     ...overrides,
   };
+  const product = getProductByPartNo(base.partNo);
+  return product ? applyProductDefaultsToForm(base, product) : base;
 }

@@ -18,7 +18,7 @@ function Header() {
           <input
             type="search"
             aria-label="통합검색"
-            placeholder="통합검색 (업체명, LOT, 품번, 품명, 도면번호)"
+            placeholder="통합검색 (업체명, LOT, 품번, 품명, 도번)"
           />
         </div>
       </div>

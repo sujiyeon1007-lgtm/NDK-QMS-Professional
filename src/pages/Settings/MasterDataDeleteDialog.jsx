@@ -1,9 +1,20 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import "./MasterDataDeleteDialog.css";
 
-function MasterDataDeleteDialog({ row, categoryLabel, onConfirm, onClose }) {
+function MasterDataDeleteDialog({
+  row,
+  categoryLabel,
+  onConfirm,
+  onClose,
+  blocked = false,
+  blockedMessage = "",
+  confirmMessage = "정말 삭제하시겠습니까?",
+  confirmLabel = "예",
+  cancelLabel = "아니오",
+  softDelete = false,
+}) {
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.classList.add("master-delete-open");
@@ -36,8 +47,8 @@ function MasterDataDeleteDialog({ row, categoryLabel, onConfirm, onClose }) {
         <header className="master-delete-header">
           <AlertTriangle size={20} />
           <div>
-            <h2 id="master-delete-title">기준정보 삭제</h2>
-            <p>{categoryLabel} · 세션 UI에서만 제거됩니다</p>
+            <h2 id="master-delete-title">{blocked ? "삭제 제한" : "기준정보 삭제"}</h2>
+            <p>{categoryLabel}</p>
           </div>
           <button type="button" className="master-delete-close" onClick={onClose} aria-label="닫기">
             <X size={18} />
@@ -45,20 +56,27 @@ function MasterDataDeleteDialog({ row, categoryLabel, onConfirm, onClose }) {
         </header>
 
         <div className="master-delete-body">
-          <p>
-            <strong>{row.code}</strong> · {row.name}
-          </p>
-          <span>삭제 후 SQLite 연동 Sprint에서 영구 반영됩니다.</span>
+          {blocked ? (
+            <span className="master-delete-blocked">{blockedMessage}</span>
+          ) : (
+            <>
+              <p>
+                <strong>{row.code}</strong> · {row.name}
+              </p>
+              <span>{confirmMessage}</span>
+            </>
+          )}
         </div>
 
         <footer className="master-delete-footer">
           <button type="button" className="master-delete-btn" onClick={onClose}>
-            취소
+            {blocked ? "확인" : cancelLabel}
           </button>
-          <button type="button" className="master-delete-btn danger" onClick={onConfirm}>
-            <Trash2 size={16} />
-            삭제
-          </button>
+          {!blocked ? (
+            <button type="button" className="master-delete-btn danger" onClick={onConfirm}>
+              {softDelete ? "미사용 처리" : confirmLabel}
+            </button>
+          ) : null}
         </footer>
       </div>
     </div>,

@@ -1,12 +1,22 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import Input from "../../foundation/components/Input";
+import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import {
+  DateRangeField,
+  EquipmentField,
+  LotNoField,
+  ManagementIdField,
+  ProcessField,
+  StatusSelectField,
+  WorkerField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
-import ProductionKpiPanel from "../../foundation/components/ProductionKpiPanel";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import {
   DEFECT_STATUS_METRIC_CARDS,
   DEFECT_STATUS_PANEL,
@@ -15,7 +25,7 @@ import { createEmptyDefectHistorySearch, matchesBasicSearch } from "../../config
 import { buildDefectHistoryListColumns } from "../../config/standardProductList";
 import { DEFECT_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getProcessChipVariant, getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
@@ -28,9 +38,8 @@ import {
 } from "../../utils/defectHistorySession";
 import DefectHistoryRegisterModal from "./DefectHistoryRegisterModal";
 import "../InOut/InboundManagement.css";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./ProductionManagement.css";
-
-const EMPTY_SEARCH = createEmptyDefectHistorySearch();
 
 function matchesDefectHistorySearch(record, search) {
   if (!matchesBasicSearch(search, record)) return false;
@@ -88,14 +97,18 @@ function getHandlingStatusVariant(status) {
 export default function DefectHistoryManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-defect-history-advanced");
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyDefectHistorySearch, { storageKey: "defect-history" });
   const [activeId, setActiveId] = useState(null);
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const equipmentList = useMemo(() => getMasterDataByCategory("equipment"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
+  const searchRecords = useMemo(() => getSessionDefectRecords(), [refreshKey]);
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+    equipment: equipmentList.map((item) => item.name ?? item.code),
+  });
 
   const rows = useMemo(() => {
     return getSessionDefectRecords()
@@ -117,6 +130,8 @@ export default function DefectHistoryManagement() {
       }),
     [metrics]
   );
+
+  const metricChipItems = useMemo(() => buildMetricChipItems(kpiCards), [kpiCards]);
 
   const {
     page,
@@ -143,12 +158,6 @@ export default function DefectHistoryManagement() {
       }),
     []
   );
-
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
-  };
 
   const handleRegister = (form) => {
     const now = new Date().toISOString();
@@ -178,137 +187,59 @@ export default function DefectHistoryManagement() {
 
   return (
     <div className="inbound-page production-page production-defect-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">불량이력관리</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
-            <Plus size={14} aria-hidden="true" />
-            {DEFECT_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
+          <Plus size={14} aria-hidden="true" />
+          {DEFECT_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
 
-      <ProductionKpiPanel
-        title={DEFECT_STATUS_PANEL.title}
-        titleIcon={DEFECT_STATUS_PANEL.titleIcon}
-        cards={kpiCards}
-        metricMode
-      />
+      <TitanKpiBarSlot ariaLabel={DEFECT_STATUS_PANEL.title} className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          items={metricChipItems}
+          ariaLabel={DEFECT_STATUS_PANEL.title}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">공정</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
-              >
-                <option value="">전체</option>
-                {processCodes.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">설비</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.equipment}
-                onChange={(e) => setDraft({ ...draft, equipment: e.target.value })}
-              >
-                <option value="">전체</option>
-                {equipmentList.map((item) => (
-                  <option key={item.id} value={item.name ?? item.code}>
-                    {item.name ?? item.code}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">작업자</span>
-              <Input
-                value={draft.worker}
-                onChange={(e) => setDraft({ ...draft, worker: e.target.value })}
-                placeholder="작업자"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">불량유형</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.defectType}
-                onChange={(e) => setDraft({ ...draft, defectType: e.target.value })}
-              >
-                <option value="">전체</option>
-                {DEFECT_TYPE_OPTIONS.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">처리상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.handlingStatus}
-                onChange={(e) => setDraft({ ...draft, handlingStatus: e.target.value })}
-              >
-                <option value="">전체</option>
-                {DEFECT_HANDLING_STATUS.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">발생일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.occurredDateFrom}
-                  onChange={(e) => setDraft({ ...draft, occurredDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.occurredDateTo}
-                  onChange={(e) => setDraft({ ...draft, occurredDateTo: e.target.value })}
-                />
-              </div>
-            </label>
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <EquipmentField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <WorkerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <StatusSelectField
+              label="불량유형"
+              value={draft.defectType}
+              onChange={(e) => onDraftChange({ ...draft, defectType: e.target.value })}
+              options={DEFECT_TYPE_OPTIONS}
+            />
+            <StatusSelectField
+              label="처리상태"
+              value={draft.handlingStatus}
+              onChange={(e) => onDraftChange({ ...draft, handlingStatus: e.target.value })}
+              options={DEFECT_HANDLING_STATUS}
+            />
+            <DateRangeField
+              label="발생일"
+              fromKey="occurredDateFrom"
+              toKey="occurredDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
           </div>
         }
       />

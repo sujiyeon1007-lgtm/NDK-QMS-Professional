@@ -1,17 +1,24 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import Input from "../../foundation/components/Input";
+import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import {
+  AssigneeField,
+  DateRangeField,
+  LotNoField,
+  ManagementIdField,
+  ProcessField,
+  StatusSelectField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
-import ProductionKpiPanel from "../../foundation/components/ProductionKpiPanel";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
 import {
   CERTIFICATE_FILE_STATUS_OPTIONS,
-  CERTIFICATE_STATUS_CARDS,
-  CERTIFICATE_STATUS_PANEL,
 } from "../../config/qualityDashboard";
 import { createEmptyCertificateSearch } from "../../config/listSearchStandard";
 import { buildCertificateListColumns } from "../../config/standardProductList";
@@ -20,23 +27,21 @@ import {
   getProcessChipVariant,
   getProductionProcessCodes,
 } from "../../config/productionProcessCodes";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveWorkers, getMasterDataByCategory } from "../../utils/masterData";
 import {
   getCertificateFileEntries,
   upsertCertificateFileEntry,
   buildCertificateEntryFromRecord,
 } from "../../utils/certificateSession";
 import { mapCertificateEntryToListRow, matchesCertificateSearch } from "../../utils/certificateStatus";
-import { buildCertificateKpiCounts } from "../../utils/qualityAnalytics";
 import { getProcessFlowSteps } from "../../utils/processFlow";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import CertificateRegisterModal from "./CertificateRegisterModal";
 import "../InOut/InboundManagement.css";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./QualityManagement.css";
-
-const EMPTY_SEARCH = createEmptyCertificateSearch();
 
 function FileMark({ registered }) {
   return (
@@ -48,26 +53,31 @@ export default function CertificateManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitial, setRegisterInitial] = useState(null);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-certificate-advanced");
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyCertificateSearch, { storageKey: "certificate" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const { activeChipId, handleChipClick } = useWorkflowChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+  });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
-  const workers = useMemo(() => getMasterDataByCategory("workers"), []);
+  const workers = useMemo(() => getActiveWorkers(), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-
-  const certificateStatusCards = useMemo(() => {
-    const entries = getCertificateFileEntries();
-    const counts = buildCertificateKpiCounts(getSessionProductionRecords(), entries);
-    return CERTIFICATE_STATUS_CARDS.map((card) => {
-      if (card.id === "registerRate") {
-        return { ...card, value: counts.registerRate, unit: "%" };
-      }
-      return { ...card, count: counts[card.id] ?? 0 };
+  const searchRecords = useMemo(() => {
+    const sessionRecords = getSessionProductionRecords();
+    return getCertificateFileEntries().map((entry) => {
+      const record = sessionRecords.find((item) => item.id === entry.managementId);
+      return record ? { ...record, ...entry, managementId: entry.managementId || record.id } : entry;
     });
   }, [refreshKey]);
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+    assignee: workers.map((worker) => worker.name),
+  });
 
   const rows = useMemo(() => {
     return getCertificateFileEntries()
@@ -123,12 +133,6 @@ export default function CertificateManagement() {
 
   const processFlowSteps = activeRecord ? getProcessFlowSteps(activeRecord) : [];
 
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
-  };
-
   const openRegister = (initialData = null) => {
     setRegisterInitial(initialData);
     setRegisterOpen(true);
@@ -153,146 +157,95 @@ export default function CertificateManagement() {
     setPage(1);
   };
 
-  const handleDetailRegister = () => {
-    if (!activeRow) return;
-    const record = getSessionProductionRecords().find((item) => item.id === activeRow.managementId);
-    openRegister(
+  const buildRegisterInitialFromRow = (row) => {
+    if (!row) return null;
+    const record = getSessionProductionRecords().find((item) => item.id === row.managementId);
+    return (
       buildCertificateEntryFromRecord(record, {
-        managementId: activeRow.managementId,
-        lotNo: activeRow.lotNo !== "—" ? activeRow.lotNo : "",
-        company: activeRow.company !== "—" ? activeRow.company : "",
-        partName: activeRow.partName !== "—" ? activeRow.partName : "",
-        partNo: activeRow.partNo !== "—" ? activeRow.partNo : "",
-        material: activeRow.material !== "—" ? activeRow.material : "",
-        process: activeRow.processName !== "—" ? activeRow.processName : "",
-        qty: activeRow.entry.qty,
-        unit: activeRow.entry.unit,
-        excelFile: activeRow.entry.excelFile,
-        pdfFile: activeRow.entry.pdfFile,
+        managementId: row.managementId,
+        lotNo: row.lotNo !== "—" ? row.lotNo : "",
+        company: row.company !== "—" ? row.company : "",
+        partName: row.partName !== "—" ? row.partName : "",
+        partNo: row.partNo !== "—" ? row.partNo : "",
+        material: row.material !== "—" ? row.material : "",
+        process: row.processName !== "—" ? row.processName : "",
+        qty: row.entry.qty,
+        unit: row.entry.unit,
+        excelFile: row.entry.excelFile,
+        pdfFile: row.entry.pdfFile,
       }) ?? {
-        managementId: activeRow.managementId,
-        lotNo: activeRow.lotNo !== "—" ? activeRow.lotNo : "",
-        company: activeRow.company,
-        partName: activeRow.partName,
-        partNo: activeRow.partNo,
-        material: activeRow.material,
-        process: activeRow.processName !== "—" ? activeRow.processName : "",
-        qty: activeRow.entry.qty,
-        unit: activeRow.entry.unit,
+        managementId: row.managementId,
+        lotNo: row.lotNo !== "—" ? row.lotNo : "",
+        company: row.company,
+        partName: row.partName,
+        partNo: row.partNo,
+        material: row.material,
+        process: row.processName !== "—" ? row.processName : "",
+        qty: row.entry.qty,
+        unit: row.entry.unit,
       }
     );
   };
 
+  const handleDetailRegister = () => {
+    if (!activeRow) return;
+    openRegister(buildRegisterInitialFromRow(activeRow));
+  };
+
+  const handleRowDoubleClick = (row) => {
+    openRegister(buildRegisterInitialFromRow(row));
+  };
+
   return (
     <div className="inbound-page quality-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">성적서관리</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => openRegister()}>
-            <Plus size={14} aria-hidden="true" />
-            {CERTIFICATE_FILE_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={() => openRegister()}>
+          <Plus size={14} aria-hidden="true" />
+          {CERTIFICATE_FILE_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
 
-      <ProductionKpiPanel
-        title={CERTIFICATE_STATUS_PANEL.title}
-        titleIcon={CERTIFICATE_STATUS_PANEL.titleIcon}
-        cards={certificateStatusCards}
-        metricMode
-      />
+      <TitanKpiBarSlot ariaLabel="성적서 현황" className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          chipSetId="certificate"
+          records={chipRecords}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">공정</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
-              >
-                <option value="">전체</option>
-                {processCodes.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">등록일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.registeredDateFrom}
-                  onChange={(e) => setDraft({ ...draft, registeredDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.registeredDateTo}
-                  onChange={(e) => setDraft({ ...draft, registeredDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">검사자</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.assignee}
-                onChange={(e) => setDraft({ ...draft, assignee: e.target.value })}
-              >
-                <option value="">전체</option>
-                {workers.map((worker) => (
-                  <option key={worker.id} value={worker.name}>
-                    {worker.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">현재상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.status}
-                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-              >
-                <option value="">전체</option>
-                {CERTIFICATE_FILE_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <DateRangeField
+              label="등록일"
+              fromKey="registeredDateFrom"
+              toKey="registeredDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+            <AssigneeField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <StatusSelectField
+              label="현재상태"
+              value={draft.status}
+              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
+              options={CERTIFICATE_FILE_STATUS_OPTIONS}
+            />
           </div>
         }
       />
@@ -309,6 +262,7 @@ export default function CertificateManagement() {
             onToggleAll={toggleAll}
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
+            onRowDoubleClick={handleRowDoubleClick}
             emptyMessage="등록된 성적서 파일이 없습니다."
           />
 

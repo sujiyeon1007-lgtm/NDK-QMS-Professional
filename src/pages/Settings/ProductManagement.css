@@ -1,0 +1,16 @@
+.product-page .product-spec-table {
+  margin-top: 8px;
+}
+
+.product-page .product-spec-table th,
+.product-page .product-spec-table td {
+  padding: 6px 8px;
+}
+
+.product-page .product-spec-table input {
+  width: 100%;
+}
+
+.product-page .inbound-page__workspace {
+  margin-top: 12px;
+}

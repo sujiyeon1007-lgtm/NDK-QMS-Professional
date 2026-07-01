@@ -1,0 +1,62 @@
+---
+description: Project TITAN UI Freeze FINAL V1.0 — UI Master lock, Foundation KPI 재사용
+alwaysApply: true
+---
+
+# Project TITAN — UI Freeze FINAL V1.0
+
+**UI Freeze.** 기능 추가만 가능. UI 변경 금지 (버그 수정 제외). PM 승인 없이 UI 변경 금지.
+
+## UI Master (5화면 · 기준)
+
+HOME · 입고관리 · 출고관리 · 생산관리 · 품질관리 — **절대 변경 금지**
+
+## 관리형 (4화면 · UI Master KPI 복사)
+
+부서별업무 · 통계 · 기준정보 · 환경설정
+
+**변경 가능:** KPI 내용 · 아이콘 · 색상 · 수치 · 검색 · 리스트 컬럼 · 상세정보  
+**동일 유지:** KPI 카드 디자인 · 크기 · Padding · Margin · Radius · Border · Spacing · Font · Hover · Layout · Toolbar · Search · Table · Detail · Button
+
+## KPI — 단일 Foundation (전 페이지 동일)
+
+- **새 KPI Component 금지**
+- **이중 행 KPI (Pill + Rounded Rect) 금지** — 취소됨
+- 모든 페이지: `TitanKpiBarSlot` + `TitanWorkflowStatusChipBar` (기본 `realtime` / `TitanKpiCard`)
+- `TitanKpiPanel` · `KPI_MODE_SUMMARY` — 관리형 페이지에서 **사용 금지**
+
+```jsx
+<TitanKpiBarSlot ariaLabel="..." className="inbound-page__kpi">
+  <TitanWorkflowStatusChipBar
+    chipSetId="..."   // 또는 items={metricChipItems}
+    records={...}
+    ariaLabel="..."
+  />
+</TitanKpiBarSlot>
+```
+
+## Table · Button
+
+- Table: 고정 Height 금지 · 행 수에 따라 자동
+- Button: 한 줄 · 줄바꿈/말줄임 금지 · Width 자동 확장
+
+## 기능 수정 시 UI 변경 금지
+
+Padding · Margin · Width · Height · Border · Radius · Font · Toolbar · Search · KPI shell · Table · Detail · Button · Hover · Animation
+
+## 원복 우선
+
+① UI Master 원복 → ② 요구사항만 추가 → ③ Build
+
+## Freeze 이후
+
+SQLite · 출력 · PDF · EXE · 기능만. UI 변경 없음.
+
+## 완료 체크리스트
+
+- UI Master 5화면 미변경
+- 부서별업무 · 통계 · 기준정보 · 환경설정 KPI = HOME KPI Foundation 동일
+- 새 KPI Component 없음 · Foundation 재사용
+- Build OK · Console Error = 0
+
+**Code:** `TitanKpiBarSlot`, `TitanKpiCard`, `TitanWorkflowStatusChipBar`, `titan-kpi-bar.css`

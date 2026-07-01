@@ -1,0 +1,790 @@
+import { useMemo, useRef, useState } from "react";
+import { Download, FolderOpen, RefreshCw, RotateCcw, Upload } from "lucide-react";
+
+import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import TitanDataTable from "../../foundation/components/DataTable";
+import {
+  APP_NAME,
+  APP_VERSION,
+  PERMISSION_MENUS,
+  USER_ROLES,
+  checkForUpdates,
+  estimateStorageUsage,
+  getCombinedLogs,
+  getEnvironmentSettings,
+  getSystemStatusSummary,
+  openBackupFolderHint,
+  readLogoFile,
+  resetUserPassword,
+  restoreFromBackupFile,
+  runDatabaseOptimize,
+  runFullBackup,
+  runSampleDataGeneration,
+  runUnusedDataCleanup,
+  saveCompanyInfo,
+  saveCompanyLogo,
+  saveNotifications,
+  savePermissions,
+  saveProgramSettings,
+  updateUser,
+} from "../../utils/environmentSettingsSession";
+
+function SettingsPanel({ title, desc, children }) {
+  return (
+    <section className="environment-content-panel titan-card">
+      <div className="environment-content-head">
+        <div>
+          <h3>{title}</h3>
+          {desc ? <p>{desc}</p> : null}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ActionMessage({ message, tone = "info" }) {
+  if (!message) return null;
+  return <p className={`environment-action-message environment-action-message--${tone}`}>{message}</p>;
+}
+
+export function CompanySection({ refreshKey, onRefresh }) {
+  const company = useMemo(() => getEnvironmentSettings().company, [refreshKey]);
+  const [form, setForm] = useState(company);
+  const [message, setMessage] = useState("");
+  const logoInputRef = useRef(null);
+
+  const handleSave = () => {
+    saveCompanyInfo(form);
+    setMessage("회사정보가 저장되었습니다.");
+    onRefresh?.();
+  };
+
+  const handleLogo = async (file) => {
+    try {
+      const payload = await readLogoFile(file);
+      if (!payload) return;
+      saveCompanyLogo(payload);
+      setForm((prev) => ({
+        ...prev,
+        logoFileName: payload.fileName,
+        logoMimeType: payload.mimeType,
+        logoDataUrl: payload.dataUrl,
+      }));
+      setMessage("회사 로고가 등록되었습니다. Header · PDF · 성적서에 적용됩니다. (V1.0 세션)");
+      onRefresh?.();
+    } catch (error) {
+      setMessage(error.message || "로고를 등록할 수 없습니다.");
+    }
+  };
+
+  return (
+    <SettingsPanel title="회사정보" desc="회사 기본 정보 및 로고를 관리합니다.">
+      <div className="environment-form-grid">
+        <label>
+          <span>회사명</span>
+          <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+        </label>
+        <label>
+          <span>대표자</span>
+          <input value={form.ceo} onChange={(e) => setForm((p) => ({ ...p, ceo: e.target.value }))} />
+        </label>
+        <label>
+          <span>사업자등록번호</span>
+          <input value={form.bizNo} onChange={(e) => setForm((p) => ({ ...p, bizNo: e.target.value }))} />
+        </label>
+        <label>
+          <span>전화번호</span>
+          <input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+        </label>
+        <label className="span-2">
+          <span>주소</span>
+          <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} />
+        </label>
+        <label>
+          <span>팩스</span>
+          <input value={form.fax} onChange={(e) => setForm((p) => ({ ...p, fax: e.target.value }))} />
+        </label>
+        <label>
+          <span>이메일</span>
+          <input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
+        </label>
+        <label className="span-2">
+          <span>홈페이지</span>
+          <input value={form.website} onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))} />
+        </label>
+      </div>
+
+      <div className="environment-logo-block">
+        <div className="environment-logo-head">
+          <strong>회사 로고</strong>
+          <SecondaryButton type="button" onClick={() => logoInputRef.current?.click()}>
+            <Upload size={14} />
+            로고 등록
+          </SecondaryButton>
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/svg+xml"
+            className="environment-hidden-input"
+            onChange={(e) => handleLogo(e.target.files?.[0])}
+          />
+        </div>
+        {form.logoDataUrl ? (
+          <img src={form.logoDataUrl} alt={form.logoFileName || "회사 로고"} className="environment-logo-preview" />
+        ) : (
+          <p className="environment-empty-note">등록된 회사 로고가 없습니다.</p>
+        )}
+        <p className="environment-form-note">등록한 로고는 프로그램 전체(Header, PDF, 성적서 등)에 자동 적용됩니다.</p>
+      </div>
+
+      <ActionMessage message={message} />
+      <div className="environment-actions">
+        <PrimaryButton type="button" onClick={handleSave}>
+          저장
+        </PrimaryButton>
+      </div>
+    </SettingsPanel>
+  );
+}
+
+export function UsersSection({ refreshKey, onRefresh }) {
+  const users = useMemo(() => getEnvironmentSettings().users, [refreshKey]);
+  const [message, setMessage] = useState("");
+  const [expandedRowId, setExpandedRowId] = useState(null);
+
+  const toggleActive = (user) => {
+    updateUser(user.id, { active: !user.active });
+    setMessage(`${user.name} 사용자 상태가 변경되었습니다.`);
+    onRefresh?.();
+  };
+
+  const handleResetPassword = (user) => {
+    const result = resetUserPassword(user.id);
+    setMessage(result.message);
+    onRefresh?.();
+  };
+
+  const columns = useMemo(
+    () => [
+      { key: "loginId", label: "아이디" },
+      { key: "name", label: "이름" },
+      { key: "department", label: "부서" },
+      {
+        key: "role",
+        label: "직급/권한",
+        render: (row) => USER_ROLES.find((r) => r.value === row.role)?.label ?? row.role,
+      },
+      {
+        key: "active",
+        label: "상태",
+        render: (row) => (
+          <span className={`status-badge ${row.active === false ? "미사용" : "사용"}`}>
+            {row.active === false ? "미사용" : "사용"}
+          </span>
+        ),
+      },
+      {
+        key: "actions",
+        label: "관리",
+        render: (row) => (
+          <div className="environment-table-actions">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleActive(row);
+              }}
+            >
+              {row.active === false ? "사용" : "미사용"}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleResetPassword(row);
+              }}
+            >
+              비밀번호 초기화
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [refreshKey]
+  );
+
+  return (
+    <SettingsPanel title="사용자관리" desc="프로그램 사용자 계정을 관리합니다. (향후 로그인 연동)">
+      <div className="environment-table-wrap">
+        <TitanDataTable
+          columns={columns}
+          rows={users}
+          getRowId={(row) => row.id}
+          expandedRowId={expandedRowId}
+          onExpandedRowChange={setExpandedRowId}
+          renderExpandedRow={(row) => (
+            <div className="titan-list-expand">
+              <dl className="inbound-detail titan-list-expand__detail">
+                <div>
+                  <dt>아이디</dt>
+                  <dd>{row.loginId}</dd>
+                </div>
+                <div>
+                  <dt>이름</dt>
+                  <dd>{row.name}</dd>
+                </div>
+                <div>
+                  <dt>부서</dt>
+                  <dd>{row.department || "—"}</dd>
+                </div>
+                <div>
+                  <dt>직급/권한</dt>
+                  <dd>{USER_ROLES.find((r) => r.value === row.role)?.label ?? row.role}</dd>
+                </div>
+                <div>
+                  <dt>상태</dt>
+                  <dd>{row.active === false ? "미사용" : "사용"}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+          emptyMessage="등록된 사용자가 없습니다."
+          ariaLabel="사용자 목록"
+        />
+      </div>
+      <ActionMessage message={message} />
+    </SettingsPanel>
+  );
+}
+
+export function PermissionsSection({ refreshKey, onRefresh }) {
+  const permissions = useMemo(() => getEnvironmentSettings().permissions, [refreshKey]);
+  const [draft, setDraft] = useState(permissions);
+  const [message, setMessage] = useState("");
+
+  const toggle = (role, key) => {
+    setDraft((prev) => ({
+      ...prev,
+      [role]: { ...prev[role], [key]: !prev[role]?.[key] },
+    }));
+  };
+
+  const handleSave = () => {
+    savePermissions(draft);
+    setMessage("권한 설정이 저장되었습니다.");
+    onRefresh?.();
+  };
+
+  return (
+    <SettingsPanel title="권한관리" desc="권한별 메뉴 접근을 설정합니다.">
+      <div className="environment-permission-grid">
+        {USER_ROLES.map((role) => (
+          <div key={role.value} className="environment-permission-card">
+            <h4>{role.label}</h4>
+            <ul>
+              {PERMISSION_MENUS.map((menu) => (
+                <li key={menu.key}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(draft[role.value]?.[menu.key])}
+                      onChange={() => toggle(role.value, menu.key)}
+                    />
+                    {menu.label}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <ActionMessage message={message} />
+      <div className="environment-actions">
+        <PrimaryButton type="button" onClick={handleSave}>
+          저장
+        </PrimaryButton>
+      </div>
+    </SettingsPanel>
+  );
+}
+
+const NOTIFICATION_ITEMS = [
+  { key: "shipmentDue", label: "출고 예정 알림" },
+  { key: "inspectionPending", label: "검사 대기 알림" },
+  { key: "productionDelay", label: "생산 지연 알림" },
+  { key: "certificatePending", label: "성적서 미등록 알림" },
+  { key: "backup", label: "백업 알림" },
+];
+
+export function NotificationsSection({ refreshKey, onRefresh }) {
+  const notifications = useMemo(() => getEnvironmentSettings().notifications, [refreshKey]);
+  const [draft, setDraft] = useState(notifications);
+  const [message, setMessage] = useState("");
+
+  const handleSave = () => {
+    saveNotifications(draft);
+    setMessage("알림 설정이 저장되었습니다.");
+    onRefresh?.();
+  };
+
+  return (
+    <SettingsPanel title="알림설정" desc="프로그램 업무 알림을 설정합니다.">
+      <ul className="environment-toggle-list">
+        {NOTIFICATION_ITEMS.map((item) => (
+          <li key={item.key}>
+            <label>
+              <input
+                type="checkbox"
+                checked={Boolean(draft[item.key])}
+                onChange={() => setDraft((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
+              />
+              {item.label}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <ActionMessage message={message} />
+      <div className="environment-actions">
+        <PrimaryButton type="button" onClick={handleSave}>
+          저장
+        </PrimaryButton>
+      </div>
+    </SettingsPanel>
+  );
+}
+
+export function BackupSection({ refreshKey, onRefresh }) {
+  const history = useMemo(() => getEnvironmentSettings().backupHistory, [refreshKey]);
+  const [message, setMessage] = useState("");
+  const restoreInputRef = useRef(null);
+
+  const handleBackup = () => {
+    const result = runFullBackup();
+    setMessage(`전체 백업이 완료되었습니다. (${result.sizeLabel})`);
+    onRefresh?.();
+  };
+
+  const handleRestore = async (file) => {
+    try {
+      const result = await restoreFromBackupFile(file);
+      setMessage(result.message);
+      if (result.ok) setTimeout(() => window.location.reload(), 800);
+      onRefresh?.();
+    } catch (error) {
+      setMessage(error.message || "복원에 실패했습니다.");
+    }
+  };
+
+  const handleOpenFolder = () => {
+    const result = openBackupFolderHint();
+    setMessage(result.message);
+  };
+
+  return (
+    <SettingsPanel title="백업 / 복원" desc="SQLite DB · 도면 · PDF · 관련 문서 · 프로그램 설정을 원클릭 백업합니다.">
+      <div className="environment-backup-actions">
+        <PrimaryButton type="button" onClick={handleBackup}>
+          <Download size={14} />
+          전체 백업
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={() => restoreInputRef.current?.click()}>
+          <Upload size={14} />
+          복원
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={handleOpenFolder}>
+          <FolderOpen size={14} />
+          백업 폴더 열기
+        </SecondaryButton>
+        <input
+          ref={restoreInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="environment-hidden-input"
+          onChange={(e) => handleRestore(e.target.files?.[0])}
+        />
+      </div>
+
+      <p className="environment-form-note">
+        백업 대상: SQLite DB · 도면 · PDF · 관련 문서 · 프로그램 설정
+      </p>
+      <ActionMessage message={message} />
+
+      <h4 className="environment-subtitle">백업 이력</h4>
+      {history.length === 0 ? (
+        <p className="environment-empty-note">등록된 백업 이력이 없습니다.</p>
+      ) : (
+        <ul className="environment-backup-history">
+          {history.map((row) => (
+            <li key={row.id}>
+              <strong>{row.label}</strong>
+              <span>{row.createdAt.replace("T", " ").slice(0, 16)}</span>
+              <span>{row.sizeLabel}</span>
+              <span className="status-badge 완료">{row.status}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SettingsPanel>
+  );
+}
+
+export function LogsSection({ refreshKey }) {
+  const [keyword, setKeyword] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [expandedRowId, setExpandedRowId] = useState(null);
+  const logs = useMemo(() => getCombinedLogs(keyword, typeFilter), [refreshKey, keyword, typeFilter]);
+
+  const logRows = useMemo(
+    () =>
+      logs.map((row) => ({
+        ...row,
+        dateLabel: String(row.date ?? row.createdAt ?? "—").replace("T", " ").slice(0, 19),
+        typeLabel: row.type === "error" ? "오류" : row.action || row.type,
+        contentLabel: row.label || row.action || "—",
+        targetLabel: row.target || row.screen || "—",
+        userLabel: row.user || "—",
+      })),
+    [logs]
+  );
+
+  const columns = useMemo(
+    () => [
+      { key: "dateLabel", label: "일시" },
+      { key: "typeLabel", label: "유형" },
+      { key: "contentLabel", label: "내용" },
+      { key: "targetLabel", label: "대상" },
+      { key: "userLabel", label: "사용자" },
+    ],
+    []
+  );
+
+  return (
+    <SettingsPanel title="로그관리" desc="로그인 · 등록 · 수정 · 삭제 · 오류 로그를 조회합니다.">
+      <div className="environment-log-search">
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="검색어"
+        />
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">전체</option>
+          <option value="login">로그인</option>
+          <option value="create">등록</option>
+          <option value="update">수정</option>
+          <option value="delete">삭제</option>
+          <option value="error">오류</option>
+        </select>
+      </div>
+
+      {logRows.length === 0 ? (
+        <p className="environment-empty-note">조회된 로그가 없습니다.</p>
+      ) : (
+        <div className="environment-table-wrap">
+          <TitanDataTable
+            columns={columns}
+            rows={logRows}
+            getRowId={(row) => row.id}
+            expandedRowId={expandedRowId}
+            onExpandedRowChange={setExpandedRowId}
+            renderExpandedRow={(row) => (
+              <div className="titan-list-expand">
+                <dl className="inbound-detail titan-list-expand__detail">
+                  <div>
+                    <dt>일시</dt>
+                    <dd>{row.dateLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>유형</dt>
+                    <dd>{row.typeLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>내용</dt>
+                    <dd>{row.contentLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>대상</dt>
+                    <dd>{row.targetLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>사용자</dt>
+                    <dd>{row.userLabel}</dd>
+                  </div>
+                  {row.detail ? (
+                    <div className="span-2">
+                      <dt>상세</dt>
+                      <dd>{row.detail}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
+            )}
+            emptyMessage="조회된 로그가 없습니다."
+            ariaLabel="로그 목록"
+          />
+        </div>
+      )}
+    </SettingsPanel>
+  );
+}
+
+export function ProgramSection({ refreshKey, onRefresh }) {
+  const programSettings = useMemo(() => getEnvironmentSettings().programSettings, [refreshKey]);
+  const [draft, setDraft] = useState(programSettings);
+  const [message, setMessage] = useState("");
+
+  const handleSave = () => {
+    saveProgramSettings(draft);
+    setMessage("프로그램 설정이 저장되었습니다.");
+    onRefresh?.();
+  };
+
+  return (
+    <SettingsPanel title="프로그램 설정" desc="자동 저장 · 자동 백업 · 저장 경로를 관리합니다.">
+      <ul className="environment-toggle-list">
+        <li>
+          <label className="environment-toggle-disabled">
+            <input type="checkbox" disabled checked={false} />
+            다크모드 (V2.0)
+          </label>
+        </li>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              checked={Boolean(draft.autoSave)}
+              onChange={() => setDraft((p) => ({ ...p, autoSave: !p.autoSave }))}
+            />
+            자동 저장
+          </label>
+        </li>
+        <li>
+          <label>
+            <input
+              type="checkbox"
+              checked={Boolean(draft.autoBackup)}
+              onChange={() => setDraft((p) => ({ ...p, autoBackup: !p.autoBackup }))}
+            />
+            자동 백업
+          </label>
+        </li>
+      </ul>
+
+      <div className="environment-form-grid">
+        <label className="span-2">
+          <span>자동 백업 주기</span>
+          <select
+            value={draft.autoBackupSchedule}
+            onChange={(e) => setDraft((p) => ({ ...p, autoBackupSchedule: e.target.value }))}
+          >
+            <option value="on_exit">종료 시</option>
+            <option value="daily">매일</option>
+          </select>
+        </label>
+        <label className="span-2">
+          <span>기본 저장 경로</span>
+          <input
+            value={draft.defaultPath}
+            onChange={(e) => setDraft((p) => ({ ...p, defaultPath: e.target.value }))}
+          />
+        </label>
+        <label className="span-2">
+          <span>PDF 저장 경로</span>
+          <input value={draft.pdfPath} onChange={(e) => setDraft((p) => ({ ...p, pdfPath: e.target.value }))} />
+        </label>
+        <label className="span-2">
+          <span>도면 저장 경로</span>
+          <input
+            value={draft.drawingPath}
+            onChange={(e) => setDraft((p) => ({ ...p, drawingPath: e.target.value }))}
+          />
+        </label>
+      </div>
+
+      <ActionMessage message={message} />
+      <div className="environment-actions">
+        <PrimaryButton type="button" onClick={handleSave}>
+          저장
+        </PrimaryButton>
+      </div>
+    </SettingsPanel>
+  );
+}
+
+export function DataSection({ onRefresh }) {
+  const storage = useMemo(() => estimateStorageUsage(), [onRefresh]);
+  const [message, setMessage] = useState("");
+
+  const runAction = (fn) => {
+    const result = fn();
+    setMessage(result.message);
+    onRefresh?.();
+  };
+
+  return (
+    <SettingsPanel title="데이터 관리" desc="샘플 데이터 · 정리 · DB 최적화를 수행합니다.">
+      <dl className="environment-info-list">
+        <div>
+          <dt>DB</dt>
+          <dd>{storage.db}</dd>
+        </div>
+        <div>
+          <dt>도면</dt>
+          <dd>{storage.drawings}</dd>
+        </div>
+        <div>
+          <dt>PDF</dt>
+          <dd>{storage.pdf}</dd>
+        </div>
+        <div>
+          <dt>백업</dt>
+          <dd>{storage.backupCount}개</dd>
+        </div>
+      </dl>
+
+      <div className="environment-backup-actions">
+        <SecondaryButton type="button" onClick={() => runAction(runSampleDataGeneration)}>
+          샘플 데이터 생성
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={() => runAction(runUnusedDataCleanup)}>
+          사용하지 않는 데이터 정리
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={() => runAction(runDatabaseOptimize)}>
+          DB 최적화
+        </SecondaryButton>
+      </div>
+      <ActionMessage message={message} />
+    </SettingsPanel>
+  );
+}
+
+export function StatusSection({ refreshKey }) {
+  const status = useMemo(() => getSystemStatusSummary(), [refreshKey]);
+  const storage = status.storage;
+
+  return (
+    <SettingsPanel title="시스템 상태" desc="프로그램 · DB · 백업 · 저장공간 · 오류 로그 상태를 확인합니다.">
+      <dl className="environment-info-list">
+        <div>
+          <dt>프로그램 버전</dt>
+          <dd>{status.version}</dd>
+        </div>
+        <div>
+          <dt>DB 상태</dt>
+          <dd>{status.dbStatus}</dd>
+        </div>
+        <div>
+          <dt>SQLite</dt>
+          <dd>{status.sqliteStatus}</dd>
+        </div>
+        <div>
+          <dt>최근 백업</dt>
+          <dd>{status.latestBackupLabel}</dd>
+        </div>
+        <div>
+          <dt>저장공간</dt>
+          <dd>{status.storagePercent}%</dd>
+        </div>
+        <div>
+          <dt>오류 로그</dt>
+          <dd>{status.errorCount}건</dd>
+        </div>
+        <div>
+          <dt>DB 용량</dt>
+          <dd>{storage.db}</dd>
+        </div>
+        <div>
+          <dt>도면 용량</dt>
+          <dd>{storage.drawings}</dd>
+        </div>
+        <div>
+          <dt>PDF 용량</dt>
+          <dd>{storage.pdf}</dd>
+        </div>
+        <div>
+          <dt>백업 보관</dt>
+          <dd>{storage.backupCount}개</dd>
+        </div>
+      </dl>
+    </SettingsPanel>
+  );
+}
+
+export function AboutSection({ refreshKey }) {
+  const update = useMemo(() => checkForUpdates(), [refreshKey]);
+  const [message, setMessage] = useState("");
+
+  return (
+    <SettingsPanel title="정보 (About)" desc="Project TITAN 프로그램 정보">
+      <dl className="environment-info-list">
+        <div>
+          <dt>Program</dt>
+          <dd>{APP_NAME}</dd>
+        </div>
+        <div>
+          <dt>Developed for</dt>
+          <dd>NDK</dd>
+        </div>
+        <div>
+          <dt>Version</dt>
+          <dd>{APP_VERSION}</dd>
+        </div>
+        <div>
+          <dt>Stack</dt>
+          <dd>React · Electron · SQLite</dd>
+        </div>
+      </dl>
+      <p className="environment-about-copy">Copyright © NDK. All rights reserved.</p>
+
+      <div className="environment-backup-actions">
+        <SecondaryButton
+          type="button"
+          onClick={() =>
+            setMessage(
+              update.available
+                ? `새 버전이 있습니다. ${update.latestVersion}`
+                : "현재 최신 버전을 사용 중입니다."
+            )
+          }
+        >
+          <RefreshCw size={14} />
+          업데이트 확인
+        </SecondaryButton>
+        {update.available ? (
+          <PrimaryButton type="button" onClick={() => setMessage("업데이트는 V1.1 Electron 연동 후 제공됩니다.")}>
+            업데이트
+          </PrimaryButton>
+        ) : null}
+      </div>
+      <ActionMessage message={message} />
+    </SettingsPanel>
+  );
+}
+
+export function renderEnvironmentSection(tabId, props) {
+  switch (tabId) {
+    case "company":
+      return <CompanySection {...props} />;
+    case "users":
+      return <UsersSection {...props} />;
+    case "permissions":
+      return <PermissionsSection {...props} />;
+    case "notifications":
+      return <NotificationsSection {...props} />;
+    case "backup":
+      return <BackupSection {...props} />;
+    case "logs":
+      return <LogsSection {...props} />;
+    case "program":
+      return <ProgramSection {...props} />;
+    case "data":
+      return <DataSection {...props} />;
+    case "status":
+      return <StatusSection {...props} />;
+    case "about":
+      return <AboutSection {...props} />;
+    default:
+      return <CompanySection {...props} />;
+  }
+}

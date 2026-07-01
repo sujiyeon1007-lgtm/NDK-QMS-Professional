@@ -1,64 +1,64 @@
 import { useMemo, useState } from "react";
-import { FileSpreadsheet, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { FileSpreadsheet, FileText, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
+import TitanSearchPanel, {
+  TitanAdvancedSearchField,
+  useSearchSuggestionHelpers,
+} from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
-import ProductionKpiPanel from "../../foundation/components/ProductionKpiPanel";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
 import {
   INSPECTION_LOG_STATUS_OPTIONS,
-  INSPECTION_STATUS_CARDS,
-  INSPECTION_STATUS_PANEL,
 } from "../../config/qualityDashboard";
 import { createEmptyInspectionLogSearch } from "../../config/listSearchStandard";
 import { buildInspectionLogListColumns } from "../../config/standardProductList";
-import { INSPECTION_LOG_REGISTER_LABEL } from "../../config/registerModalStandard";
+import { INSPECTION_LOG_REGISTER_LABEL, INSPECTION_REPORT_LABEL } from "../../config/registerModalStandard";
 import {
   getProcessChipVariant,
   getProductionProcessCodes,
 } from "../../config/productionProcessCodes";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { addInspectionLog, buildInspectionLogFromRecord, getInspectionLogs } from "../../utils/inspectionLogSession";
+import { getInspectionLogs } from "../../utils/inspectionLogSession";
+import { ensureInspectionReportForLog } from "../../utils/inspectionReportSession";
 import {
   mapInspectionLogToListRow,
   matchesInspectionLogSearch,
 } from "../../utils/inspectionLogStatus";
-import { buildInspectionLogKpiCounts } from "../../utils/qualityAnalytics";
 import { getProcessFlowSteps } from "../../utils/processFlow";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import InspectionLogRegisterModal from "./InspectionLogRegisterModal";
 import "../InOut/InboundManagement.css";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./QualityManagement.css";
 
-const EMPTY_SEARCH = createEmptyInspectionLogSearch();
-
 export default function InspectionLogManagement() {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [registerInitial, setRegisterInitial] = useState(null);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-inspection-log-advanced");
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyInspectionLogSearch, { storageKey: "inspection-log" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const { activeChipId, handleChipClick } = useWorkflowChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+  });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-
-  const inspectionStatusCards = useMemo(() => {
-    const counts = buildInspectionLogKpiCounts(getInspectionLogs());
-    return INSPECTION_STATUS_CARDS.map((card) => {
-      if (card.id === "passRate") {
-        return { ...card, value: counts.passRate, unit: "%" };
-      }
-      return { ...card, count: counts[card.id] ?? 0 };
-    });
-  }, [refreshKey]);
+  const searchRecords = useMemo(() => getInspectionLogs(), [refreshKey]);
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+  });
 
   const rows = useMemo(() => {
     return getInspectionLogs()
@@ -112,124 +112,88 @@ export default function InspectionLogManagement() {
 
   const processFlowSteps = activeRecord ? getProcessFlowSteps(activeRecord) : [];
 
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
+  const openRegister = (managementId = "") => {
+    const query = managementId ? `?managementId=${encodeURIComponent(managementId)}` : "";
+    navigate(`/quality/inspection/register${query}`);
   };
 
-  const openRegister = (initialData = null) => {
-    setRegisterInitial(initialData);
-    setRegisterOpen(true);
-  };
-
-  const handleRegister = (form) => {
-    addInspectionLog({
-      managementId: form.managementId.trim(),
-      company: form.company.trim(),
-      partName: form.partName.trim(),
-      partNo: form.partNo.trim(),
-      material: form.material.trim(),
-      lotNo: form.lotNo.trim(),
-      process: form.process.trim(),
-      qty: Number(form.qty) || 0,
-      unit: form.unit || "EA",
-      inspectionDate: form.inspectionDate,
-      assignee: form.assignee.trim(),
-      inspectionItems: form.inspectionItems,
-      inspectionItem: form.inspectionItems.join(", "),
-      judgment: form.judgment,
-      note: form.note.trim(),
-    });
-    setActiveId(null);
-    setRefreshKey((key) => key + 1);
-    setPage(1);
+  const handleOpenReport = () => {
+    if (!activeRow?.id) return;
+    ensureInspectionReportForLog(activeRow.id);
+    navigate(`/quality/inspection/${activeRow.id}/report`);
   };
 
   const handleDetailRegister = () => {
-    if (!activeRow) return;
-    const record = getSessionProductionRecords().find((item) => item.id === activeRow.managementId);
-    openRegister(
-      buildInspectionLogFromRecord(record, {
-        managementId: activeRow.managementId,
-        lotNo: activeRow.lotNo !== "—" ? activeRow.lotNo : "",
-        company: activeRow.company !== "—" ? activeRow.company : "",
-        partName: activeRow.partName !== "—" ? activeRow.partName : "",
-        partNo: activeRow.partNo !== "—" ? activeRow.partNo : "",
-        material: activeRow.material !== "—" ? activeRow.material : "",
-        process: activeRow.processName !== "—" ? activeRow.processName : "",
-        qty: activeRow.log.qty,
-        unit: activeRow.log.unit,
-        assignee: activeRow.assignee !== "—" ? activeRow.assignee : "",
-      }) ?? {
-        managementId: activeRow.managementId,
-        lotNo: activeRow.lotNo !== "—" ? activeRow.lotNo : "",
-        company: activeRow.company,
-        partName: activeRow.partName,
-        partNo: activeRow.partNo,
-        material: activeRow.material,
-        process: activeRow.processName !== "—" ? activeRow.processName : "",
-        qty: activeRow.log.qty,
-        unit: activeRow.log.unit,
-      }
-    );
+    if (!activeRow?.managementId || activeRow.managementId === "—") {
+      openRegister();
+      return;
+    }
+    openRegister(activeRow.managementId);
+  };
+
+  const handleRowDoubleClick = (row) => {
+    if (!row?.managementId || row.managementId === "—") {
+      openRegister();
+      return;
+    }
+    openRegister(row.managementId);
   };
 
   return (
     <div className="inbound-page quality-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">검사일지</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => openRegister()}>
-            <Plus size={14} aria-hidden="true" />
-            {INSPECTION_LOG_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={() => openRegister()}>
+          <Plus size={14} aria-hidden="true" />
+          {INSPECTION_LOG_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
 
-      <ProductionKpiPanel
-        title={INSPECTION_STATUS_PANEL.title}
-        titleIcon={INSPECTION_STATUS_PANEL.titleIcon}
-        cards={inspectionStatusCards}
-        metricMode
-      />
+      <TitanKpiBarSlot ariaLabel="검사 현황" className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          chipSetId="inspection"
+          records={chipRecords}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
+            <TitanAdvancedSearchField
+              label="관리번호"
+              fieldKey="managementId"
+              value={draft.managementId}
+              onChange={(value) => onDraftChange({ ...draft, managementId: value })}
+              suggestions={getSuggestions("managementId", draft.managementId)}
+              placeholder="관리번호"
+            />
+            <TitanAdvancedSearchField
+              label="LOT.NO"
+              fieldKey="lotNo"
+              value={draft.lotNo}
+              onChange={(value) => onDraftChange({ ...draft, lotNo: value })}
+              suggestions={getSuggestions("lotNo", draft.lotNo)}
+              placeholder="LOT.NO"
+            />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">공정</span>
               <select
                 className="titan-search-panel__select"
                 value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
+                onChange={(e) => onDraftChange({ ...draft, process: e.target.value })}
               >
                 <option value="">전체</option>
                 {processCodes.map((item) => (
@@ -245,30 +209,30 @@ export default function InspectionLogManagement() {
                 <Input
                   type="date"
                   value={draft.inspectionDateFrom}
-                  onChange={(e) => setDraft({ ...draft, inspectionDateFrom: e.target.value })}
+                  onChange={(e) => onDraftChange({ ...draft, inspectionDateFrom: e.target.value })}
                 />
                 <span>~</span>
                 <Input
                   type="date"
                   value={draft.inspectionDateTo}
-                  onChange={(e) => setDraft({ ...draft, inspectionDateTo: e.target.value })}
+                  onChange={(e) => onDraftChange({ ...draft, inspectionDateTo: e.target.value })}
                 />
               </div>
             </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">검사자</span>
-              <Input
-                value={draft.assignee}
-                onChange={(e) => setDraft({ ...draft, assignee: e.target.value })}
-                placeholder="검사자"
-              />
-            </label>
+            <TitanAdvancedSearchField
+              label="검사자"
+              fieldKey="assignee"
+              value={draft.assignee}
+              onChange={(value) => onDraftChange({ ...draft, assignee: value })}
+              suggestions={getSuggestions("assignee", draft.assignee)}
+              placeholder="검사자"
+            />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">현재상태</span>
               <select
                 className="titan-search-panel__select"
                 value={draft.status}
-                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+                onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
               >
                 <option value="">전체</option>
                 {INSPECTION_LOG_STATUS_OPTIONS.map((status) => (
@@ -294,6 +258,7 @@ export default function InspectionLogManagement() {
             onToggleAll={toggleAll}
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
+            onRowDoubleClick={handleRowDoubleClick}
             emptyMessage="등록된 검사일지가 없습니다."
           />
 
@@ -312,6 +277,9 @@ export default function InspectionLogManagement() {
             actionLabel={INSPECTION_LOG_REGISTER_LABEL}
             actionIcon={Plus}
             onAction={handleDetailRegister}
+            secondaryActionLabel={INSPECTION_REPORT_LABEL}
+            secondaryActionIcon={FileText}
+            onSecondaryAction={handleOpenReport}
             processFlowSteps={processFlowSteps}
             detailContent={
               <dl className="inbound-detail">
@@ -382,13 +350,6 @@ export default function InspectionLogManagement() {
           />
         ) : null}
       </div>
-
-      <InspectionLogRegisterModal
-        open={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        onRegister={handleRegister}
-        initialData={registerInitial}
-      />
     </div>
   );
 }

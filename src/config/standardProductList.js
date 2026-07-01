@@ -69,6 +69,108 @@ export function buildInspectionLogListColumns({ renderStatus, renderProcess }) {
   ];
 }
 
+/** 통계조회 — 업체별 회사 전체 요약 리스트 */
+export function buildInquiryDashboardListColumns() {
+  return [
+    titanColumn("statNo", { key: "no" }),
+    titanColumn("company"),
+    titanColumn("statProductionQty", { key: "productionQtyLabel", label: "생산량" }),
+    titanColumn("statInspectionCount", { key: "inspectionCount", label: "검사 건수" }),
+    titanColumn("statShipmentQty", { key: "shipmentQtyLabel", label: "출고량" }),
+    titanColumn("statPassRate", { key: "passRate", label: "합격률" }),
+    titanColumn("statDefectRate", { key: "defectRate", label: "불량률" }),
+  ];
+}
+
+/** 통계자료 — 업체 · 단위별 집계 (레거시) */
+export function buildStatisticsListColumns({ showUnitColumn = false, quantityUnitLabel = "" } = {}) {
+  const qtyLabel = quantityUnitLabel ? `(${quantityUnitLabel})` : "";
+  return [
+    titanColumn("statNo", { key: "no" }),
+    titanColumn("company"),
+    ...(showUnitColumn ? [titanColumn("statUnit", { key: "unitLabel" })] : []),
+    titanColumn("statProductionQty", {
+      key: "productionQtyLabel",
+      label: quantityUnitLabel ? `생산${qtyLabel}` : "생산량",
+    }),
+    titanColumn("statShipmentQty", {
+      key: "shipmentQtyLabel",
+      label: quantityUnitLabel ? `출고${qtyLabel}` : "출고량",
+    }),
+    titanColumn("statInspectionCount", { key: "inspectionCount" }),
+    titanColumn("statPassRate", { key: "passRate" }),
+    titanColumn("statDefectRate", { key: "defectRate" }),
+    titanColumn("statReprocessRate", { key: "reprocessRate" }),
+  ];
+}
+
+export function buildProductionStatisticsListColumns() {
+  return [
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("process", { key: "processName" }),
+    titanColumn("equipment"),
+    titanColumn("worker"),
+    titanColumn("statProductionQty", { key: "productionQtyLabel", label: "생산량" }),
+    titanColumn("statUnit", { key: "unitLabel", label: "단위" }),
+    titanColumn("workDate"),
+  ];
+}
+
+export function buildQualityStatisticsListColumns() {
+  return [
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("process", { key: "processName" }),
+    titanColumn("assignee", { label: "검사자" }),
+    titanColumn("inspectionDate", { label: "검사일" }),
+    titanColumn("status", { key: "judgment", label: "검사 결과" }),
+    titanColumn("note", { key: "reprocessLabel", label: "재처리 여부" }),
+  ];
+}
+
+export function buildShipmentStatisticsListColumns() {
+  return [
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("statShipmentQty", { key: "shipmentQtyLabel", label: "출고량" }),
+    titanColumn("statUnit", { key: "unitLabel", label: "단위" }),
+    titanColumn("shipDate", { label: "출고일" }),
+    titanColumn("manager", { label: "담당자" }),
+  ];
+}
+
+export function buildSalesStatisticsListColumns() {
+  return [
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("statShipmentQty", { key: "shipmentQtyLabel", label: "출고량" }),
+    titanColumn("statUnit", { key: "unitLabel", label: "단위" }),
+    titanColumn("shipDate", { label: "출고일" }),
+  ];
+}
+
+/** 부서별 업무 */
+export function buildDepartmentWorkListColumns({ renderStatus, renderPriority }) {
+  return [
+    titanColumn("taskTitle", { key: "title" }),
+    titanColumn("department"),
+    titanColumn("assignee"),
+    titanColumn("requestDate"),
+    titanColumn("dueDate"),
+    titanColumn("priority", { render: renderPriority }),
+    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+  ];
+}
+
 /** 성적서관리 — 파일 등록 현황 */
 export function buildCertificateListColumns({ renderStatus, renderProcess, renderExcel, renderPdf }) {
   return [

@@ -1,22 +1,32 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
+import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import {
+  DateRangeField,
+  LotNoField,
+  ManagementIdField,
+  ManagerField,
+  NoteField,
+  ProcessField,
+  StatusSelectField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
+import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
+import { INBOUND_KPI_CONFIG } from "../../config/inboundDashboard";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import { createEmptyInboundSearch, matchesBasicSearch } from "../../config/listSearchStandard";
 import { buildStandardProductListColumns } from "../../config/standardProductList";
-import {
-  getProcessChipVariant,
-  getProductionProcessCodes,
-  getProductionProcessName,
-} from "../../config/productionProcessCodes";
-import { useAdvancedSearchOpen } from "../../foundation/hooks/useAdvancedSearchOpen";
+import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
+import { getHeatTreatmentProcessTone } from "../../config/heatTreatmentProcessColors";
+import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { addSessionProductionRecord, getSessionProductionRecords } from "../../utils/productionRecords";
@@ -26,19 +36,37 @@ import {
 } from "../../config/registerModalStandard";
 import { parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
+import { isIncomingRegistered } from "../../utils/productionRecords";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
+import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
 import {
   INBOUND_STATUS_LABELS,
   filterInboundManagementRecords,
   getInboundManagementStatus,
+  isInboundShipOutComplete,
 } from "../../utils/inboundManagementStatus";
-import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
+import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
+import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./InboundManagement.css";
 
-const EMPTY_SEARCH = createEmptyInboundSearch();
 const INBOUND_STATUS_OPTIONS = Object.values(INBOUND_STATUS_LABELS);
+
+function mapInboundListRow(record) {
+  if (isInboundShipOutComplete(record)) {
+    return mapStandardProductListRow(record, { label: "출고완료", variant: "complete" });
+  }
+  return mapStandardProductListRow(record, getInboundManagementStatus(record));
+}
+
+function resolveInboundListRecords(search) {
+  const all = getSessionProductionRecords();
+  if (search.__chipProductShipDone) {
+    return all.filter((record) => isIncomingRegistered(record) && isInboundShipOutComplete(record));
+  }
+  return filterInboundManagementRecords(all);
+}
 
 function matchesInboundSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
@@ -60,6 +88,12 @@ function matchesInboundSearch(record, row, search) {
   const manager = record.registrar ?? "관리자";
   if (search.manager && !manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
+  if (search.__chipProductShipWait && row.statusLabel !== INBOUND_STATUS_LABELS.SHIP_WAIT) {
+    return false;
+  }
+  if (search.__chipProductShipDone && row.statusLabel !== "출고완료") {
+    return false;
+  }
   if (search.note && !String(record.note ?? "").includes(search.note)) return false;
   return true;
 }
@@ -67,20 +101,41 @@ function matchesInboundSearch(record, row, search) {
 export default function InboundManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [search, setSearch] = useState(EMPTY_SEARCH);
-  const [draft, setDraft] = useState(EMPTY_SEARCH);
-  const [advancedOpen, toggleAdvanced] = useAdvancedSearchOpen("titan-inbound-advanced");
+  const [registerInitialForm, setRegisterInitialForm] = useState(null);
+  const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
+    useTitanListSearch(createEmptyInboundSearch, { storageKey: "inbound" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [inOutPrintOpen, setInOutPrintOpen] = useState(false);
+  const chipRecords = useMemo(
+    () => filterInboundManagementRecords(getSessionProductionRecords()),
+    [refreshKey]
+  );
+  const { activeChipId, handleChipClick } = useStatusChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+  });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
+  const searchRecords = useMemo(
+    () => filterInboundManagementRecords(getSessionProductionRecords()),
+    [refreshKey]
+  );
+  const masterProducts = useMemo(() => getMasterDataByCategory("products"), [refreshKey]);
+  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
+    process: processCodes.map((item) => item.name),
+    company: companies.map((item) => item.name),
+    partNo: masterProducts.map((item) => item.partNo).filter(Boolean),
+    partName: masterProducts.map((item) => item.name).filter(Boolean),
+    material: getMasterDataByCategory("materials").map((item) => item.name),
+  });
 
   const rows = useMemo(() => {
-    const records = filterInboundManagementRecords(getSessionProductionRecords());
+    const records = resolveInboundListRecords(search);
     return records
-      .map((record) => mapStandardProductListRow(record, getInboundManagementStatus(record)))
+      .map((record) => mapInboundListRow(record))
       .filter((row) => matchesInboundSearch(row.record, row, search))
       .sort((a, b) => b.managementId.localeCompare(a.managementId));
   }, [search, refreshKey]);
@@ -109,14 +164,27 @@ export default function InboundManagement() {
     return [];
   }, [selectedRows, activeRow]);
 
+  const sessionRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+
   const inOutPrintProps = useMemo(
     () =>
       printTargetRows.length > 0
         ? buildInOutListPrintProps(printTargetRows, {
             listNoPrefix: "HTL",
             workDate: getJournalReferenceDate(),
+            records: sessionRecords,
           })
         : null,
+    [printTargetRows, sessionRecords]
+  );
+
+  const handleInOutPrinted = useCallback(
+    (printProps) => {
+      if (!printProps?.listNo || printTargetRows.length === 0) return;
+      const managementIds = printTargetRows.map((row) => row.managementId ?? row.id);
+      applyHtlWorkListPrinted(managementIds, printProps.listNo);
+      setRefreshKey((key) => key + 1);
+    },
     [printTargetRows]
   );
 
@@ -145,7 +213,9 @@ export default function InboundManagement() {
         ),
         renderProcess: (row) =>
           row.processName && row.processName !== "—" ? (
-            <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
+            <StatusChip kind="process" variant={getHeatTreatmentProcessTone(row.processName)}>
+              {row.processName}
+            </StatusChip>
           ) : (
             "—"
           ),
@@ -159,10 +229,30 @@ export default function InboundManagement() {
     ? getProcessFlowSteps(activeRow.record, activeRow.statusLabel)
     : [];
 
-  const handleSearch = () => setSearch({ ...draft });
-  const handleReset = () => {
-    setDraft(EMPTY_SEARCH);
-    setSearch(EMPTY_SEARCH);
+  const openRegisterModal = () => {
+    setRegisterInitialForm(null);
+    setRegisterOpen(true);
+  };
+
+  const handleRowDoubleClick = (row) => {
+    const record = row.record;
+    if (!record) return;
+    setRegisterInitialForm({
+      company: record.company || "",
+      partName: record.partName || "",
+      partNo: record.partNo || "",
+      drawingNo: record.drawingNo || "",
+      material: record.material || "",
+      spec: record.spec || "",
+      unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
+      heatTreatment: record.heatTreatment || "",
+      qty: record.qty != null ? String(record.qty) : "",
+      unit: record.unit || "EA",
+      dueDate: record.dueDate || "",
+      urgent: record.urgent ?? false,
+      note: record.note || "",
+    });
+    setRegisterOpen(true);
   };
 
   const handleInboundRegister = (form, managementId) => {
@@ -176,6 +266,8 @@ export default function InboundManagement() {
       partNo: form.partNo,
       drawingNo: form.drawingNo,
       material: form.material,
+      spec: form.spec || "",
+      unitPrice: form.unitPrice ? Number(String(form.unitPrice).replace(/,/g, "")) || null : null,
       qty: Number(parsed.qty) || 0,
       unit: parsed.unit,
       incomingDate: today,
@@ -187,7 +279,8 @@ export default function InboundManagement() {
       lotNo: "",
       equipment: "",
       workDate: "",
-      completionStatus: "작업대기",
+      completionStatus: "",
+      workflowStatus: "",
       registered: false,
       qrGenerated: false,
       workSheetGenerated: false,
@@ -203,120 +296,68 @@ export default function InboundManagement() {
 
   return (
     <div className="inbound-page">
-      <div className="inbound-page__toolbar">
-        <h2 className="inbound-page__title">입고관리</h2>
-        <div className="inbound-page__actions">
-          <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
-            <Plus size={14} aria-hidden="true" />
-            {INBOUND_REGISTER_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={printTargetRows.length === 0}>
-            <Printer size={14} aria-hidden="true" />
-            {INBOUND_PRINT_LIST_LABEL}
-          </SecondaryButton>
-          <SecondaryButton type="button">
-            <FileSpreadsheet size={14} aria-hidden="true" />
-            엑셀 출력
-          </SecondaryButton>
-        </div>
-      </div>
+      <SectionPageActions>
+        <PrimaryButton type="button" onClick={openRegisterModal}>
+          <Plus size={14} aria-hidden="true" />
+          {INBOUND_REGISTER_LABEL}
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={printTargetRows.length === 0}>
+          <Printer size={14} aria-hidden="true" />
+          {INBOUND_PRINT_LIST_LABEL}
+        </SecondaryButton>
+        <SecondaryButton type="button">
+          <FileSpreadsheet size={14} aria-hidden="true" />
+          엑셀 출력
+        </SecondaryButton>
+      </SectionPageActions>
+
+      <TitanKpiBarSlot ariaLabel={INBOUND_KPI_CONFIG.ariaLabel} className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          chipSetId={INBOUND_KPI_CONFIG.chipSetId}
+          records={chipRecords}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
+          ariaLabel={INBOUND_KPI_CONFIG.ariaLabel}
+        />
+      </TitanKpiBarSlot>
 
       <TitanSearchPanel
         draft={draft}
-        onDraftChange={setDraft}
-        onSearch={handleSearch}
-        onReset={handleReset}
+        onDraftChange={onDraftChange}
+        onSearch={onSearch}
+        onReset={onReset}
         advancedOpen={advancedOpen}
-        onAdvancedToggle={toggleAdvanced}
+        onAdvancedToggle={onAdvancedToggle}
         companies={companies}
+        records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">입고일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.incomingDateFrom}
-                  onChange={(e) => setDraft({ ...draft, incomingDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.incomingDateTo}
-                  onChange={(e) => setDraft({ ...draft, incomingDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId}
-                onChange={(e) => setDraft({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo}
-                onChange={(e) => setDraft({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">공정</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.process}
-                onChange={(e) => setDraft({ ...draft, process: e.target.value })}
-              >
-                <option value="">전체</option>
-                {processCodes.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <DateRangeField
+              label="입고일"
+              fromKey="incomingDateFrom"
+              toKey="incomingDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">수량</span>
               <Input
                 value={draft.qty}
-                onChange={(e) => setDraft({ ...draft, qty: e.target.value })}
+                onChange={(e) => onDraftChange({ ...draft, qty: e.target.value })}
                 placeholder="수량"
               />
             </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">담당자</span>
-              <Input
-                value={draft.manager}
-                onChange={(e) => setDraft({ ...draft, manager: e.target.value })}
-                placeholder="담당자"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.status}
-                onChange={(e) => setDraft({ ...draft, status: e.target.value })}
-              >
-                <option value="">전체</option>
-                {INBOUND_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">비고</span>
-              <Input
-                value={draft.note}
-                onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-                placeholder="비고"
-              />
-            </label>
+            <ManagerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <StatusSelectField
+              label="상태"
+              value={draft.status}
+              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
+              options={INBOUND_STATUS_OPTIONS}
+            />
+            <NoteField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
           </div>
         }
       />
@@ -350,6 +391,7 @@ export default function InboundManagement() {
             onToggleAll={toggleAll}
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
+            onRowDoubleClick={handleRowDoubleClick}
             emptyMessage="진행 중인 입고 제품이 없습니다. (출고완료 제품은 이력조회에서 확인)"
           />
 
@@ -399,7 +441,7 @@ export default function InboundManagement() {
                   <dt>공정</dt>
                   <dd>
                     {activeRow.processName && activeRow.processName !== "—" ? (
-                      <StatusChip variant={getProcessChipVariant(activeRow.processName)}>
+                      <StatusChip kind="process" variant={getHeatTreatmentProcessTone(activeRow.processName)}>
                         {activeRow.processName}
                       </StatusChip>
                     ) : (
@@ -429,7 +471,11 @@ export default function InboundManagement() {
 
       {registerOpen ? (
         <IncomingRegistrationModal
-          onClose={() => setRegisterOpen(false)}
+          initialForm={registerInitialForm}
+          onClose={() => {
+            setRegisterOpen(false);
+            setRegisterInitialForm(null);
+          }}
           onRegister={handleInboundRegister}
         />
       ) : null}
@@ -439,6 +485,7 @@ export default function InboundManagement() {
         onClose={() => setInOutPrintOpen(false)}
         documentType={TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST}
         printProps={inOutPrintProps}
+        onAfterPrint={handleInOutPrinted}
       />
     </div>
   );

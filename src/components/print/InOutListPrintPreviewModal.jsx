@@ -14,19 +14,24 @@ import OutboundListPrint from "./OutboundListPrint";
 import TitanPrintPreviewModal from "./TitanPrintPreviewModal";
 
 /** 입고·출고 리스트 공통 Preview — 동일 Modal·동일 출력 엔진, 양식만 구분 */
-function InOutListPrintPreviewModal({ open, onClose, documentType, printProps }) {
+function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, onAfterPrint }) {
   const [busy, setBusy] = useState(false);
   const meta = getPrintDocumentMeta(documentType);
   const isInbound = documentType === TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST;
+
+  const notifyAfterPrint = useCallback(() => {
+    onAfterPrint?.(printProps);
+  }, [onAfterPrint, printProps]);
 
   const handlePrint = useCallback(async (documentEl) => {
     setBusy(true);
     try {
       await printTitanDocument(documentEl);
+      notifyAfterPrint();
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [notifyAfterPrint]);
 
   const handlePdf = useCallback(
     async (documentEl) => {
@@ -34,11 +39,12 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps })
       try {
         const prefix = isInbound ? "inbound-list" : "outbound-list";
         await exportTitanPdf(documentEl, `${prefix}-${printProps?.listNo || "document"}.pdf`);
+        notifyAfterPrint();
       } finally {
         setBusy(false);
       }
     },
-    [isInbound, printProps?.listNo]
+    [isInbound, notifyAfterPrint, printProps?.listNo]
   );
 
   const handleExcel = useCallback(async () => {
@@ -51,10 +57,11 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps })
       } else {
         await exportOutboundListXlsx({ ...printProps, filename });
       }
+      notifyAfterPrint();
     } finally {
       setBusy(false);
     }
-  }, [isInbound, printProps]);
+  }, [isInbound, notifyAfterPrint, printProps]);
 
   if (!printProps) return null;
 

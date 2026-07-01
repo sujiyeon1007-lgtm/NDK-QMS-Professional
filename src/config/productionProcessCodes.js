@@ -18,13 +18,8 @@ export const PRODUCTION_PROCESS_CODE_FALLBACK = [
  */
 export function getProductionProcessCodes() {
   const masterItems = getMasterDataByCategory(PRODUCTION_PROCESS_CODE_CATEGORY);
-  const preferred = PRODUCTION_PROCESS_CODE_FALLBACK.map((item) => item.name);
-  const fromMaster = masterItems.filter((item) => preferred.includes(item.name));
-
-  if (fromMaster.length >= PRODUCTION_PROCESS_CODE_FALLBACK.length) {
-    return fromMaster.filter((item) => item.active !== false);
-  }
-
+  const active = masterItems.filter((item) => item.active !== false);
+  if (active.length > 0) return active;
   return PRODUCTION_PROCESS_CODE_FALLBACK;
 }
 
@@ -32,8 +27,7 @@ export function getProductionProcessName(record) {
   return record?.heatTreatment?.trim() || record?.process?.trim() || "—";
 }
 
-export function getProcessChipVariant(processName) {
-  if (processName === "연질화") return "wait";
-  if (processName === "이온질화") return "progress";
-  return "hold";
-}
+export {
+  getHeatTreatmentProcessTone,
+  getHeatTreatmentProcessTone as getProcessChipVariant,
+} from "./heatTreatmentProcessColors";

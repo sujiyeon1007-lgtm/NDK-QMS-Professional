@@ -248,6 +248,18 @@
   color: #3f7a51;
 }
 
+.status-badge.사용 {
+  background: #eef7f1;
+  border-color: #dceee2;
+  color: #3f7a51;
+}
+
+.status-badge.미사용 {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
 /* V2.0 workflow badges (pastel — project-wide) */
 .status-badge.LOT미지정,
 .status-badge.미등록,

@@ -1,0 +1,515 @@
+.master-data-page .production-kpi-panel {
+  margin-bottom: 0;
+}
+
+.master-data-page--products .inbound-page__workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 34%);
+  min-height: 520px;
+}
+
+.product-detail-panel .titan-collapse__body {
+  max-height: calc(100vh - 280px);
+  overflow: auto;
+}
+
+.product-detail-panel .titan-detail-panel__action {
+  flex-shrink: 0;
+}
+
+.master-register-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.master-register-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.master-register-modal__field.span-2 {
+  grid-column: span 2;
+}
+
+.master-register-modal__field > span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.master-register-modal__field input,
+.master-register-modal__field select,
+.master-register-modal__field textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.master-register-modal__field textarea {
+  min-height: 72px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.master-form-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.master-form-toggle__knob {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.2s ease;
+}
+
+.master-form-toggle__knob::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.master-form-toggle.on .master-form-toggle__knob {
+  background: #2563eb;
+}
+
+.master-form-toggle.on .master-form-toggle__knob::after {
+  transform: translateX(20px);
+}
+
+.master-form-toggle em {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.master-register-modal__error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.product-master-import-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.product-master-import-modal__steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-master-import-modal__step {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.product-master-import-modal__step.is-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.product-master-import-modal__step.is-done {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.product-master-import-modal__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-master-import-modal__desc,
+.product-master-import-modal__hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-master-import-modal__columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-master-import-modal__columns li {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.product-master-import-modal__upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px dashed #93c5fd;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.product-master-import-modal__upload input {
+  display: none;
+}
+
+.product-master-import-modal__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.product-master-import-modal__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.product-master-import-modal__table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.product-master-import-modal__policy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-master-import-modal__policy label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.product-master-import-modal__block h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.product-master-import-modal__block ul,
+.product-master-import-modal__changes,
+.product-master-import-modal__errors {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.product-master-import-modal__changes li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.product-master-import-modal__result dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.product-master-import-modal__result dl div {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+}
+
+.product-master-import-modal__result dt {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.product-master-import-modal__result dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+/* Generic Master Excel Import (5 types) */
+.master-excel-import-modal__body,
+.product-master-import-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.master-excel-import-modal__steps,
+.product-master-import-modal__steps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-master-import-modal__steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.master-excel-import-modal__step,
+.product-master-import-modal__step {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.master-excel-import-modal__step.is-active,
+.product-master-import-modal__step.is-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.master-excel-import-modal__step.is-done,
+.product-master-import-modal__step.is-done {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.master-excel-import-modal__panel,
+.product-master-import-modal__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.master-excel-import-modal__desc,
+.master-excel-import-modal__hint,
+.product-master-import-modal__desc,
+.product-master-import-modal__hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.master-excel-import-modal__columns,
+.product-master-import-modal__columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.master-excel-import-modal__columns li,
+.product-master-import-modal__columns li {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.master-excel-import-modal__upload,
+.product-master-import-modal__upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px dashed #93c5fd;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.master-excel-import-modal__upload input,
+.product-master-import-modal__upload input {
+  display: none;
+}
+
+.master-excel-import-modal__error,
+.product-master-import-modal__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.master-excel-import-modal__summary,
+.product-master-import-modal__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.master-excel-import-modal__table-wrap,
+.product-master-import-modal__table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.master-excel-import-modal__policy,
+.product-master-import-modal__policy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.master-excel-import-modal__policy label,
+.product-master-import-modal__policy label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.master-excel-import-modal__block h3,
+.product-master-import-modal__block h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.master-excel-import-modal__block ul,
+.master-excel-import-modal__changes,
+.master-excel-import-modal__errors,
+.product-master-import-modal__block ul,
+.product-master-import-modal__changes,
+.product-master-import-modal__errors {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.master-excel-import-modal__changes li,
+.product-master-import-modal__changes li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.master-excel-import-modal__result dl,
+.product-master-import-modal__result dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.master-excel-import-modal__result dl div,
+.product-master-import-modal__result dl div {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+}
+
+.master-excel-import-modal__result dt,
+.product-master-import-modal__result dt {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.master-excel-import-modal__result dd,
+.product-master-import-modal__result dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.master-excel-import-modal__progress-label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.master-excel-import-modal__progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.master-excel-import-modal__progress-bar span {
+  display: block;
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.15s ease;
+}

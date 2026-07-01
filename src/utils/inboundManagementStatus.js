@@ -11,6 +11,7 @@ import { getStockQty } from "./inventory";
 import { isIncomingRegistered } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { getProcessFlowStepsByStatus } from "./processFlow";
+import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 /** @typedef {'incoming' | 'prod-wait' | 'production' | 'inspect' | 'certificate' | 'ship-wait'} InboundStatusVariant */
 
@@ -41,6 +42,28 @@ export function isInboundShipOutComplete(record) {
 export function getInboundManagementStatus(record) {
   if (!isIncomingRegistered(record)) return null;
   if (isInboundShipOutComplete(record)) return null;
+
+  const workflowStatus = getWorkflowStatus(record);
+
+  if (workflowStatus === WORKFLOW_STATUS.CERT_DONE && getStockQty(record) > 0) {
+    return { label: INBOUND_STATUS_LABELS.SHIP_WAIT, variant: "ship-wait" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.INSPECT_DONE) {
+    return { label: "검사완료", variant: "inspect" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) {
+    return { label: "생산완료", variant: "production" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) {
+    return { label: "생산중", variant: "production" };
+  }
+
+  if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
+    return { label: "작업대기", variant: "prod-wait" };
+  }
 
   const hasLot = Boolean(record.registered && record.lotNo?.trim());
   const hasInspect = hasInspectionLogForManagementId(record.id);

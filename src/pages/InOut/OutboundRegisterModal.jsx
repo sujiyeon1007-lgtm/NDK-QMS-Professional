@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { OUTBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveWorkers } from "../../utils/masterData";
 import {
   getSessionProductionRecords,
+  processShipment,
   updateSessionProductionRecord,
 } from "../../utils/productionRecords";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
+import { onOutboundComplete } from "../../utils/titanWorkflowStatus";
+import { getStockQty } from "../../utils/inventory";
 
 const EMPTY_FORM = {
   managementId: "",
@@ -17,20 +20,21 @@ const EMPTY_FORM = {
   note: "",
 };
 
-export default function OutboundRegisterModal({ open, onClose, onRegister }) {
+export default function OutboundRegisterModal({ open, onClose, onRegister, initialManagementId = "" }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const records = getSessionProductionRecords().filter((r) => r.incomingRegistered);
-  const workers = getMasterDataByCategory("workers");
+  const workers = getActiveWorkers();
 
   useEffect(() => {
     if (open) {
       setForm({
         ...EMPTY_FORM,
+        managementId: initialManagementId || "",
         shipDate: getJournalReferenceDate(),
         manager: workers[0]?.name ?? "관리자",
       });
     }
-  }, [open, workers]);
+  }, [open, workers, initialManagementId]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -108,12 +112,32 @@ export default function OutboundRegisterModal({ open, onClose, onRegister }) {
 }
 
 export function applyOutboundRegister(form) {
-  if (!form.managementId.trim()) return null;
-  updateSessionProductionRecord(form.managementId.trim(), {
+  const managementId = form.managementId.trim();
+  if (!managementId) return null;
+
+  const shipQty = Number(form.shipQty);
+  const result = processShipment(managementId, shipQty, {
     outboundRegistered: true,
     outboundDate: form.shipDate || getJournalReferenceDate(),
     outboundManager: form.manager || "관리자",
     note: form.note?.trim() || undefined,
   });
-  return form.managementId.trim();
+
+  if (!result.ok) {
+    window.alert(result.message || "출고 등록에 실패했습니다.");
+    return null;
+  }
+
+  const record = getSessionProductionRecords().find((item) => item.id === managementId);
+  if (record && getStockQty(record) <= 0) {
+    onOutboundComplete(managementId);
+  } else {
+    updateSessionProductionRecord(managementId, {
+      outboundRegistered: true,
+      outboundDate: form.shipDate || getJournalReferenceDate(),
+      outboundManager: form.manager || "관리자",
+    });
+  }
+
+  return managementId;
 }

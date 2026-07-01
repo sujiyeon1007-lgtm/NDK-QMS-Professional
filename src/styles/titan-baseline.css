@@ -19,17 +19,17 @@
   --titan-table-header-bg: #f1f5f9;
   --titan-border: #e2e8f0;
 
-  --titan-layout-header-h: 60px;
-  --titan-layout-footer-h: 34px;
-  --titan-sidebar-width: 196px;
-  --titan-main-padding-y: 8px;
-  --titan-main-padding-x: 12px;
-  --titan-page-gap: 8px;
+  --titan-layout-header-h: 52px;
+  --titan-layout-footer-h: 28px;
+  --titan-sidebar-width: 168px;
+  --titan-main-padding-y: 12px;
+  --titan-main-padding-x: 16px;
+  --titan-page-gap: 16px;
   --titan-page-top-bar-min-h: 0;
   --titan-page-top-bar-padding: 8px 14px;
-  --titan-page-top-bar-radius: 14px;
-  --titan-panel-padding-y: 12px;
-  --titan-panel-padding-x: 14px;
+  --titan-page-top-bar-radius: 12px;
+  --titan-panel-padding-y: 20px;
+  --titan-panel-padding-x: 20px;
   --titan-panel-radius: 12px;
   --titan-kpi-height: 118px;
   --titan-kpi-summary-height: 108px;
@@ -44,17 +44,23 @@
   --titan-search-field-h: 34px;
   --titan-search-btn-h: 34px;
 
+  /* 12 Column Grid — Project TITAN V1.0 공통 UI */
+  --titan-grid-columns: 12;
+  --titan-grid-gap: 16px;
+  --titan-card-padding: 20px;
+  --titan-card-radius: 12px;
+
   /* Sidebar — official layout tokens (adjust here when menus grow) */
-  --titan-sidebar-brand-max-h: 64px;
+  --titan-sidebar-brand-max-h: 52px;
   --titan-sidebar-logo-max-h: 26px;
-  --titan-sidebar-nav-padding-y: 7px;
+  --titan-sidebar-nav-padding-y: 5px;
   --titan-sidebar-nav-padding-x: 6px;
-  --titan-sidebar-group-label-h: 25px;
-  --titan-sidebar-link-min-h: 32px;
+  --titan-sidebar-group-label-h: 22px;
+  --titan-sidebar-link-min-h: 30px;
   --titan-sidebar-link-gap: 8px;
-  --titan-sidebar-item-gap: 3px;
-  --titan-sidebar-group-gap: 6px;
-  --titan-sidebar-group-divider-pad: 7px;
+  --titan-sidebar-item-gap: 2px;
+  --titan-sidebar-group-gap: 4px;
+  --titan-sidebar-group-divider-pad: 5px;
 }
 
 /* ── Common page shell (all work screens) ── */

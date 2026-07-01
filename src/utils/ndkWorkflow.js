@@ -11,6 +11,7 @@
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { formatQtyWithUnit } from "./productUnits";
 import { getStockQty, isIncomingRegistered } from "./productionRecords";
+import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 /**
  * QR 코드에 저장할 LOT 값 (LOT 번호만 · 모바일 조회 키)
@@ -96,6 +97,14 @@ export const SHIPMENT_STATUS = {
  * 진행 상태 요약 (정보 표시용 · 순차 강제 없음)
  */
 export function getRecordWorkflowState(record) {
+  const workflowStatus = getWorkflowStatus(record);
+  if (workflowStatus === WORKFLOW_STATUS.SHIP_DONE) return "출고완료";
+  if (workflowStatus === WORKFLOW_STATUS.CERT_DONE) return "성적서완료";
+  if (workflowStatus === WORKFLOW_STATUS.INSPECT_DONE) return "검사완료";
+  if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) return "생산완료";
+  if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) return "생산중";
+  if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) return "작업대기";
+
   if (!isIncomingRegistered(record)) return "입고대기";
   if (record?.shipmentStatus === SHIPMENT_STATUS.DONE && getStockQty(record) <= 0) {
     return "출고완료";
