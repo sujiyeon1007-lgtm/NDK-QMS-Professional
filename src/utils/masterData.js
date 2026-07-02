@@ -4,8 +4,9 @@
  */
 
 import { canDeleteProduct } from "./productUsage";
+import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
 
-const STORAGE_KEY = "project-titan-master-data-v1";
+const STORAGE_KEY = "project-titan-master-data-v2";
 
 export const MASTER_CATEGORIES = [
   { key: "companies", label: "업체", desc: "입고·생산·성적서 공통 업체" },
@@ -58,7 +59,7 @@ export const MASTER_DATA = {
     },
     {
       id: "c2",
-      code: "SE",
+      code: "SB",
       name: "삼성부품",
       bizNo: "234-56-78901",
       manager: "이담당",
@@ -116,6 +117,18 @@ export const MASTER_DATA = {
       note: "긴급 대응",
       active: true,
     },
+    {
+      id: "c7",
+      code: "SE",
+      name: "서암기계공업",
+      bizNo: "",
+      manager: "",
+      phone: "",
+      email: "",
+      address: "",
+      note: "Demo · Excel Import",
+      active: true,
+    },
   ],
   products: [
     {
@@ -160,6 +173,7 @@ export const MASTER_DATA = {
       note: "",
       active: true,
     },
+    ...SEOAM_DEMO_PRODUCTS,
   ],
   workers: [
     { id: "w1", code: "W001", name: "김작업", department: "생산부", note: "", active: true },
@@ -262,6 +276,11 @@ export const MASTER_DATA = {
     { id: "m5", code: "SACM645", name: "SACM645", spec: "니켈합금강", note: "", active: true },
     { id: "m6", code: "SUJ2", name: "SUJ2", spec: "베어링강", note: "", active: true },
     { id: "m7", code: "SUS304", name: "SUS304", spec: "스테인리스", note: "", active: true },
+    { id: "m8", code: "SNCM439", name: "SNCM439", spec: "니켈합금강", note: "서암 Demo", active: true },
+    { id: "m9", code: "SCM440H", name: "SCM440H", spec: "합금강", note: "서암 Demo", active: true },
+    { id: "m10", code: "SM45C", name: "SM45C", spec: "탄소강", note: "서암 Demo", active: true },
+    { id: "m11", code: "34CrAlMo7", name: "34CrAlMo7", spec: "합금강", note: "서암 Demo", active: true },
+    { id: "m12", code: "SACM1", name: "SACM1", spec: "니켈합금강", note: "서암 Demo", active: true },
   ],
   equipment: [
     {
