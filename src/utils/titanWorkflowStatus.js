@@ -166,21 +166,30 @@ function patchWorkflowStatus(record, nextStatus, extra = {}) {
  * Work request list printed → 작업대기 + assign HTL
  * @param {string[]} managementIds
  * @param {string} htlNo
+ * @param {{ isReprint?: boolean }} [options]
  */
-export function applyHtlWorkListPrinted(managementIds = [], htlNo = "") {
+export function applyHtlWorkListPrinted(managementIds = [], htlNo = "", options = {}) {
   const trimmedHtl = htlNo?.trim();
   if (!trimmedHtl || !managementIds.length) return;
 
   const now = new Date().toISOString();
+  const isReprint = Boolean(options.isReprint);
+  const historyEntry = { at: now, docNo: trimmedHtl, reprint: isReprint };
+
   managementIds.forEach((id) => {
     const record = getSessionProductionRecords().find((item) => item.id === id);
     if (!record) return;
+
+    const history = Array.isArray(record.htlPrintHistory) ? [...record.htlPrintHistory] : [];
+    history.push(historyEntry);
 
     updateSessionProductionRecord(id, {
       ...patchWorkflowStatus(record, WORKFLOW_STATUS.WORK_WAIT, {
         htlNo: trimmedHtl,
         workSheetGenerated: true,
         htlPrintedAt: now,
+        htlPrintStatus: "출력완료",
+        htlPrintHistory: history,
       }),
     });
   });

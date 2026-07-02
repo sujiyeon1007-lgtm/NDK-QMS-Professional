@@ -186,6 +186,11 @@
   text-align: center;
 }
 
+.titan-print-th-right {
+  text-align: right;
+  padding-right: 9px;
+}
+
 .titan-print-table tbody td {
   font-size: 14px;
   font-weight: 700;
@@ -232,12 +237,27 @@
   font-weight: 800;
 }
 
-.titan-print-col-lot {
+.titan-print-col-lot,
+.titan-print-col-handwriting {
   min-width: 52mm;
   min-height: 50px;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.03em;
+}
+
+.titan-print-col-checkbox {
+  min-width: 10mm;
+  min-height: 42px;
+}
+
+.titan-print-checkbox {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #334155;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 .titan-print-td-left {
@@ -247,6 +267,68 @@
 
 .titan-print-td-center {
   text-align: center;
+}
+
+.titan-print-td-right {
+  text-align: right;
+  padding-right: 9px;
+}
+
+/* DOC-01 — wrap columns (no ellipsis) */
+.titan-print-col-wrap,
+.htl-work-list-print .titan-print-col-partname,
+.htl-work-list-print .titan-print-col-partno {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+  vertical-align: middle;
+  line-height: 1.38;
+}
+
+.htl-work-list-print .titan-print-col-partno {
+  word-break: break-all;
+  overflow-wrap: normal;
+}
+
+.titan-print-col-stock {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+/* DOC-01 — Official Footer */
+.titan-print-official-footer {
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: 1px solid #cbd5e1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.titan-print-official-footer__notes p {
+  margin: 0 0 2px;
+}
+
+.titan-print-official-footer__brand {
+  margin: 0;
+  text-align: right;
+  font-size: 10px;
+  font-weight: 900;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.htl-work-list-print.titan-print-landscape .titan-print-page {
+  width: 297mm;
+  min-height: 210mm;
 }
 
 .titan-print-memo {

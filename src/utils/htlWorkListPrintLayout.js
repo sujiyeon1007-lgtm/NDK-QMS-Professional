@@ -3,25 +3,29 @@ import {
   computePrintColumnWidths,
   paginateRowsByLayout,
   PRINT_ORIENTATION,
-  resolvePrintOrientation,
 } from "./titanPrintLayout";
 
-/** 저장된 비고만 출력 — 자동 생성·임시값·대시(-) 금지 */
-function formatNote(row) {
-  const note = row.note?.trim();
-  if (!note || note === "-") return "";
-  return note;
-}
+/** DOC-01 PM Official — 열처리 작업 요청 리스트 (A4 Landscape) */
+export const HTL_PRINT_TITLE = "열처리 작업 요청 리스트";
 
-export const HTL_PRINT_TITLE = "열처리 작업 계획 리스트";
-
-/** Project TITAN HTL 출력 컬럼 — 권장 비율 기준 */
-export function buildHtlPrintColumns(workDate = "") {
+/** Project TITAN HTL 출력 컬럼 (DOC-01 PM Final) */
+export function buildHtlPrintColumns() {
   return [
     {
+      id: "check",
+      header: "□",
+      baseRatio: 3,
+      narrow: true,
+      checkbox: true,
+      handwriting: true,
+      singleLine: true,
+      align: "center",
+      getValue: () => "",
+    },
+    {
       id: "no",
-      header: "No.",
-      baseRatio: 5,
+      header: "No",
+      baseRatio: 3,
       narrow: true,
       singleLine: true,
       align: "center",
@@ -30,7 +34,7 @@ export function buildHtlPrintColumns(workDate = "") {
     {
       id: "company",
       header: "업체명",
-      baseRatio: 15,
+      baseRatio: 11,
       singleLine: true,
       align: "left",
       getValue: (row) => row.company ?? "",
@@ -38,75 +42,85 @@ export function buildHtlPrintColumns(workDate = "") {
     {
       id: "partName",
       header: "품명",
-      baseRatio: 20,
-      wrapMaxLines: 2,
+      baseRatio: 12,
+      wrap: true,
       align: "left",
       getValue: (row) => row.partName ?? "",
     },
     {
       id: "partNo",
       header: "품번",
-      baseRatio: 15,
-      singleLine: true,
+      baseRatio: 11,
+      wrap: true,
       align: "left",
       getValue: (row) => row.partNo ?? "",
     },
     {
       id: "material",
       header: "재질",
-      baseRatio: 10,
+      baseRatio: 7,
       singleLine: true,
       align: "center",
       getValue: (row) => row.material ?? "",
     },
     {
-      id: "qty",
-      header: "수량",
-      baseRatio: 9,
+      id: "stockQty",
+      header: "실재고(EA)",
+      baseRatio: 7,
+      singleLine: true,
+      align: "right",
+      getValue: (row) => formatQtyWithUnit(row.qty, row.unit || "EA"),
+    },
+    {
+      id: "workQty",
+      header: "작업수량(EA)",
+      baseRatio: 7,
+      handwriting: true,
       singleLine: true,
       align: "center",
-      getValue: (row) => formatQtyWithUnit(row.qty, row.unit),
+      getValue: () => "",
     },
     {
       id: "workDate",
-      header: "작업일자",
-      baseRatio: 10,
+      header: "작업일",
+      baseRatio: 7,
+      handwriting: true,
       singleLine: true,
       align: "center",
-      getValue: () => workDate?.trim() || "",
+      getValue: () => "",
     },
     {
       id: "lot",
       header: "LOT No.",
-      baseRatio: 17,
+      baseRatio: 9,
       handwriting: true,
       singleLine: true,
       align: "center",
-      /** 작업 계획서 — 현장 수기 작성용 빈칸 (시스템 LOT 미출력) */
       getValue: () => "",
     },
     {
       id: "note",
       header: "비고",
-      baseRatio: 11,
+      baseRatio: 14,
+      handwriting: true,
       singleLine: true,
       align: "left",
-      getValue: (row) => formatNote(row),
+      getValue: () => "",
     },
   ];
 }
 
-export function buildHtlPrintLayout(rows, workDate = "", options = {}) {
-  const columns = buildHtlPrintColumns(workDate);
+export function buildHtlPrintLayout(rows, _workDate = "", options = {}) {
+  const columns = buildHtlPrintColumns();
   const columnWidths = computePrintColumnWidths(columns, rows);
-  const orientation = resolvePrintOrientation(columns, rows, columnWidths);
+  const orientation = PRINT_ORIENTATION.LANDSCAPE;
 
   const trimmedMemo = options.workMemo?.trim() ?? "";
-  let lastPageReserve = 3;
-  if (trimmedMemo) lastPageReserve += 4;
+  let lastPageReserve = 5;
+  if (trimmedMemo) lastPageReserve += 3;
 
   const rowLineBudget = {
-    lineBudget: orientation === PRINT_ORIENTATION.LANDSCAPE ? 10 : 14,
+    lineBudget: 10,
     lastPageReserve,
   };
   const pages = paginateRowsByLayout(rows, columns, columnWidths, orientation, rowLineBudget);

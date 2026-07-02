@@ -1,40 +1,71 @@
 import { useMemo } from "react";
 import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
+import { buildTitanDocumentQrPayloadFromRows } from "../../utils/titanDocumentQr";
 import { buildHtlPrintLayout, HTL_PRINT_TITLE } from "../../utils/htlWorkListPrintLayout";
-import { PRINT_ORIENTATION } from "../../utils/titanPrintLayout";
+import TitanPrintDocumentMeta from "./TitanPrintDocumentMeta";
+import TitanPrintOfficialFooter from "./TitanPrintOfficialFooter";
 import TitanPrintPage from "./TitanPrintPage";
 import TitanPrintPageHeader from "./TitanPrintPageHeader";
 import TitanPrintTable from "./TitanPrintTable";
+import "./TitanPrintDocumentMeta.css";
 import "./titan-print.css";
+
+function resolveOutputDate(printDate = "", printDateTime = "") {
+  if (printDate) return printDate;
+  const source = printDateTime || getPrintDateTime();
+  const match = String(source).match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : "";
+}
 
 function HeatTreatmentWorkListPrint({
   rows,
   listNo = "",
+  incomingDate = "",
   printDate = "",
-  workDate = "",
+  outputDate = "",
   workMemo = "",
   printDateTime = "",
   printUser = "",
 }) {
   const resolvedPrintDateTime = printDateTime || getPrintDateTime();
   const resolvedPrintUser = printUser || getPrintUser();
+  const resolvedOutputDate = resolveOutputDate(outputDate || printDate, resolvedPrintDateTime);
   const trimmedMemo = workMemo.trim();
 
   const layout = useMemo(
-    () => buildHtlPrintLayout(rows, workDate, { workMemo: trimmedMemo }),
-    [rows, workDate, trimmedMemo]
+    () => buildHtlPrintLayout(rows, "", { workMemo: trimmedMemo }),
+    [rows, trimmedMemo]
   );
   const { columns, columnWidths, orientation, pages } = layout;
   const totalPages = pages.length;
-  const isLandscape = orientation === PRINT_ORIENTATION.LANDSCAPE;
+
+  const qrValue = useMemo(
+    () =>
+      buildTitanDocumentQrPayloadFromRows({
+        kind: "HTL",
+        docNo: listNo,
+        rows: rows.map((row) => ({
+          managementId: row.managementId ?? row.id,
+          company: row.company,
+          partNo: row.partNo,
+          lotNo: row.lotNo,
+        })),
+      }),
+    [listNo, rows]
+  );
+
+  const renderCell = (row, column) => {
+    if (column.checkbox) {
+      return <span className="titan-print-checkbox" aria-hidden="true" />;
+    }
+    return column.getValue(row);
+  };
 
   return (
     <div
-      className={`titan-print-document htl-work-list-print${
-        isLandscape ? " titan-print-landscape" : ""
-      }`}
+      className="titan-print-document htl-work-list-print titan-print-landscape"
       data-print-orientation={orientation}
-      aria-label="열처리 작업 계획 리스트"
+      aria-label="열처리 작업 요청 리스트"
     >
       {pages.map((pageRows, pageIndex) => (
         <TitanPrintPage
@@ -48,25 +79,19 @@ function HeatTreatmentWorkListPrint({
         >
           <TitanPrintPageHeader title={HTL_PRINT_TITLE} />
 
-          {(listNo || printDate) && (
-            <div className="titan-print-meta">
-              {listNo && (
-                <span>
-                  리스트 No. <strong>{listNo}</strong>
-                </span>
-              )}
-              {printDate && (
-                <span>
-                  작업일 <strong>{printDate}</strong>
-                </span>
-              )}
-            </div>
-          )}
+          <TitanPrintDocumentMeta
+            docNo={listNo}
+            incomingDate={incomingDate}
+            outputDate={resolvedOutputDate}
+            qrValue={qrValue}
+            qrLabel="열처리 작업 요청 리스트 QR"
+          />
 
           <TitanPrintTable
             columns={columns}
             rows={pageRows}
             columnWidths={columnWidths}
+            renderCell={renderCell}
           />
 
           {pageIndex === totalPages - 1 && trimmedMemo && (
@@ -75,6 +100,8 @@ function HeatTreatmentWorkListPrint({
               <p>{trimmedMemo}</p>
             </section>
           )}
+
+          <TitanPrintOfficialFooter />
         </TitanPrintPage>
       ))}
     </div>

@@ -1,9 +1,13 @@
 ---
-description: Project TITAN V1.0 — Dev / Demo / Beta Operations Policy (FINAL)
+description: Project TITAN V1.0 — Dev / Demo / Beta Operations (see master-policy-v1)
 alwaysApply: true
 ---
 
-# Project TITAN — Dev / Demo / Beta Operations Policy (FINAL)
+# Dev / Demo / Beta Operations
+
+**Superseded by companion rule:** `.cursor/rules/project-titan-master-policy-v1.mdc` (MASTER POLICY V1.0)
+
+Quick reference:
 
 **UI 개발 단계 종료.** **개발 = Demo 구축.**
 

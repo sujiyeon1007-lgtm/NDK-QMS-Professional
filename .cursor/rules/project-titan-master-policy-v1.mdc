@@ -1,0 +1,142 @@
+---
+description: Project TITAN MASTER POLICY V1.0 — Official Development Rule
+alwaysApply: true
+---
+
+# Project TITAN MASTER POLICY V1.0
+
+**Official Development Rule**
+
+Project TITAN is not "building a program" — it is building a **QMS the company actually uses**.
+
+**Completion criterion:** *"Can the company use this tomorrow?"*
+
+---
+
+## 1. Development Principle
+
+**개발 = Demo 구축**
+
+Simultaneous and all required for **done**:
+
+- 기능 구현 · Demo 데이터 · Workflow 연결 · 출력물 · **Beta 시연**
+
+---
+
+## 2. Development Flow
+
+```text
+Local Host (vite --host) → develop → test → Build
+→ Git Commit → Git Push → Beta → meeting → feedback → fix
+```
+
+---
+
+## 3. Environments
+
+| Env | Use |
+|-----|-----|
+| **Local Host** | Development |
+| **Beta** (`ndk-qms-beta.vercel.app`) | Meeting · demo · review |
+| **Release** | Electron EXE + SQLite — production |
+
+---
+
+## 4. Git Branches
+
+- `main` — Release
+- `beta-demo` — Meeting · Vercel
+- `develop` — Optional dev
+
+---
+
+## 5. Demo Policy
+
+**No Dummy Data.** Real: 거래처 · 품번 · 품명 · 재질 · 단가 · Workflow.
+
+**Primary demo company:** **서암기계공업**
+
+---
+
+## 6. UI Policy (Freeze)
+
+Foundation UI · Desktop ERP layout · **No responsive/mobile** · min-width · horizontal scroll OK
+
+---
+
+## 7. Workflow (Fixed)
+
+```text
+입고등록 → 열처리 작업 요청 리스트 → 생산일보 → 검사등록 → 성적서
+→ 출고등록 → 거래명세서 → 이력조회
+```
+
+---
+
+## 8. Sprint Model (Business units — not pages)
+
+| Sprint | Scope |
+|--------|--------|
+| **Sprint 3** | 입고 → 열처리 작업 요청 리스트 |
+| Sprint 4 | 생산일보 |
+| Sprint 5 | 검사 · 성적서 |
+| Sprint 6 | 출고 · 거래명세서 |
+| Sprint 7 | SQLite |
+| Sprint 8 | Electron EXE |
+
+One Sprint = one real business flow **complete**.
+
+---
+
+## 9. Print Output Policy
+
+Shared: Header · Footer · document numbers · PDF · design · QR.
+
+**Order:** HTML Preview → **PM approval** → PDF → Workflow → Beta
+
+**Before PM approval:** no PDF finalize, Commit, Push, or Beta deploy for that output.
+
+---
+
+## 10. Documents (DOC)
+
+| ID | Name | Number |
+|----|------|--------|
+| DOC-01 | 열처리 작업 요청 리스트 | `HTL-YYYYMMDD-001` |
+| DOC-02 | 생산일보 | `DPR-YYYYMMDD-001` |
+| DOC-03 | 검사성적서 | `COA-YYYYMMDD-001` |
+| DOC-04 | 거래명세서 | `INV-YYYYMMDD-001` |
+
+---
+
+## 11. QR Policy (Default)
+
+All **internal** prints include QR. **Exception:** 거래명세서 — supplier QR only.
+
+**Payload:** 문서번호 · 관리번호 · 업체명 · 품번 · LOT · 문서종류 · 버전
+
+**Roadmap:** V1.0 QR print → V1.1 scan/open → V2.0 Smart QR · labels · status colors
+
+---
+
+## 12–15. Future Roadmap (Reference)
+
+- **Mobile Mode:** QR scan → role-specific mobile screens (post V1.0 desktop)
+- **AI V2.1:** Natural query · anomaly search
+- **Smart Factory V3.0:** MES · ERP · IoT · realtime dashboard
+
+Do not implement roadmap items unless explicitly requested.
+
+---
+
+## 16. Completion Checklist (Every task)
+
+□ 기능 · □ Demo · □ Workflow · □ 출력물 · □ Build · □ Console 0 · □ React 0 · □ Commit · □ Push · □ Beta · □ **PM 승인**
+
+---
+
+## 17. Ultimate Goal
+
+Unified QMS platform: 입고 · 생산 · 검사 · 성적서 · 출고 · LOT · QR · documents · (future) mobile · AI · MES · ERP — one connected system.
+
+**Priority:** real operational use over UI or feature count.

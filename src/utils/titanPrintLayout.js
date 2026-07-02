@@ -48,6 +48,9 @@ export function computePrintColumnWidths(columns, rows) {
     if (column.wrapMaxLines) {
       units = Math.max(units, 10);
     }
+    if (column.wrap) {
+      units = Math.max(units, 12);
+    }
     return units;
   });
 
@@ -64,6 +67,7 @@ export function computePrintColumnWidths(columns, rows) {
       narrow: Boolean(column.narrow),
       handwriting: Boolean(column.handwriting),
       singleLine: Boolean(column.singleLine),
+      wrap: Boolean(column.wrap),
       wrapMaxLines: column.wrapMaxLines ?? 0,
     };
   });
@@ -135,11 +139,23 @@ export function estimateWrapLines(text, widthPercent, orientation, maxLines = 2)
   return Math.min(maxLines, Math.max(1, Math.ceil(units / unitsPerLine)));
 }
 
-/** 행 높이(줄 수) — 품명만 최대 2줄, 그 외 1줄 */
+/** 행 높이(줄 수) — wrap 컬럼은 자동 줄바꿈(말줄임 없음) */
 export function estimateRowLines(row, columns, columnWidths, orientation) {
   let lines = 1;
 
   columns.forEach((column, index) => {
+    if (column.wrap) {
+      const value = column.getValue(row);
+      const cellLines = estimateWrapLines(
+        value,
+        columnWidths[index].widthPercent,
+        orientation,
+        12
+      );
+      lines = Math.max(lines, cellLines);
+      return;
+    }
+
     if (column.wrapMaxLines) {
       const value = column.getValue(row);
       const cellLines = estimateWrapLines(

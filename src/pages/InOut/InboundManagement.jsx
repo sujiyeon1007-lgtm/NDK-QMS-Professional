@@ -48,6 +48,7 @@ import {
 } from "../../utils/inboundManagementStatus";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
 import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
+import { resolveHtlPrintRows } from "../../utils/htlPrintEligibility";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./InboundManagement.css";
 
@@ -164,32 +165,45 @@ export default function InboundManagement() {
     return [];
   }, [selectedRows, activeRow]);
 
+  const htlPrintResolution = useMemo(
+    () => resolveHtlPrintRows(printTargetRows),
+    [printTargetRows]
+  );
+
   const sessionRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
 
   const inOutPrintProps = useMemo(
     () =>
-      printTargetRows.length > 0
-        ? buildInOutListPrintProps(printTargetRows, {
+      htlPrintResolution.rows.length > 0
+        ? buildInOutListPrintProps(htlPrintResolution.rows, {
             listNoPrefix: "HTL",
             workDate: getJournalReferenceDate(),
             records: sessionRecords,
+            printMode: htlPrintResolution.mode,
           })
         : null,
-    [printTargetRows, sessionRecords]
+    [htlPrintResolution, sessionRecords]
   );
 
   const handleInOutPrinted = useCallback(
     (printProps) => {
-      if (!printProps?.listNo || printTargetRows.length === 0) return;
-      const managementIds = printTargetRows.map((row) => row.managementId ?? row.id);
-      applyHtlWorkListPrinted(managementIds, printProps.listNo);
+      if (!printProps?.listNo || htlPrintResolution.rows.length === 0) return;
+      const managementIds = htlPrintResolution.rows.map((row) => row.managementId ?? row.id);
+      applyHtlWorkListPrinted(managementIds, printProps.listNo, {
+        isReprint: printProps.printMode === "reprint",
+      });
       setRefreshKey((key) => key + 1);
     },
-    [printTargetRows]
+    [htlPrintResolution.rows]
   );
 
   const openInOutPrintPreview = () => {
-    if (printTargetRows.length === 0) return;
+    if (htlPrintResolution.rows.length === 0) {
+      window.alert(
+        "출력 대상이 없습니다.\n입고완료 · 열처리 미진행 · 미출력(또는 재출력 가능) 상태만 출력됩니다."
+      );
+      return;
+    }
     setInOutPrintOpen(true);
   };
 
@@ -301,7 +315,7 @@ export default function InboundManagement() {
           <Plus size={14} aria-hidden="true" />
           {INBOUND_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={printTargetRows.length === 0}>
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!inOutPrintProps}>
           <Printer size={14} aria-hidden="true" />
           {INBOUND_PRINT_LIST_LABEL}
         </SecondaryButton>
@@ -371,7 +385,7 @@ export default function InboundManagement() {
                 <strong>{selectedQty} EA</strong>
               </span>
               <div>
-                <SecondaryButton type="button" onClick={openInOutPrintPreview}>
+                <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!inOutPrintProps}>
                   {INBOUND_PRINT_LIST_LABEL}
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => setSelectedIds([])}>

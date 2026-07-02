@@ -100,6 +100,7 @@ export async function exportTitanPdf(root, filename = "document.pdf") {
 export async function exportHtlWorkListXlsx({
   rows,
   listNo = "",
+  incomingDate = "",
   printDate = "",
   workDate = "",
   workMemo = "",
@@ -108,10 +109,10 @@ export async function exportHtlWorkListXlsx({
   filename = "document.xlsx",
 }) {
   const XLSX = await import("xlsx");
-  const { columns, columnWidths } = buildHtlPrintLayout(rows, workDate);
+  const { columns, columnWidths } = buildHtlPrintLayout(rows, workDate, { workMemo });
   const sheetRows = [
     [HTL_PRINT_TITLE],
-    [`리스트 No. ${listNo}`, printDate ? `작업일 ${printDate}` : ""],
+    [`문서번호 ${listNo}`, incomingDate ? `입고일 ${incomingDate}` : "", printDate ? `출력일 ${printDate}` : ""],
     [],
     columns.map((column) => column.header),
     ...rows.map((row) => columns.map((column) => column.getValue(row))),
