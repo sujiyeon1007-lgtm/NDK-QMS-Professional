@@ -1,0 +1,122 @@
+---
+description: Project TITAN V1.0 Development Direction — Official 2026-07-02 · Standalone QMS · MES V1.1
+alwaysApply: true
+---
+
+# Project TITAN V1.0 — Development Direction (Official · 2026-07-02)
+
+**Source of truth (code):** `src/config/titanV1DevelopmentDirection.js`
+
+---
+
+## Project Vision
+
+Project TITAN은 NDK의 품질관리 업무를 통합 관리하는 **품질관리 시스템(QMS)** 을 구축하는 것을 목표로 한다.
+
+- **V1.0:** 실제 업무에 사용할 수 있는 **독립적인 품질관리 시스템** 완성
+- **V1.1:** MES와 연동하여 기존 업무와 자연스럽게 연결
+- **V2.0:** 문서관리 · Traceability 고도화
+
+**Core promise:** *"MES 때문에 흔들리지 않는다"* — MES is integration target, not development direction driver.
+
+---
+
+## V1.0 Lock
+
+| Constant | Value |
+|----------|-------|
+| `V1_0_OFFICIAL_DATE` | `2026-07-02` |
+| `V1_0_EDITION_LOCK` | `standalone` (독립 실행형 QMS) |
+| `V1_0_SHOW_EDITION_BOOT_MODAL` | `false` |
+| Repository | `session` only (SessionStorage Demo) |
+
+---
+
+## Development Strategy
+
+### V1.0 — 독립 실행형 NDK QMS
+
+입고관리 · LOT 관리 · 생산일보 · 검사등록 · 외관검사 · 경도 · 유효경화깊이 · 조직사진 · 성적서 · 문서관리 · QR · Traceability · 품질이력 · 출력물
+
+※ **SessionStorage 기반 Demo 및 Workflow 완성**
+
+### V1.1 — MES 연동
+
+MES(Oracle/API/CSV) · 제품 Master 조회 · 거래처 조회 · 입고/출고 조회 · Repository → Oracle 교체
+
+### V2.0 — 고도화
+
+Revision Control · Approval Workflow · Effective History · Document Compare · 통계 고도화
+
+---
+
+## Current Development Principles
+
+1. **현재 Sprint에서는 MES 연동을 구현하지 않는다**
+2. **NDK에서 실제 사용할 수 있는 QMS를 완성한다**
+3. **MES 연동은 Repository 구조 유지 · V1.1에서 진행**
+4. UI/Workflow 먼저 · 기존 설계 유지 · 불필요한 변경 금지
+
+---
+
+## ON HOLD (NOT delete)
+
+### Editions
+
+- Quality Edition (narrow scope — alternate path)
+- MES Connected Edition → **V1.1**
+
+### Repositories
+
+- Oracle · API · CSV · SQLite → **V1.1**
+
+### Features
+
+- MES 연동 · 출고(MES 조회) · 재고 · 거래명세서 · V2.0 문서 고도화
+
+---
+
+## V1.0 Workflow
+
+```text
+입고관리 → LOT 관리 → 생산일보 → 검사등록 → 외관검사 → 경도 → 유효경화깊이
+→ 조직사진 → 성적서 → 문서관리 → QR · Traceability → 품질이력 → 출력물
+```
+
+**Sidebar (Standalone):** HOME · 입출고관리 · 생산관리 · 품질관리 · 부서별 업무 · 통계 · 기준정보 · 환경설정
+
+---
+
+## Sprint Order
+
+| Sprint | Scope |
+|--------|-------|
+| **Sprint 3** | Print Engine · 성적서 · 출력물 · 문서관리 기본 구조 |
+| **Sprint 4** | 품질접수 · 검사등록 · 경도 · 유효경화깊이 · 조직사진 |
+| **Sprint 5** | 품질이력 · 통계 · Dashboard |
+| **Sprint 6** | 문서관리 고도화 · QR · PDF · 검색 기능 |
+| **After PoC** | Oracle PoC → MES 연동 여부 → V1.1 → V2.0 |
+
+---
+
+## Vision Path
+
+```text
+V1.0 독립 실행형 QMS → V1.1 MES 연동 → V2.0 문서/Traceability 고도화
+```
+
+---
+
+## Do Not (Current Sprint)
+
+- Implement MES Oracle/API/CSV repository integration
+- Switch edition to MES Connected before V1.1 gate
+- Delete PoC/Electron/inout/production infrastructure
+- Let MES PoC status drive V1.0 QMS development direction
+
+---
+
+## Companion Rules
+
+- `.cursor/rules/project-titan-progress-v1.mdc` — sprint status
+- `.cursor/rules/project-titan-mes-integration-poc.mdc` — PoC (parallel · V1.1 decision input)

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FileSpreadsheet, Plus, Printer } from "lucide-react";
+import { FileSpreadsheet, Pencil, Plus, Printer, XCircle } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import {
@@ -44,13 +44,22 @@ import {
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
 import { validateLotNoForDailyReportRegister } from "../../utils/lotFormatValidation";
 import { onDailyReportSaved } from "../../utils/titanWorkflowStatus";
-import { PRODUCTION_DAILY_REGISTER_LABEL, PRODUCTION_DAILY_PRINT_LABEL } from "../../config/registerModalStandard";
-import { mapStandardRowsToInOutPrintRows } from "../../utils/inOutListPrintRows";
-import { getJournalReferenceDate } from "../../utils/workJournalData";
+import { PRODUCTION_DAILY_REGISTER_LABEL, PRODUCTION_DAILY_PRINT_LABEL, PRODUCTION_DAILY_EDIT_LABEL, PRODUCTION_DAILY_CANCEL_LABEL } from "../../config/registerModalStandard";
+import { getPrintOutputDate } from "../../utils/titanPrintDates";
+import {
+  buildProductionDailyReportPrintBundles,
+  getRecordsForProductionLot,
+  isProductionDailyReportPrintReady,
+} from "../../utils/productionDailyReportPrintData";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
+import {
+  cancelProductionDailyReportLot,
+  canCancelProductionDailyReportLot,
+  revertProductionDailyReportRecords,
+} from "../../utils/productionDailyReportRegister";
 import DailyProductionReportRegisterModal from "./DailyProductionReportRegisterModal";
 import "../InOut/InboundManagement.css";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
@@ -89,12 +98,15 @@ export default function DailyProductionReport() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitialId, setRegisterInitialId] = useState("");
+  const [registerMode, setRegisterMode] = useState("register");
+  const [editLotNo, setEditLotNo] = useState("");
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyProductionDailyReportSearch, { storageKey: "production-daily" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [dailyPrintOpen, setDailyPrintOpen] = useState(false);
   const [dailyPrintBusy, setDailyPrintBusy] = useState(false);
+  const [dailyPrintProps, setDailyPrintProps] = useState(null);
   const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -145,23 +157,43 @@ export default function DailyProductionReport() {
     return [];
   }, [selectedRows, activeRow]);
 
-  const dailyPrintProps = useMemo(() => {
-    if (printTargetRows.length === 0) return null;
-    const primary = printTargetRows[0]?.record ?? printTargetRows[0];
-    return {
-      rows: mapStandardRowsToInOutPrintRows(printTargetRows),
-      listNo: primary?.htlNo || "",
-      workDate: primary?.workDate || getJournalReferenceDate(),
-      heatTreatmentConditions: printTargetRows
-        .map((row) => row.record?.heatTreatmentConditions ?? row.heatTreatmentConditions)
-        .filter(Boolean)
-        .join(" / "),
-    };
-  }, [printTargetRows]);
+  const canPrintDailyReport = useMemo(
+    () => printTargetRows.some((row) => isProductionDailyReportPrintReady(row.record ?? row)),
+    [printTargetRows]
+  );
+
+  const activeLotNo = activeRow?.record?.lotNo?.trim() ?? "";
+  const canEditOrCancelLot = useMemo(
+    () => Boolean(activeRow && isProductionDailyReportPrintReady(activeRow.record)),
+    [activeRow]
+  );
+  const cancelLotCheck = useMemo(() => {
+    if (!canEditOrCancelLot || !activeLotNo) return { ok: false };
+    return canCancelProductionDailyReportLot(activeLotNo);
+  }, [canEditOrCancelLot, activeLotNo, refreshKey]);
 
   const openDailyPrintPreview = () => {
     if (printTargetRows.length === 0) return;
+
+    const bundles = buildProductionDailyReportPrintBundles(printTargetRows, getSessionProductionRecords(), {
+      outputDate: getPrintOutputDate(),
+    });
+
+    if (!bundles.length) {
+      window.alert("생산일보 등록(LOT) 후 출력할 수 있습니다.");
+      return;
+    }
+
+    setDailyPrintProps({
+      bundles,
+      outputDate: getPrintOutputDate(),
+    });
     setDailyPrintOpen(true);
+  };
+
+  const closeDailyPrintPreview = () => {
+    setDailyPrintOpen(false);
+    setDailyPrintProps(null);
   };
 
   const handleDailyPrint = async (documentEl) => {
@@ -176,7 +208,7 @@ export default function DailyProductionReport() {
   const handleDailyPdf = async (documentEl) => {
     setDailyPrintBusy(true);
     try {
-      await exportTitanPdf(documentEl, `production-daily-report-${getJournalReferenceDate()}.pdf`);
+      await exportTitanPdf(documentEl, `production-daily-report-${getPrintOutputDate()}.pdf`);
     } finally {
       setDailyPrintBusy(false);
     }
@@ -216,57 +248,113 @@ export default function DailyProductionReport() {
     }
   };
 
-  const handleRegister = (form) => {
-    const managementId = form.managementId.trim();
-    if (!managementId) return;
-
-    const existing = getSessionProductionRecords().find((r) => r.id === managementId);
-    if (!existing) {
-      window.alert("입고 등록된 관리번호만 생산일보 등록이 가능합니다.");
-      return;
-    }
-    if (!existing.htlNo?.trim()) {
-      window.alert("열처리 작업 요청 리스트 출력 후 생산일보를 등록할 수 있습니다.");
-      return;
-    }
-
-    const lotCheck = validateLotNoForDailyReportRegister(form.lotNo, existing);
-    if (!lotCheck.ok) {
-      window.alert(lotCheck.message);
-      return;
-    }
+  const handleRegister = (form, meta = { mode: "register", editLotNo: "" }) => {
+    const products = form.chargeProducts ?? [];
+    if (products.length === 0) return;
 
     const now = new Date().toISOString();
     const today = now.slice(0, 10);
-    const qty = Number(form.qty) || 0;
-    const patch = {
-      company: form.company.trim() || existing.company || "—",
-      lotNo: lotCheck.lotNo,
-      heatTreatment: form.process || existing.heatTreatment,
-      partName: form.partName.trim() || existing.partName,
-      partNo: form.partNo.trim() || existing.partNo,
-      material: form.material.trim() || existing.material,
-      qty: qty || existing.qty,
-      workDate: form.workDate || today,
-      equipment: form.equipment,
-      registrar: form.worker.trim() || "관리자",
-      heatTreatmentConditions: form.heatTreatmentConditions?.trim() || "",
-      note: form.note.trim(),
-      registered: true,
-      lotCreatedAt: existing.lotCreatedAt || now,
-      updatedAt: now,
-    };
+    const isEdit = meta.mode === "edit" && meta.editLotNo;
 
-    onDailyReportSaved(managementId, patch);
+    if (isEdit) {
+      const originalRecords = getRecordsForProductionLot(meta.editLotNo);
+      const nextIds = new Set(products.map((product) => product.managementId?.trim()).filter(Boolean));
+      const removedIds = originalRecords
+        .map((record) => record.id)
+        .filter((id) => !nextIds.has(id));
 
-    setActiveId(managementId);
+      if (removedIds.length) {
+        const revertResult = revertProductionDailyReportRecords(removedIds);
+        if (!revertResult.ok) {
+          window.alert(revertResult.reason);
+          return;
+        }
+      }
+    }
+
+    for (const product of products) {
+      const managementId = product.managementId?.trim();
+      if (!managementId) continue;
+
+      const existing = getSessionProductionRecords().find((r) => r.id === managementId);
+      if (!existing) {
+        window.alert("입고 등록된 관리번호만 생산일보 등록이 가능합니다.");
+        return;
+      }
+      if (!existing.htlNo?.trim()) {
+        window.alert("열처리 작업 요청 리스트 출력 후 생산일보를 등록할 수 있습니다.");
+        return;
+      }
+
+      if (!isEdit) {
+        const lotCheck = validateLotNoForDailyReportRegister(form.lotNo, existing);
+        if (!lotCheck.ok) {
+          window.alert(lotCheck.message);
+          return;
+        }
+      }
+
+      const qty = Number(product.qty) || Number(existing.qty) || 0;
+      const patch = {
+        company: product.company.trim() || existing.company || "—",
+        lotNo: form.lotNo.trim(),
+        heatTreatment: product.process || existing.heatTreatment,
+        partName: product.partName.trim() || existing.partName,
+        partNo: product.partNo.trim() || existing.partNo,
+        material: product.material.trim() || existing.material,
+        qty: qty || existing.qty,
+        workDate: form.workDate || today,
+        equipment: form.equipment,
+        registrar: form.worker.trim() || "관리자",
+        heatTreatmentConditions: form.heatTreatmentConditions?.trim() || "",
+        note: form.note.trim(),
+        registered: true,
+        lotCreatedAt: existing.lotCreatedAt || now,
+        updatedAt: now,
+      };
+
+      onDailyReportSaved(managementId, patch);
+    }
+
+    const lastId = products[products.length - 1]?.managementId;
+    if (lastId) setActiveId(lastId);
     setRefreshKey((k) => k + 1);
     setPage(1);
   };
 
   const openRegisterModal = (managementId = "") => {
+    setRegisterMode("register");
+    setEditLotNo("");
     setRegisterInitialId(managementId);
     setRegisterOpen(true);
+  };
+
+  const openEditModal = (lotNo = "") => {
+    const trimmedLot = lotNo?.trim();
+    if (!trimmedLot) return;
+    setRegisterMode("edit");
+    setEditLotNo(trimmedLot);
+    setRegisterInitialId("");
+    setRegisterOpen(true);
+  };
+
+  const handleCancelLot = () => {
+    if (!activeLotNo) return;
+    const check = canCancelProductionDailyReportLot(activeLotNo);
+    if (!check.ok) {
+      window.alert(check.reason);
+      return;
+    }
+    if (!window.confirm(`LOT ${activeLotNo} 생산일보 등록을 취소하시겠습니까?`)) return;
+
+    const result = cancelProductionDailyReportLot(activeLotNo);
+    if (!result.ok) {
+      window.alert(result.reason);
+      return;
+    }
+
+    setRefreshKey((k) => k + 1);
+    setPage(1);
   };
 
   const handleRowDoubleClick = (row) => {
@@ -283,7 +371,23 @@ export default function DailyProductionReport() {
           <Plus size={14} aria-hidden="true" />
           {PRODUCTION_DAILY_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={openDailyPrintPreview} disabled={printTargetRows.length === 0}>
+        <SecondaryButton
+          type="button"
+          onClick={() => openEditModal(activeLotNo)}
+          disabled={!canEditOrCancelLot}
+        >
+          <Pencil size={14} aria-hidden="true" />
+          {PRODUCTION_DAILY_EDIT_LABEL}
+        </SecondaryButton>
+        <SecondaryButton
+          type="button"
+          onClick={handleCancelLot}
+          disabled={!canEditOrCancelLot || !cancelLotCheck.ok}
+        >
+          <XCircle size={14} aria-hidden="true" />
+          {PRODUCTION_DAILY_CANCEL_LABEL}
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={openDailyPrintPreview} disabled={!canPrintDailyReport}>
           <Printer size={14} aria-hidden="true" />
           {PRODUCTION_DAILY_PRINT_LABEL}
         </SecondaryButton>
@@ -372,6 +476,9 @@ export default function DailyProductionReport() {
             actionLabel={PRODUCTION_DAILY_PRINT_LABEL}
             actionIcon={Printer}
             onAction={openDailyPrintPreview}
+            secondaryActionLabel={canEditOrCancelLot ? PRODUCTION_DAILY_EDIT_LABEL : undefined}
+            secondaryActionIcon={canEditOrCancelLot ? Pencil : undefined}
+            onSecondaryAction={canEditOrCancelLot ? () => openEditModal(activeLotNo) : undefined}
             processFlowSteps={processFlowSteps}
             detailContent={
               <dl className="inbound-detail">
@@ -438,16 +545,20 @@ export default function DailyProductionReport() {
       <DailyProductionReportRegisterModal
         open={registerOpen}
         initialManagementId={registerInitialId}
+        mode={registerMode}
+        editLotNo={editLotNo}
         onClose={() => {
           setRegisterOpen(false);
           setRegisterInitialId("");
+          setRegisterMode("register");
+          setEditLotNo("");
         }}
         onRegister={handleRegister}
       />
 
       <TitanPrintPreviewModal
         open={dailyPrintOpen}
-        onClose={() => setDailyPrintOpen(false)}
+        onClose={closeDailyPrintPreview}
         title={`${dailyPrintMeta?.label ?? "생산일보"} 출력 미리보기`}
         onPrint={handleDailyPrint}
         onPdf={handleDailyPdf}

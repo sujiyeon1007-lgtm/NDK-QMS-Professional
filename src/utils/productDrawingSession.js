@@ -5,19 +5,18 @@
 import { findProductByPartNo, getMasterDataByCategory } from "./masterData";
 import { getCurrentTitanUser } from "./titanHistorySession";
 
+import {
+  QUALITY_DOCUMENT_TYPES,
+  resolveQualityDocumentType,
+} from "../config/qualityDocumentManagement";
+
 const STORAGE_KEY = "project-titan-product-drawings-v2";
 const LEGACY_INSPECTION_KEY = "project-titan-product-inspection-v1";
 
 export const DRAWING_ACCEPT = ["application/pdf", "image/jpeg", "image/png"];
 
-export const RELATED_DOCUMENT_TYPES = [
-  { value: "drawing", label: "도면" },
-  { value: "sop", label: "SOP" },
-  { value: "inspection_standard", label: "검사기준서" },
-  { value: "customer_spec", label: "고객사양서" },
-  { value: "photo", label: "제품사진" },
-  { value: "other", label: "기타" },
-];
+/** @deprecated use QUALITY_DOCUMENT_TYPE_OPTIONS from qualityDocumentManagement.js */
+export const RELATED_DOCUMENT_TYPES = QUALITY_DOCUMENT_TYPES;
 
 function createRevisionId() {
   return `DR-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -82,11 +81,11 @@ function normalizeHistoryEntry(entry = {}) {
 }
 
 function normalizeDocument(document = {}) {
-  const typeMeta = RELATED_DOCUMENT_TYPES.find((item) => item.value === document.type);
+  const typeMeta = resolveQualityDocumentType(document.type);
   return {
     id: document.id || createDocumentId(),
-    type: document.type?.trim() || "other",
-    typeLabel: typeMeta?.label ?? "기타",
+    type: typeMeta.value,
+    typeLabel: typeMeta.label,
     title: document.title?.trim() ?? "",
     fileName: document.fileName?.trim() ?? "",
     mimeType: document.mimeType?.trim() ?? "",

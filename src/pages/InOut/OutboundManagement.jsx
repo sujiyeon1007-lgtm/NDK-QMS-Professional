@@ -24,7 +24,7 @@ import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModa
 import TransactionStatementPrintDocument from "../../components/print/TransactionStatementPrintDocument";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import { createEmptyOutboundSearch, matchesBasicSearch } from "../../config/listSearchStandard";
-import { buildStandardProductListColumns } from "../../config/standardProductList";
+import { buildOutboundListColumns } from "../../config/standardProductList";
 import {
   getProcessChipVariant,
   getProductionProcessCodes,
@@ -37,37 +37,84 @@ import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { SHIPMENT_STATUS } from "../../utils/ndkWorkflow";
 import {
   OUTBOUND_STATUS_LABELS,
+  filterOutboundCompletedRecords,
   filterOutboundManagementRecords,
   getOutboundManagementStatus,
   getOutboundManager,
   getOutboundShipDate,
   getOutboundShipQty,
+  getOutboundShipmentCount,
+  getOutboundTotalShippedQty,
+  getStatementPrintStatus,
 } from "../../utils/outboundManagementStatus";
 import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
-import { OUTBOUND_REGISTER_LABEL, OUTBOUND_LIST_LABEL, OUTBOUND_STATEMENT_LABEL } from "../../config/registerModalStandard";
+import {
+  OUTBOUND_REGISTER_LABEL,
+  OUTBOUND_LIST_LABEL,
+  OUTBOUND_STATEMENT_REPRINT_LABEL,
+} from "../../config/registerModalStandard";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
-import { getJournalReferenceDate } from "../../utils/workJournalData";
+import { getPrintOutputDate } from "../../utils/titanPrintDates";
+import { getStockQty, getIncomingQty } from "../../utils/inventory";
 import { buildTransactionStatementPrintProps } from "../../utils/titanPrintPreviewHelpers";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
-import OutboundRegisterModal, { applyOutboundRegister } from "./OutboundRegisterModal";
+import {
+  cancelLastOutboundShipment,
+  getLastOutboundShipQty,
+  recordTransactionStatementPrint,
+} from "../../utils/outboundRegistration";
+import { isTitanAdminUser } from "../../utils/titanAdminAccess";
+import OutboundRegisterModal from "./OutboundRegisterModal";
+import OutboundStatementPromptDialog from "./OutboundStatementPromptDialog";
 import "./InboundManagement.css";
 import "./OutboundManagement.css";
+import "./OutboundStatementPromptDialog.css";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 
 const OUTBOUND_STATUS_OPTIONS = Object.values(OUTBOUND_STATUS_LABELS);
 
-function mapOutboundListRow(record) {
-  if (record.shipmentStatus === SHIPMENT_STATUS.DONE) {
-    return mapStandardProductListRow(record, { label: "출고완료", variant: "complete" });
+function resolveRegisterTargetId(selectedRows = [], activeRow = null) {
+  if (selectedRows.length >= 1) {
+    return selectedRows[0].managementId ?? selectedRows[0].id ?? "";
   }
-  return mapStandardProductListRow(record, getOutboundManagementStatus(record));
+  return activeRow?.managementId ?? activeRow?.id ?? "";
+}
+
+function mapOutboundListRow(record) {
+  const statementStatus = getStatementPrintStatus(record);
+  const stock = getStockQty(record);
+
+  if (record.shipmentStatus === SHIPMENT_STATUS.DONE && stock <= 0) {
+    return {
+      ...mapStandardProductListRow(record, { label: "출고완료", variant: "complete" }),
+      stockQtyLabel: "0 EA",
+      shipDateLabel: getOutboundShipDate(record),
+      statementStatusLabel: statementStatus.label,
+      statementStatusVariant: statementStatus.variant,
+      manager: getOutboundManager(record),
+    };
+  }
+
+  const status = getOutboundManagementStatus(record) ?? {
+    label: "출고대기",
+    variant: "ship-wait",
+  };
+
+  return {
+    ...mapStandardProductListRow(record, status),
+    stockQtyLabel: getOutboundShipQty(record),
+    shipDateLabel: getOutboundShipDate(record),
+    statementStatusLabel: statementStatus.label,
+    statementStatusVariant: statementStatus.variant,
+    manager: getOutboundManager(record),
+  };
 }
 
 function resolveOutboundListRecords(search) {
   const all = getSessionProductionRecords();
   if (search.__chipProductShipDone) {
-    return all.filter((record) => record.shipmentStatus === SHIPMENT_STATUS.DONE);
+    return filterOutboundCompletedRecords(all);
   }
   return filterOutboundManagementRecords(all);
 }
@@ -77,7 +124,7 @@ function matchesOutboundSearch(record, row, search) {
   if (search.managementId && !record.id.toLowerCase().includes(search.managementId.toLowerCase())) {
     return false;
   }
-  if (search.qty && !String(row.qty).includes(search.qty)) return false;
+  if (search.qty && !String(row.stockQtyLabel ?? row.qty).includes(search.qty)) return false;
   if (search.process && getProductionProcessName(record) !== search.process) return false;
   if (
     search.lotNo &&
@@ -111,8 +158,12 @@ export default function OutboundManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [outboundListPrintOpen, setOutboundListPrintOpen] = useState(false);
+  const [outboundListPrintProps, setOutboundListPrintProps] = useState(null);
   const [statementPrintOpen, setStatementPrintOpen] = useState(false);
   const [statementPrintBusy, setStatementPrintBusy] = useState(false);
+  const [statementContext, setStatementContext] = useState(null);
+  const [statementPromptOpen, setStatementPromptOpen] = useState(false);
+  const [pendingRegisterResult, setPendingRegisterResult] = useState(null);
   const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -133,15 +184,7 @@ export default function OutboundManagement() {
   const rows = useMemo(() => {
     const records = resolveOutboundListRecords(search);
     return records
-      .map((record) => {
-        const base = mapOutboundListRow(record);
-        return {
-          ...base,
-          qty: getOutboundShipQty(record),
-          workDate: getOutboundShipDate(record),
-          manager: getOutboundManager(record),
-        };
-      })
+      .map((record) => mapOutboundListRow(record))
       .filter((row) => matchesOutboundSearch(row.record, row, search))
       .sort((a, b) => b.managementId.localeCompare(a.managementId));
   }, [search, refreshKey]);
@@ -175,36 +218,53 @@ export default function OutboundManagement() {
     return [];
   }, [selectedRows, activeRow]);
 
-  const outboundListPrintProps = useMemo(
-    () =>
-      printTargetRows.length > 0
-        ? buildInOutListPrintProps(printTargetRows, {
-            listNoPrefix: "OUT",
-            workDate: getJournalReferenceDate(),
-          })
-        : null,
-    [printTargetRows]
-  );
+  const outboundListPrintPropsForModal = outboundListPrintProps;
 
   const statementPrintProps = useMemo(() => {
+    if (statementContext?.record) {
+      return buildTransactionStatementPrintProps(statementContext.record, {
+        shipQty: statementContext.shipQty,
+      });
+    }
     const targetRecord = printTargetRows[0]?.record ?? null;
-    return buildTransactionStatementPrintProps(targetRecord);
-  }, [printTargetRows]);
+    if (!targetRecord) return null;
+    return buildTransactionStatementPrintProps(targetRecord, {
+      shipQty: getLastOutboundShipQty(targetRecord),
+    });
+  }, [statementContext, printTargetRows]);
 
-  const openOutboundListPrintPreview = () => {
-    if (printTargetRows.length === 0) return;
-    setOutboundListPrintOpen(true);
+  const openStatementPrintPreview = (context = null) => {
+    const record = context?.record ?? printTargetRows[0]?.record ?? null;
+    if (!record) return;
+    setStatementContext(
+      context ?? {
+        record,
+        shipQty: getLastOutboundShipQty(record),
+      }
+    );
+    setStatementPrintOpen(true);
   };
 
-  const openStatementPrintPreview = () => {
-    if (!statementPrintProps) return;
-    setStatementPrintOpen(true);
+  const closeStatementPrintPreview = () => {
+    setStatementPrintOpen(false);
+    setStatementContext(null);
+  };
+
+  const handleStatementPrinted = () => {
+    if (!statementPrintProps?.record) return;
+    recordTransactionStatementPrint(statementPrintProps.record, {
+      shipQty: statementPrintProps.shipQtyNumeric,
+      unitPrice: statementPrintProps.unitPrice,
+      amounts: statementPrintProps.amounts,
+    });
+    setRefreshKey((key) => key + 1);
   };
 
   const handleStatementPrint = async (documentEl) => {
     setStatementPrintBusy(true);
     try {
       await printTitanDocument(documentEl);
+      handleStatementPrinted();
     } finally {
       setStatementPrintBusy(false);
     }
@@ -215,6 +275,7 @@ export default function OutboundManagement() {
     try {
       const id = statementPrintProps?.record?.id ?? "statement";
       await exportTitanPdf(documentEl, `transaction-statement-${id}.pdf`);
+      handleStatementPrinted();
     } finally {
       setStatementPrintBusy(false);
     }
@@ -234,9 +295,12 @@ export default function OutboundManagement() {
 
   const columns = useMemo(
     () =>
-      buildStandardProductListColumns({
+      buildOutboundListColumns({
         renderStatus: (row) => (
           <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
+        ),
+        renderStatementStatus: (row) => (
+          <StatusChip variant={row.statementStatusVariant}>{row.statementStatusLabel}</StatusChip>
         ),
         renderProcess: (row) =>
           row.processName && row.processName !== "—" ? (
@@ -249,22 +313,90 @@ export default function OutboundManagement() {
   );
 
   const openRegisterModal = (managementId = "") => {
-    setRegisterInitialId(managementId);
+    const resolvedId = managementId || resolveRegisterTargetId(selectedRows, activeRow);
+    setRegisterInitialId(resolvedId);
     setRegisterOpen(true);
   };
 
   const handleRowDoubleClick = (row) => {
     const managementId = row.managementId ?? row.id;
     if (!managementId) return;
+    if (getStockQty(row.record) <= 0) {
+      openStatementPrintPreview({
+        record: row.record,
+        shipQty: getLastOutboundShipQty(row.record),
+      });
+      return;
+    }
     openRegisterModal(managementId);
   };
 
-  const handleOutboundRegister = (form) => {
-    const managementId = applyOutboundRegister(form);
-    if (!managementId) return;
-    setActiveId(managementId);
+  const openOutboundListPrintPreview = () => {
+    if (printTargetRows.length === 0) return;
+    setOutboundListPrintProps(
+      buildInOutListPrintProps(printTargetRows, {
+        listNoPrefix: "OUT",
+        outputDate: getPrintOutputDate(),
+        resolveQty: (record) => getStockQty(record),
+      })
+    );
+    setOutboundListPrintOpen(true);
+  };
+
+  const activeRecord = activeRow?.record ?? null;
+  const canRegisterOutbound = Boolean(activeRecord && getStockQty(activeRecord) > 0);
+  const detailActionLabel = canRegisterOutbound
+    ? OUTBOUND_REGISTER_LABEL
+    : OUTBOUND_STATEMENT_REPRINT_LABEL;
+  const DetailActionIcon = canRegisterOutbound ? Plus : Printer;
+
+  const handleDetailAction = () => {
+    if (canRegisterOutbound) {
+      openRegisterModal(activeRow.managementId);
+      return;
+    }
+    openStatementPrintPreview({
+      record: activeRecord,
+      shipQty: getLastOutboundShipQty(activeRecord),
+    });
+  };
+
+  const handleOutboundRegister = (result) => {
+    if (!result?.ok || !result.managementId) return;
+    setActiveId(result.managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
+    setPendingRegisterResult(result);
+    setStatementPromptOpen(true);
+  };
+
+  const handleStatementPromptConfirm = () => {
+    if (!pendingRegisterResult) {
+      setStatementPromptOpen(false);
+      return;
+    }
+    setStatementPromptOpen(false);
+    openStatementPrintPreview({
+      record: pendingRegisterResult.record,
+      shipQty: pendingRegisterResult.shipQty,
+    });
+    setPendingRegisterResult(null);
+  };
+
+  const handleStatementPromptCancel = () => {
+    setStatementPromptOpen(false);
+    setPendingRegisterResult(null);
+  };
+
+  const handleOutboundCancel = () => {
+    if (!activeRecord) return;
+    const cancelResult = cancelLastOutboundShipment(activeRecord.id);
+    if (!cancelResult.ok) {
+      window.alert(cancelResult.message);
+      return;
+    }
+    window.alert(`출고 ${cancelResult.revertedQty} EA가 취소되었습니다.\n잔여 재고: ${cancelResult.stockAfter} EA`);
+    setRefreshKey((key) => key + 1);
   };
 
   return (
@@ -277,10 +409,6 @@ export default function OutboundManagement() {
         <SecondaryButton type="button" onClick={openOutboundListPrintPreview} disabled={printTargetRows.length === 0}>
           <Printer size={14} aria-hidden="true" />
           {OUTBOUND_LIST_LABEL}
-        </SecondaryButton>
-        <SecondaryButton type="button" onClick={openStatementPrintPreview} disabled={!statementPrintProps}>
-          <Printer size={14} aria-hidden="true" />
-          {OUTBOUND_STATEMENT_LABEL}
         </SecondaryButton>
         <SecondaryButton type="button">
           <FileSpreadsheet size={14} aria-hidden="true" />
@@ -349,9 +477,6 @@ export default function OutboundManagement() {
                 <SecondaryButton type="button" onClick={openOutboundListPrintPreview}>
                   {OUTBOUND_LIST_LABEL}
                 </SecondaryButton>
-                <SecondaryButton type="button" onClick={openStatementPrintPreview} disabled={!statementPrintProps}>
-                  {OUTBOUND_STATEMENT_LABEL}
-                </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
                   선택 해제
                 </SecondaryButton>
@@ -385,9 +510,9 @@ export default function OutboundManagement() {
 
         {activeRow ? (
           <TitanDetailPanel
-            actionLabel={OUTBOUND_STATEMENT_LABEL}
-            actionIcon={Printer}
-            onAction={openStatementPrintPreview}
+            actionLabel={detailActionLabel}
+            actionIcon={DetailActionIcon}
+            onAction={handleDetailAction}
             processFlowSteps={processFlowSteps}
             detailContent={
               <dl className="inbound-detail">
@@ -428,12 +553,28 @@ export default function OutboundManagement() {
                   </dd>
                 </div>
                 <div>
-                  <dt>출고수량</dt>
-                  <dd>{activeRow.qty}</dd>
+                  <dt>입고수량</dt>
+                  <dd>{getIncomingQty(activeRecord)} EA</dd>
+                </div>
+                <div>
+                  <dt>총 출고수량</dt>
+                  <dd>{getOutboundTotalShippedQty(activeRecord)}</dd>
+                </div>
+                <div>
+                  <dt>잔량</dt>
+                  <dd>{getStockQty(activeRecord)} EA</dd>
+                </div>
+                <div>
+                  <dt>출고횟수</dt>
+                  <dd>{getOutboundShipmentCount(activeRecord)}회</dd>
+                </div>
+                <div>
+                  <dt>실재고</dt>
+                  <dd>{activeRow.stockQtyLabel}</dd>
                 </div>
                 <div>
                   <dt>출고일</dt>
-                  <dd>{activeRow.workDate}</dd>
+                  <dd>{activeRow.shipDateLabel}</dd>
                 </div>
                 <div>
                   <dt>현재상태</dt>
@@ -442,9 +583,24 @@ export default function OutboundManagement() {
                   </dd>
                 </div>
                 <div>
+                  <dt>거래명세서</dt>
+                  <dd>
+                    <StatusChip variant={activeRow.statementStatusVariant}>
+                      {activeRow.statementStatusLabel}
+                    </StatusChip>
+                  </dd>
+                </div>
+                <div>
                   <dt>담당자</dt>
                   <dd>{activeRow.manager}</dd>
                 </div>
+                {isTitanAdminUser() && (activeRecord?.shippedQty ?? 0) > 0 ? (
+                  <div className="inbound-detail__actions">
+                    <SecondaryButton type="button" onClick={handleOutboundCancel}>
+                      출고취소 (관리자)
+                    </SecondaryButton>
+                  </div>
+                ) : null}
               </dl>
             }
           />
@@ -461,16 +617,23 @@ export default function OutboundManagement() {
         onRegister={handleOutboundRegister}
       />
 
+      <OutboundStatementPromptDialog
+        open={statementPromptOpen}
+        result={pendingRegisterResult}
+        onConfirm={handleStatementPromptConfirm}
+        onCancel={handleStatementPromptCancel}
+      />
+
       <InOutListPrintPreviewModal
         open={outboundListPrintOpen}
         onClose={() => setOutboundListPrintOpen(false)}
         documentType={TITAN_PRINT_DOCUMENT_TYPES.OUTBOUND_LIST}
-        printProps={outboundListPrintProps}
+        printProps={outboundListPrintPropsForModal}
       />
 
       <TitanPrintPreviewModal
         open={statementPrintOpen}
-        onClose={() => setStatementPrintOpen(false)}
+        onClose={closeStatementPrintPreview}
         title="거래명세서 출력 미리보기"
         onPrint={handleStatementPrint}
         onPdf={handleStatementPdf}

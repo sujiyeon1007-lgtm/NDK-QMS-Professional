@@ -30,6 +30,31 @@
   flex: 1;
 }
 
+.titan-header__edition {
+  margin-right: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+.titan-header__demo-admin {
+  margin-right: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
 .titan-header__beta {
   display: flex;
   flex-direction: column;

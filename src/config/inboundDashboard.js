@@ -8,7 +8,7 @@
 
  * UI: TitanWorkflowStatusChipBar (Foundation 공통)
 
- * KPI: 제품 입고 등록 · 제품 출고대기 · 제품 출고완료
+ * KPI: 제품 입고 등록 · 미출력 입고리스트 · 제품 출고대기 · 제품 출고완료
 
  */
 

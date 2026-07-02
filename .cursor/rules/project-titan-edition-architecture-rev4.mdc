@@ -1,0 +1,58 @@
+---
+description: Project TITAN Edition Architecture REV.4 — REV.5 Platform 하위
+alwaysApply: true
+---
+
+# Edition Layer (REV.4 · REV.5 Platform 하위)
+
+**최우선:** `.cursor/rules/project-titan-platform-architecture-rev5.mdc`
+
+**Source:** `src/config/titanEditionArchitecture.js`
+
+---
+
+## 핵심
+
+**프로그램 두 개 ❌** · **Core 하나 + Edition 두 가지 ✅**
+
+```text
+Project TITAN Core (UI · Workflow · Print · 문서 · 성적서 · QR · 이력 · 통계)
+        ↑
+Standalone Repository  |  MES Repository (Oracle/API/CSV)
+        ↑                        ↑
+Standalone Edition      MES Connected Edition
+```
+
+**UI · Workflow 100% 동일** · **Repository만 변경**
+
+---
+
+## Edition
+
+### Standalone (독립형)
+
+MES 없음 · Master·입출고·재고 **TITAN 관리** · Repository: Session → SQLite
+
+Workflow: 입고등록 → 품질접수 → 검사 → … → 출고
+
+### MES Connected (연동형)
+
+MES = SoT · TITAN = QMS · **Read Only** · Repository: Oracle / API / CSV
+
+Workflow: MES 입고 → TITAN 입고조회 → 품질접수 → 검사 → 성적서
+
+---
+
+## 실행
+
+시작 시 Edition 선택 · **환경설정 → 프로그램 설정**에서 변경
+
+`src/utils/titanEditionSession.js`
+
+---
+
+## Do Not
+
+- Edition별 UI/Workflow 분기 신규 작성
+- MES Connected에서 Master/입고 **TITAN 생성**
+- Standalone을 MES 대체품으로 설계 (독립 QMS)

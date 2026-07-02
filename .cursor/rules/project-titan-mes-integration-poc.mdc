@@ -1,0 +1,99 @@
+---
+description: MES 연동 사전 검증(PoC) REV.5 REAL — Electron Main Oracle Read Only PoC
+alwaysApply: true
+---
+
+# MES 연동 사전 검증 (PoC) — REV.5 REAL
+
+**목적:** Architecture 확정 후 **실제 Oracle Read Only 연동 가능 여부** 확인 (Electron Main Process)
+
+**우선순위:** Oracle PoC **병행** (V1.0 QMS Core 개발과 병행 · PoC 결과는 V1.1 Edition 결정용) · **Repository 마이그레이션 ON HOLD**
+
+**V1.0 Sprint 3 (QMS):** Print Engine · 성적서 · 출력물 · 문서관리 기본 구조 — see `project-titan-v1-development-direction.mdc`
+
+**Source of truth (code):**
+- `src/config/mesIntegrationPoc.js` · `src/config/mesOracleRealPoc.js`
+- `src/utils/mesIntegrationPocSession.js` · `src/services/mesOracleBridge.js`
+- `electron/oracle/` · `electron/main.mjs` · `electron/preload.cjs`
+
+**관리 UI:** 환경설정 → **MES PoC** (`/environment/mes-poc`) — **관리자 전용**
+
+---
+
+## Architecture (REV.5)
+
+```text
+React UI → mesOracleBridge → IPC → Electron Main → node-oracledb → Oracle (SELECT only)
+         → getRepositories() → session | oracle (PoC toggle)
+```
+
+**브라우저(Vite) 단독:** Real PoC ❌ — `npm run electron:dev` 필수
+
+---
+
+## 우선순위 (검증 순서)
+
+1. Oracle 접속 가능 여부 (DUAL)
+2. 제품 Master 조회 (max 20 rows)
+3. 거래처 조회 (max 20 rows)
+4. 입고 데이터 조회 (max 20 rows)
+5. 출고 · 재고 조회 (수동/향후)
+6. CSV Export 가능 여부
+7. API 제공 여부
+
+---
+
+## Connection Status
+
+`success` · `fail` · `timeout` · `noPermission`
+
+---
+
+## Security
+
+- `.env` — Host/Port/Service/User/Password/SQL (Git ❌)
+- `.env.example` — 템플릿만 커밋
+- `mes-poc-config.local.json` — gitignore
+- 비밀번호: connect 시 메모리만 · SessionStorage/Git/코드 저장 ❌
+- SELECT only · max 20 rows · DBA 읽기 전용 계정
+
+---
+
+## SQL Templates
+
+- `scripts/mes-poc/queries/product-master.sql`
+- `scripts/mes-poc/queries/customer-master.sql`
+- `scripts/mes-poc/queries/inbound.sql`
+
+→ `.env`의 `MES_ORACLE_SQL_*` (한 줄)
+
+---
+
+## V1.1 분기
+
+| PoC 결과 | V1.1 경로 |
+|----------|-----------|
+| Oracle + Master + 입고 **성공** | **MES Oracle 연동** |
+| Oracle 실패 · CSV Export **가능** | **CSV Import 구조 유지** |
+| 검증 미완료 | PoC 계속 · Sprint 3 병행 |
+
+---
+
+## 실행
+
+```bash
+cp .env.example .env   # fill Oracle credentials + SQL
+npm install
+npm run electron:dev   # Vite + Electron
+```
+
+**필수:** Oracle Instant Client (PATH) · node-oracledb (`optionalDependencies`)
+
+---
+
+## Do Not
+
+- 브라우저에서 Oracle 직접 접속 (Main Process만)
+- PoC 미완료 상태에서 V1.1 **Production Repository 교체 착수**
+- MES zip/ini의 **평문 DB PW**를 레포에 커밋
+- INSERT/UPDATE/DELETE in PoC queries

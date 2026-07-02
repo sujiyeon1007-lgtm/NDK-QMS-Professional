@@ -17,6 +17,7 @@ import {
   isInboundShipOutComplete,
 } from "./inboundManagementStatus";
 import { buildTodayWorkSummary } from "./homeDashboardData";
+import { isHtlFirstPrintTarget } from "./htlPrintEligibility";
 
 /**
  * @typedef {Record<string, number>} StatusChipCounts
@@ -56,6 +57,7 @@ export function resolveInboundStatusChipCounts(records) {
 
   return {
     productIncomingReg: visible.length,
+    productHtlNotPrinted: visible.filter((r) => isIncomingRegistered(r) && isHtlFirstPrintTarget(r)).length,
     productShipWait: visible.filter((r) => statusOf(r) === INBOUND_STATUS_LABELS.SHIP_WAIT).length,
     productShipDone: records.filter((r) => isInboundShipOutComplete(r)).length,
   };

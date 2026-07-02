@@ -1,0 +1,53 @@
+---
+description: Project TITAN Official Print Standard — list documents (DOC-01~06)
+alwaysApply: true
+---
+
+# Official Print Standard (List Documents)
+
+All **list-form** print outputs use **A4 Landscape** with **DOC-01 as Layout Master**.
+
+Source: `src/config/titanListPrintStandard.js` · `src/components/print/titan-print.css` · `.titan-print-list`
+
+Companion: `.cursor/rules/project-titan-print-engine-policy.mdc`
+
+---
+
+## Documents (Landscape + common layout)
+
+DOC-01 HTL · DOC-02 DPR list · DOC-03 Inspection list · DOC-04 Certificate list · DOC-05 Outbound list · DOC-06 History list
+
+**Same:** Header · Footer · Table style · QR position · document number system · Print Engine
+
+**Only columns change** — layout stays identical.
+
+---
+
+## Typography (compact ERP)
+
+- Base font ~**1–2pt smaller** than prior preview (12px table body vs 14px)
+- Row height auto-adjusts with font · line-height ~1.32
+- **No ellipsis** on wrap columns
+
+---
+
+## Margins
+
+- Header and Footer **retained**
+- Table body area **maximized** (8mm page padding · tighter header/table gaps)
+- Goal: more rows per page without over-shrinking
+
+---
+
+## Engine
+
+- `TITAN_LIST_PRINT_LINE_BUDGET` · group keep-together · wrap columns
+- New list prints: copy DOC-01 pattern — change columns only
+
+---
+
+## Procedure
+
+Preview → PM screenshot → approval → PDF → Workflow → Commit → Push → Beta
+
+Non-list docs (거래명세서 · 성적서 양식 등): dedicated layout — still use Print Engine core.

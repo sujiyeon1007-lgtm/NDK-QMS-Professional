@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Project TITAN Professional V1.0 — Development Standard (PM Final)
 
-**Purpose:** QMS + MES + ERP for NDK real operations. Prioritize **design and consistency** over speed. Maintainable structure for anyone on the team.
+**Purpose:** **MES 연동 기반 QMS** for NDK heat-treatment quality. Prioritize **design and consistency** over speed.
+
+**Architecture (FINAL):** `.cursor/rules/project-titan-mes-architecture-final.mdc` · `src/config/mesArchitecturePolicy.js`
 
 **Source of truth (code):** `src/config/developmentStandard.js`, `src/config/menuStructure.js`
 
@@ -114,8 +116,10 @@ See `WORKFLOW_STEPS` in `src/config/menuStructure.js`.
 
 ## 10. Data Rules
 
-- **Never enter the same data twice.**
-- Data entered once is **reused** across menus: 입고 → 생산 → 검사 → 성적서 → 출고 → 통계.
+- **Never enter the same data twice** — Master/입출고/관리번호는 **MES Source of Truth** (TITAN **조회만**).
+- **mesManagementNo** (예: DL260702-016) = 품질 데이터 Primary Key · **TITAN 생성 ❌**
+- Demo: SessionStorage = 가상 MES · `getRepositories()` 경유
+- Data entered once is **reused** across menus via **mesManagementNo**
 
 ## 11. Change Rules
 

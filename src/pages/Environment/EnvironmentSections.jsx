@@ -28,6 +28,31 @@ import {
   saveProgramSettings,
   updateUser,
 } from "../../utils/environmentSettingsSession";
+import { getTitanArchitectureDisplayInfo } from "../../config/mesArchitecturePolicy";
+import { OFFICIAL_POLICY_DISPLAY } from "../../config/titanV1OfficialPolicy";
+import {
+  REPOSITORY_ARCHITECTURE_VERSION,
+  REPOSITORY_BACKEND,
+  REPOSITORY_REGISTRY,
+  REPOSITORY_SWAP_POLICY,
+  QUALITY_PRIMARY_KEY,
+} from "../../config/repositoryArchitecture";
+import { DEMO_ADMIN_POLICY_VERSION } from "../../config/demoAdminPolicy";
+import {
+  MES_REPOSITORY_ADAPTER,
+  TITAN_EDITION,
+  EDITION_FEATURE_COMPARISON,
+  getSelectableEditions,
+} from "../../config/titanEditionArchitecture";
+import { PLATFORM_ARCHITECTURE_VERSION, TITAN_PLATFORM_VISION, PLATFORM_LAYERS } from "../../config/titanPlatformArchitecture";
+import { getRepositoryBackendLabel } from "../../repositories";
+import { isTitanAdminUser, getTitanUserRole, isDemoAdminModeActive } from "../../utils/titanAdminAccess";
+import {
+  getTitanEditionState,
+  setTitanEdition,
+  getTitanEditionDisplayLabel,
+} from "../../utils/titanEditionSession";
+import MesIntegrationPocPanel from "./MesIntegrationPocPanel";
 
 function SettingsPanel({ title, desc, children }) {
   return (
@@ -40,6 +65,25 @@ function SettingsPanel({ title, desc, children }) {
       </div>
       {children}
     </section>
+  );
+}
+
+function AdminOnlySection({ title, desc, children }) {
+  if (!isTitanAdminUser()) {
+    return (
+      <SettingsPanel title={title} desc={desc}>
+        <div className="environment-poc-access-denied">
+          <strong>접근 권한 없음</strong>
+          <p>관리자 전용 메뉴입니다.</p>
+        </div>
+      </SettingsPanel>
+    );
+  }
+
+  return (
+    <SettingsPanel title={title} desc={desc}>
+      {children}
+    </SettingsPanel>
   );
 }
 
@@ -531,7 +575,9 @@ export function LogsSection({ refreshKey }) {
 
 export function ProgramSection({ refreshKey, onRefresh }) {
   const programSettings = useMemo(() => getEnvironmentSettings().programSettings, [refreshKey]);
+  const editionState = useMemo(() => getTitanEditionState(), [refreshKey]);
   const [draft, setDraft] = useState(programSettings);
+  const [editionDraft, setEditionDraft] = useState(editionState);
   const [message, setMessage] = useState("");
 
   const handleSave = () => {
@@ -540,8 +586,66 @@ export function ProgramSection({ refreshKey, onRefresh }) {
     onRefresh?.();
   };
 
+  const handleEditionSave = () => {
+    const result = setTitanEdition(editionDraft.editionId, {
+      mesAdapter: editionDraft.mesAdapter,
+    });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setMessage(`실행 Edition이 ${getTitanEditionDisplayLabel()} 로 변경되었습니다.`);
+    onRefresh?.();
+  };
+
   return (
-    <SettingsPanel title="프로그램 설정" desc="자동 저장 · 자동 백업 · 저장 경로를 관리합니다.">
+    <SettingsPanel title="프로그램 설정" desc="Edition · 자동 저장 · 자동 백업 · 저장 경로">
+      <h4 className="environment-subtitle">실행 Edition (Platform REV.6)</h4>
+      <p className="environment-form-note">{TITAN_PLATFORM_VISION.motto}</p>
+      <fieldset className="environment-edition-fieldset">
+        {getSelectableEditions().map((edition) => (
+          <label key={edition.id} className="environment-edition-option">
+            <input
+              type="radio"
+              name="program-edition"
+              checked={editionDraft.editionId === edition.id}
+              onChange={() => setEditionDraft((p) => ({ ...p, editionId: edition.id }))}
+            />
+            <span>
+              <strong>{edition.labelKo}</strong>
+              <small>{edition.subtitle ?? edition.label}</small>
+              — {edition.description}
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      {editionDraft.editionId === TITAN_EDITION.MES_CONNECTED ? (
+        <label className="environment-edition-adapter">
+          <span>MES Repository</span>
+          <select
+            value={editionDraft.mesAdapter}
+            onChange={(e) => setEditionDraft((p) => ({ ...p, mesAdapter: e.target.value }))}
+          >
+            <option value={MES_REPOSITORY_ADAPTER.ORACLE}>Oracle (Read Only)</option>
+            <option value={MES_REPOSITORY_ADAPTER.API}>API (V1.1)</option>
+            <option value={MES_REPOSITORY_ADAPTER.CSV}>CSV (V1.1)</option>
+          </select>
+        </label>
+      ) : null}
+      <div className="environment-actions">
+        <PrimaryButton type="button" onClick={handleEditionSave}>
+          Edition 적용
+        </PrimaryButton>
+      </div>
+      <p className="environment-form-note environment-edition-future">
+        Enterprise Edition (확장형) — Smart Factory · MES·ERP·PLC·IoT·AI·SPC · Future
+      </p>
+      <p className="environment-form-note">
+        현재: <strong>{getTitanEditionDisplayLabel()}</strong> · Backend: {getRepositoryBackendLabel()} · Policy{" "}
+        {PLATFORM_ARCHITECTURE_VERSION}
+      </p>
+
+      <h4 className="environment-subtitle">프로그램 옵션</h4>
       <ul className="environment-toggle-list">
         <li>
           <label className="environment-toggle-disabled">
@@ -711,12 +815,196 @@ export function StatusSection({ refreshKey }) {
   );
 }
 
-export function AboutSection({ refreshKey }) {
+export function MesPocSection({ refreshKey, onRefresh }) {
+  return (
+    <AdminOnlySection
+      title="MES PoC"
+      desc="MES Oracle 연동 사전 검증 · REV.4 FINAL · Repository 마이그레이션 ON HOLD"
+    >
+      <MesIntegrationPocPanel refreshKey={refreshKey} onRefresh={onRefresh} />
+    </AdminOnlySection>
+  );
+}
+
+export function ArchitectureSection() {
+  const architecture = useMemo(() => getTitanArchitectureDisplayInfo(), []);
+
+  return (
+    <AdminOnlySection title="Architecture" desc="Project TITAN 공식 정책 · 아키텍처 (관리자)">
+      <dl className="environment-info-list environment-info-list--architecture">
+        <div>
+          <dt>Platform Architecture</dt>
+          <dd>{PLATFORM_ARCHITECTURE_VERSION}</dd>
+        </div>
+        <div>
+          <dt>Platform Vision</dt>
+          <dd>{TITAN_PLATFORM_VISION.tagline}</dd>
+        </div>
+        <div>
+          <dt>Edition Architecture</dt>
+          <dd>{PLATFORM_ARCHITECTURE_VERSION}</dd>
+        </div>
+        <div>
+          <dt>실행 Edition</dt>
+          <dd>{getTitanEditionDisplayLabel()}</dd>
+        </div>
+        <div>
+          <dt>Official Policy</dt>
+          <dd>{OFFICIAL_POLICY_DISPLAY.revision}</dd>
+        </div>
+        <div>
+          <dt>Project TITAN</dt>
+          <dd>{architecture.program}</dd>
+        </div>
+        <div>
+          <dt>Version</dt>
+          <dd>{architecture.version}</dd>
+        </div>
+        <div>
+          <dt>Architecture</dt>
+          <dd>{architecture.architecture}</dd>
+        </div>
+        <div>
+          <dt>Platform</dt>
+          <dd>{architecture.platform}</dd>
+        </div>
+        <div>
+          <dt>Data Source</dt>
+          <dd>{architecture.dataSource}</dd>
+        </div>
+        <div>
+          <dt>Future</dt>
+          <dd>{architecture.future}</dd>
+        </div>
+        <div>
+          <dt>Revision</dt>
+          <dd>{architecture.revision}</dd>
+        </div>
+      </dl>
+      <pre className="environment-debug-stack">{PLATFORM_LAYERS.map((layer) => `${layer.label}\n  ${(layer.modules ?? layer.items ?? []).join(" · ")}`).join("\n\n")}</pre>
+      <h4 className="environment-subtitle">Edition 비교 (REV.6)</h4>
+      <div className="environment-edition-compare-wrap">
+        <table className="environment-edition-compare">
+          <thead>
+            <tr>
+              <th scope="col">기능</th>
+              <th scope="col">Quality</th>
+              <th scope="col">Standalone</th>
+              <th scope="col">MES Connected</th>
+            </tr>
+          </thead>
+          <tbody>
+            {EDITION_FEATURE_COMPARISON.map((row) => (
+              <tr key={row.feature}>
+                <th scope="row">{row.feature}</th>
+                <td>{row.quality}</td>
+                <td>{row.standalone}</td>
+                <td>{row.mesConnected}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="environment-form-note">
+        MES 연동 검증은 <strong>관리자 → MES PoC</strong> 탭에서 수행합니다.
+      </p>
+    </AdminOnlySection>
+  );
+}
+
+export function RepositoryStatusSection() {
+  const backend = getRepositoryBackendLabel();
+
+  return (
+    <AdminOnlySection title="Repository Status" desc="UI → getRepositories() → Backend (관리자)">
+      <dl className="environment-info-list environment-info-list--architecture">
+        <div>
+          <dt>Architecture Version</dt>
+          <dd>{REPOSITORY_ARCHITECTURE_VERSION}</dd>
+        </div>
+        <div>
+          <dt>Current Backend</dt>
+          <dd>{backend}</dd>
+        </div>
+        <div>
+          <dt>V1.1 Target (MES)</dt>
+          <dd>{REPOSITORY_BACKEND.MES_ORACLE}</dd>
+        </div>
+        <div>
+          <dt>Primary Key</dt>
+          <dd>{QUALITY_PRIMARY_KEY}</dd>
+        </div>
+        <div>
+          <dt>Swap Policy</dt>
+          <dd>{REPOSITORY_SWAP_POLICY.swapTarget}</dd>
+        </div>
+      </dl>
+      <h4 className="environment-subtitle">Registered Repositories</h4>
+      <ul className="environment-poc-analysis-list">
+        {REPOSITORY_REGISTRY.map((name) => (
+          <li key={name} className="environment-poc-analysis-item environment-poc-analysis-item--pass">
+            <span className="environment-poc-analysis-item__mark" aria-hidden>✓</span>
+            <div>
+              <strong>{name}</strong>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <pre className="environment-debug-stack">{`UI\n ↓\ngetRepositories()\n ↓\nSession Repository (V1.0)\n ↓\nOracle Repository (V1.1)`}</pre>
+    </AdminOnlySection>
+  );
+}
+
+export function DebugSection() {
+  const sessionKeyCount = useMemo(() => {
+    try {
+      return globalThis.sessionStorage?.length ?? 0;
+    } catch {
+      return 0;
+    }
+  }, []);
+
+  return (
+    <AdminOnlySection title="Debug" desc="Demo · 개발 디버그 정보 (관리자 · UI 전용)">
+      <dl className="environment-info-list">
+        <div>
+          <dt>Demo Admin Policy</dt>
+          <dd>{DEMO_ADMIN_POLICY_VERSION}</dd>
+        </div>
+        <div>
+          <dt>Demo Admin Mode</dt>
+          <dd>{isDemoAdminModeActive() ? "활성" : "비활성"}</dd>
+        </div>
+        <div>
+          <dt>Current Role (V1.1 prep)</dt>
+          <dd>{getTitanUserRole()}</dd>
+        </div>
+        <div>
+          <dt>Build Mode</dt>
+          <dd>{import.meta.env.MODE}</dd>
+        </div>
+        <div>
+          <dt>SessionStorage Keys</dt>
+          <dd>{sessionKeyCount}개</dd>
+        </div>
+        <div>
+          <dt>App Version</dt>
+          <dd>{APP_VERSION}</dd>
+        </div>
+      </dl>
+      <p className="environment-form-note">
+        Demo Admin은 UI 접근만 제어합니다. Business Logic은 권한과 독립적으로 동작합니다.
+      </p>
+    </AdminOnlySection>
+  );
+}
+
+export function AboutSection({ refreshKey, onRefresh }) {
   const update = useMemo(() => checkForUpdates(), [refreshKey]);
   const [message, setMessage] = useState("");
 
   return (
-    <SettingsPanel title="정보 (About)" desc="Project TITAN 프로그램 정보">
+    <AdminOnlySection title="About" desc="Project TITAN 프로그램 정보 (관리자)">
       <dl className="environment-info-list">
         <div>
           <dt>Program</dt>
@@ -735,6 +1023,7 @@ export function AboutSection({ refreshKey }) {
           <dd>React · Electron · SQLite</dd>
         </div>
       </dl>
+
       <p className="environment-about-copy">Copyright © NDK. All rights reserved.</p>
 
       <div className="environment-backup-actions">
@@ -758,7 +1047,7 @@ export function AboutSection({ refreshKey }) {
         ) : null}
       </div>
       <ActionMessage message={message} />
-    </SettingsPanel>
+    </AdminOnlySection>
   );
 }
 
@@ -782,6 +1071,14 @@ export function renderEnvironmentSection(tabId, props) {
       return <DataSection {...props} />;
     case "status":
       return <StatusSection {...props} />;
+    case "mes-poc":
+      return <MesPocSection {...props} />;
+    case "architecture":
+      return <ArchitectureSection {...props} />;
+    case "repository-status":
+      return <RepositoryStatusSection {...props} />;
+    case "debug":
+      return <DebugSection {...props} />;
     case "about":
       return <AboutSection {...props} />;
     default:

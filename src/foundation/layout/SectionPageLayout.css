@@ -11,18 +11,18 @@
   background: var(--titan-surface);
   border: 1px solid var(--titan-border);
   border-radius: var(--titan-radius);
+  box-shadow: var(--titan-shadow);
 }
 
 .titan-section-page__title {
   margin: 0;
   font-size: 16px;
-  font-weight: 800;
-  color: var(--titan-text);
   white-space: nowrap;
 }
 
 .titan-section-page__desc {
   margin: 4px 0 0;
+  padding-left: calc(var(--titan-title-accent-gap) + var(--titan-title-accent-width));
   font-size: 12px;
   color: var(--titan-text-muted);
 }
@@ -47,12 +47,14 @@
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
+  transition: background var(--titan-transition-fast), color var(--titan-transition-fast),
+    border-color var(--titan-transition-fast);
 }
 
 .titan-section-tabs__link:hover {
-  background: #eff6ff;
+  background: var(--titan-hover-bg);
   color: var(--titan-primary);
-  border-color: #bfdbfe;
+  border-color: var(--titan-border);
 }
 
 .titan-section-tabs__link.active {

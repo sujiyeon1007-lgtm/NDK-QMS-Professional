@@ -1,9 +1,9 @@
-import { formatQtyWithUnit } from "./productUnits";
 import {
-  computePrintColumnWidths,
-  paginateRowsByLayout,
-  PRINT_ORIENTATION,
-} from "./titanPrintLayout";
+  buildListPrintPaginationOptions,
+  TITAN_LIST_PRINT_ORIENTATION,
+} from "../config/titanListPrintStandard";
+import { formatQtyWithUnit } from "./productUnits";
+import { computePrintColumnWidths, paginateRowsByLayout } from "./titanPrintLayout";
 
 /** DOC-01 PM Official — 열처리 작업 요청 리스트 (A4 Landscape) */
 export const HTL_PRINT_TITLE = "열처리 작업 요청 리스트";
@@ -35,7 +35,7 @@ export function buildHtlPrintColumns() {
       id: "company",
       header: "업체명",
       baseRatio: 11,
-      singleLine: true,
+      wrap: true,
       align: "left",
       getValue: (row) => row.company ?? "",
     },
@@ -59,7 +59,7 @@ export function buildHtlPrintColumns() {
       id: "material",
       header: "재질",
       baseRatio: 7,
-      singleLine: true,
+      wrap: true,
       align: "center",
       getValue: (row) => row.material ?? "",
     },
@@ -103,9 +103,9 @@ export function buildHtlPrintColumns() {
       header: "비고",
       baseRatio: 14,
       handwriting: true,
-      singleLine: true,
+      wrap: true,
       align: "left",
-      getValue: () => "",
+      getValue: (row) => row.note ?? "",
     },
   ];
 }
@@ -113,17 +113,17 @@ export function buildHtlPrintColumns() {
 export function buildHtlPrintLayout(rows, _workDate = "", options = {}) {
   const columns = buildHtlPrintColumns();
   const columnWidths = computePrintColumnWidths(columns, rows);
-  const orientation = PRINT_ORIENTATION.LANDSCAPE;
-
-  const trimmedMemo = options.workMemo?.trim() ?? "";
-  let lastPageReserve = 5;
-  if (trimmedMemo) lastPageReserve += 3;
-
-  const rowLineBudget = {
-    lineBudget: 10,
-    lastPageReserve,
-  };
-  const pages = paginateRowsByLayout(rows, columns, columnWidths, orientation, rowLineBudget);
+  const orientation = TITAN_LIST_PRINT_ORIENTATION;
+  const pages = paginateRowsByLayout(
+    rows,
+    columns,
+    columnWidths,
+    orientation,
+    buildListPrintPaginationOptions({
+      workMemo: options.workMemo,
+      getGroupKey: (row) => row.managementId ?? row.id ?? "",
+    })
+  );
 
   return {
     columns,

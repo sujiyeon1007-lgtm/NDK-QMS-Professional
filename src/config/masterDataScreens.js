@@ -193,8 +193,8 @@ export const MASTER_DATA_SCREENS = {
       { key: "note", label: "비고" },
     ],
     formFields: [
-      { key: "code", label: "설비코드", required: true, placeholder: "예: ION-01" },
-      { key: "name", label: "설비명", required: true, placeholder: "예: 1호기" },
+      { key: "code", label: "설비코드", required: true, placeholder: "예: 3S-3" },
+      { key: "name", label: "설비명", required: true, placeholder: "예: 3S-3 · 61" },
       { key: "equipType", label: "공정", placeholder: "예: 이온질화" },
       { key: "note", label: "비고", type: "textarea", span: 2 },
       { key: "active", label: "사용여부", type: "toggle" },

@@ -5,9 +5,15 @@ alwaysApply: true
 
 # Project TITAN MASTER POLICY V1.0
 
+> **⚠️ Sprint/메뉴 우선순위는 2026-07-02 공식 방향이 우선합니다.**  
+> See: `.cursor/rules/project-titan-v1-development-direction.mdc` · `src/config/titanV1DevelopmentDirection.js`  
+> 아래 Sprint 3(입고·DOC-01) 등 **MES/입출고 중심 항목은 보류** — 참고용으로만 유지.
+
 **Official Development Rule**
 
-Project TITAN is not "building a program" — it is building a **QMS the company actually uses**.
+Project TITAN is not "building a program" — it is building a **QMS the company actually uses**, **complementing MES (not replacing it)**.
+
+**Official Policy V1.0 REV.3:** `.cursor/rules/project-titan-v1-official-policy-rev3.mdc` · `src/config/titanV1OfficialPolicy.js`
 
 **Completion criterion:** *"Can the company use this tomorrow?"*
 
@@ -53,6 +59,8 @@ Local Host (vite --host) → develop → test → Build
 ## 5. Demo Policy
 
 **No Dummy Data.** Real: 거래처 · 품번 · 품명 · 재질 · 단가 · Workflow.
+
+**Demo data = 가상 MES 데이터** (SessionStorage). Workflow 유지.
 
 **Primary demo company:** **서암기계공업**
 
@@ -121,11 +129,15 @@ All **internal** prints include QR. **Exception:** 거래명세서 — supplier 
 
 ## 12–15. Future Roadmap (Reference)
 
-- **Mobile Mode:** QR scan → role-specific mobile screens (post V1.0 desktop)
-- **AI V2.1:** Natural query · anomaly search
-- **Smart Factory V3.0:** MES · ERP · IoT · realtime dashboard
+See: `.cursor/rules/project-titan-vision-roadmap-v1.mdc` (Vision · Smart QR · Portal MASTER FINAL)
 
-Do not implement roadmap items unless explicitly requested.
+- **V1.0 (now):** Stable QMS · Document QR on prints · Desktop ERP
+- **V1.1:** QR Portal · document open from scan
+- **V2.0:** Smart QR · labels · mobile field mode · status colors
+- **V2.1:** AI Assistant
+- **V3.0:** Smart Factory · MES · ERP · IoT
+
+Do not implement roadmap items unless explicitly scheduled in a Sprint.
 
 ---
 
@@ -137,6 +149,6 @@ Do not implement roadmap items unless explicitly requested.
 
 ## 17. Ultimate Goal
 
-Unified QMS platform: 입고 · 생산 · 검사 · 성적서 · 출고 · LOT · QR · documents · (future) mobile · AI · MES · ERP — one connected system.
+**MES** (회사 공통) → **Project TITAN** (열처리 QMS) → 검사 · 성적서 · 품질이력 · 통계 · QR · Portal · Traceability
 
-**Priority:** real operational use over UI or feature count.
+**Priority:** real operational use over UI or feature count. **Do not duplicate MES Master/입출고 입력 in final architecture.**

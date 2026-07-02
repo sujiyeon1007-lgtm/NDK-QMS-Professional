@@ -123,7 +123,11 @@ export const MENU_SECTIONS = {
       { id: "program", label: "프로그램 설정", path: "/environment/program" },
       { id: "data", label: "데이터 관리", path: "/environment/data" },
       { id: "status", label: "시스템 상태", path: "/environment/status" },
-      { id: "about", label: "정보 (About)", path: "/environment/about" },
+      { id: "mes-poc", label: "MES PoC", path: "/environment/mes-poc" },
+      { id: "architecture", label: "Architecture", path: "/environment/architecture" },
+      { id: "repository-status", label: "Repository Status", path: "/environment/repository-status" },
+      { id: "debug", label: "Debug", path: "/environment/debug" },
+      { id: "about", label: "About", path: "/environment/about" },
     ],
   },
 };

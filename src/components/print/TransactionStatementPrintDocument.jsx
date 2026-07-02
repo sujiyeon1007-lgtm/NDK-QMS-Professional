@@ -1,7 +1,14 @@
 import TransactionStatementPreview from "../transactionStatement/TransactionStatementPreview";
 
 /** 거래명세서 전용 출력 문서 — 입출고 리스트 Preview와 분리 */
-function TransactionStatementPrintDocument({ record, shipQty, amounts, unitPrice, issueDate }) {
+function TransactionStatementPrintDocument({
+  record,
+  shipQty,
+  shipQtyNumeric,
+  amounts,
+  unitPrice,
+  issueDate,
+}) {
   if (!record) return null;
 
   return (
@@ -9,6 +16,7 @@ function TransactionStatementPrintDocument({ record, shipQty, amounts, unitPrice
       <TransactionStatementPreview
         record={record}
         shipQty={shipQty}
+        shipQtyNumeric={shipQtyNumeric}
         amounts={amounts}
         unitPrice={unitPrice}
         issueDate={issueDate}

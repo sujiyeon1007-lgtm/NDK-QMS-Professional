@@ -3,7 +3,7 @@ import {
   buildStatementItemRows,
   getCustomerProfile,
 } from "../../utils/transactionStatementConfig";
-import { formatQtyWithUnit } from "../../utils/productUnits";
+import { formatQtyWithUnit, parseQtyWithUnit } from "../../utils/productUnits";
 import "./TransactionStatement.css";
 
 function formatNum(value) {
@@ -200,13 +200,25 @@ function TransactionStatementSheet({
   );
 }
 
-export default function TransactionStatementPreview({ record, shipQty, amounts, unitPrice, issueDate }) {
+export default function TransactionStatementPreview({
+  record,
+  shipQty,
+  shipQtyNumeric,
+  amounts,
+  unitPrice,
+  issueDate,
+}) {
   const customer = getCustomerProfile(record.company);
+  const unit = record.unit ?? "EA";
+  const qty = Number.isFinite(Number(shipQtyNumeric))
+    ? Number(shipQtyNumeric)
+    : parseQtyWithUnit(shipQty, unit).qty;
+
   const lineItem = {
     partNo: record.partNo ?? "",
     partName: record.partName ?? "",
-    unit: record.unit ?? "EA",
-    qty: Number(shipQty) || 0,
+    unit,
+    qty,
     unitPrice: Number(unitPrice) || 0,
     supplyAmount: amounts.supplyAmount,
     vat: amounts.vat,

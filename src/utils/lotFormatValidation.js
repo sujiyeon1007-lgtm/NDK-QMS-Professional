@@ -1,10 +1,15 @@
 /**
  * Project TITAN — LOT 번호 형식 검증 (생산일보 등록 시 save 검증)
- * 예: 26060206-3S2A · 26060206-2S1B · 26060301-1S3A
+ * 예: 260626-3S3A · 260626-10S01B · 260626-61A
  */
 
-/** 8자리 일자-숫자S숫자영문 (업체 LOT 패턴 공통) */
-export const NDK_LOT_FORMAT_PATTERN = /^\d{8}-\d+S\d+[A-Z]$/;
+import {
+  NDK_PRODUCTION_LOT_PATTERN,
+  parseProductionLotNo,
+  productionLotMatchesEquipment,
+} from "./productionLotNumber";
+
+export { NDK_PRODUCTION_LOT_PATTERN as NDK_LOT_FORMAT_PATTERN };
 
 /**
  * LOT 형식 검증 (저장 시점)
@@ -16,14 +21,41 @@ export function validateLotNoFormat(lotNo) {
   if (!trimmed) {
     return { ok: false, code: "EMPTY", message: "LOT 번호를 입력하세요." };
   }
-  if (!NDK_LOT_FORMAT_PATTERN.test(trimmed)) {
+  if (!NDK_PRODUCTION_LOT_PATTERN.test(trimmed)) {
     return {
       ok: false,
       code: "FORMAT",
-      message: "LOT 번호 형식이 올바르지 않습니다. (예: 26060206-3S2A)",
+      message: "LOT 번호 형식이 올바르지 않습니다. (예: 260626-3S3A)",
     };
   }
-  return { ok: true, lotNo: trimmed };
+
+  const parsed = parseProductionLotNo(trimmed);
+  return { ok: true, lotNo: parsed?.lotNo ?? trimmed.toUpperCase() };
+}
+
+/**
+ * LOT 번호와 설비 선택 일치 검증
+ * @param {string} lotNo
+ * @param {string} equipment
+ */
+export function validateLotNoEquipmentMatch(lotNo, equipment) {
+  const formatCheck = validateLotNoFormat(lotNo);
+  if (!formatCheck.ok) return formatCheck;
+
+  const equipmentName = String(equipment ?? "").trim();
+  if (!equipmentName) {
+    return { ok: false, code: "EQUIPMENT", message: "설비를 선택하세요." };
+  }
+
+  if (!productionLotMatchesEquipment(formatCheck.lotNo, equipmentName)) {
+    return {
+      ok: false,
+      code: "EQUIPMENT_MISMATCH",
+      message: "LOT 번호와 선택 설비가 일치하지 않습니다. 작업일 · 설비를 확인하세요.",
+    };
+  }
+
+  return formatCheck;
 }
 
 /**

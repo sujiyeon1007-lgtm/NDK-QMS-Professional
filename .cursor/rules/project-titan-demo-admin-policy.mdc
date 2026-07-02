@@ -1,0 +1,48 @@
+---
+description: Project TITAN V1.0 Demo 관리자 권한 REV.1 — Header 배지 · 관리자 메뉴 그룹 · UI-only
+alwaysApply: true
+---
+
+# Demo 관리자 권한 (V1.0 REV.1)
+
+**Source:** `src/config/demoAdminPolicy.js` · `src/utils/titanAdminAccess.js`
+
+---
+
+## 정책
+
+- `DEMO_ADMIN_MODE` — **config + titanAdminAccess.js 에서만** 참조
+- 권한 체크: **`isTitanAdminUser()` 만** (페이지·컴포넌트에서 DEMO_ADMIN_MODE 직접 참조 ❌)
+- Header **`[ DEMO ADMIN ]`** — `isDemoAdminModeActive()` 일 때만
+- **Business Logic ↔ 권한 독립** · Demo Admin은 **UI만** 제어
+
+---
+
+## 환경설정 — 관리자 그룹
+
+`environmentSettings.js` → **관리자** 섹션:
+
+MES PoC · Architecture · Repository Status · Debug · About
+
+향후 관리자 메뉴는 이 그룹에 추가
+
+---
+
+## MES PoC
+
+우측 상단 **DEMO · READ ONLY** 워터마크
+
+---
+
+## V1.1 Role (구조 준비)
+
+Admin · Quality · Production · Sales · Viewer
+
+`getTitanUserRole()` · `hasTitanRole()` · `DEMO_ADMIN_MODE = false` 전환
+
+---
+
+## Do Not
+
+- Business Logic 내부 `isTitanAdminUser()` 게이트 (UI에서만)
+- 컴포넌트에서 `DEMO_ADMIN_MODE` 직접 import

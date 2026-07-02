@@ -1,0 +1,21 @@
+---
+description: Project TITAN Repository Layer — UI→Repository→Session/Oracle (REV.3 FINAL)
+alwaysApply: true
+---
+
+# Repository Architecture (REV.3 FINAL)
+
+**Rule:** UI는 SessionStorage/Oracle **직접 호출 금지** → `getRepositories()`
+
+**Config:** `src/config/repositoryArchitecture.js` · **Impl:** `src/repositories/`
+
+```text
+V1.0: React UI → Repository → SessionStorage (가상 MES)
+V1.1: React UI → Repository → Oracle
+```
+
+**Primary Key:** `mesManagementNo` (MES 관리번호 · 예: DL260702-016)
+
+**Repositories:** Customer · Product · Incoming · Inspection · Certificate (+ 확장)
+
+**Swap policy:** UI · Workflow **불변** · Repository 구현만 교체

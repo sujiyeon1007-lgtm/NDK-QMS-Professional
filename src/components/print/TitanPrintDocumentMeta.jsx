@@ -6,6 +6,10 @@ function TitanPrintDocumentMeta({
   docNo = "",
   incomingDate = "",
   outputDate = "",
+  lotNo = "",
+  workDate = "",
+  equipment = "",
+  worker = "",
   qrValue = "",
   qrLabel = "문서 QR",
 }) {
@@ -17,6 +21,16 @@ function TitanPrintDocumentMeta({
             문서번호 <strong>{docNo}</strong>
           </span>
         )}
+        {lotNo && (
+          <span>
+            로트번호 <strong>{lotNo}</strong>
+          </span>
+        )}
+        {workDate && (
+          <span>
+            작업일 <strong>{workDate}</strong>
+          </span>
+        )}
         {incomingDate && (
           <span>
             입고일 <strong>{incomingDate}</strong>
@@ -25,6 +39,16 @@ function TitanPrintDocumentMeta({
         {outputDate && (
           <span>
             출력일 <strong>{outputDate}</strong>
+          </span>
+        )}
+        {equipment && equipment !== "—" && (
+          <span>
+            설비 <strong>{equipment}</strong>
+          </span>
+        )}
+        {worker && worker !== "—" && (
+          <span>
+            작업자 <strong>{worker}</strong>
           </span>
         )}
       </div>

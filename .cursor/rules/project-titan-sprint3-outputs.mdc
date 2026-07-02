@@ -5,6 +5,9 @@ alwaysApply: true
 
 # Sprint 3 — DOC-01 (Detail)
 
+> **⚠️ ON HOLD / 참고용** — V1.0 Sprint 3 공식 범위: Print Engine · 성적서 · 출력물 · 문서관리 기본 구조.  
+> See: `.cursor/rules/project-titan-v1-development-direction.mdc` (2026-07-02)
+
 **Master policy:** `.cursor/rules/project-titan-master-policy-v1.mdc`
 
 ## Sprint Goal

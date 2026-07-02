@@ -5,8 +5,8 @@
  * Status is auto-set by workflow events — users do not edit it manually.
  */
 
-import { getJournalReferenceDate } from "./workJournalData";
 import { getStockQty } from "./inventory";
+import { getPrintOutputDate, toCompactPrintDate } from "./titanPrintDates";
 import { getSessionProductionRecords, updateSessionProductionRecord } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { CERTIFICATE_STATUS, SHIPMENT_STATUS } from "./ndkWorkflow";
@@ -31,21 +31,42 @@ const STATUS_RANK = {
   [WORKFLOW_STATUS.SHIP_DONE]: 6,
 };
 
-/**
- * Sequential HTL number: HTL-YYYYMMDD-NNN (same number for work request + daily report chain)
- * @param {object[]} [records]
- */
-export function generateHtlNo(records = getSessionProductionRecords()) {
-  const date = getJournalReferenceDate().replace(/-/g, "");
-  const prefix = `HTL-${date}-`;
+function resolveDocDateCompact(outputDate = getPrintOutputDate()) {
+  return toCompactPrintDate(outputDate) || toCompactPrintDate(getPrintOutputDate());
+}
+
+function nextSequentialDocNo(prefix, records, docField, outputDate = getPrintOutputDate()) {
+  const date = resolveDocDateCompact(outputDate);
+  const fullPrefix = `${prefix}-${date}-`;
   const sequences = records
-    .map((record) => record.htlNo)
-    .filter((htlNo) => htlNo?.startsWith(prefix))
-    .map((htlNo) => Number.parseInt(htlNo.slice(prefix.length), 10))
+    .map((record) => record[docField])
+    .filter((docNo) => docNo?.startsWith(fullPrefix))
+    .map((docNo) => Number.parseInt(docNo.slice(fullPrefix.length), 10))
     .filter((seq) => Number.isFinite(seq));
 
   const next = sequences.length ? Math.max(...sequences) + 1 : 1;
-  return `${prefix}${String(next).padStart(3, "0")}`;
+  return `${fullPrefix}${String(next).padStart(3, "0")}`;
+}
+
+/**
+ * Sequential HTL number: HTL-YYYYMMDD-NNN (same number for work request + daily report chain)
+ * @param {object[]} [records]
+ * @param {string} [outputDate] — 출력/생성일 (문서번호 날짜)
+ */
+export function generateHtlNo(records = getSessionProductionRecords(), outputDate = getPrintOutputDate()) {
+  return nextSequentialDocNo("HTL", records, "htlNo", outputDate);
+}
+
+/**
+ * Sequential OUT list number: OUT-YYYYMMDD-NNN
+ * @param {object[]} [records]
+ * @param {string} [outputDate]
+ */
+export function generateOutboundListNo(
+  records = getSessionProductionRecords(),
+  outputDate = getPrintOutputDate()
+) {
+  return nextSequentialDocNo("OUT", records, "outboundListNo", outputDate);
 }
 
 /**
@@ -53,7 +74,11 @@ export function generateHtlNo(records = getSessionProductionRecords()) {
  * @param {object[]} rows
  * @param {object[]} [records]
  */
-export function resolveHtlNoForPrintRows(rows = [], records = getSessionProductionRecords()) {
+export function resolveHtlNoForPrintRows(
+  rows = [],
+  records = getSessionProductionRecords(),
+  outputDate = getPrintOutputDate()
+) {
   const htlNos = [
     ...new Set(
       rows
@@ -68,7 +93,7 @@ export function resolveHtlNoForPrintRows(rows = [], records = getSessionProducti
   ];
 
   if (htlNos.length === 1) return htlNos[0];
-  return generateHtlNo(records);
+  return generateHtlNo(records, outputDate);
 }
 
 /**

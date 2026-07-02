@@ -30,6 +30,13 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+.titan-sidebar__edition {
+  margin-top: 4px;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  color: #93c5fd !important;
+}
+
 .titan-sidebar__nav {
   flex: 1 1 auto;
   overflow-y: auto;

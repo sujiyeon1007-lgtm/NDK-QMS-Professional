@@ -1,0 +1,51 @@
+---
+description: Project TITAN 문서관리 — V1.0 공식 정책 REV.3 핵심 모듈
+alwaysApply: true
+---
+
+# 문서관리 (V1.0 공식 · REV.3)
+
+**최우선:** `project-titan-v1-official-policy-rev3.mdc` · `src/config/titanV1OfficialPolicy.js`
+
+**구현:** `src/config/qualityDocumentManagement.js`
+
+---
+
+## 문서 종류
+
+도면 · 검사기준서 · 관리계획서 · 작업표준서 · FMEA · 고객 요구사항 · 특채 승인서 · NCR · 품질 공지 · 기타 품질 문서
+
+---
+
+## 관리 방식 (고정)
+
+```text
+품번 → Revision → 승인자 → 개정일 → PDF → 이력관리
+```
+
+- **Owner:** TITAN (MES ❌)
+- **개정·승인·검색·연결:** TITAN
+
+---
+
+## 관리번호
+
+- **MES 생성** (예: DL260702-016) · TITAN **조회·연결만**
+- 검사등록 + **품번** → 최신 도면 · 검사기준서 · 관리계획서 · 작업표준서 자동 연결
+
+---
+
+## 생산 vs 품질 문서
+
+| 구분 | Owner | 방식 |
+|------|-------|------|
+| **생산 데이터** | MES | 조회 중심 |
+| **품질 문서** | TITAN | 버전관리 · 개정이력 · 승인 · 검색 · 연결 |
+
+---
+
+## Do Not
+
+- 품질 PDF/개정을 **MES Master**에 중복 저장
+- Revision 없이 PDF만 업로드 (이력 필수)
+- 검사 시 **수동 폴더 탐색** 전제 UI (자동 연결 우선)

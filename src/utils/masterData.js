@@ -239,51 +239,27 @@ export const MASTER_DATA = {
     { id: "m12", code: "SACM1", name: "SACM1", spec: "니켈합금강", note: "", active: true },
   ],
   equipment: [
-    {
-      id: "e1",
-      code: "ION-01",
-      name: "1호기",
-      equipType: "이온질화",
-      location: "1공장",
-      note: "",
-      active: true,
-    },
-    {
-      id: "e2",
-      code: "ION-02",
-      name: "2호기",
-      equipType: "이온질화",
-      location: "1공장",
-      note: "",
-      active: true,
-    },
-    {
-      id: "e3",
-      code: "ION-03",
-      name: "3호기",
-      equipType: "이온질화",
-      location: "1공장",
-      note: "",
-      active: true,
-    },
-    {
-      id: "e4",
-      code: "GAS-01",
-      name: "GAS-01",
-      equipType: "가스질화",
-      location: "2공장",
-      note: "",
-      active: true,
-    },
-    {
-      id: "e5",
-      code: "GAS-02",
-      name: "GAS-02",
-      equipType: "가스질화",
-      location: "2공장",
-      note: "",
-      active: true,
-    },
+    { id: "e1", code: "3S-1", name: "3S-1", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e2", code: "3S-2", name: "3S-2", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e3", code: "3S-3", name: "3S-3", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e4", code: "3S-4", name: "3S-4", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e5", code: "10S-01", name: "10S-01", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e6", code: "10S-02", name: "10S-02", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e7", code: "10S-03", name: "10S-03", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e8", code: "10S-04", name: "10S-04", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e9", code: "10S-05", name: "10S-05", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e10", code: "10S-06", name: "10S-06", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e11", code: "10S-07", name: "10S-07", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e12", code: "10S-08", name: "10S-08", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e13", code: "10S-09", name: "10S-09", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e14", code: "10S-10", name: "10S-10", equipType: "이온질화", location: "1공장", note: "", active: true },
+    { id: "e15", code: "61", name: "61", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e16", code: "62", name: "62", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e17", code: "63", name: "63", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e18", code: "64", name: "64", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e19", code: "65", name: "65", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e20", code: "66", name: "66", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e21", code: "67", name: "67", equipType: "연질화", location: "2공장", note: "", active: true },
   ],
   heatTreatment: [
     { id: "h1", code: "HT-GN", name: "가스질화", description: "가스 질화 열처리", active: true },
@@ -393,6 +369,13 @@ function loadMasterDataFromStorage() {
     } else if (Array.isArray(merged.employees)) {
       merged.employees = migrateLegacyWorkers(merged.employees);
     }
+    if (Array.isArray(parsed.equipment)) {
+      const hasNdkLotEquipment = parsed.equipment.some((row) => {
+        const value = String(row.code ?? row.name ?? "").trim();
+        return /^(\d+S-\d+|10S-\d{2}|6[1-7])$/.test(value);
+      });
+      merged.equipment = hasNdkLotEquipment ? parsed.equipment : cloneMasterData(MASTER_DATA).equipment;
+    }
     delete merged.items;
     return merged;
   } catch {
@@ -472,6 +455,14 @@ export function getActiveWorkers() {
 /** 생산일보 — 사용 중인 설비 Master */
 export function getActiveEquipment() {
   return getMasterDataByCategory("equipment").filter((row) => row.active !== false);
+}
+
+/** 열처리 공정별 설비 (이온질화 · 연질화) */
+export function getActiveEquipmentByHeatTreatment(heatTreatment = "") {
+  const process = String(heatTreatment ?? "").trim();
+  const rows = getActiveEquipment();
+  if (!process) return rows;
+  return rows.filter((row) => row.equipType === process);
 }
 
 export function getActiveWorkerNames() {

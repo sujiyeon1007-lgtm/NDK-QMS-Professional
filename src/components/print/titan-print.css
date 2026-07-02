@@ -222,8 +222,8 @@
   text-align: left;
 }
 
-/* 품번 — 항상 한 줄 */
-.titan-print-col-partno {
+/* 품번 — wrap 문서(DOC-01)에서는 .titan-print-col-wrap 우선 */
+.titan-print-col-partno:not(.titan-print-col-wrap) {
   white-space: nowrap;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -274,22 +274,183 @@
   padding-right: 9px;
 }
 
-/* DOC-01 — wrap columns (no ellipsis) */
+/* DOC-01 Layout Master — 리스트 출력 공통 (DOC-01~06) */
+.titan-print-list {
+  --titan-list-font: 12px;
+  --titan-list-title-font: 18px;
+  --titan-list-meta-font: 10px;
+  --titan-list-meta-strong: 11px;
+  --titan-list-line-height: 1.32;
+  --titan-list-cell-py: 4px;
+  --titan-list-cell-px: 6px;
+  --titan-list-row-min: 32px;
+  --titan-list-header-row-min: 30px;
+  --titan-list-page-padding: 8mm;
+  --titan-list-section-gap: 8px;
+  font-size: var(--titan-list-font);
+  gap: var(--titan-list-section-gap);
+}
+
+.titan-print-list .titan-print-page {
+  padding: var(--titan-list-page-padding);
+}
+
+.titan-print-list .titan-print-header {
+  grid-template-columns: 32mm 1fr 40mm;
+  gap: 4mm;
+  margin-bottom: 3mm;
+  padding-bottom: 2.5mm;
+}
+
+.titan-print-list .titan-print-header-logo {
+  min-height: 54px;
+}
+
+.titan-print-list .ndk-logo--print {
+  height: 54px !important;
+  max-width: 38mm !important;
+}
+
+.titan-print-list .titan-print-title {
+  font-size: var(--titan-list-title-font);
+  padding-top: 1mm;
+  letter-spacing: 0.06em;
+}
+
+.titan-print-list .titan-print-approval th {
+  height: 20px;
+  font-size: 9px;
+}
+
+.titan-print-list .titan-print-approval td {
+  height: 30px;
+}
+
+.titan-print-list .titan-print-meta {
+  margin-bottom: 2.5mm;
+  font-size: var(--titan-list-meta-font);
+}
+
+.titan-print-list .titan-print-meta strong {
+  font-size: var(--titan-list-meta-strong);
+}
+
+.titan-print-list .titan-print-doc-meta {
+  margin-bottom: 2.5mm;
+}
+
+.titan-print-list .titan-print-doc-meta__info {
+  font-size: var(--titan-list-meta-font);
+}
+
+.titan-print-list .titan-print-doc-meta__info strong {
+  font-size: var(--titan-list-meta-strong);
+}
+
+.titan-print-list .titan-print-doc-meta__qr svg {
+  width: 64px;
+  height: 64px;
+}
+
+.titan-print-list .titan-print-table th,
+.titan-print-list .titan-print-table td {
+  padding: var(--titan-list-cell-py) var(--titan-list-cell-px);
+  line-height: var(--titan-list-line-height);
+}
+
+.titan-print-list .titan-print-table th {
+  font-size: var(--titan-list-font);
+  min-height: var(--titan-list-header-row-min);
+}
+
+.titan-print-list .titan-print-table tbody td {
+  font-size: var(--titan-list-font);
+  min-height: var(--titan-list-row-min);
+}
+
+.titan-print-list .titan-print-col-lot,
+.titan-print-list .titan-print-col-handwriting {
+  min-height: 38px;
+  font-size: 13px;
+}
+
+.titan-print-list .titan-print-col-checkbox {
+  min-height: var(--titan-list-row-min);
+}
+
+.titan-print-list .titan-print-col-note {
+  min-height: 38px;
+}
+
+.titan-print-list .titan-print-page-footer {
+  padding-top: 3mm;
+  font-size: 10px;
+}
+
+.titan-print-list .titan-print-official-footer {
+  margin-top: 3mm;
+  padding-top: 2mm;
+  font-size: 9px;
+}
+
+.titan-print-list .titan-print-official-footer__brand {
+  font-size: 9px;
+}
+
+.titan-print-list .titan-print-memo {
+  margin-top: 3mm;
+  padding: 3mm 4mm;
+}
+
+.titan-print-list .titan-print-memo h2 {
+  margin-bottom: 2mm;
+  font-size: 11px;
+}
+
+.titan-print-list .titan-print-memo p {
+  font-size: var(--titan-list-font);
+  line-height: var(--titan-list-line-height);
+}
+
+.titan-print-list.titan-print-landscape .titan-print-page,
+.titan-print-document.titan-print-list.titan-print-landscape .titan-print-page {
+  width: 297mm;
+  min-height: 210mm;
+}
+
+/* 리스트 wrap columns (no ellipsis) */
 .titan-print-col-wrap,
+.titan-print-list .titan-print-col-company,
+.titan-print-list .titan-print-col-partname,
+.titan-print-list .titan-print-col-partno,
+.titan-print-list .titan-print-col-material,
+.titan-print-list .titan-print-col-note,
+.htl-work-list-print .titan-print-col-company,
 .htl-work-list-print .titan-print-col-partname,
-.htl-work-list-print .titan-print-col-partno {
+.htl-work-list-print .titan-print-col-partno,
+.htl-work-list-print .titan-print-col-material,
+.htl-work-list-print .titan-print-col-note {
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: anywhere;
   overflow: visible;
   text-overflow: clip;
   vertical-align: middle;
-  line-height: 1.38;
+  line-height: 1.32;
 }
 
-.htl-work-list-print .titan-print-col-partno {
+.htl-work-list-print .titan-print-col-partno,
+.titan-print-list .titan-print-col-partno {
+  font-weight: 800;
+  letter-spacing: 0.01em;
   word-break: break-all;
   overflow-wrap: normal;
+}
+
+.htl-work-list-print .titan-print-col-material,
+.titan-print-list .titan-print-col-material {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .titan-print-col-stock {
@@ -324,6 +485,19 @@
   font-weight: 900;
   color: #475569;
   white-space: nowrap;
+}
+
+.titan-print-official-footer__meta {
+  margin: 0 0 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.titan-print-list .titan-print-official-footer__meta {
+  font-size: 8px;
 }
 
 .htl-work-list-print.titan-print-landscape .titan-print-page {
@@ -459,9 +633,9 @@ body.titan-print-mode .titan-print-preview-frame {
 }
 
 .titan-print-engine-host .titan-print-document.titan-print-landscape .titan-print-page {
-  width: 277mm;
-  height: 190mm;
-  max-height: 190mm;
+  width: 281mm;
+  height: 194mm;
+  max-height: 194mm;
 }
 
 .titan-print-engine-host .titan-print-page-body {
@@ -541,7 +715,7 @@ body.titan-print-mode .titan-print-preview-frame {
 
   @page titan-landscape {
     size: A4 landscape;
-    margin: 10mm;
+    margin: 8mm;
   }
 
   html,
@@ -589,9 +763,9 @@ body.titan-print-mode .titan-print-preview-frame {
   }
 
   .titan-print-document.titan-print-landscape .titan-print-page {
-    width: 277mm;
-    height: 190mm;
-    max-height: 190mm;
+    width: 281mm;
+    height: 194mm;
+    max-height: 194mm;
     page: titan-landscape;
   }
 

@@ -23,13 +23,13 @@
   position: relative;
   padding: var(--titan-table-th-padding, 10px 10px);
   font-size: 12px;
-  font-weight: 700;
-  color: #334155;
+  font-weight: 800;
+  color: var(--titan-table-header-text);
   text-align: center;
   white-space: nowrap;
-  background: var(--titan-table-header-bg, #f1f5f9);
-  border: 1px solid #e2e8f0;
-  border-bottom: 1px solid #cbd5e1;
+  background: var(--titan-table-header);
+  border: 1px solid var(--titan-table-header-border);
+  border-bottom: 1px solid var(--titan-table-header-border);
   vertical-align: middle;
 }
 
@@ -38,7 +38,8 @@
 }
 
 .erp-table thead th:hover {
-  background: #eff6ff;
+  background: var(--titan-hover-bg);
+  transition: background var(--titan-transition-fast);
 }
 
 .erp-table thead th.col-check {

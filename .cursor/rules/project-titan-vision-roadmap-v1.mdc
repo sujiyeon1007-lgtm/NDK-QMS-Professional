@@ -1,0 +1,89 @@
+---
+description: Project TITAN Vision · Smart QR · Portal Roadmap (MASTER FINAL)
+alwaysApply: true
+---
+
+# Project TITAN — Vision / Smart QR / Portal Roadmap (MASTER FINAL)
+
+**Not MES replacement** — **QMS platform complementing MES** (열처리 특화 · 품질 · Traceability · QR · Portal).
+
+**Architecture FINAL:** `.cursor/rules/project-titan-mes-architecture-final.mdc`
+
+**Development criterion:** *"Can the company use this today?"*
+
+Companion: `.cursor/rules/project-titan-master-policy-v1.mdc`
+
+---
+
+## Vision
+
+**One Management Number · Complete Traceability · One Workflow**
+
+입고 → 출고 — single managementId links all processes.
+
+### Slogan
+
+- *"From Receiving to Shipment, One Workflow."*
+- *"One Management Number. Complete Traceability."*
+
+---
+
+## QR Policy (Default)
+
+All **internal** print documents include QR automatically.
+
+**Exception:** 거래명세서 — supplier QR only (no internal workflow QR).
+
+### QR Types
+
+| Type | Purpose |
+|------|---------|
+| **Document QR** | Open document |
+| **Management ID QR** | Full workflow for managementId |
+| **LOT QR** | Full LOT traceability |
+
+Payload (V1.0): 문서번호 · 관리번호 · 업체명 · 품번 · LOT · 문서종류 · 버전
+
+---
+
+## QR Portal V1.0 (Future Sprint)
+
+QR Scan → TITAN Portal → document info
+
+**Portal shows:** 문서번호 · 관리번호 · 업체 · 품명 · 품번 · LOT · 출력일 · 현재 상태 · 문서 종류
+
+**First screen:** current status + **next required task** + action buttons (role-based)
+
+**Role-based menus:** 생산부 · 품질 · 출하 · 관리자 — different actions from same QR
+
+---
+
+## Version Roadmap (Do NOT implement unless scheduled)
+
+| Version | Scope |
+|---------|--------|
+| **V1.0** (current) | Stable real-use QMS · print QR · Desktop ERP · Demo workflow |
+| **V1.1** | Portal opens linked documents · workflow deep links |
+| **V2.0** | Smart QR · next-task guidance · QR/LOT labels · status colors · mobile field mode |
+| **V2.1** | AI Assistant — natural query · anomaly search |
+| **V3.0** | Smart Factory — **MES 연동 완성** · ERP · IoT · realtime dashboard |
+
+### V2.0 Status Colors (reference)
+
+🟢 입고 · 🟡 생산중 · 🟠 검사중 · 🔵 성적서 완료 · ⚫ 출고완료
+
+---
+
+## Roadmap Policy
+
+Long-term features above are **not V1.0 scope**.
+
+V1.0 priority: **stable QMS the company uses daily.**
+
+V1.1+ developed **sequentially per Sprint plan** after PM approval.
+
+---
+
+## Ultimate Goal
+
+Unified **QMS** platform — MES data · quality · inspection · LOT · documents · QR · Portal · mobile · AI — **Traceability with MES, not instead of MES**.

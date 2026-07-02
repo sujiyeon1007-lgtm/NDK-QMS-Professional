@@ -12,6 +12,7 @@ import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { formatQtyWithUnit } from "./productUnits";
 import { getStockQty, isIncomingRegistered } from "./productionRecords";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { getShipmentEvents } from "./titanHistorySession";
 
 /**
  * QR 코드에 저장할 LOT 값 (LOT 번호만 · 모바일 조회 키)
@@ -211,14 +212,85 @@ function getHistoryStepDetail(record, stepKey) {
 
 /**
  * 관리번호 기준 전체 이력 타임라인 (선택 Workflow · 순차 강제 없음)
+ * 부분출고 이력 → 출고완료 순서로 표시
  */
 export function buildProductHistoryTimeline(record) {
-  return HISTORY_TIMELINE_STEPS.map((step) => ({
-    key: step.key,
-    label: step.label,
-    detail: getHistoryStepDetail(record, step.key),
-    status: isHistoryStepDone(record, step.key) ? "done" : "optional",
-  }));
+  const preShipmentKeys = [
+    "incoming",
+    "plan",
+    "htl",
+    "dailyLot",
+    "worksheet",
+    "inspection",
+    "certificate",
+    "transaction",
+  ];
+
+  const timeline = preShipmentKeys.map((key) => {
+    const step = HISTORY_TIMELINE_STEPS.find((item) => item.key === key);
+    return {
+      key,
+      label: step?.label ?? key,
+      detail: getHistoryStepDetail(record, key),
+      status: isHistoryStepDone(record, key) ? "done" : "optional",
+    };
+  });
+
+  const partialShipments = resolvePartialShipmentEntries(record);
+
+  partialShipments.forEach((entry, index) => {
+    const isPartial = partialShipments.length > 1 && index < partialShipments.length - 1;
+    timeline.push({
+      key: `partial-shipment-${index}`,
+      label: isPartial ? `부분출고 ${index + 1}` : "출고",
+      detail: formatPartialShipmentDetail(entry, record),
+      status: "done",
+    });
+  });
+
+  if ((record?.shippedQty ?? 0) > 0 && getStockQty(record) <= 0) {
+    timeline.push({
+      key: "shipment-complete",
+      label: "출고 완료",
+      detail: `누적 ${formatQtyWithUnit(record.shippedQty, record.unit)} · 전량 출고`,
+      status: "done",
+    });
+  } else if (partialShipments.length === 0) {
+    timeline.push({
+      key: "shipment",
+      label: "출고",
+      detail: getHistoryStepDetail(record, "shipment"),
+      status: isHistoryStepDone(record, "shipment") ? "done" : "optional",
+    });
+  }
+
+  return timeline;
+}
+
+function resolvePartialShipmentEntries(record) {
+  if (Array.isArray(record?.partialShipHistory) && record.partialShipHistory.length > 0) {
+    return record.partialShipHistory;
+  }
+
+  return getShipmentEvents(record?.id)
+    .slice()
+    .reverse()
+    .map((event) => ({
+      shipDate: event.shippedAt,
+      shipQty: event.shipQty,
+      shippedBy: event.shippedBy,
+      statementStatus: record?.hasTransactionStatement ? "발행완료" : "미출력",
+      balanceAfter: event.stockAfter,
+    }));
+}
+
+function formatPartialShipmentDetail(entry, record) {
+  const shipDate = entry.shipDate ?? entry.shippedAt ?? "—";
+  const shipQty = formatQtyWithUnit(entry.shipQty, record?.unit || "EA");
+  const balance = formatQtyWithUnit(entry.balanceAfter ?? entry.stockAfter ?? 0, record?.unit || "EA");
+  const user = entry.shippedBy ?? "—";
+  const statement = entry.statementStatus ?? "미출력";
+  return `${shipDate} · ${shipQty} · ${user} · 잔량 ${balance} · ${statement}`;
 }
 
 /**

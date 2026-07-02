@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { isDemoAdminModeActive } from "../../utils/titanAdminAccess";
 import { getCurrentTitanUser } from "../../utils/titanHistorySession";
+import { getTitanEditionDisplayLabel } from "../../utils/titanEditionSession";
 
 function parseCurrentUser(raw = "") {
   const text = String(raw ?? "").trim();
@@ -38,6 +40,14 @@ export default function Header() {
       <h1 className="titan-header__title">NDK QMS Professional</h1>
       <span className="titan-header__note">Project TITAN V1.0</span>
       <div className="titan-header__spacer" />
+      {isDemoAdminModeActive() ? (
+        <div className="titan-header__demo-admin" aria-label="Demo Admin Mode">
+          DEMO ADMIN
+        </div>
+      ) : null}
+      <div className="titan-header__edition" aria-label="실행 Edition">
+        {getTitanEditionDisplayLabel()}
+      </div>
       {import.meta.env.VITE_BETA_DEMO === "true" ? (
         <div className="titan-header__beta" aria-label="Beta Demo Build">
           <span>Project TITAN</span>

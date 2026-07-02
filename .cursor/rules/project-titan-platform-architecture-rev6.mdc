@@ -1,0 +1,51 @@
+---
+description: Project TITAN Platform Architecture REV.6 Official — Quality · Standalone · MES Connected
+alwaysApply: true
+---
+
+# Platform Architecture REV.6 (Official)
+
+**최우선 Architecture Rule**
+
+**Source:** `src/config/titanPlatformArchitecture.js` · `src/config/titanEditionArchitecture.js`
+
+---
+
+## 비전
+
+**열처리 산업 Quality Management Platform** · Core 하나 · **Edition만 선택**
+
+**Develop Once, Deploy Anywhere**
+
+---
+
+## Edition (3 + Future)
+
+| Edition | 목적 | Repository |
+|---------|------|------------|
+| **Quality (QMS Only)** | 순수 품질 · 입출고/생산 ❌ | Session · CSV/Excel |
+| **Standalone (QMS + Basic)** | 운영+품질 통합 | Session → SQLite |
+| **MES Connected (QMS + MES)** | MES SoT · TITAN QMS · Read Only | Oracle / API / CSV |
+| **Enterprise** | Future · Smart Factory | ERP·PLC·IoT·AI·SPC |
+
+---
+
+## Core (Edition 공통 · 변경 금지)
+
+Dashboard · Workflow · Print · Certificate · Document · QR · Quality History · Statistics · Settings
+
+**새 기능 = Core 기준 개발** · Edition = **메뉴 · Repository · 데이터 입력**만 차이
+
+---
+
+## 개발 원칙
+
+Edition별 따로 개발 ❌ · UI/Workflow/Print/Certificate 동일 · Repository만 교체
+
+---
+
+## MES Connected
+
+MES = SoT · TITAN = QMS · 중복 입력 ❌ · Read Only
+
+Companion: REV.5 Rule · PoC · Repository Rule

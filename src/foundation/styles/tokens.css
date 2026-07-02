@@ -7,36 +7,47 @@
   /* Primary / Secondary */
   --titan-primary: #2563eb;
   --titan-primary-hover: #1d4ed8;
-  --titan-secondary: #64748b;
-  --titan-secondary-hover: #475569;
+  --titan-secondary: #6b7280;
+  --titan-secondary-hover: #4b5563;
 
   /* Semantic */
-  --titan-success: #10b981;
-  --titan-warning: #f97316;
-  --titan-danger: #ef4444;
-  --titan-neutral: #64748b;
+  --titan-success: #16a34a;
+  --titan-warning: #d97706;
+  --titan-danger: #dc2626;
+  --titan-neutral: #6b7280;
 
   /* Background / Surface */
-  --titan-bg: #f8fafc;
+  --titan-bg: #f5f7fa;
   --titan-surface: #ffffff;
+  --titan-hover-bg: #eef4ff;
   --titan-sidebar-bg: #0f172a;
   --titan-sidebar-active: #2563eb;
 
   /* Text */
-  --titan-text: #0f172a;
-  --titan-text-muted: #64748b;
+  --titan-text: #1f2937;
+  --titan-text-muted: #6b7280;
   --titan-text-inverse: #ffffff;
 
   /* Border */
-  --titan-border: #e2e8f0;
+  --titan-border: #d8e2f1;
+  --titan-card-border: #d8e2f1;
+
+  /* Search · Card shell */
+  --titan-search-panel-bg: #fafbfd;
+  --titan-search-panel-border: #d8e2f1;
+
+  /* Title accent (vertical line) */
+  --titan-title-accent-width: 3px;
+  --titan-title-accent-color: #2563eb;
+  --titan-title-accent-gap: 10px;
 
   /* Table (PM 공통 리스트) */
-  --titan-table-header: #e3e9f0;
-  --titan-table-header-text: #1e293b;
-  --titan-table-header-border: #d5dee8;
-  --titan-table-border: #dde6f0;
-  --titan-table-row-hover: #f3f7fc;
-  --titan-table-row-selected: #dce8f7;
+  --titan-table-header: #f7f9fc;
+  --titan-table-header-text: #1f2937;
+  --titan-table-header-border: #d8e2f1;
+  --titan-table-border: #d8e2f1;
+  --titan-table-row-hover: #eef4ff;
+  --titan-table-row-selected: #e3edff;
   --titan-table-cell-py: 10px;
   --titan-table-cell-px: 12px;
 
@@ -57,7 +68,8 @@
   /* Radius & Shadow */
   --titan-radius: 12px;
   --titan-radius-sm: 6px;
-  --titan-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --titan-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  --titan-transition-fast: 175ms ease;
 
   /* List-first layout */
   --titan-list-ratio: 86%;
@@ -68,11 +80,11 @@
   --titan-table-min-width: 1120px;
 
   /* Status (PM V1.0 공식 — Status Badge) */
-  --titan-status-progress: #1976d2;
-  --titan-status-complete: #2e7d32;
-  --titan-status-wait: #f57c00;
-  --titan-status-hold: #757575;
-  --titan-status-defect: #d32f2f;
+  --titan-status-progress: #2563eb;
+  --titan-status-complete: #16a34a;
+  --titan-status-wait: #d97706;
+  --titan-status-hold: #6b7280;
+  --titan-status-defect: #dc2626;
 
   /* Status Chip Bar (Compact KPI) */
   --titan-status-chip-bar-min-h: 52px;
@@ -87,13 +99,13 @@
   --titan-status-chip-label-size: 11px;
   --titan-status-chip-count-size: 16px;
   --titan-status-chip-count-unit-size: 11px;
-  --titan-status-chip-count-color: #0f172a;
+  --titan-status-chip-count-color: #1f2937;
   --titan-status-chip-icon-size: 16px;
-  --titan-status-chip-border: #dbe4f0;
+  --titan-status-chip-border: #d8e2f1;
   --titan-status-chip-bg: #ffffff;
-  --titan-status-chip-hover-bg: #f8fafc;
-  --titan-status-chip-hover-border: #cbd5e1;
-  --titan-status-chip-active-bg: #eff6ff;
+  --titan-status-chip-hover-bg: #eef4ff;
+  --titan-status-chip-hover-border: #c7d7ef;
+  --titan-status-chip-active-bg: #eef4ff;
   --titan-status-chip-active-border: #93c5fd;
   --titan-status-chip-disabled-opacity: 0.45;
 

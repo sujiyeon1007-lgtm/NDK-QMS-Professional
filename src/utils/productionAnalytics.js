@@ -15,14 +15,8 @@ import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 
 const REFERENCE_DATE = new Date("2026-06-30T12:00:00");
 
-/** 설비 코드 → 호기 표시 (시안 기준) */
-const EQUIPMENT_UNIT_MAP = {
-  "GAS-01": "1호기",
-  "GAS-02": "2호기",
-  "ION-01": "3호기",
-  "ION-02": "4호기",
-  "ION-03": "5호기",
-};
+/** 설비명 표시 (LOT·마스터 설비명 그대로 사용) */
+const EQUIPMENT_UNIT_MAP = {};
 
 export function getReferenceDate() {
   return REFERENCE_DATE;

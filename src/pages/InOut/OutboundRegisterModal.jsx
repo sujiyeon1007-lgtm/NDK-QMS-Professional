@@ -1,48 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { OUTBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getActiveWorkers } from "../../utils/masterData";
-import {
-  getSessionProductionRecords,
-  processShipment,
-  updateSessionProductionRecord,
-} from "../../utils/productionRecords";
-import { getJournalReferenceDate } from "../../utils/workJournalData";
-import { onOutboundComplete } from "../../utils/titanWorkflowStatus";
 import { getStockQty } from "../../utils/inventory";
+import {
+  applyOutboundRegister,
+  getOutboundEligibleRecords,
+  mapRecordToOutboundRegisterForm,
+  validateOutboundRegisterForm,
+} from "../../utils/outboundRegistration";
+import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { getPrintOutputDate } from "../../utils/titanPrintDates";
 
-const EMPTY_FORM = {
-  managementId: "",
-  shipQty: "",
-  shipDate: "",
-  manager: "",
-  note: "",
-};
+const EMPTY_FORM = mapRecordToOutboundRegisterForm(null);
+
+function resolveRegisterRecord(managementId, eligibleRecords = []) {
+  const trimmed = managementId?.trim();
+  if (!trimmed) return null;
+
+  return (
+    eligibleRecords.find((item) => item.id === trimmed) ??
+    getSessionProductionRecords().find((item) => item.id === trimmed) ??
+    null
+  );
+}
 
 export default function OutboundRegisterModal({ open, onClose, onRegister, initialManagementId = "" }) {
   const [form, setForm] = useState(EMPTY_FORM);
-  const records = getSessionProductionRecords().filter((r) => r.incomingRegistered);
-  const workers = getActiveWorkers();
+  const workers = useMemo(() => getActiveWorkers(), [open]);
+
+  const eligibleRecords = useMemo(() => (open ? getOutboundEligibleRecords() : []), [open]);
+
+  const displayRecords = useMemo(() => {
+    const records = [...eligibleRecords];
+    const current = resolveRegisterRecord(form.managementId, records);
+    if (current && !records.some((item) => item.id === current.id)) {
+      records.unshift(current);
+    }
+    return records;
+  }, [eligibleRecords, form.managementId]);
 
   useEffect(() => {
-    if (open) {
-      setForm({
-        ...EMPTY_FORM,
-        managementId: initialManagementId || "",
-        shipDate: getJournalReferenceDate(),
-        manager: workers[0]?.name ?? "관리자",
-      });
-    }
-  }, [open, workers, initialManagementId]);
+    if (!open) return;
+
+    const records = getOutboundEligibleRecords();
+    const activeWorkers = getActiveWorkers();
+    const baseForm = {
+      ...EMPTY_FORM,
+      shipDate: getPrintOutputDate(),
+      manager: activeWorkers[0]?.name ?? "관리자",
+    };
+
+    const record = resolveRegisterRecord(initialManagementId, records);
+    setForm(mapRecordToOutboundRegisterForm(record, baseForm));
+  }, [open, initialManagementId]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleManagementChange = (managementId) => {
+    const record = resolveRegisterRecord(managementId, eligibleRecords);
+    setForm(mapRecordToOutboundRegisterForm(record, { ...form, managementId, shipQty: "" }));
+  };
+
   const handleSubmit = () => {
-    if (!form.managementId.trim()) return;
-    onRegister(form);
+    const validation = validateOutboundRegisterForm(form);
+    if (!validation.ok) {
+      window.alert(validation.message);
+      return;
+    }
+
+    const result = applyOutboundRegister(form);
+    if (!result.ok) return;
+
+    onRegister(result);
     onClose();
   };
 
@@ -56,88 +89,106 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
       titleId="outbound-register-modal-title"
       size="wide"
     >
-      <div className="titan-modal__grid">
+      <div className="titan-modal__section">
+        <p className="titan-modal__section-title">출고 대상 선택</p>
         <label className="titan-modal__field titan-modal__field--full">
           <span>관리번호</span>
           <select
             value={form.managementId}
-            onChange={(e) => updateField("managementId", e.target.value)}
+            onChange={(e) => handleManagementChange(e.target.value)}
           >
             <option value="">선택</option>
-            {records.map((record) => (
+            {displayRecords.map((record) => (
               <option key={record.id} value={record.id}>
-                {record.id} · {record.company} · {record.partName}
+                {record.id} · {record.company} · {record.partName} · 실재고 {getStockQty(record)} EA
               </option>
             ))}
           </select>
         </label>
-        <label className="titan-modal__field">
-          <span>수량</span>
-          <Input
-            value={form.shipQty}
-            onChange={(e) => updateField("shipQty", e.target.value)}
-            placeholder="출고 수량"
-          />
-        </label>
-        <label className="titan-modal__field">
-          <span>출고일</span>
-          <Input
-            type="date"
-            value={form.shipDate}
-            onChange={(e) => updateField("shipDate", e.target.value)}
-          />
-        </label>
-        <label className="titan-modal__field">
-          <span>담당자</span>
-          <select value={form.manager} onChange={(e) => updateField("manager", e.target.value)}>
-            <option value="">선택</option>
-            {workers.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-modal__field titan-modal__field--full">
-          <span>비고</span>
-          <Input
-            value={form.note}
-            onChange={(e) => updateField("note", e.target.value)}
-            placeholder="비고"
-          />
-        </label>
+      </div>
+
+      <div className="titan-modal__section">
+        <p className="titan-modal__section-title">기본 정보</p>
+        <div className="titan-modal__grid">
+          <label className="titan-modal__field">
+            <span>LOT</span>
+            <Input value={form.lotNo} readOnly disabled />
+          </label>
+          <label className="titan-modal__field">
+            <span>업체명</span>
+            <Input value={form.company} readOnly disabled />
+          </label>
+          <label className="titan-modal__field">
+            <span>품명</span>
+            <Input value={form.partName} readOnly disabled />
+          </label>
+          <label className="titan-modal__field">
+            <span>품번</span>
+            <Input value={form.partNo} readOnly disabled />
+          </label>
+          <label className="titan-modal__field">
+            <span>재질</span>
+            <Input value={form.material} readOnly disabled />
+          </label>
+          <label className="titan-modal__field">
+            <span>공정</span>
+            <Input value={form.processName} readOnly disabled />
+          </label>
+        </div>
+      </div>
+
+      <div className="titan-modal__section">
+        <p className="titan-modal__section-title">수량</p>
+        <div className="titan-modal__grid">
+          <label className="titan-modal__field">
+            <span>실재고(EA)</span>
+            <Input value={form.stockQty} readOnly disabled placeholder="자동 입력" />
+          </label>
+          <label className="titan-modal__field">
+            <span>출고수량(EA)</span>
+            <Input
+              value={form.shipQty}
+              onChange={(e) => updateField("shipQty", e.target.value)}
+              placeholder="출고 수량 입력"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="titan-modal__section">
+        <p className="titan-modal__section-title">출고 정보</p>
+        <div className="titan-modal__grid">
+          <label className="titan-modal__field">
+            <span>출고일</span>
+            <Input
+              type="date"
+              value={form.shipDate}
+              onChange={(e) => updateField("shipDate", e.target.value)}
+            />
+          </label>
+          <label className="titan-modal__field">
+            <span>담당자</span>
+            <select value={form.manager} onChange={(e) => updateField("manager", e.target.value)}>
+              <option value="">선택</option>
+              {workers.map((item) => (
+                <option key={item.id} value={item.name}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="titan-modal__field titan-modal__field--full">
+            <span>비고</span>
+            <Input
+              value={form.note}
+              onChange={(e) => updateField("note", e.target.value)}
+              placeholder="비고"
+            />
+          </label>
+        </div>
       </div>
     </TitanRegisterModal>
   );
 }
 
-export function applyOutboundRegister(form) {
-  const managementId = form.managementId.trim();
-  if (!managementId) return null;
-
-  const shipQty = Number(form.shipQty);
-  const result = processShipment(managementId, shipQty, {
-    outboundRegistered: true,
-    outboundDate: form.shipDate || getJournalReferenceDate(),
-    outboundManager: form.manager || "관리자",
-    note: form.note?.trim() || undefined,
-  });
-
-  if (!result.ok) {
-    window.alert(result.message || "출고 등록에 실패했습니다.");
-    return null;
-  }
-
-  const record = getSessionProductionRecords().find((item) => item.id === managementId);
-  if (record && getStockQty(record) <= 0) {
-    onOutboundComplete(managementId);
-  } else {
-    updateSessionProductionRecord(managementId, {
-      outboundRegistered: true,
-      outboundDate: form.shipDate || getJournalReferenceDate(),
-      outboundManager: form.manager || "관리자",
-    });
-  }
-
-  return managementId;
-}
+export { applyOutboundRegister };

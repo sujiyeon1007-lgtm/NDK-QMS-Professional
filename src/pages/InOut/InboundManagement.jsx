@@ -38,6 +38,7 @@ import { parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { isIncomingRegistered } from "../../utils/productionRecords";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
+import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
 import {
@@ -48,7 +49,7 @@ import {
 } from "../../utils/inboundManagementStatus";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
 import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
-import { resolveHtlPrintRows } from "../../utils/htlPrintEligibility";
+import { isHtlFirstPrintTarget, resolveHtlPrintRows } from "../../utils/htlPrintEligibility";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "./InboundManagement.css";
 
@@ -89,6 +90,9 @@ function matchesInboundSearch(record, row, search) {
   const manager = record.registrar ?? "관리자";
   if (search.manager && !manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
+  if (search.__chipProductHtlNotPrinted && !isHtlFirstPrintTarget(record)) {
+    return false;
+  }
   if (search.__chipProductShipWait && row.statusLabel !== INBOUND_STATUS_LABELS.SHIP_WAIT) {
     return false;
   }
@@ -108,6 +112,7 @@ export default function InboundManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [inOutPrintOpen, setInOutPrintOpen] = useState(false);
+  const [inOutPrintProps, setInOutPrintProps] = useState(null);
   const chipRecords = useMemo(
     () => filterInboundManagementRecords(getSessionProductionRecords()),
     [refreshKey]
@@ -170,20 +175,6 @@ export default function InboundManagement() {
     [printTargetRows]
   );
 
-  const sessionRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
-
-  const inOutPrintProps = useMemo(
-    () =>
-      htlPrintResolution.rows.length > 0
-        ? buildInOutListPrintProps(htlPrintResolution.rows, {
-            listNoPrefix: "HTL",
-            workDate: getJournalReferenceDate(),
-            records: sessionRecords,
-            printMode: htlPrintResolution.mode,
-          })
-        : null,
-    [htlPrintResolution, sessionRecords]
-  );
 
   const handleInOutPrinted = useCallback(
     (printProps) => {
@@ -204,6 +195,14 @@ export default function InboundManagement() {
       );
       return;
     }
+    setInOutPrintProps(
+      buildInOutListPrintProps(htlPrintResolution.rows, {
+        listNoPrefix: "HTL",
+        outputDate: getPrintOutputDate(),
+        records: getSessionProductionRecords(),
+        printMode: htlPrintResolution.mode,
+      })
+    );
     setInOutPrintOpen(true);
   };
 
@@ -315,7 +314,7 @@ export default function InboundManagement() {
           <Plus size={14} aria-hidden="true" />
           {INBOUND_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!inOutPrintProps}>
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={htlPrintResolution.rows.length === 0}>
           <Printer size={14} aria-hidden="true" />
           {INBOUND_PRINT_LIST_LABEL}
         </SecondaryButton>
@@ -385,7 +384,7 @@ export default function InboundManagement() {
                 <strong>{selectedQty} EA</strong>
               </span>
               <div>
-                <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!inOutPrintProps}>
+                <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={htlPrintResolution.rows.length === 0}>
                   {INBOUND_PRINT_LIST_LABEL}
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => setSelectedIds([])}>

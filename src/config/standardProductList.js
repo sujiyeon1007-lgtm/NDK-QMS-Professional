@@ -20,6 +20,28 @@ export function buildStandardProductListColumns({ renderStatus, renderProcess })
   ];
 }
 
+/** 출고관리 — 공통 리스트 + 거래명세서 상태 */
+export function buildOutboundListColumns({ renderStatus, renderProcess, renderStatementStatus }) {
+  return [
+    titanColumn("managementId"),
+    titanColumn("lotNo"),
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("qty", { key: "stockQtyLabel", label: "실재고" }),
+    titanColumn("process", { key: "processName", render: renderProcess }),
+    titanColumn("workDate", { key: "shipDateLabel", label: "출고일" }),
+    titanColumn("status", {
+      key: "statementStatusLabel",
+      label: "거래명세서",
+      render: renderStatementStatus,
+    }),
+    titanColumn("status", { key: "statusLabel", label: "현재상태", render: renderStatus }),
+    titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
+  ];
+}
+
 /** 생산실적관리 — 관리번호 · 설비 미표시 */
 export function buildProductionResultsListColumns({ renderProcess, renderLotNo }) {
   return [

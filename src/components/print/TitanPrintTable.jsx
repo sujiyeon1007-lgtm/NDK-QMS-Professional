@@ -19,12 +19,24 @@ function getCellClass(column, layout) {
     classes.push("titan-print-col-narrow");
   }
 
+  if (column.id === "company") {
+    classes.push("titan-print-col-company");
+  }
+
   if (column.id === "partName") {
     classes.push("titan-print-col-partname");
   }
 
   if (column.id === "partNo") {
     classes.push("titan-print-col-partno");
+  }
+
+  if (column.id === "material") {
+    classes.push("titan-print-col-material");
+  }
+
+  if (column.id === "note") {
+    classes.push("titan-print-col-note");
   }
 
   if (column.id === "stockQty") {
@@ -70,7 +82,10 @@ function TitanPrintTable({ columns, rows, columnWidths, renderCell }) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.id ?? row.no}>
+          <tr
+            key={row.id ?? row.no}
+            data-management-id={row.managementId ?? row.id ?? undefined}
+          >
             {columns.map((column, index) => {
               const layout = columnWidths[index];
               const className = getCellClass(column, layout);

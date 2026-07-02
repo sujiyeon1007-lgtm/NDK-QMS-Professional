@@ -82,6 +82,13 @@ export const STATUS_CHIP_SETS = {
         filterPatch: { __chipProductIncomingReg: "1" },
       },
       {
+        id: "productHtlNotPrinted",
+        label: "미출력 입고리스트",
+        icon: "description",
+        tone: "production",
+        filterPatch: { __chipProductHtlNotPrinted: "1" },
+      },
+      {
         id: "productShipWait",
         label: "제품 출고대기",
         icon: "localShipping",

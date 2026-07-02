@@ -1,17 +1,21 @@
 import { NavLink } from "react-router-dom";
-import { SIDEBAR_MENU } from "../../config/menuStructure";
+import { getVisibleSidebarMenu } from "../../utils/titanEditionMenu";
+import { getTitanEditionDisplayLabel } from "../../utils/titanEditionSession";
 import "./Sidebar.css";
 
 export default function Sidebar() {
+  const menuItems = getVisibleSidebarMenu();
+
   return (
     <aside className="titan-sidebar">
       <div className="titan-sidebar__brand">
         <strong>NDK QMS</strong>
         <span>Project TITAN V1.0</span>
+        <span className="titan-sidebar__edition">{getTitanEditionDisplayLabel()}</span>
       </div>
 
       <nav className="titan-sidebar__nav" aria-label="메인 메뉴">
-        {SIDEBAR_MENU.map(({ id, label, icon: Icon, path, end }) => (
+        {menuItems.map(({ id, label, icon: Icon, path, end }) => (
           <NavLink
             key={id}
             to={path}

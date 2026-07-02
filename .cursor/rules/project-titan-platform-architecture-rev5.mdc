@@ -1,0 +1,61 @@
+---
+description: Project TITAN Platform Architecture REV.5 — REV.6 Official 하위
+alwaysApply: true
+---
+
+# Platform Architecture REV.5 (REV.6 하위)
+
+**최우선:** `.cursor/rules/project-titan-platform-architecture-rev6.mdc`
+
+---
+
+## 비전
+
+**열처리 산업 Quality Management Platform** · NDK 전용 ❌
+
+**Develop Once, Deploy Anywhere**
+
+One Core · Multiple Editions · Multiple Repositories · One Quality Platform
+
+---
+
+## Platform Layers
+
+```text
+TITAN Core Platform
+  UI · Workflow · Print · Document · Certificate · QR · History · Statistics · Dashboard
+Edition Layer
+  Standalone · MES Connected · Enterprise (Future)
+Repository Layer
+  Session · SQLite · Oracle · API · CSV · Future
+Data Source Layer
+  Session · SQLite · Oracle · REST API · CSV · Future ERP/MES
+```
+
+**Core는 MES·DB 비종속** · **Repository만 Data Source 호출**
+
+---
+
+## Edition
+
+| Edition | 용도 | Repository |
+|---------|------|------------|
+| **Standalone** | MES 없음 · TITAN 전체 관리 | Session → SQLite |
+| **MES Connected** | MES SoT · TITAN QMS · Read Only | Oracle / API / CSV |
+| **Enterprise** | Smart Factory (Future) | MES·ERP·PLC·IoT·AI·SPC |
+
+---
+
+## 개발 원칙
+
+Core 하나 · 프로그램 두 개 ❌ · Edition 변경 · Repository 교체 · UI/Workflow 동일
+
+신규 고객/MES → **Edition·Repository 추가 · Core 불변**
+
+---
+
+## MES Connected
+
+MES = 운영 SoT · TITAN = QMS · 중복 입력 ❌ · Read Only
+
+Companion: `project-titan-edition-architecture-rev4.mdc` (REV.4 하위) · PoC · Repository Rule

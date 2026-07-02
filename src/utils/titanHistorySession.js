@@ -100,6 +100,12 @@ export function saveShipmentEvent(payload) {
   return row;
 }
 
+export function removeShipmentEventById(eventId) {
+  const before = shipmentEvents.length;
+  shipmentEvents = shipmentEvents.filter((row) => row.id !== eventId);
+  return before !== shipmentEvents.length;
+}
+
 export function getDefectRecords(managementId) {
   const rows = managementId
     ? defectRecords.filter((row) => row.managementId === managementId)

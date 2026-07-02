@@ -70,20 +70,13 @@ export function createEmptyProductionDailyReportSearch() {
 
 export function createEmptyProductionDailyReportRegister() {
   return {
-    managementId: "",
     lotNo: "",
-    company: "",
-    partName: "",
-    partNo: "",
-    material: "",
-    qty: "",
-    process: "",
+    chargeProducts: [],
+    heatTreatmentConditionRows: [{ temperature: "", duration: "" }],
     workDate: "",
     equipment: "",
     worker: "",
-    heatTreatmentConditions: "",
     note: "",
-    htlNo: "",
   };
 }
 

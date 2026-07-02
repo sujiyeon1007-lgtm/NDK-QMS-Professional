@@ -1,0 +1,80 @@
+.outbound-statement-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+body.outbound-statement-prompt-open {
+  overflow: hidden;
+}
+
+.outbound-statement-prompt-dialog {
+  width: min(460px, 100%);
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.outbound-statement-prompt-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 10px;
+  color: #2563eb;
+}
+
+.outbound-statement-prompt-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.outbound-statement-prompt-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.outbound-statement-prompt-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.outbound-statement-prompt-body {
+  padding: 8px 20px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.outbound-statement-prompt-body p {
+  margin: 0 0 8px;
+}
+
+.outbound-statement-prompt-question {
+  margin-top: 14px !important;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.outbound-statement-prompt-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 18px;
+  border-top: 1px solid #e2e8f0;
+}

@@ -11,11 +11,14 @@ export const PRINT_CONTENT_WIDTH = {
   [PRINT_ORIENTATION.LANDSCAPE]: 269,
 };
 
-/** 페이지당 행 줄(line) 예산 — Header/Footer/Meta 제외 */
+/** 페이지당 행 줄(line) 예산 — Header/Footer/Meta 제외 (리스트는 titanListPrintStandard) */
 export const PAGE_LINE_BUDGET = {
   [PRINT_ORIENTATION.PORTRAIT]: 15,
-  [PRINT_ORIENTATION.LANDSCAPE]: 11,
+  [PRINT_ORIENTATION.LANDSCAPE]: 13,
 };
+
+/** 리스트 출력 — 축소 글꼴 기준 줄바꿈 추정 계수 */
+export const LIST_PRINT_WRAP_UNITS_FACTOR = 0.48;
 
 const MM_PER_TEXT_UNIT = 1.55;
 const BASE_RATIO_BLEND = 0.68;
@@ -135,7 +138,7 @@ export function estimateWrapLines(text, widthPercent, orientation, maxLines = 2)
 
   const contentMm = PRINT_CONTENT_WIDTH[orientation];
   const colMm = (widthPercent / 100) * contentMm;
-  const unitsPerLine = Math.max(8, colMm * 0.42);
+  const unitsPerLine = Math.max(8, colMm * LIST_PRINT_WRAP_UNITS_FACTOR);
   return Math.min(maxLines, Math.max(1, Math.ceil(units / unitsPerLine)));
 }
 
@@ -171,8 +174,37 @@ export function estimateRowLines(row, columns, columnWidths, orientation) {
   return lines;
 }
 
-/** 가변 행 높이를 반영한 페이지 분할 */
-export function paginateRowsByLayout(rows, columns, columnWidths, orientation, options = {}) {
+/** 관리번호 등 그룹 키 기준 — 입력 순서 유지 */
+export function buildRowGroups(rows, getGroupKey = (row) => row.managementId ?? row.id ?? "") {
+  const groups = [];
+  const indexByKey = new Map();
+
+  rows.forEach((row, rowIndex) => {
+    const rawKey = getGroupKey(row);
+    const key =
+      rawKey != null && String(rawKey).trim() !== ""
+        ? String(rawKey).trim()
+        : `__ungrouped_${rowIndex}`;
+
+    if (!indexByKey.has(key)) {
+      indexByKey.set(key, groups.length);
+      groups.push({ key, rows: [] });
+    }
+    groups[indexByKey.get(key)].rows.push(row);
+  });
+
+  return groups;
+}
+
+function estimateGroupLines(groupRows, columns, columnWidths, orientation) {
+  return groupRows.reduce(
+    (sum, row) => sum + estimateRowLines(row, columns, columnWidths, orientation),
+    0
+  );
+}
+
+/** 행 단위 페이지 분할 (개별 행 keep-together) */
+export function paginateRowsSimple(rows, columns, columnWidths, orientation, options = {}) {
   if (!rows.length) return [[]];
 
   const lineBudget = options.lineBudget ?? PAGE_LINE_BUDGET[orientation];
@@ -208,5 +240,101 @@ export function paginateRowsByLayout(rows, columns, columnWidths, orientation, o
     pages.push(currentPage);
   }
 
-  return pages;
+  return applyOrphanRowPrevention(pages, options.minOrphanRows ?? 2);
+}
+
+function flushCurrentPage(pages, currentPageRef) {
+  if (currentPageRef.page.length) {
+    pages.push(currentPageRef.page);
+    currentPageRef.page = [];
+    currentPageRef.usedLines = 0;
+  }
+}
+
+/**
+ * 페이지 하단 orphan row 방지 — 마지막 페이지를 제외하고 행 수가 minOrphanRows 미만이면 다음 페이지와 병합
+ * @param {object[][]} pages
+ * @param {number} minOrphanRows
+ */
+export function applyOrphanRowPrevention(pages, minOrphanRows = 2) {
+  if (!pages.length || minOrphanRows <= 1) return pages;
+
+  const result = pages.map((page) => [...page]);
+
+  for (let index = 0; index < result.length - 1; index += 1) {
+    const page = result[index];
+    const nextPage = result[index + 1];
+    if (!page.length || page.length >= minOrphanRows) continue;
+
+    if (nextPage.length >= minOrphanRows) {
+      const needed = minOrphanRows - page.length;
+      const movable = Math.max(0, nextPage.length - minOrphanRows);
+      const pullCount = Math.min(needed, movable);
+      if (pullCount > 0) {
+        page.push(...nextPage.splice(0, pullCount));
+      }
+    }
+
+    if (page.length > 0 && page.length < minOrphanRows) {
+      nextPage.unshift(...page.splice(0, page.length));
+    }
+  }
+
+  return result.filter((page) => page.length > 0);
+}
+
+/**
+ * 가변 행 높이 + 관리번호 그룹 keep-together 페이지 분할
+ * @param {{ lineBudget?: number, lastPageReserve?: number, getGroupKey?: (row: object) => string }} options
+ */
+export function paginateRowsByLayout(rows, columns, columnWidths, orientation, options = {}) {
+  const getGroupKey = options.getGroupKey;
+  if (!getGroupKey) {
+    return paginateRowsSimple(rows, columns, columnWidths, orientation, options);
+  }
+
+  if (!rows.length) return [[]];
+
+  const lineBudget = options.lineBudget ?? PAGE_LINE_BUDGET[orientation];
+  const lastPageReserve = options.lastPageReserve ?? 0;
+  const groups = buildRowGroups(rows, getGroupKey);
+  const pages = [];
+  const currentPageRef = { page: [], usedLines: 0 };
+
+  const remainingLinesFromGroups = (startGroupIndex) => {
+    let total = 0;
+    for (let index = startGroupIndex; index < groups.length; index += 1) {
+      total += estimateGroupLines(groups[index].rows, columns, columnWidths, orientation);
+    }
+    return total;
+  };
+
+  groups.forEach((group, groupIndex) => {
+    const groupRows = group.rows;
+    const groupLines = estimateGroupLines(groupRows, columns, columnWidths, orientation);
+    const remainingLines = remainingLinesFromGroups(groupIndex);
+    const budget =
+      remainingLines <= lineBudget ? Math.max(1, lineBudget - lastPageReserve) : lineBudget;
+
+    if (groupLines > lineBudget) {
+      flushCurrentPage(pages, currentPageRef);
+      const subPages = paginateRowsSimple(groupRows, columns, columnWidths, orientation, {
+        lineBudget,
+        lastPageReserve: 0,
+      });
+      subPages.forEach((subPage) => pages.push(subPage));
+      return;
+    }
+
+    if (currentPageRef.page.length > 0 && currentPageRef.usedLines + groupLines > budget) {
+      flushCurrentPage(pages, currentPageRef);
+    }
+
+    currentPageRef.page.push(...groupRows);
+    currentPageRef.usedLines += groupLines;
+  });
+
+  flushCurrentPage(pages, currentPageRef);
+  const normalized = pages.length ? pages : [[]];
+  return applyOrphanRowPrevention(normalized, options.minOrphanRows ?? 2);
 }

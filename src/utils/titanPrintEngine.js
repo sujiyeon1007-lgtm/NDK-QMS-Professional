@@ -48,7 +48,7 @@ function copyStylesInto(targetDoc) {
 /** iframe 인쇄 — A4 고정 높이 flex (Footer orphan 방지) */
 const PRINT_ENGINE_CRITICAL_CSS = `
 @page { size: A4 portrait; margin: 10mm; }
-@page titan-landscape { size: A4 landscape; margin: 10mm; }
+@page titan-landscape { size: A4 landscape; margin: 8mm; }
 body.titan-print-engine-host { margin: 0; padding: 0; background: #fff; }
 body.titan-print-engine-host .titan-print-document { gap: 0; margin: 0; padding: 0; }
 body.titan-print-engine-host .titan-print-page {
@@ -65,9 +65,9 @@ body.titan-print-engine-host .titan-print-page {
   box-shadow: none;
 }
 body.titan-print-engine-host .titan-print-document.titan-print-landscape .titan-print-page {
-  width: 277mm;
-  height: 190mm;
-  max-height: 190mm;
+  width: 281mm;
+  height: 194mm;
+  max-height: 194mm;
 }
 body.titan-print-engine-host .titan-print-page-body {
   flex: 1 1 auto;
@@ -115,7 +115,8 @@ function injectPrintEngineCriticalCss(targetDoc) {
 /** iframe 인쇄/PDF — CSS 유실 시에도 A4 flex 레이아웃 유지 */
 function applyPrintEngineInlineStyles(clone) {
   clone.querySelectorAll(".ndk-logo--print").forEach((logo) => {
-    logo.style.height = "68px";
+    const isList = logo.closest(".titan-print-list") != null;
+    logo.style.height = isList ? "54px" : "68px";
     logo.style.width = "auto";
     logo.style.maxWidth = "42mm";
     logo.style.objectFit = "contain";
@@ -131,9 +132,9 @@ function applyPrintEngineInlineStyles(clone) {
     page.style.overflow = "hidden";
     page.style.margin = "0";
     page.style.padding = "0";
-    page.style.width = isLandscape ? "277mm" : "190mm";
-    page.style.height = isLandscape ? "190mm" : "277mm";
-    page.style.maxHeight = isLandscape ? "190mm" : "277mm";
+    page.style.width = isLandscape ? "281mm" : "190mm";
+    page.style.height = isLandscape ? "194mm" : "277mm";
+    page.style.maxHeight = isLandscape ? "194mm" : "277mm";
     page.style.minHeight = "0";
 
     const body = page.querySelector(".titan-print-page-body");

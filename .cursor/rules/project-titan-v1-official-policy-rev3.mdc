@@ -1,0 +1,90 @@
+---
+description: Project TITAN V1.0 공식 정책 — Trace ID · 문서관리 (Edition REV.4는 edition-architecture Rule)
+alwaysApply: true
+---
+
+# Project TITAN V1.0 — 공식 정책
+
+**Architecture 최우선:** `.cursor/rules/project-titan-platform-architecture-rev6.mdc` · `src/config/titanPlatformArchitecture.js`
+
+**본 Rule:** Trace ID · 문서관리 · MES/TITAN 역할 (Edition별 상세는 REV.4)
+
+**Source:** `src/config/titanV1OfficialPolicy.js`
+
+---
+
+## 🎯 TITAN 핵심
+
+**관리번호(Trace ID)를 중심으로 모든 품질 정보를 연결하는 열처리 전문 QMS**
+
+MES와 **경쟁 ❌** · MES 데이터로 **품질 완성** ✅
+
+---
+
+## 역할 분리
+
+### MES (회사 운영 · Source of Truth)
+
+거래처 · 제품 · 품번 · 재질 · 수주 · 입고 · 출고 · 재고 · **생산**
+
++ 실물: **관리번호 생성** (예: DL260702-016) · LOT
+
+### TITAN (품질관리)
+
+관리번호 **허브** · LOT · 검사 · 경도 · 유효경화깊이 · 조직사진 · 성적서 · Traceability · 품질 통계 · 출력물 · **문서관리**
+
+**TITAN은 MES Master/입출고를 생성·수정하지 않음** (조회)
+
+---
+
+## 관리번호 (Trace ID)
+
+MES: 번호 존재하나 품질 미활용 → **TITAN: 품질 허브**
+
+```text
+관리번호 → 입고 → LOT → 생산일보 → 검사 → 조직사진 → 성적서 → 출고 → QR → 품질이력
+```
+
+- **MES 생성** · TITAN **연결·조회** (`mesManagementNo`) · **중복 생성 ❌**
+
+---
+
+## 문서관리 (TITAN 핵심)
+
+도면 · 검사기준서 · 관리계획서 · 작업표준서 · FMEA · 고객 요구사항 · 특채 · NCR · 품질 공지 · 기타
+
+```text
+품번 → Revision → 승인자 → 개정일 → PDF → 이력관리
+```
+
+**검사등록:** 관리번호 연결 → 품번 → **최신** 도면·검사기준서·관리계획서·작업표준서 **자동 연결**
+
+---
+
+## 데이터 분리
+
+| | MES | TITAN |
+|---|-----|-------|
+| 생산 데이터 | 관리 · SoT | **조회** |
+| 품질 문서 | — | **버전·승인·이력·연결** |
+
+---
+
+## V1.0 구현
+
+- Demo: SessionStorage = 가상 MES · **Repository** (`getRepositories()`)
+- Sprint 3: Print · DOC-01 · 거래명세서 · PoC 병행
+- V1.1: Oracle Repository 교체 · **UI·Workflow 불변**
+
+---
+
+## V1.1+ DMS Roadmap (V1.0 ❌)
+
+승인 WF · 개정 비교 · 만료 알림 · QR 현장 열람 · 성적서-Revision 기록
+
+---
+
+## Do Not
+
+- MES 대체 · TITAN 관리번호 **중복 생성**
+- 문서 Revision 없이 PDF만 · MES 화면 1:1 복제

@@ -1,10 +1,9 @@
-import { formatQtyWithUnit } from "./productUnits";
 import {
-  computePrintColumnWidths,
-  paginateRowsByLayout,
-  PRINT_ORIENTATION,
-  resolvePrintOrientation,
-} from "./titanPrintLayout";
+  buildListPrintPaginationOptions,
+  TITAN_LIST_PRINT_ORIENTATION,
+} from "../config/titanListPrintStandard";
+import { formatQtyWithUnit } from "./productUnits";
+import { computePrintColumnWidths, paginateRowsByLayout } from "./titanPrintLayout";
 
 /** 저장된 비고만 출력 — 자동 생성·임시값·대시(-) 금지 */
 function formatNote(row) {
@@ -15,7 +14,7 @@ function formatNote(row) {
 
 export const OUTBOUND_PRINT_TITLE = "출고 리스트";
 
-/** Project TITAN 출고 리스트 출력 컬럼 — 입출고 리스트와 동일 엔진, 출고 전용 양식 */
+/** Project TITAN 출고 리스트 — DOC-01 Layout Master · 컬럼만 출고 전용 */
 export function buildOutboundPrintColumns(shipDate = "") {
   return [
     {
@@ -31,7 +30,7 @@ export function buildOutboundPrintColumns(shipDate = "") {
       id: "company",
       header: "업체명",
       baseRatio: 14,
-      singleLine: true,
+      wrap: true,
       align: "left",
       getValue: (row) => row.company ?? "",
     },
@@ -39,7 +38,7 @@ export function buildOutboundPrintColumns(shipDate = "") {
       id: "partName",
       header: "품명",
       baseRatio: 18,
-      wrapMaxLines: 2,
+      wrap: true,
       align: "left",
       getValue: (row) => row.partName ?? "",
     },
@@ -47,7 +46,7 @@ export function buildOutboundPrintColumns(shipDate = "") {
       id: "partNo",
       header: "품번",
       baseRatio: 14,
-      singleLine: true,
+      wrap: true,
       align: "left",
       getValue: (row) => row.partNo ?? "",
     },
@@ -55,7 +54,7 @@ export function buildOutboundPrintColumns(shipDate = "") {
       id: "material",
       header: "재질",
       baseRatio: 9,
-      singleLine: true,
+      wrap: true,
       align: "center",
       getValue: (row) => row.material ?? "",
     },
@@ -87,7 +86,7 @@ export function buildOutboundPrintColumns(shipDate = "") {
       id: "note",
       header: "비고",
       baseRatio: 11,
-      singleLine: true,
+      wrap: true,
       align: "left",
       getValue: (row) => formatNote(row),
     },
@@ -97,17 +96,17 @@ export function buildOutboundPrintColumns(shipDate = "") {
 export function buildOutboundPrintLayout(rows, shipDate = "", options = {}) {
   const columns = buildOutboundPrintColumns(shipDate);
   const columnWidths = computePrintColumnWidths(columns, rows);
-  const orientation = resolvePrintOrientation(columns, rows, columnWidths);
-
-  const trimmedMemo = options.workMemo?.trim() ?? "";
-  let lastPageReserve = 3;
-  if (trimmedMemo) lastPageReserve += 4;
-
-  const rowLineBudget = {
-    lineBudget: orientation === PRINT_ORIENTATION.LANDSCAPE ? 10 : 14,
-    lastPageReserve,
-  };
-  const pages = paginateRowsByLayout(rows, columns, columnWidths, orientation, rowLineBudget);
+  const orientation = TITAN_LIST_PRINT_ORIENTATION;
+  const pages = paginateRowsByLayout(
+    rows,
+    columns,
+    columnWidths,
+    orientation,
+    buildListPrintPaginationOptions({
+      workMemo: options.workMemo,
+      getGroupKey: (row) => row.managementId ?? row.id ?? "",
+    })
+  );
 
   return {
     columns,

@@ -1,0 +1,118 @@
+---
+description: Project TITAN Architecture — Edition REV.4 하위 (MES Connected 상세)
+alwaysApply: true
+---
+
+# Architecture (Edition REV.4 하위)
+
+> **⚠️ Edition/Repository 확정은 Oracle PoC 후 V1.1.** V1.0 개발 방향: `.cursor/rules/project-titan-v1-development-direction.mdc` (2026-07-02)
+
+**최우선:** `.cursor/rules/project-titan-edition-architecture-rev4.mdc` · `src/config/titanEditionArchitecture.js`
+
+**MES Connected 상세:** `mesArchitecturePolicy.js` · PoC · 문서관리 Rule
+
+---
+
+## 1. 방향 (최종)
+
+TITAN = **ERP/MES 대체 ❌** · **MES 연동 열처리 QMS ✅**
+
+```text
+MES → 생산 · 물류 · Master Data (Source of Truth)
+TITAN → 품질(QMS) (Quality Source of Truth)
+```
+
+---
+
+## 2. MES 실물 분석
+
+- **Oracle** · **FastReport(FR3)** · Oracle Dataset · **관리번호 MES 자동생성** (예: `DL260702-016`)
+- MES SoT: 관리번호 · Master · LOT · 입출고 · 재고 · **생산**
+
+---
+
+## 3. 관리번호 정책 (변경)
+
+| 기존 | 변경 |
+|------|------|
+| TITAN 관리번호 생성 | **MES 자동생성 → Oracle → TITAN 조회** |
+
+**TITAN은 관리번호를 생성하지 않음.** `mesManagementNo` = **Primary Key**
+
+---
+
+## 4. Database · 품질 연결
+
+Inspection · Microstructure · Certificate · History — 모두 **`mesManagementNo`** 기준
+
+---
+
+## 5–6. 역할
+
+**MES (생성·수정):** Master · 입출고 · 재고 · 생산 · **관리번호 · LOT**
+
+**TITAN (QMS):** 품질접수 · 검사 · 경도 · 유효경화깊이 · 조직/현미경 · 성적서 · QR · Traceability · 통계 · **문서관리**
+
+TITAN은 MES 데이터 **조회만** (생성·수정 ❌)
+
+---
+
+## 7. Workflow
+
+```text
+MES: 입고등록 → 관리번호 자동생성 → Oracle
+TITAN: 입고조회 → 품질접수 → 검사 → … → QR → 품질이력
+```
+
+---
+
+## 8. 입고관리
+
+**최종:** 입력 ❌ · **입고조회 → MES 조회 → 품질접수** (등록은 MES만)
+
+V1.0 Demo: 가상 MES UI 유지 · **구조는 조회 전제**
+
+---
+
+## 9. QR
+
+**MES 관리번호** 기준 → Portal → 성적서 · 조직사진 · 경도 · 검사/출고 이력
+
+---
+
+## 10. Repository
+
+```text
+V1.0: UI → Repository → SessionStorage
+V1.1: UI → Repository → Oracle  (UI·Workflow 불변)
+```
+
+`getRepositories()` — UI는 Session/Oracle **직접 호출 금지**
+
+---
+
+## 11. Demo · Sprint
+
+- Demo = SessionStorage **가상 MES Oracle**
+- **Sprint 3:** Print Engine · DOC-01 · 거래명세서 · 부분출고
+- **병행:** MES PoC
+
+---
+
+## 12. UX 철학
+
+MES 복제 ❌ · **Workflow 유지 + UX 현대화** · Live Search · 최소 입력 · Design System · 파스텔톤
+
+---
+
+## 13. Vision
+
+MES = 생산·물류 SoT · TITAN = **품질 SoT** · Repository 연동 · **세계 수준 전문 QMS**
+
+---
+
+## Do Not
+
+- TITAN에서 **관리번호/Master/입고 생성**
+- UI에서 **Session/Oracle 직접 접근** (Repository 우회)
+- MES 화면 **1:1 복제** 목표

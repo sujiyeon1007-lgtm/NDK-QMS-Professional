@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
 import { buildTitanDocumentQrPayloadFromRows } from "../../utils/titanDocumentQr";
+import { TITAN_LIST_PRINT_DOCUMENT_CLASS, TITAN_LIST_DOCUMENT_CODES } from "../../config/titanListPrintStandard";
 import { buildHtlPrintLayout, HTL_PRINT_TITLE } from "../../utils/htlWorkListPrintLayout";
 import TitanPrintDocumentMeta from "./TitanPrintDocumentMeta";
 import TitanPrintOfficialFooter from "./TitanPrintOfficialFooter";
@@ -63,7 +64,7 @@ function HeatTreatmentWorkListPrint({
 
   return (
     <div
-      className="titan-print-document htl-work-list-print titan-print-landscape"
+      className={`titan-print-document htl-work-list-print ${TITAN_LIST_PRINT_DOCUMENT_CLASS} titan-print-landscape`}
       data-print-orientation={orientation}
       aria-label="열처리 작업 요청 리스트"
     >
@@ -101,7 +102,7 @@ function HeatTreatmentWorkListPrint({
             </section>
           )}
 
-          <TitanPrintOfficialFooter />
+          <TitanPrintOfficialFooter documentCode={TITAN_LIST_DOCUMENT_CODES.HTL} />
         </TitanPrintPage>
       ))}
     </div>

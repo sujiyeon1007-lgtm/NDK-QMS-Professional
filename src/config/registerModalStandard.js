@@ -9,8 +9,12 @@ export const INBOUND_PRINT_LIST_LABEL = "입고 리스트 (열처리 작업 요�
 export const OUTBOUND_REGISTER_LABEL = "출고 등록";
 export const OUTBOUND_LIST_LABEL = "출고 리스트";
 export const OUTBOUND_STATEMENT_LABEL = "거래명세서 출력";
+export const OUTBOUND_STATEMENT_REPRINT_LABEL = "거래명세서 재출력";
 
 export const PRODUCTION_DAILY_REGISTER_LABEL = "생산일보 등록";
+export const PRODUCTION_DAILY_EDIT_LABEL = "생산일보 수정";
+export const PRODUCTION_DAILY_CANCEL_LABEL = "생산일보 취소";
+export const PRODUCTION_DAILY_EDIT_MODAL_TITLE = "생산일보 수정";
 export const PRODUCTION_DAILY_PRINT_LABEL = "생산일보 출력";
 
 export const INSPECTION_LOG_REGISTER_LABEL = "검사일지 등록";

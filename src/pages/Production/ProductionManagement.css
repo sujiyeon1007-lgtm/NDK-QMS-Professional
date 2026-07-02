@@ -19,17 +19,7 @@
 }
 
 .production-page__list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: 8px;
-}
-
-.production-page__list-header h3 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--titan-primary);
 }
 
 .production-kpi-panel {
@@ -646,13 +636,6 @@
   border-top: 1px solid var(--titan-border);
 }
 
-.titan-modal__section-title {
-  margin: 0 0 10px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--titan-text);
-}
-
 .titan-modal__grid--single {
   grid-template-columns: 1fr;
 }
@@ -672,4 +655,118 @@
     grid-template-columns: 1fr;
     justify-items: center;
   }
+}
+
+/* ── 생산일보 등록 (로트 · 장입 · 열처리 조건) ── */
+.daily-report-register__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.daily-report-register__lot-field {
+  display: block;
+}
+
+.daily-report-register__line-input {
+  border: none;
+  border-bottom: 1px solid var(--titan-border-strong, #94a3b8);
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.daily-report-register__line-input:focus {
+  border-bottom-color: var(--titan-primary, #2563eb);
+  box-shadow: none;
+}
+
+.daily-report-register__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.daily-report-register__section-head .titan-modal__section-title {
+  margin: 0;
+}
+
+.daily-report-register__product-picker select {
+  min-width: 220px;
+}
+
+.daily-report-register__charge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.daily-report-register__charge-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--titan-border-strong, #94a3b8);
+  font-size: 13px;
+  color: var(--titan-text);
+  word-break: keep-all;
+}
+
+.daily-report-register__charge-line--empty {
+  min-height: 34px;
+}
+
+.daily-report-register__condition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.daily-report-register__condition-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.daily-report-register__condition-input {
+  width: 120px;
+  min-width: 96px;
+}
+
+.daily-report-register__condition-unit {
+  font-size: 13px;
+  color: var(--titan-text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.daily-report-register__add-btn {
+  margin-left: 4px;
+  min-height: 32px;
+  padding-inline: 10px;
+}
+
+.daily-report-register__remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--titan-text-muted, #64748b);
+  cursor: pointer;
+}
+
+.daily-report-register__remove-btn:hover {
+  background: var(--titan-surface-muted, #f1f5f9);
+  color: var(--titan-danger, #dc2626);
 }
