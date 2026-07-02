@@ -1,0 +1,154 @@
+---
+description: Project TITAN V1.0 — Dev / Demo / Beta Operations Policy (FINAL)
+alwaysApply: true
+---
+
+# Project TITAN — Dev / Demo / Beta Operations Policy (FINAL)
+
+**UI 개발 단계 종료.** **개발 = Demo 구축.**
+
+완료 기준: **"실제 회사에서 내일 바로 사용할 수 있는가?"**
+
+---
+
+## 1. Develop (Local Host)
+
+All work in Cursor on **Local Host only**:
+
+- 기능 개발 · UI 수정 · 버그 수정 · Workflow · 출력물
+
+**Dev command (required):**
+
+```json
+"dev": "vite --host"
+```
+
+Run `npm run dev` — must show:
+
+| Type | URL |
+|------|-----|
+| Local | `http://localhost:5173` or `:5174` |
+| Network | `http://192.168.xxx.xxx:5173` or `:5174` |
+
+Network URL: phone / laptop / other PC testing.
+
+**Do not use Local Host for meetings or demos.**
+
+---
+
+## 2. Beta (Meetings / Demo)
+
+Always: **https://ndk-qms-beta.vercel.app**
+
+For: 회의 · 소장님 · 사장님 · 시연 · 피드백
+
+Deploy **stable versions only** to Beta.
+
+---
+
+## 3. Release (Production)
+
+**Electron** (`Project TITAN.exe`) + **SQLite** — final real-use deployment.
+
+---
+
+## 4. Development Flow
+
+```text
+Local Host
+  ↓ 기능 구현 → Demo 데이터 → Workflow 연결
+  ↓ Build 확인 → Git Commit → Git Push
+  ↓ Beta auto-deploy → Beta 확인 → 회의 → 피드백 → 수정
+  ↓ Main Release → EXE 제작
+```
+
+---
+
+## 5. Git Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Stable — EXE baseline |
+| `beta-demo` | Meetings — Vercel auto-deploy |
+| `develop` | Optional dev branch |
+
+---
+
+## 6. Demo Policy
+
+**No Dummy Data.** Real: 거래처 · 제품 · 품번 · 재질 · 단가 · Workflow.
+
+**Primary company:** **서암기계공업**
+
+Always maintain **Beta에서 바로 시연 가능** state.
+
+---
+
+## 7. Development Policy
+
+Simultaneous development:
+
+- **기능** + **Demo** + **Workflow** + **출력물**
+
+Feature-only without Demo usability = **not complete**.
+
+---
+
+## 8. UI Policy (Frozen)
+
+Foundation UI fixed. No arbitrary changes. Add required features only.
+
+---
+
+## 9. Desktop Program
+
+Not responsive web — **Windows Desktop ERP**. No mobile.
+
+Min-width maintained. When narrow: **horizontal scroll** (ERP style).
+
+---
+
+## 10. Print Outputs (Next Sprint)
+
+Order:
+
+1. **열처리 작업 요청 리스트** ← next
+2. 생산일보
+3. 검사성적서
+4. 거래명세서
+
+Shared: **common Header · design · document number system**. Default: **PDF**.
+
+### 열처리 작업 요청 리스트
+
+**Purpose:** 품질부 → 생산부 작업 전달
+
+**Auto:** 작업지시번호 · 업체명 · 품명 · 품번 · 재질 · 실재고 · 입고일 · 출력일
+
+**Handwritten (생산부):** 작업수량 · 작업일 · LOT No. · 비고 · 체크박스
+
+---
+
+## 11. Workflow (Fixed)
+
+```text
+입고등록 → 열처리 작업 요청 리스트 출력 → 생산부 수기 작성
+→ 생산일보 등록 → 검사등록 → 성적서 출력 → 출고등록
+→ 거래명세서 출력 → 이력조회
+```
+
+---
+
+## 12. Completion Report (Required)
+
+- □ 변경 파일 · □ 구현 내용 · □ Build 성공
+- □ Console Error = 0 · □ React Error = 0
+- □ Git Commit · □ Git Push · □ Beta 반영 · □ Demo 확인
+
+---
+
+## 13. Goal
+
+Build a **QMS the company actually uses** — not just a program.
+
+Priority: **real workflow · real outputs · real usability** over UI.

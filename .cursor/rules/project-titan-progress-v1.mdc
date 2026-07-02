@@ -134,26 +134,24 @@ alwaysApply: true
 ## 앞으로 개발 순서
 
 ```text
-① 품질관리 완료
+① Demo 데이터 구축 (서암기계공업 기준 · 실제 Workflow)
   ↓
-② 불량이력관리 (4M)
+② 출력물
+  - 열처리 작업 요청 리스트 (최우선)
+  - 생산일보
+  - 검사성적서
+  - 거래명세서
   ↓
-③ 부서별 업무 (V1.0 완료)
+③ SQLite 연결
   ↓
-④ 통계자료
-  ↓
-⑤ 기준정보관리
-  ↓
-⑥ 환경설정
-  ↓
-⑦ 문서 출력
-  ↓
-⑧ SQLite 연결
-  ↓
-⑨ Electron EXE
+④ Electron EXE
 ```
 
-**현재 Cursor 집중:** ① 품질관리 (검사일지 · 성적서) — ②로 넘어가기 전 PM 승인 필수.
+**개발 = Demo 구축:** 기능 구현 + Demo 데이터 + Workflow 연결을 동시에. Beta에서 즉시 시연 가능해야 완료.
+
+See: `.cursor/rules/project-titan-dev-operations-policy.mdc`
+
+**현재 Cursor 집중:** ② 출력물 — **열처리 작업 요청 리스트** (입고 → 생산부 전달)
 
 ---
 
