@@ -1,0 +1,225 @@
+/**
+ * Project TITAN V1.0 — Desktop ERP Layout (Final)
+ * Desktop program baseline only — NO mobile/responsive compression.
+ * Min-width 1600px · horizontal scroll when viewport is narrower.
+ */
+
+/* ── App shell: fixed desktop min-width + horizontal scroll ── */
+html {
+  overflow-x: auto;
+}
+
+body,
+#root {
+  min-width: var(--titan-app-min-width);
+}
+
+.titan-app-shell {
+  min-width: var(--titan-app-min-width);
+  overflow-x: visible;
+}
+
+.titan-app-body {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.titan-main {
+  overflow-x: visible;
+}
+
+/* ── Header: no compression / overlap ── */
+.titan-header {
+  flex-shrink: 0;
+  min-width: var(--titan-app-min-width);
+}
+
+.titan-header__title,
+.titan-header__note,
+.titan-header__beta,
+.titan-header__user,
+.titan-header__clock {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.titan-header__user {
+  gap: 10px;
+}
+
+/* ── Toolbar: buttons keep full label, no clipping ── */
+.titan-menu-toolbar {
+  flex-shrink: 0;
+}
+
+.titan-menu-toolbar__actions {
+  flex-shrink: 0;
+  min-width: max-content;
+}
+
+.titan-menu-toolbar__actions .titan-btn,
+.titan-page-top-bar__actions .titan-btn {
+  flex-shrink: 0;
+  min-width: max-content;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* ── Search: desktop baseline field widths ── */
+.titan-search-panel__basic {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  min-height: auto;
+}
+
+.titan-search-panel__fields {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-width: 560px;
+}
+
+.titan-search-panel__field {
+  flex: 1 1 0;
+  min-width: 150px;
+  max-width: none;
+}
+
+.titan-search-panel__actions {
+  flex-shrink: 0;
+}
+
+.titan-advanced-search__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.titan-advanced-search__field {
+  flex: 0 1 150px;
+  min-width: 150px;
+  max-width: none;
+}
+
+/* ── Table: fixed columns, no text breaking ── */
+.titan-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.titan-table--ratio {
+  table-layout: fixed;
+  min-width: var(--titan-table-min-width);
+  width: 100%;
+}
+
+.titan-table--ratio .titan-table__cell,
+.titan-table--ratio .titan-table__cell--head {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titan-table--ratio .titan-table__cell--partName {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* ── List workspace: side panel NEVER stacks below list ── */
+.inbound-page__workspace,
+.titan-list-workspace,
+.titan-split-workspace {
+  grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  container-type: normal;
+}
+
+.inbound-page__detail,
+.titan-detail-panel {
+  min-width: var(--titan-side-max);
+  max-width: var(--titan-side-max);
+  flex-shrink: 0;
+}
+
+/* ── Detail panel output buttons: full label visible ── */
+.titan-detail-panel__action.titan-btn {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: var(--titan-toolbar-btn-h, 36px);
+  padding: 8px 12px;
+  white-space: normal;
+  flex-shrink: 0;
+}
+
+.titan-detail-panel__action .titan-text-wrap {
+  display: inline;
+  max-width: none;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.inbound-page__detail-action.titan-btn {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: var(--titan-toolbar-btn-h, 36px);
+  white-space: normal;
+}
+
+.inbound-page__detail-action .titan-text-wrap {
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
+/* ── Override responsive compression media queries (desktop ERP) ── */
+@media (max-width: 1400px) {
+  .titan-page:has(.titan-list-workspace) .ndk-summary-grid.ndk-summary-grid--6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .titan-split-workspace,
+  .titan-list-workspace {
+    grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+    height: auto;
+  }
+
+  .incoming-page .incoming-main,
+  .certificate-page .cert-main,
+  .production-plan-page .production-main {
+    --titan-list-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  }
+
+  .shipment-page .ship-split-workspace,
+  .daily-work-page .daily-split-workspace {
+    grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .titan-table-footer {
+    grid-template-columns: 1fr auto 1fr !important;
+    gap: 0 !important;
+  }
+
+  .titan-table-footer__total {
+    justify-self: start !important;
+  }
+
+  .titan-table-footer__pagination {
+    justify-self: center !important;
+  }
+
+  .titan-table-footer__page-size {
+    justify-self: end !important;
+  }
+}

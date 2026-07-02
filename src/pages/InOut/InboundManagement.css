@@ -21,7 +21,7 @@
 
 .inbound-page__workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, var(--titan-side-max));
+  grid-template-columns: minmax(0, 1fr) var(--titan-side-max);
   gap: var(--titan-gap);
   min-height: 420px;
 }
@@ -60,7 +60,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--titan-gap);
-  min-width: 0;
+  min-width: var(--titan-side-max);
+  max-width: var(--titan-side-max);
+  flex-shrink: 0;
 }
 
 .inbound-detail {
@@ -137,7 +139,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--titan-gap);
-  min-width: 0;
+  min-width: var(--titan-side-max);
+  max-width: var(--titan-side-max);
+  flex-shrink: 0;
 }
 
 .titan-detail-panel__divider {
@@ -156,12 +160,8 @@
 .titan-detail-panel__action .titan-text-wrap {
   flex: 1;
   min-width: 0;
-  white-space: normal;
+  white-space: pre-line;
   word-break: keep-all;
-}
-
-@media (max-width: 1100px) {
-  .inbound-page__workspace {
-    grid-template-columns: 1fr;
-  }
+  overflow: visible;
+  text-overflow: clip;
 }

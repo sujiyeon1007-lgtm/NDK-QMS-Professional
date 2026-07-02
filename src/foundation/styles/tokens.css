@@ -63,6 +63,10 @@
   --titan-list-ratio: 86%;
   --titan-side-max: 240px;
 
+  /* Desktop program baseline (no mobile) */
+  --titan-app-min-width: 1600px;
+  --titan-table-min-width: 1120px;
+
   /* Status (PM V1.0 공식 — Status Badge) */
   --titan-status-progress: #1976d2;
   --titan-status-complete: #2e7d32;

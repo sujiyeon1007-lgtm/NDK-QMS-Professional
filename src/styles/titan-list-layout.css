@@ -107,8 +107,9 @@
 }
 
 @media (max-width: 1200px) {
+  /* Desktop ERP — keep side-by-side layout, no stacking */
   .titan-split-workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) var(--titan-side-max, 240px);
     height: auto;
   }
 }
@@ -510,11 +511,12 @@
 }
 
 @media (max-width: 1200px) {
+  /* Desktop ERP — keep side-by-side layout, no stacking */
   .titan-list-workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) var(--titan-side-max, 240px);
   }
 
   .titan-list-workspace .titan-queue-list {
-    max-height: 320px;
+    max-height: none;
   }
 }

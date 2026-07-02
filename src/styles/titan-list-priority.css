@@ -183,14 +183,15 @@
 }
 
 @media (max-width: 1100px) {
+  /* Desktop ERP — keep side-by-side layout, no stacking */
   .incoming-page .incoming-main,
   .certificate-page .cert-main,
   .production-plan-page .production-main {
-    --titan-list-columns: 1fr;
+    --titan-list-columns: minmax(0, 1fr) var(--titan-side-max, 240px);
   }
 
   .shipment-page .ship-split-workspace,
   .daily-work-page .daily-split-workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) var(--titan-side-max, 240px);
   }
 }

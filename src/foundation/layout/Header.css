@@ -6,6 +6,8 @@
   padding: 0 16px;
   background: var(--titan-surface);
   border-bottom: 1px solid var(--titan-border);
+  flex-shrink: 0;
+  min-width: var(--titan-app-min-width);
 }
 
 .titan-header__title {
@@ -13,6 +15,8 @@
   font-size: 15px;
   font-weight: 800;
   color: var(--titan-text);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .titan-header__note {

@@ -310,7 +310,9 @@ button.titan-status-chip {
 
 /* ── TitanDataTable (PM 공통 리스트) ── */
 .titan-table-wrap {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
   border: 1px solid var(--titan-table-border);
   border-radius: var(--titan-radius-sm);
   background: var(--titan-surface);
@@ -324,6 +326,7 @@ button.titan-status-chip {
 
 .titan-table--ratio {
   table-layout: fixed;
+  min-width: var(--titan-table-min-width, 1120px);
 }
 
 .titan-table--ratio .titan-table__cell--company,
@@ -332,11 +335,11 @@ button.titan-status-chip {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .titan-table--ratio .titan-table__cell--partName {
-  white-space: normal;
-  word-break: break-word;
   line-height: 1.35;
 }
 
@@ -362,6 +365,9 @@ button.titan-status-chip {
   color: var(--titan-text);
   vertical-align: middle;
   background: var(--titan-surface);
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .titan-table__body tr:last-child .titan-table__cell {
@@ -599,23 +605,26 @@ button.titan-status-chip {
 .titan-search-panel__basic {
   display: flex;
   align-items: flex-end;
+  flex-wrap: nowrap;
   gap: 12px;
-  min-height: 62px;
+  min-height: auto;
 }
 
 .titan-search-panel__fields {
   flex: 1 1 auto;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
-  min-width: 0;
+  min-width: 560px;
 }
 
 .titan-search-panel__field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: 150px;
+  max-width: none;
 }
 
 .titan-search-panel__label {
@@ -668,8 +677,8 @@ button.titan-status-chip {
 }
 
 .titan-advanced-search__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -677,6 +686,9 @@ button.titan-status-chip {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 0 1 150px;
+  min-width: 150px;
+  max-width: none;
 }
 
 .titan-advanced-search__label {
@@ -913,29 +925,7 @@ button.titan-status-chip {
   gap: 8px;
 }
 
-@media (max-width: 1100px) {
-  .titan-search-panel__basic {
-    flex-direction: column;
-    align-items: stretch;
-    min-height: auto;
-  }
-
-  .titan-search-panel__fields,
-  .titan-advanced-search__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .titan-table-footer {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .titan-table-footer__total,
-  .titan-table-footer__pagination,
-  .titan-table-footer__page-size {
-    justify-self: center;
-  }
-}
+/* Desktop ERP — table footer stays 3-column (override in titan-desktop-layout.css if needed) */
 
 /* legacy alias */
 .titan-pagination.titan-table__pagination,

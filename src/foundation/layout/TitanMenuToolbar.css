@@ -22,12 +22,13 @@
 
 .titan-menu-toolbar__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
   justify-content: flex-end;
   flex: 0 0 auto;
-  min-width: 0;
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 .titan-menu-toolbar__actions--empty {
