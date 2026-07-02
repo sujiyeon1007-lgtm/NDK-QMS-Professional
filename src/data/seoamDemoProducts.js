@@ -1,4 +1,4 @@
-/** Project TITAN Demo — 서암기계공업 Product Master (950건) · Auto-generated */
+/** Project TITAN — 서암기계공업 Product Master (950건) · Auto-generated from Excel */
 export const SEOAM_DEMO_PRODUCTS = [
   {
     "id": "seoam-1",

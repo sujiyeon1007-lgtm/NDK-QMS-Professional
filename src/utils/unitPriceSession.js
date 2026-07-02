@@ -9,37 +9,21 @@ function priceKey(company, partNo) {
 
 let unitPriceStore = new Map([
   [
-    priceKey("대한정밀", "DK-1042-A"),
+    priceKey("서암기계공업", "H2E19655"),
     {
-      company: "대한정밀",
-      partNo: "DK-1042-A",
-      partName: "축용 냉간단조품",
-      history: [
-        { id: "up1", effectiveDate: "2026-07-01", price: 1000, note: "초기 단가" },
-        { id: "up2", effectiveDate: "2026-08-01", price: 1200, note: "단가 인상" },
-        { id: "up3", effectiveDate: "2026-10-15", price: 1350, note: "" },
-      ],
+      company: "서암기계공업",
+      partNo: "H2E19655",
+      partName: "BULL GEAR",
+      history: [{ id: "up1", effectiveDate: "2026-07-01", price: 5462200, note: "" }],
     },
   ],
   [
-    priceKey("한국금속", "HK-3305-B"),
+    priceKey("서암기계공업", "CQ91BUL504"),
     {
-      company: "한국금속",
-      partNo: "HK-3305-B",
-      partName: "기어 블랭크",
-      history: [
-        { id: "up4", effectiveDate: "2026-06-01", price: 850, note: "" },
-        { id: "up5", effectiveDate: "2026-09-01", price: 920, note: "" },
-      ],
-    },
-  ],
-  [
-    priceKey("삼성부품", "SP-8821-C"),
-    {
-      company: "삼성부품",
-      partNo: "SP-8821-C",
-      partName: "브라켓 ASSY",
-      history: [{ id: "up6", effectiveDate: "2026-07-01", price: 1500, note: "" }],
+      company: "서암기계공업",
+      partNo: "CQ91BUL504",
+      partName: "BULL GEAR",
+      history: [{ id: "up2", effectiveDate: "2026-07-01", price: 660000, note: "" }],
     },
   ],
 ]);

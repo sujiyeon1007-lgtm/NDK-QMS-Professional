@@ -10,7 +10,7 @@ import {
   getDrawingRevisionHistory,
 } from "./productDrawingSession";
 
-const STORAGE_KEY = "project-titan-product-inspection-v1";
+const STORAGE_KEY = "project-titan-product-inspection-v2";
 
 const DRAWING_ACCEPT = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -50,59 +50,7 @@ function normalizeInspectionRecord(record) {
 }
 
 function getSeedRecords() {
-  const products = getMasterDataByCategory("products");
-  const sample = products.find((row) => row.partNo === "WS-2210-F") ?? products[0];
-  if (!sample) return [];
-
-  return [
-    normalizeInspectionRecord({
-      id: "PI-SEED-001",
-      productId: sample.id,
-      partNo: sample.partNo,
-      specification: {
-        hardness: {
-          enabled: true,
-          unit: "HV",
-          surfaceEntries: [
-            { id: "hs-seed-1", value: "550", valueTo: "700", condition: "범위", unit: "HV" },
-            { id: "hs-seed-2", value: "52", valueTo: "56", condition: "범위", unit: "HRC" },
-          ],
-          items: [
-            {
-              key: "caseDepth",
-              label: "경화깊이 기준",
-              value: "0.40",
-              valueTo: "",
-              condition: "이상",
-              disabled: true,
-              unit: "mm",
-            },
-            {
-              key: "effectiveDepth",
-              label: "유효경화깊이 기준",
-              value: "0.20",
-              valueTo: "0.40",
-              condition: "범위",
-              disabled: false,
-              unit: "mm",
-            },
-            { key: "compoundLayer", label: "화합물층", spec: "5~15", disabled: false },
-            { key: "core", label: "심부경도", spec: "250~350", disabled: false },
-          ],
-        },
-        microstructure: { enabled: true },
-        dimension: {
-          enabled: true,
-          unit: "mm",
-          items: [{ id: "dim-1", label: "외경", spec: "45.0±0.1" }],
-        },
-        appearance: { enabled: true },
-        other: { enabled: false, note: "" },
-      },
-      drawing: createEmptyDrawing(),
-      note: "",
-    }),
-  ];
+  return [];
 }
 
 function loadRecords() {

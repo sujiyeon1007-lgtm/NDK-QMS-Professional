@@ -187,12 +187,7 @@ function buildProductionRows(period, referenceDate, search, unitFilter) {
   }));
 
   if (rows.length === 0) {
-    rows = [
-      { id: "PS-1", company: "한국금속", partName: "기어 블랭크", partNo: "HK-3305-B", material: "SNCM220", processName: "이온질화", equipment: "ION-01", worker: "김작업", productionQty: 200, unit: "EA", workDate: "2026-06-28", status: "생산완료" },
-      { id: "PS-2", company: "삼성부품", partName: "VALVE STEM", partNo: "VS-10234", material: "SACM645", processName: "침탄", equipment: "GAS-01", worker: "이주임", productionQty: 8350, unit: "KG", workDate: "2026-06-27", status: "생산진행" },
-      { id: "PS-3", company: "대한정밀", partName: "축용 냉간단조품", partNo: "DK-1042-A", material: "SCM440", processName: "가스질화", equipment: "GAS-02", worker: "박대리", productionQty: 120, unit: "EA", workDate: "2026-06-26", status: "생산완료" },
-      { id: "PS-4", company: "우성기계", partName: "Pinion Gear", partNo: "WS-2210-F", material: "SCM440", processName: "침탄", equipment: "ION-02", worker: "최과장", productionQty: 15, unit: "LOT", workDate: "2026-06-25", status: "생산진행" },
-    ];
+    return rows;
   }
 
   return rows
@@ -219,10 +214,7 @@ function buildQualityRows(period, referenceDate, search, unitFilter) {
   rows = rows.filter((row) => isInPeriod(row.inspectionDate, period, referenceDate) && isInSearchDateRange(row.inspectionDate, search));
 
   if (rows.length === 0) {
-    rows = [
-      { id: "QL-1", company: "한국금속", partName: "기어 블랭크", partNo: "HK-3305-B", material: "SNCM220", processName: "이온질화", assignee: "품질관리부 / 정반이 사원", inspectionDate: "2026-06-28", judgment: "합격", reprocess: "N", unit: "EA", defectQty: 0 },
-      { id: "QL-2", company: "삼성부품", partName: "VALVE STEM", partNo: "VS-10234", material: "SACM645", processName: "침탄", assignee: "품질관리부 / 정반이 사원", inspectionDate: "2026-06-27", judgment: "불합격", reprocess: "Y", unit: "KG", defectQty: 1 },
-    ];
+    return rows;
   }
 
   return rows
@@ -248,10 +240,7 @@ function buildShipmentRows(period, referenceDate, search, unitFilter) {
   rows = rows.filter((row) => isInPeriod(row.shipDate, period, referenceDate) && isInSearchDateRange(row.shipDate, search));
 
   if (rows.length === 0) {
-    rows = [
-      { id: "SH-1", company: "한국금속", partName: "기어 블랭크", partNo: "HK-3305-B", material: "SNCM220", shipmentQty: 180, unit: "EA", shipDate: "2026-06-28", manager: "영업부 / 박대리" },
-      { id: "SH-2", company: "삼성부품", partName: "VALVE STEM", partNo: "VS-10234", material: "SACM645", shipmentQty: 7920, unit: "KG", shipDate: "2026-06-27", manager: "영업부 / 최과장" },
-    ];
+    return rows;
   }
 
   return rows

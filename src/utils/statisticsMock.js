@@ -31,12 +31,12 @@ const base = {
     { label: "7", value: 18 },
   ],
   byCompany: [
-    { label: "대한정밀", value: 32 },
-    { label: "삼성부품", value: 28 },
-    { label: "한국금속", value: 24 },
-    { label: "우성기계", value: 20 },
-    { label: "신화산업", value: 16 },
-    { label: "성우정밀", value: 8 },
+    { label: "서암기계공업", value: 44 },
+    { label: "현대위아", value: 0 },
+    { label: "두산에너빌리티", value: 0 },
+    { label: "SNT다이내믹스", value: 0 },
+    { label: "한화에어로스페이스", value: 0 },
+    { label: "GE", value: 0 },
   ],
   byHeatTreatment: [
     { label: "가스질화", value: 45 },

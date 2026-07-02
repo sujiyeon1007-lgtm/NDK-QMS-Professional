@@ -8,107 +8,10 @@ import {
   normalizeProductRegistration,
 } from "./productSpecificationModel";
 
-const STORAGE_KEY = "project-titan-product-registration-v1";
+const STORAGE_KEY = "project-titan-product-registration-v2";
 
 function getSeedProducts() {
-  return [
-    normalizeProductRegistration({
-      id: "PRD-SEED-001",
-      company: "한국금속",
-      partName: "기어 블랭크",
-      partNo: "HK-3305-B",
-      drawingNo: "DW-3305-02",
-      material: "SNCM220",
-      process: "이온질화",
-      note: "",
-      specification: {
-        appearance: {
-          enabled: true,
-          items: [
-            { key: "dent", label: "찍힘", enabled: true },
-            { key: "color", label: "색상 이상", enabled: true },
-            { key: "stain", label: "얼룩", enabled: true },
-            { key: "other", label: "기타", enabled: false },
-          ],
-        },
-        hardness: {
-          enabled: true,
-          unit: "HV",
-          items: [
-            { key: "surface", label: "표면경도", spec: "550~700", disabled: false },
-            { key: "caseDepth", label: "경화깊이", spec: "없음", disabled: true },
-            { key: "effectiveDepth", label: "유효경화깊이", spec: "0.20~0.40", disabled: false },
-            { key: "compoundLayer", label: "화합물층", spec: "5~15", disabled: false },
-            { key: "core", label: "심부경도", spec: "250~350", disabled: false },
-          ],
-        },
-        dimension: {
-          enabled: true,
-          unit: "mm",
-          items: [
-            { id: "dim-1", label: "전장", spec: "120.0±0.2" },
-            { id: "dim-2", label: "외경", spec: "45.0±0.1" },
-            { id: "dim-3", label: "단차", spec: "0.05 max" },
-          ],
-        },
-        hardeningDepth: { enabled: true },
-        heatTreatment: {
-          effectiveDepthBasis: "hv390",
-          specifiedHv: 390,
-          grindingAllowanceMm: 0.15,
-          certificateOutputMode: "all",
-        },
-        microstructure: { enabled: false },
-        other: { enabled: false, note: "" },
-      },
-    }),
-    normalizeProductRegistration({
-      id: "PRD-SEED-002",
-      company: "삼성부품",
-      partName: "VALVE STEM",
-      partNo: "VS-10234",
-      drawingNo: "DWG-204B1144P0001",
-      material: "SACM645",
-      process: "Ion Nitriding",
-      note: "",
-      specification: {
-        appearance: {
-          enabled: true,
-          items: [
-            { key: "dent", label: "찍힘", enabled: true },
-            { key: "color", label: "색상 이상", enabled: true },
-            { key: "stain", label: "얼룩", enabled: true },
-            { key: "other", label: "기타", enabled: false },
-          ],
-        },
-        hardness: {
-          enabled: true,
-          unit: "HV",
-          items: [
-            { key: "surface", label: "표면경도", spec: "550~700", disabled: false },
-            { key: "caseDepth", label: "경화깊이", spec: "없음", disabled: true },
-            { key: "effectiveDepth", label: "유효경화깊이", spec: "0.20~0.40", disabled: false },
-            { key: "compoundLayer", label: "화합물층", spec: "5~15", disabled: false },
-            { key: "core", label: "심부경도", spec: "250~350", disabled: false },
-          ],
-        },
-        dimension: {
-          enabled: false,
-          unit: "mm",
-          items: [],
-        },
-        hardeningDepth: { enabled: true },
-        heatTreatment: {
-          effectiveDepthBasis: "corePlus50",
-          specifiedHv: 420,
-          grindingAllowanceMm: 0.15,
-          certificateOutputMode: "caseAndAfterGrinding",
-        },
-        microstructure: { enabled: true },
-        other: { enabled: false, note: "" },
-      },
-    }),
-  ];
+  return [];
 }
 
 function safeRead() {

@@ -5,7 +5,7 @@
 import { findProductByPartNo, getMasterDataByCategory } from "./masterData";
 import { getCurrentTitanUser } from "./titanHistorySession";
 
-const STORAGE_KEY = "project-titan-product-drawings-v1";
+const STORAGE_KEY = "project-titan-product-drawings-v2";
 const LEGACY_INSPECTION_KEY = "project-titan-product-inspection-v1";
 
 export const DRAWING_ACCEPT = ["application/pdf", "image/jpeg", "image/png"];
@@ -144,62 +144,7 @@ function appendHistory(productId, entry) {
 }
 
 function getSeedRecords() {
-  const products = getMasterDataByCategory("products");
-  const sample = products.find((row) => row.partNo === "WS-2210-F") ?? products[0];
-  if (!sample) return [];
-
-  const revA = normalizeRevision(
-    {
-      id: "DR-SEED-A",
-      drawingNo: sample.drawingNo || "204B1144P0001",
-      revision: "A",
-      revisionDate: "2026-01-10",
-      fileName: "",
-      mimeType: "",
-      dataUrl: "",
-      note: "초기 등록",
-      registeredBy: "관리자",
-    },
-    false
-  );
-  const revB = normalizeRevision(
-    {
-      id: "DR-SEED-B",
-      drawingNo: sample.drawingNo || "204B1144P0001",
-      revision: "B",
-      revisionDate: "2026-03-15",
-      fileName: "",
-      mimeType: "",
-      dataUrl: "",
-      note: "치수 변경",
-      registeredBy: "관리자",
-    },
-    false
-  );
-  const revC = normalizeRevision(
-    {
-      id: "DR-SEED-C",
-      drawingNo: sample.drawingNo || "204B1144P0001",
-      revision: "C",
-      revisionDate: "2026-06-20",
-      fileName: "",
-      mimeType: "",
-      dataUrl: "",
-      note: "금일 반영",
-      registeredBy: "관리자",
-    },
-    true
-  );
-
-  return [
-    normalizeRecord({
-      productId: sample.id,
-      partNo: sample.partNo,
-      currentRevisionId: revC.id,
-      revisions: [revA, revB, revC],
-      documents: [],
-    }),
-  ];
+  return [];
 }
 
 function migrateLegacyInspectionDrawings(records) {

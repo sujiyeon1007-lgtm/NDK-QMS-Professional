@@ -4,7 +4,7 @@
 
 import { getCurrentTitanUser } from "./titanHistorySession";
 
-const STORAGE_KEY = "project-titan-work-schedule-v1";
+const STORAGE_KEY = "project-titan-work-schedule-v2";
 
 export const HOME_TASK_PRIORITIES = [
   { value: "high", label: "높음" },
@@ -65,30 +65,7 @@ function sortHomeTasks(tasks) {
 }
 
 export function getUserTodayTasks() {
-  const stored = sortHomeTasks(safeRead());
-  if (stored.length > 0) return stored;
-  return sortHomeTasks([
-    {
-      id: "seed-task-1",
-      title: "검사일지 작성",
-      assignee: getCurrentTitanUser(),
-      time: "10:00",
-      priority: "high",
-      status: HOME_TASK_STATUS.IN_PROGRESS,
-      completed: false,
-      source: "seed",
-    },
-    {
-      id: "seed-task-2",
-      title: "성적서 등록",
-      assignee: getCurrentTitanUser(),
-      time: "11:30",
-      priority: "normal",
-      status: HOME_TASK_STATUS.DONE,
-      completed: true,
-      source: "seed",
-    },
-  ]);
+  return sortHomeTasks(safeRead());
 }
 
 export function addUserHomeTask({ title, assignee, time, priority, memo }) {

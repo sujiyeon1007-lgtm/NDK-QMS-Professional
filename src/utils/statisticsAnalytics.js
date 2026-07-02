@@ -238,47 +238,12 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
     });
 }
 
-function enrichDemoRows(period, referenceDate, unitFilter) {
-  const seed = [
-    { company: "한국금속", unit: "EA", productionQty: 12540, shipmentQty: 11820, inspectionCount: 312, passRate: 96.8, defectRate: 3.2, reprocessRate: 2.4 },
-    { company: "삼성부품", unit: "KG", productionQty: 8350, shipmentQty: 7920, inspectionCount: 286, passRate: 95.9, defectRate: 4.1, reprocessRate: 3.1 },
-    { company: "대한정밀", unit: "EA", productionQty: 9420, shipmentQty: 9100, inspectionCount: 248, passRate: 97.2, defectRate: 2.8, reprocessRate: 1.9 },
-    { company: "우성기계", unit: "LOT", productionQty: 215, shipmentQty: 198, inspectionCount: 214, passRate: 96.1, defectRate: 3.9, reprocessRate: 2.7 },
-    { company: "성우정밀", unit: "SET", productionQty: 680, shipmentQty: 640, inspectionCount: 188, passRate: 95.4, defectRate: 4.6, reprocessRate: 3.4 },
-  ];
-
-  const periodScale = { day: 0.04, week: 0.22, month: 1, year: 11.5 }[period] ?? 1;
-  const monthFactor = 1 + (referenceDate.getMonth() % 6) * 0.015;
-
-  return seed
-    .filter((item) => matchesUnitFilter(item.unit, unitFilter))
-    .map((item, index) => ({
-      id: `STAT-DEMO-${item.company}-${item.unit}`,
-      company: item.company,
-      unit: item.unit,
-      partName: "—",
-      partNo: "—",
-      material: "—",
-      productionQty: Math.round(item.productionQty * periodScale * monthFactor),
-      shipmentQty: Math.round(item.shipmentQty * periodScale * monthFactor),
-      inspectionCount: Math.max(1, Math.round(item.inspectionCount * periodScale)),
-      passRate: item.passRate,
-      defectRate: item.defectRate,
-      reprocessRate: item.reprocessRate,
-      passCount: Math.round(item.inspectionCount * periodScale * (item.passRate / 100)),
-      defectQty: Math.max(1, Math.round(item.productionQty * periodScale * item.defectRate * 0.01)),
-      reprocessCount: Math.max(0, Math.round(item.inspectionCount * periodScale * (item.reprocessRate / 100))),
-      salesAmount: Math.round(item.shipmentQty * periodScale * 850),
-      no: index + 1,
-    }));
-}
 
 export function buildStatisticsRows(period, referenceDate, search = {}, unitFilter = "") {
   const filterUnit = search.unit || unitFilter;
   const aggregated = aggregateCompanyMetrics(period, referenceDate, filterUnit, search);
-  const rows = aggregated.length > 0 ? aggregated : enrichDemoRows(period, referenceDate, filterUnit);
 
-  return rows
+  return aggregated
     .filter((row) => matchesStatisticsSearch(row, search))
     .map((row, index) => ({ ...row, no: index + 1 }));
 }
@@ -649,13 +614,7 @@ function buildInquiryRecentProductionItems(selectedRow, unitFilter, limit = 5) {
     .sort((a, b) => String(b.workDate).localeCompare(String(a.workDate)));
 
   if (records.length === 0) {
-    records = [
-      { id: "demo-1", company: "경일정밀", partName: "커넥터 하우징", qty: 300, unit: "EA", workDate: "2026-06-29", statusLabel: "생산완료" },
-      { id: "demo-2", company: "우성기계", partName: "Pinion Gear", qty: 150, unit: "EA", workDate: "2026-06-29", statusLabel: "생산진행" },
-      { id: "demo-3", company: "성우정밀", partName: "Drive Shaft", qty: 35, unit: "EA", workDate: "2026-06-28", statusLabel: "생산완료" },
-      { id: "demo-4", company: "한국금속", partName: "기어 블랭크", qty: 200, unit: "EA", workDate: "2026-06-27", statusLabel: "생산완료" },
-      { id: "demo-5", company: "삼성부품", partName: "VALVE STEM", qty: 420, unit: "KG", workDate: "2026-06-26", statusLabel: "생산진행" },
-    ];
+    return [];
   }
 
   return records.slice(0, limit).map((record) => ({
@@ -690,13 +649,7 @@ function buildInquiryRecentInspectionItems(selectedRow, unitFilter, limit = 5) {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   if (rows.length === 0) {
-    rows = [
-      { id: "QI-1", company: "한국금속", partName: "기어 블랭크", statusLabel: "합격", date: "2026-06-28" },
-      { id: "QI-2", company: "삼성부품", partName: "VALVE STEM", statusLabel: "불합격", date: "2026-06-27" },
-      { id: "QI-3", company: "대한정밀", partName: "축용 냉간단조품", statusLabel: "합격", date: "2026-06-26" },
-      { id: "QI-4", company: "성우정밀", partName: "Drive Shaft", statusLabel: "합격", date: "2026-06-25" },
-      { id: "QI-5", company: "우성기계", partName: "Pinion Gear", statusLabel: "보류", date: "2026-06-24" },
-    ];
+    return [];
   }
 
   return rows.slice(0, limit).map((row) => ({
@@ -731,13 +684,7 @@ function buildInquiryRecentShipmentItems(selectedRow, unitFilter, limit = 5) {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   if (rows.length === 0) {
-    rows = [
-      { id: "QS-1", company: "한국금속", partName: "기어 블랭크", qty: 180, unit: "EA", date: "2026-06-28", statusLabel: "출고 완료" },
-      { id: "QS-2", company: "삼성부품", partName: "VALVE STEM", qty: 7920, unit: "KG", date: "2026-06-27", statusLabel: "출고 완료" },
-      { id: "QS-3", company: "대한정밀", partName: "축용 냉간단조품", qty: 110, unit: "EA", date: "2026-06-26", statusLabel: "출고 완료" },
-      { id: "QS-4", company: "성우정밀", partName: "Drive Shaft", qty: 35, unit: "EA", date: "2026-06-25", statusLabel: "출고 완료" },
-      { id: "QS-5", company: "경일정밀", partName: "커넥터 하우징", qty: 260, unit: "EA", date: "2026-06-24", statusLabel: "출고 완료" },
-    ];
+    return [];
   }
 
   return rows.slice(0, limit).map((row) => ({
@@ -1005,24 +952,7 @@ export function buildStatisticsTrendSeries(scope, period, referenceDate, selecte
   let items = [...bucketMap.values()].sort((a, b) => a.label.localeCompare(b.label));
 
   if (items.length === 0) {
-    const scale = { day: 0.15, week: 0.45, month: 1, year: 1 }[period] ?? 1;
-    const demoLabels =
-      period === "year"
-        ? ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06"]
-        : period === "month"
-          ? ["2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07"]
-          : period === "week"
-            ? ["월", "화", "수", "목", "금", "토"]
-            : ["09:00", "11:00", "13:00", "15:00", "17:00"];
-
-    items = demoLabels.map((label, index) => ({
-      label,
-      productionQty: Math.round((4200 + index * 380) * scale),
-      shipmentQty: Math.round((3900 + index * 350) * scale),
-      inspectionCount: Math.max(1, Math.round((18 + index * 2) * scale)),
-      passRate: 94 + (index % 3),
-      salesAmount: 28000000 + index * 1200000,
-    }));
+    return [];
   } else {
     items = items.map((item) => ({
       ...item,

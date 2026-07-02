@@ -10,7 +10,7 @@ import { cloneSpecification } from "./productSpecificationModel";
 import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
 import { migrateHardeningDepthRows, normalizeHardeningDepthRows } from "./hardeningDepthModel";
 
-const STORAGE_KEY = "project-titan-inspection-log-v1";
+const STORAGE_KEY = "project-titan-inspection-log-v2";
 
 export const INSPECTION_CATEGORIES = [
   { value: "개발", label: "개발" },
@@ -38,21 +38,21 @@ function getSeedInspectionLogs() {
   return [
     normalizeLog({
       id: "INS-SEED-001",
-      inspectionDate: "2026-06-28",
+      inspectionDate: "2026-07-01",
       category: "양산",
-      managementId: "HA_20260626_003",
-      company: "한국금속",
-      partName: "기어 블랭크",
-      partNo: "HK-3305-B",
-      drawingNo: "DW-3305-02",
-      material: "SNCM220",
-      lotNo: "LOT260628-01",
-      qty: 200,
+      managementId: "SE_20260703_0002",
+      company: "서암기계공업",
+      partName: "BULL GEAR",
+      partNo: "CQ91BUL504",
+      drawingNo: "",
+      material: "SNCM439",
+      lotNo: "LOT260701-01",
+      qty: 24,
       unit: "EA",
       assignee: "품질관리부 / 정반이 사원",
       inspectionItem: "표면경도",
-      inspectionStandard: "HRC 58~62",
-      measuredValue: "HRC 60.2",
+      inspectionStandard: "550~700 HV",
+      measuredValue: "HV 612",
       judgment: "합격",
       inspectionEquipment: "경도시험기",
       inspectionLocation: "품질검사실",
@@ -66,8 +66,8 @@ function getSeedInspectionLogs() {
       microstructureJudgment: "이상없음",
       hardeningDepthHv: [...DEFAULT_HARDENING_HV],
       deleted: false,
-      createdAt: "2026-06-28T09:00:00.000Z",
-      updatedAt: "2026-06-28T09:00:00.000Z",
+      createdAt: "2026-07-01T09:00:00.000Z",
+      updatedAt: "2026-07-01T09:00:00.000Z",
     }),
   ];
 }
