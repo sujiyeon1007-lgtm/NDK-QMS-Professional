@@ -8,12 +8,8 @@ import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/c
 import {
   DateRangeField,
   LotNoField,
-  ManagementIdField,
-  ManagerField,
   NoteField,
   ProcessField,
-  PurchaseOrderNoField,
-  CustomerLotNoField,
   StatusSelectField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -24,7 +20,7 @@ import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import { INBOUND_KPI_CONFIG } from "../../config/inboundDashboard";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
-import { createEmptyInboundSearch, matchesBasicSearch } from "../../config/listSearchStandard";
+import { createEmptyInboundSearch, INBOUND_BASIC_SEARCH_FIELDS, matchesBasicSearch } from "../../config/listSearchStandard";
 import { buildInboundListColumns } from "../../config/standardProductList";
 import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
@@ -32,8 +28,9 @@ import { getHeatTreatmentProcessTone } from "../../config/heatTreatmentProcessCo
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { addSessionProductionRecord, getSessionProductionRecords } from "../../utils/productionRecords";
+import { addSessionProductionRecord, getSessionProductionRecords, updateSessionProductionRecord } from "../../utils/productionRecords";
 import {
+  INBOUND_EDIT_LABEL,
   INBOUND_REGISTER_LABEL,
   INBOUND_PRINT_LIST_LABEL,
   INBOUND_LIST_PRINT_TOOLBAR_LABEL,
@@ -60,10 +57,38 @@ import "./InboundManagement.css";
 const INBOUND_STATUS_OPTIONS = Object.values(INBOUND_STATUS_LABELS);
 
 function mapInboundListRow(record) {
-  if (isInboundShipOutComplete(record)) {
-    return mapStandardProductListRow(record, { label: "출고완료", variant: "complete" });
-  }
-  return mapStandardProductListRow(record, getInboundManagementStatus(record));
+  const base =
+    isInboundShipOutComplete(record)
+      ? mapStandardProductListRow(record, { label: "출고완료", variant: "complete" })
+      : mapStandardProductListRow(record, getInboundManagementStatus(record));
+  return {
+    ...base,
+    managerName: record.registrar ?? record.manager ?? "—",
+  };
+}
+
+function recordToRegisterForm(record) {
+  if (!record) return null;
+  return {
+    company: record.company || "",
+    manager: record.registrar ?? record.manager ?? "",
+    partName: record.partName || "",
+    partNo: record.partNo || "",
+    drawingNo: record.drawingNo || "",
+    material: record.material || "",
+    spec: record.spec || "",
+    unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
+    heatTreatment: record.heatTreatment || "",
+    lotNo: record.lotNo || "",
+    customerLotNo: record.customerLotNo || "",
+    purchaseOrderNo: record.purchaseOrderNo || "",
+    incomingDate: record.incomingDate || "",
+    qty: record.qty != null ? String(record.qty) : "",
+    unit: record.unit || "EA",
+    dueDate: record.dueDate || "",
+    urgent: record.urgent ?? false,
+    note: record.note || "",
+  };
 }
 
 function resolveInboundListRecords(search) {
@@ -81,7 +106,7 @@ function matchesInboundSearch(record, row, search) {
   if (search.incomingDateTo && record.incomingDate > search.incomingDateTo) return false;
   if (search.qty && !String(record.qty).includes(search.qty)) return false;
   if (search.process && getProductionProcessName(record) !== search.process) return false;
-  const manager = record.registrar ?? "관리자";
+  const manager = record.registrar ?? record.manager ?? "";
   if (search.manager && !manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
   if (search.__chipProductHtlNotPrinted && !isHtlFirstPrintTarget(record)) {
@@ -100,6 +125,8 @@ function matchesInboundSearch(record, row, search) {
 export default function InboundManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerMode, setRegisterMode] = useState("create");
+  const [editRecordId, setEditRecordId] = useState(null);
   const [registerInitialForm, setRegisterInitialForm] = useState(null);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyInboundSearch, { storageKey: "inbound" });
@@ -129,6 +156,7 @@ export default function InboundManagement() {
     partNo: masterProducts.map((item) => item.partNo).filter(Boolean),
     partName: masterProducts.map((item) => item.name).filter(Boolean),
     material: getMasterDataByCategory("materials").map((item) => item.name),
+    manager: getMasterDataByCategory("workers").map((item) => item.name).filter(Boolean),
   });
 
   const rows = useMemo(() => {
@@ -238,41 +266,30 @@ export default function InboundManagement() {
     : [];
 
   const openRegisterModal = () => {
+    setRegisterMode("create");
+    setEditRecordId(null);
     setRegisterInitialForm(null);
     setRegisterOpen(true);
   };
 
-  const handleRowDoubleClick = (row) => {
-    const record = row.record;
-    if (!record) return;
-    setRegisterInitialForm({
-      company: record.company || "",
-      partName: record.partName || "",
-      partNo: record.partNo || "",
-      drawingNo: record.drawingNo || "",
-      material: record.material || "",
-      spec: record.spec || "",
-      unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
-      heatTreatment: record.heatTreatment || "",
-      lotNo: record.lotNo || "",
-      customerLotNo: record.customerLotNo || "",
-      purchaseOrderNo: record.purchaseOrderNo || "",
-      incomingDate: record.incomingDate || "",
-      qty: record.qty != null ? String(record.qty) : "",
-      unit: record.unit || "EA",
-      dueDate: record.dueDate || "",
-      urgent: record.urgent ?? false,
-      note: record.note || "",
-    });
+  const openEditModal = (row) => {
+    const record = row?.record ?? row;
+    if (!record?.id) return;
+    setActiveId(record.id);
+    setRegisterMode("edit");
+    setEditRecordId(record.id);
+    setRegisterInitialForm(recordToRegisterForm(record));
     setRegisterOpen(true);
   };
 
-  const handleInboundRegister = (form, managementId) => {
+  const handleRowDoubleClick = (row) => {
+    openEditModal(row);
+  };
+
+  const buildRecordPatchFromForm = (form) => {
     const parsed = parseQtyWithUnit(form.qty, form.unit);
     const today = getJournalReferenceDate();
-
-    addSessionProductionRecord({
-      id: managementId,
+    return {
       company: form.company,
       partName: form.partName,
       partNo: form.partNo,
@@ -283,7 +300,6 @@ export default function InboundManagement() {
       qty: Number(parsed.qty) || 0,
       unit: parsed.unit,
       incomingDate: form.incomingDate || today,
-      incomingRegistered: true,
       dueDate: form.dueDate || today,
       lotNo: form.lotNo?.trim() || "",
       customerLotNo: form.customerLotNo?.trim() || "",
@@ -291,6 +307,15 @@ export default function InboundManagement() {
       heatTreatment: form.heatTreatment,
       note: form.note,
       urgent: form.urgent,
+      registrar: form.manager?.trim() || "",
+      incomingRegistered: true,
+    };
+  };
+
+  const handleInboundRegister = (form, managementId) => {
+    addSessionProductionRecord({
+      id: managementId,
+      ...buildRecordPatchFromForm(form),
       htlNo: "",
       equipment: "",
       workDate: "",
@@ -309,6 +334,12 @@ export default function InboundManagement() {
     setPage(1);
   };
 
+  const handleInboundUpdate = (form, managementId) => {
+    updateSessionProductionRecord(managementId, buildRecordPatchFromForm(form));
+    setActiveId(managementId);
+    setRefreshKey((k) => k + 1);
+  };
+
   return (
     <div className="inbound-page">
       <SectionPageActions>
@@ -316,6 +347,9 @@ export default function InboundManagement() {
           <Plus size={14} aria-hidden="true" />
           {INBOUND_REGISTER_LABEL}
         </PrimaryButton>
+        <SecondaryButton type="button" onClick={() => openEditModal(activeRow)} disabled={!activeRow}>
+          {INBOUND_EDIT_LABEL}
+        </SecondaryButton>
         <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={resolvedPrintRows.rows.length === 0}>
           <Printer size={14} aria-hidden="true" />
           {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
@@ -345,6 +379,11 @@ export default function InboundManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={INBOUND_BASIC_SEARCH_FIELDS}
+        basicFieldsClassName="titan-search-panel__fields--inbound"
+        extraSuggestions={{
+          manager: getMasterDataByCategory("workers").map((item) => item.name).filter(Boolean),
+        }}
         advancedContent={
           <div className="titan-advanced-search__grid">
             <DateRangeField
@@ -354,10 +393,7 @@ export default function InboundManagement() {
               draft={draft}
               onDraftChange={onDraftChange}
             />
-            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">수량</span>
@@ -367,7 +403,6 @@ export default function InboundManagement() {
                 placeholder="수량"
               />
             </label>
-            <ManagerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <StatusSelectField
               label="상태"
               value={draft.status}
@@ -451,6 +486,10 @@ export default function InboundManagement() {
                   <dd>{companySummary}</dd>
                 </div>
                 <div>
+                  <dt>담당자</dt>
+                  <dd>{activeRow.managerName}</dd>
+                </div>
+                <div>
                   <dt>품명</dt>
                   <dd>{activeRow.partName}</dd>
                 </div>
@@ -500,12 +539,18 @@ export default function InboundManagement() {
 
       {registerOpen ? (
         <IncomingRegistrationModal
+          key={`${registerMode}-${editRecordId ?? "new"}`}
+          mode={registerMode}
+          editManagementId={editRecordId}
           initialForm={registerInitialForm}
           onClose={() => {
             setRegisterOpen(false);
+            setRegisterMode("create");
+            setEditRecordId(null);
             setRegisterInitialForm(null);
           }}
           onRegister={handleInboundRegister}
+          onUpdate={handleInboundUpdate}
         />
       ) : null}
 

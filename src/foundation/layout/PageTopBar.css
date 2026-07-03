@@ -16,6 +16,13 @@
   color: var(--titan-text);
 }
 
+.titan-page-top-bar__kicker {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text-secondary, #475569);
+}
+
 .titan-page-top-bar__desc {
   margin: 4px 0 0;
   font-size: 12px;

@@ -30,39 +30,39 @@
 export const STATUS_CHIP_SETS = {
   home: {
     id: "home",
-    ariaLabel: "금일 업무 현황",
+    ariaLabel: "진행현황",
     chips: [
       {
         id: "incoming",
-        label: "입고완료",
+        label: "입고",
         icon: "inventory",
         tone: "incoming",
         filterValue: "입고",
       },
       {
         id: "production",
-        label: "생산중",
+        label: "작업중",
         icon: "precisionManufacturing",
         tone: "production",
-        filterValue: "생산",
+        filterValue: "작업중",
       },
       {
         id: "inspect",
-        label: "검사대기",
+        label: "검사",
         icon: "factCheck",
         tone: "inspect",
         filterValue: "검사",
       },
       {
         id: "cert",
-        label: "성적서대기",
+        label: "성적서",
         icon: "description",
         tone: "certificate",
         filterValue: "성적서",
       },
       {
         id: "ship",
-        label: "출고예정",
+        label: "출고",
         icon: "localShipping",
         tone: "shipment",
         filterValue: "출고",

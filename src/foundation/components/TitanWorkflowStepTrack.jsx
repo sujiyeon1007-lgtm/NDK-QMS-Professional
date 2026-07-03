@@ -36,7 +36,11 @@ export default function TitanWorkflowStepTrack({
           >
             <div className="titan-workflow-step-track__node">
               <span className="titan-workflow-step-track__dot" aria-hidden="true">
-                {phase.state === "active" ? (
+                {phase.state === "done" ? (
+                  <span className="titan-workflow-step-track__check" aria-hidden="true">
+                    ✓
+                  </span>
+                ) : phase.state === "active" ? (
                   <span className="titan-workflow-step-track__dot-inner" aria-hidden="true" />
                 ) : null}
               </span>

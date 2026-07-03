@@ -29,6 +29,8 @@ export default function TitanSearchPanel({
   extraSuggestions = {},
   showStatusField = false,
   statusFieldLabel = "현재상태",
+  basicFields = null,
+  basicFieldsClassName = "",
   className = "",
   enableEnterSearch = true,
 }) {
@@ -47,48 +49,35 @@ export default function TitanSearchPanel({
   const getSuggestions = (fieldKey) =>
     filterSearchSuggestions(suggestionIndex, fieldKey, draft[fieldKey]);
 
+  const defaultBasicFields = [
+    { key: "company", label: "업체명", placeholder: "업체명", allowEmpty: true, emptyLabel: "전체" },
+    { key: "partName", label: "품명", placeholder: "품명" },
+    { key: "partNo", label: "품번", placeholder: "품번" },
+    { key: "material", label: "재질", placeholder: "재질" },
+  ];
+
+  const resolvedBasicFields = basicFields ?? defaultBasicFields;
+
   return (
     <div className={`titan-search-panel titan-card ${className}`.trim()}>
       <div className="titan-search-panel__basic">
-        <div className="titan-search-panel__fields">
-          <TitanSearchField
-            label="업체명"
-            fieldKey="company"
-            value={draft.company ?? ""}
-            onChange={(value) => update("company", value)}
-            suggestions={getSuggestions("company")}
-            placeholder="업체명"
-            allowEmpty
-            emptyLabel="전체"
-            onEnterSearch={handleEnterSearch}
-          />
-          <TitanSearchField
-            label="품명"
-            fieldKey="partName"
-            value={draft.partName ?? ""}
-            onChange={(value) => update("partName", value)}
-            suggestions={getSuggestions("partName")}
-            placeholder="품명"
-            onEnterSearch={handleEnterSearch}
-          />
-          <TitanSearchField
-            label="품번"
-            fieldKey="partNo"
-            value={draft.partNo ?? ""}
-            onChange={(value) => update("partNo", value)}
-            suggestions={getSuggestions("partNo")}
-            placeholder="품번"
-            onEnterSearch={handleEnterSearch}
-          />
-          <TitanSearchField
-            label="재질"
-            fieldKey="material"
-            value={draft.material ?? ""}
-            onChange={(value) => update("material", value)}
-            suggestions={getSuggestions("material")}
-            placeholder="재질"
-            onEnterSearch={handleEnterSearch}
-          />
+        <div
+          className={`titan-search-panel__fields${basicFieldsClassName ? ` ${basicFieldsClassName}` : ""}`.trim()}
+        >
+          {resolvedBasicFields.map((field) => (
+            <TitanSearchField
+              key={field.key}
+              label={field.label}
+              fieldKey={field.key}
+              value={draft[field.key] ?? ""}
+              onChange={(value) => update(field.key, value)}
+              suggestions={getSuggestions(field.key)}
+              placeholder={field.placeholder ?? field.label}
+              allowEmpty={field.allowEmpty}
+              emptyLabel={field.emptyLabel}
+              onEnterSearch={handleEnterSearch}
+            />
+          ))}
           {showStatusField ? (
             <TitanSearchField
               label={statusFieldLabel}

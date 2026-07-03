@@ -6,7 +6,7 @@ import { getTitanEditionState } from "./titanEditionSession";
 
 export { isSidebarMenuVisibleForEdition };
 
-/** 현재 Edition 기준 Sidebar 메뉴 — Menu Freeze 시 9개 고정 */
+/** 현재 Edition 기준 Sidebar 메뉴 — Menu Freeze 시 12개 고정 */
 export function getVisibleSidebarMenu(editionId = getTitanEditionState().editionId) {
   if (MENU_FREEZE_LOCKED) {
     return getMenuFreezeSidebarMenu();

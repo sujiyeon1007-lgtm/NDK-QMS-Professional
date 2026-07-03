@@ -80,6 +80,16 @@ export function getCompanyDrawingNoOptions(company, partName, partNo) {
   ].sort((a, b) => a.localeCompare(b, "ko"));
 }
 
+/** 품명만으로 Product Master 행 조회 (품번 자동 — 동일 품명 복수 시 품번 정렬 1건) */
+export function findCompanyProductByPartName(company, partName) {
+  const nameKey = String(partName ?? "").trim().toLowerCase();
+  if (!nameKey) return null;
+  const matches = companyProducts(company)
+    .filter((row) => String(row.name ?? "").trim().toLowerCase() === nameKey)
+    .sort((a, b) => String(a.partNo ?? "").localeCompare(String(b.partNo ?? ""), "ko"));
+  return matches[0] ?? null;
+}
+
 /** 업체 · 품명 · 품번 · 도번으로 Product Master 행 조회 */
 export function findCompanyProduct(company, partName, partNo, drawingNo = "") {
   const nameKey = String(partName ?? "").trim().toLowerCase();

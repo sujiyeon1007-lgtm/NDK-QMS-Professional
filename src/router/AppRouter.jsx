@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 
 import { OPERATION_MODE_WELCOME_ENABLED } from "../config/titanV1DevelopmentDirection";
 
@@ -32,10 +32,6 @@ import InspectionReportView from "../pages/Quality/InspectionReportView";
 
 import InspectionLogRegisterView from "../pages/Quality/InspectionLogRegisterView";
 
-import DepartmentWorkLayout from "../pages/DepartmentWork/DepartmentWorkLayout";
-
-import DepartmentWorkManagement from "../pages/DepartmentWork/DepartmentWorkManagement";
-
 import StatisticsLayout from "../pages/Statistics/StatisticsLayout";
 
 import StatisticsScreen from "../pages/Statistics/StatisticsScreen";
@@ -43,6 +39,12 @@ import StatisticsScreen from "../pages/Statistics/StatisticsScreen";
 import SettingsLayout from "../pages/Settings/SettingsLayout";
 
 import MasterDataHubPage from "../pages/Settings/MasterDataHubPage";
+
+import CompanyManagementPage from "../pages/Settings/CompanyManagementPage";
+
+import ProductManagementPage from "../pages/Settings/ProductManagementPage";
+
+import MasterEntityManagementPage from "../pages/Settings/MasterEntityManagementPage";
 
 import MasterDataManagement from "../pages/Settings/MasterDataManagement";
 
@@ -60,6 +62,14 @@ import HistoryLayout from "../pages/History/HistoryLayout";
 
 import QualityHistoryInquiry from "../pages/History/QualityHistoryInquiry";
 
+import InventoryStatusLayout from "../pages/Inventory/InventoryStatusLayout";
+
+import InventoryStatusPage from "../pages/Inventory/InventoryStatusPage";
+
+import WorkJournalLayout from "../pages/WorkJournal/WorkJournalLayout";
+
+import WorkJournal from "../pages/WorkJournal/WorkJournal";
+
 import OperationModeGuard from "./OperationModeGuard";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
@@ -70,6 +80,18 @@ function LegacyRedirect({ to }) {
 
   return <Navigate to={to} replace />;
 
+}
+
+const BASELINE_LEGACY_PATHS = {
+  materials: "/settings/materials",
+  processes: "/settings/processes",
+  equipment: "/settings/equipment",
+  workers: "/settings/workers",
+};
+
+function BaselineTabLegacyRedirect() {
+  const { baselineTab } = useParams();
+  return <Navigate to={BASELINE_LEGACY_PATHS[baselineTab] ?? "/settings/materials"} replace />;
 }
 
 
@@ -98,6 +120,22 @@ function AppRoutes() {
               <Route path="incoming" element={<InboundManagement />} />
 
               <Route path="shipment" element={<OutboundManagement />} />
+
+            </Route>
+
+
+
+            <Route path="/inventory" element={<InventoryStatusLayout />}>
+
+              <Route index element={<InventoryStatusPage />} />
+
+            </Route>
+
+
+
+            <Route path="/work-journal" element={<WorkJournalLayout />}>
+
+              <Route index element={<WorkJournal />} />
 
             </Route>
 
@@ -135,19 +173,15 @@ function AppRoutes() {
 
 
 
-            <Route path="/department-work" element={<DepartmentWorkLayout />}>
+            <Route path="/department-work" element={<Navigate to="/work-journal" replace />} />
 
-              <Route index element={<Navigate to="/department-work/all" replace />} />
-
-              <Route path=":departmentTab" element={<DepartmentWorkManagement />} />
-
-            </Route>
+            <Route path="/department-work/:departmentTab" element={<Navigate to="/work-journal" replace />} />
 
 
 
-            <Route path="/personal" element={<Navigate to="/department-work/all" replace />} />
+            <Route path="/personal" element={<Navigate to="/work-journal" replace />} />
 
-            <Route path="/personal/:tab" element={<Navigate to="/department-work/all" replace />} />
+            <Route path="/personal/:tab" element={<Navigate to="/work-journal" replace />} />
 
 
 
@@ -183,23 +217,23 @@ function AppRoutes() {
 
               <Route index element={<MasterDataHubPage />} />
 
-              <Route path="company" element={<Navigate to="/settings" replace />} />
+              <Route path="companies" element={<CompanyManagementPage />} />
 
-              <Route path="baseline" element={<Navigate to="/settings" replace />} />
+              <Route path="products" element={<ProductManagementPage />} />
 
-              <Route path="baseline/:baselineTab" element={<Navigate to="/settings" replace />} />
+              <Route path="materials" element={<MasterEntityManagementPage tabId="materials" />} />
 
-              <Route path="companies" element={<Navigate to="/settings" replace />} />
+              <Route path="processes" element={<MasterEntityManagementPage tabId="processes" />} />
 
-              <Route path="products" element={<Navigate to="/settings" replace />} />
+              <Route path="equipment" element={<MasterEntityManagementPage tabId="equipment" />} />
 
-              <Route path="materials" element={<Navigate to="/settings" replace />} />
+              <Route path="workers" element={<MasterEntityManagementPage tabId="workers" />} />
 
-              <Route path="processes" element={<Navigate to="/settings" replace />} />
+              <Route path="company" element={<Navigate to="/settings/companies" replace />} />
 
-              <Route path="equipment" element={<Navigate to="/settings" replace />} />
+              <Route path="baseline" element={<Navigate to="/settings/materials" replace />} />
 
-              <Route path="workers" element={<Navigate to="/settings" replace />} />
+              <Route path="baseline/:baselineTab" element={<BaselineTabLegacyRedirect />} />
 
             </Route>
 

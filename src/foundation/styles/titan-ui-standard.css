@@ -175,22 +175,23 @@
   overflow: auto;
 }
 
-/* Panel toolbar row — 1행 고정 · overflow scroll */
+/* Panel toolbar — CommonToolbar · 줄바꿈 허용 · 부모 밖 overflow ❌ */
+.master-data-page--panel .titan-toolbar,
+.titan-workspace-modal .titan-toolbar,
+.master-data-split-page__nav > .titan-toolbar {
+  flex-shrink: 0;
+}
+
 .master-data-page--panel .master-data-split-page__nav-head,
 .titan-workspace-modal .master-data-split-page__nav-head {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--titan-grid-gap-standard);
-  flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: visible;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .master-data-page--panel .master-data-split-page__nav-actions,
 .titan-workspace-modal .master-data-split-page__nav-actions {
-  flex-shrink: 0;
-  flex-wrap: nowrap;
+  display: contents;
 }
 
 .master-data-page--panel {
@@ -233,11 +234,13 @@
   min-width: var(--titan-page-content-min-w);
 }
 
-/* Hub — 고정 2열 · 축소 ❌ */
+/* Hub — 2열 · 좌측 정렬 · 축소 ❌ */
 .titan-hub-page__cards,
 .titan-hub-page__workflow {
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  min-width: min(100%, 560px);
+  grid-template-columns: repeat(2, minmax(260px, 300px));
+  width: fit-content;
+  max-width: 100%;
+  justify-content: start;
 }
 
 .titan-hub-page {

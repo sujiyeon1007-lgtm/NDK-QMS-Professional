@@ -428,6 +428,11 @@ button.titan-status-chip {
   background: var(--titan-table-row-selected);
 }
 
+.titan-table__body tr.titan-table__row--active .titan-table__cell:first-child,
+.titan-table__body tr.titan-table__row--expanded .titan-table__cell:first-child {
+  box-shadow: inset 3px 0 0 var(--titan-primary, #2563eb);
+}
+
 .titan-table__body tr.titan-table__row--selected:hover .titan-table__cell,
 .titan-table__body tr.titan-table__row--active:hover .titan-table__cell {
   background: var(--titan-table-row-selected);
@@ -470,6 +475,33 @@ button.titan-status-chip {
 
 .titan-list-expand {
   padding: 12px 16px;
+}
+
+.titan-common-expand-row__divider {
+  height: 1px;
+  margin: 12px 0;
+  background: #e2e8f0;
+}
+
+.titan-common-expand-row__meta.home-workflow-expand__meta--stack {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.titan-common-expand-row__meta.home-workflow-expand__meta--stack div {
+  display: grid;
+  grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.titan-common-expand-row__meta.home-workflow-expand__meta--stack dt {
+  margin: 0;
+}
+
+.titan-common-expand-row__meta.home-workflow-expand__meta--stack dd {
+  margin: 0;
+  font-weight: 700;
 }
 
 .titan-list-expand__detail {
@@ -1100,13 +1132,74 @@ body.titan-modal-open {
 }
 
 .titan-workspace-modal__toolbar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--titan-btn-gap);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   padding: 0 var(--titan-panel-padding) 10px;
   border-bottom: 1px solid var(--titan-border);
-  overflow-x: auto;
+}
+
+.titan-workspace-modal__toolbar > .titan-toolbar,
+.titan-workspace-modal__toolbar > .toolbar {
+  width: 100%;
+}
+
+/* ── Common Toolbar (Popup · Panel · Card) ── */
+.titan-toolbar,
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.titan-toolbar__title,
+.toolbar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.titan-toolbar__title h2,
+.toolbar-title h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.titan-toolbar__title span,
+.toolbar-title span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.titan-toolbar__actions,
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  flex: 1 1 auto;
+}
+
+.titan-toolbar__actions .primary-button,
+.titan-toolbar__actions .secondary-button,
+.toolbar-actions .primary-button,
+.toolbar-actions .secondary-button {
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 .titan-workspace-modal__search {
@@ -1379,23 +1472,36 @@ body.titan-modal-open {
   white-space: nowrap;
 }
 
-/* Workflow tone — KPI Bar · Step Track only (not Status / list chips) */
+/* Workflow tone — KPI Bar · Step Track · Status Chip Bar (HOME 진행현황) */
 .titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon,
 .titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon,
+.titan-status-chip-bar .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon,
 .titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__icon {
   color: var(--titan-process-icon, var(--titan-process-dot, var(--titan-text-muted)));
 }
 
 .titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon-fallback,
 .titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon-fallback,
+.titan-status-chip-bar .titan-status-chip[class*="titan-process--"] .titan-status-chip__icon-fallback,
 .titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__icon-fallback {
   background: var(--titan-process-dot, #64748b);
 }
 
 .titan-kpi-bar-slot .titan-status-chip[class*="titan-process--"] .titan-status-chip__label,
 .titan-kpi-panel__chips .titan-status-chip[class*="titan-process--"] .titan-status-chip__label,
+.titan-status-chip-bar .titan-status-chip[class*="titan-process--"] .titan-status-chip__label,
 .titan-workflow-step-track [class*="titan-process--"] .titan-status-chip__label {
   color: var(--titan-process-text, #475569);
+}
+
+.titan-status-chip-bar .titan-status-chip[class*="titan-process--"]:hover:not(:disabled) {
+  background: var(--titan-process-chip-hover, var(--titan-status-chip-bg));
+  border-color: var(--titan-process-bar-active, var(--titan-status-chip-hover-border));
+}
+
+.titan-status-chip-bar .titan-status-chip[class*="titan-process--"].is-active {
+  background: var(--titan-process-chip-hover, var(--titan-status-chip-active-bg));
+  border-color: var(--titan-process-bar-active, var(--titan-status-chip-active-border));
 }
 
 .titan-status-chip__metric {
@@ -1433,6 +1539,17 @@ body.titan-modal-open {
   flex-direction: column;
 }
 
+.titan-collapsible-search__collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.titan-collapsible-search.is-open .titan-collapsible-search__collapse {
+  grid-template-rows: 1fr;
+}
+
 .titan-collapsible-search__toggle {
   display: flex;
   align-items: center;
@@ -1459,6 +1576,14 @@ body.titan-modal-open {
 .titan-collapsible-search__body {
   padding: var(--titan-collapsible-search-body-py);
   min-width: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-collapsible-search__collapse {
+    transition: none;
+  }
 }
 
 /* ── TitanNoticePanel (Foundation · Sprint 1-4) ── */
@@ -1646,19 +1771,31 @@ body.titan-modal-open {
   font-weight: 700;
 }
 
-/* 완료 — neutral gray (line은 process color 미적용) */
+/* 완료 — process color + check */
 .titan-workflow-step-track__item--done .titan-workflow-step-track__dot {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #94a3b8;
-  background: #94a3b8;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--titan-process-bar-active, #94a3b8);
+  background: var(--titan-process-bar-active, #94a3b8);
+}
+
+.titan-workflow-step-track__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
 }
 
 .titan-workflow-step-track__item--done .titan-workflow-step-track__line {
-  left: calc(50% + 6px);
-  right: calc(-50% + 6px);
+  left: calc(50% + 8px);
+  right: calc(-50% + 8px);
   height: 2px;
-  background: #cbd5e1;
+  background: var(--titan-process-bar-active, #cbd5e1);
 }
 
 .titan-workflow-step-track__item--done .titan-workflow-step-track__label {

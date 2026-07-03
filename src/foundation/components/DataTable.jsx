@@ -16,6 +16,9 @@ function buildRowClassName(rowId, { activeRowId, selectedRowIds, clickable, isEx
   if (effectiveActiveId != null && rowId === effectiveActiveId) {
     classes.push("titan-table__row--active");
   }
+  if (isExpanded) {
+    classes.push("titan-table__row--expanded");
+  }
   if (selectedRowIds?.includes(rowId)) {
     classes.push("titan-table__row--selected");
   }

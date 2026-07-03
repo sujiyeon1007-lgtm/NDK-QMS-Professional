@@ -114,15 +114,13 @@ export default function DocumentManagementPage() {
     }
     sessionStorage.setItem("titan-product-selected-id", activeRow.id);
     if (mode === "view" && statusRow.statusId === "unregistered") return;
-    sessionStorage.setItem("titan-open-company-modal", "1");
-    navigate("/settings");
+    navigate("/settings/products");
   };
 
   const handleDownload = (statusRow) => {
     if (!statusRow.canDownload || !activeRow) return;
     sessionStorage.setItem("titan-product-selected-id", activeRow.id);
-    sessionStorage.setItem("titan-open-company-modal", "1");
-    navigate("/settings");
+    navigate("/settings/products");
   };
 
   return (

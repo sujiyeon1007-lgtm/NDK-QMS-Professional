@@ -27,17 +27,42 @@ export const EMPTY_BASIC_SEARCH = {
 export function createEmptyInboundSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    managementId: "",
     purchaseOrderNo: "",
     customerLotNo: "",
     incomingDateFrom: "",
     incomingDateTo: "",
-    managementId: "",
     lotNo: "",
     process: "",
     qty: "",
     manager: "",
     status: "",
     note: "",
+  };
+}
+
+/** 입고현황 — 기본 검색 8항목 */
+export const INBOUND_BASIC_SEARCH_FIELDS = [
+  { key: "managementId", label: "관리번호", placeholder: "관리번호" },
+  { key: "company", label: "거래처", placeholder: "거래처", allowEmpty: true, emptyLabel: "전체" },
+  { key: "manager", label: "담당자", placeholder: "담당자" },
+  { key: "purchaseOrderNo", label: "발주번호", placeholder: "발주번호" },
+  { key: "partName", label: "품명", placeholder: "품명" },
+  { key: "partNo", label: "품번", placeholder: "품번" },
+  { key: "customerLotNo", label: "업체 LOT", placeholder: "업체 LOT" },
+  { key: "material", label: "재질", placeholder: "재질" },
+];
+
+export function createEmptyWorkJournalSearch() {
+  return {
+    company: "",
+    category: "",
+    title: "",
+    managementId: "",
+    lotNo: "",
+    dateFrom: "",
+    dateTo: "",
+    source: "",
   };
 }
 

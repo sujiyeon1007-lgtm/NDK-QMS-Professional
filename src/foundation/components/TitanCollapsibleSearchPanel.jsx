@@ -40,7 +40,9 @@ export default function TitanCollapsibleSearchPanel({
       >
         {isOpen ? openLabel : closedLabel}
       </button>
-      {isOpen ? <div className="titan-collapsible-search__body">{children}</div> : null}
+      <div className="titan-collapsible-search__collapse" aria-hidden={!isOpen}>
+        <div className="titan-collapsible-search__body">{children}</div>
+      </div>
     </Card>
   );
 }

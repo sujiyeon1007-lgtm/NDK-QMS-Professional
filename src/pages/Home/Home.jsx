@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import PageTopBar from "../../foundation/layout/PageTopBar";
-import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
-import { HOME_INTEGRATED_SEARCH_CONFIG } from "../../config/homeIntegratedSearch";
 import { HOME_PAGE_META } from "../../config/homeDashboard";
 import { buildProductWorkflowPreview } from "../../utils/homeDashboardData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
@@ -10,8 +8,10 @@ import { getMasterDataByCategory } from "../../utils/masterData";
 import { setTitanErrorContext, clearTitanErrorContext } from "../../utils/titanErrorContext";
 import {
   HomeIntegratedSearchPanel,
+  HomeKpiPanel,
   HomeNoticePanel,
-  HomeProductWorkflowPanel,
+  HomeProgressPanel,
+  HomeRecentWorkPanel,
   HomeWorkSchedulePanel,
 } from "./HomeDashboardPanels";
 import { useHomeIntegratedSearch } from "./useHomeIntegratedSearch";
@@ -51,26 +51,23 @@ export default function Home() {
     <div className="home-page">
       <PageTopBar
         title={HOME_PAGE_META.title}
+        kicker={HOME_PAGE_META.kicker}
         description={HOME_PAGE_META.description}
         onRefresh={handleRefresh}
       />
 
+      <HomeKpiPanel records={records} />
+
       <div className="home-board">
-        <aside className="home-board__left" aria-label="업무 지원">
+        <aside className="home-board__left" aria-label="업무 지원 · 최근 이력">
           <HomeNoticePanel refreshKey={refreshKey} />
           <HomeWorkSchedulePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
+          <div className="home-board__cell home-board__cell--recent" aria-label="최근 작업 이력">
+            <HomeRecentWorkPanel records={records} />
+          </div>
         </aside>
 
-        <div className="home-board__right" aria-label="실시간 업무">
-          <div className="home-board__cell home-board__cell--kpi titan-kpi-bar-slot">
-            <TitanWorkflowStatusChipBar
-              chipSetId={HOME_INTEGRATED_SEARCH_CONFIG.chipSetId}
-              records={records}
-              activeId={activeChipId}
-              onChipClick={handleChipClick}
-            />
-          </div>
-
+        <div className="home-board__right" aria-label="검색 · 진행현황">
           <div className="home-board__cell home-board__cell--search">
             <HomeIntegratedSearchPanel
               draft={draft}
@@ -84,8 +81,13 @@ export default function Home() {
             />
           </div>
 
-          <div className="home-board__cell home-board__cell--workflow">
-            <HomeProductWorkflowPanel records={records} search={search} />
+          <div className="home-board__cell home-board__cell--progress">
+            <HomeProgressPanel
+              records={records}
+              search={search}
+              activeChipId={activeChipId}
+              onChipClick={handleChipClick}
+            />
           </div>
         </div>
       </div>

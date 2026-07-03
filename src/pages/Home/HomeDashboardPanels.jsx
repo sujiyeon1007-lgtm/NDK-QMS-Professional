@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 import Card from "../../foundation/components/Card";
+import StatusChip from "../../foundation/components/StatusChip";
 import StatusSummaryCard from "../../foundation/components/StatusSummaryCard";
 import TitanStandardList from "../../foundation/components/TitanStandardList";
 import TitanCollapsibleSearchPanel from "../../foundation/components/TitanCollapsibleSearchPanel";
@@ -17,6 +18,8 @@ import {
 import { HOME_INTEGRATED_SEARCH_CONFIG } from "../../config/homeIntegratedSearch";
 import {
   HOME_NOTICES_PREVIEW_LIMIT,
+  HOME_RECENT_LIST_TITLE,
+  HOME_RECENT_TABS,
   HOME_TOP_KPI_CARDS,
   HOME_WORK_SCHEDULE_PREVIEW_LIMIT,
   HOME_WORKFLOW_FULL_VIEW_PATH,
@@ -25,6 +28,7 @@ import {
 import {
   buildHomeTopKpiCounts,
   buildProductWorkflowPreview,
+  buildRecentListByTab,
   buildTodayWorkSummary,
 } from "../../utils/homeDashboardData";
 import {
@@ -34,19 +38,26 @@ import {
   toggleHomeTaskCompleted,
 } from "../../utils/homeTasksSession";
 import TitanNoticePanel from "../../foundation/components/TitanNoticePanel";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanWorkflowStepTrack from "../../foundation/components/TitanWorkflowStepTrack";
 import { getHomeNotices } from "../../utils/homeNoticesSession";
-import { buildProductWorkflowListColumns } from "../../config/productWorkflowList";
+import { buildHomeProductProgressTableColumns } from "../../config/productWorkflowList";
+import HomeWorkflowProgressRate from "./HomeWorkflowProgressRate";
 import HomeTaskModal from "./HomeTaskModal";
 
 export function HomeKpiPanel({ records }) {
   const counts = useMemo(() => buildHomeTopKpiCounts(records), [records]);
 
   return (
-    <section className="home-panel home-panel--kpi titan-card" aria-label="KPI">
+    <section className="home-panel home-panel--kpi titan-card" aria-label="KPI Dashboard">
       <div className="home-kpi-row home-kpi-row--compact">
         {HOME_TOP_KPI_CARDS.map((card) => (
-          <StatusSummaryCard key={card.id} {...card} count={counts[card.id] ?? 0} />
+          <StatusSummaryCard
+            key={card.id}
+            {...card}
+            count={counts[card.id] ?? 0}
+            countSuffix={card.countSuffix}
+          />
         ))}
       </div>
     </section>
@@ -156,16 +167,21 @@ export function HomeTodaySummary({ records }) {
   );
 }
 
-/** 제품 진행현황 Row Expand 상세 (TitanStandardList renderExpandedRow) */
+/** 제품 진행 Row Expand 상세 — 진행률 · 공정 Step · 메타 정보 (REV.6) */
 export function HomeWorkflowRowDetail({ item }) {
   return (
     <div className="home-workflow-expand">
-      <div className="home-workflow-expand__head">
-        <strong>{item.partName}</strong>
-        <span>{item.managementId}</span>
-      </div>
+      <HomeWorkflowProgressRate percent={item.progressPercent} />
 
-      <TitanWorkflowStepTrack phases={item.phases} />
+      <div className="home-workflow-expand__divider" aria-hidden="true" />
+
+      <TitanWorkflowStepTrack
+        phases={item.phases}
+        showCaptions
+        ariaLabel={`${item.managementId ?? ""} 공정 진행`}
+      />
+
+      <div className="home-workflow-expand__divider" aria-hidden="true" />
 
       <dl className="home-workflow-expand__meta">
         <div>
@@ -188,9 +204,28 @@ export function HomeWorkflowRowDetail({ item }) {
   );
 }
 
-export function HomeProductWorkflowPanel({ records, search }) {
+/** ② 진행현황 — 공정 Chip 선택 (클릭 → search.status 필터) */
+export function HomeProgressOverviewPanel({ records, activeChipId, onChipClick }) {
+  const { chipSetId } = HOME_INTEGRATED_SEARCH_CONFIG;
+
+  return (
+    <div className="home-progress-overview" aria-label="진행현황 공정 선택">
+      <TitanWorkflowStatusChipBar
+        chipSetId={chipSetId}
+        records={records}
+        activeId={activeChipId}
+        onChipClick={onChipClick}
+        className="home-progress-overview__chips"
+        ariaLabel="진행현황"
+      />
+    </div>
+  );
+}
+
+/** ③ 제품 진행 리스트 — 공정 Chip + 통합검색 Filter 연동 */
+export function HomeProductProgressTable({ records, search }) {
   const [expandedRowId, setExpandedRowId] = useState(null);
-  const columns = useMemo(() => buildProductWorkflowListColumns(), []);
+  const columns = useMemo(() => buildHomeProductProgressTableColumns(), []);
   const items = useMemo(
     () => buildProductWorkflowPreview(records, { limit: HOME_WORKFLOW_PREVIEW_LIMIT, search }),
     [records, search]
@@ -203,25 +238,42 @@ export function HomeProductWorkflowPanel({ records, search }) {
   }, [items, expandedRowId]);
 
   return (
-    <Card className="home-panel home-panel--workflow">
+    <TitanStandardList
+      columns={columns}
+      rows={items}
+      getRowId={(row) => row.managementId}
+      expandedRowId={expandedRowId}
+      onExpandedRowChange={setExpandedRowId}
+      renderExpandedRow={(row) => <HomeWorkflowRowDetail item={row} />}
+      emptyMessage="진행 중인 제품이 없습니다."
+      ariaLabel="제품 진행 리스트"
+    />
+  );
+}
+
+/** 진행현황 Panel — Overview + Product Table (REV.1 + 기능 복구) */
+export function HomeProgressPanel({ records, search, activeChipId, onChipClick }) {
+  return (
+    <Card className="home-panel home-panel--progress">
       <div className="home-panel__head">
-        <h3>제품 진행현황</h3>
+        <h3>진행현황</h3>
         <Link to={HOME_WORKFLOW_FULL_VIEW_PATH} className="home-panel__link-btn">
           전체 보기
         </Link>
       </div>
-      <TitanStandardList
-        columns={columns}
-        rows={items}
-        getRowId={(row) => row.managementId}
-        expandedRowId={expandedRowId}
-        onExpandedRowChange={setExpandedRowId}
-        renderExpandedRow={(row) => <HomeWorkflowRowDetail item={row} />}
-        emptyMessage="진행 중인 제품이 없습니다."
-        ariaLabel="제품 진행현황"
+      <HomeProgressOverviewPanel
+        records={records}
+        activeChipId={activeChipId}
+        onChipClick={onChipClick}
       />
+      <HomeProductProgressTable records={records} search={search} />
     </Card>
   );
+}
+
+/** @deprecated HomeProgressPanel 사용 */
+export function HomeProductWorkflowPanel(props) {
+  return <HomeProgressPanel {...props} />;
 }
 
 export function HomeWorkSchedulePanel({ refreshKey, onRefresh }) {
@@ -253,7 +305,7 @@ export function HomeWorkSchedulePanel({ refreshKey, onRefresh }) {
       </div>
       <ul className="home-todo-list">
         {tasks.length === 0 ? (
-          <li className="home-empty">등록된 할 일이 없습니다.</li>
+          <li className="home-empty">등록된 일정이 없습니다.</li>
         ) : (
           tasks.map((task) => {
             const done = task.status === HOME_TASK_STATUS.DONE;
@@ -296,12 +348,61 @@ export function HomeNoticePanel({ refreshKey }) {
       className={`home-panel home-panel--notice${expanded ? " is-expanded" : ""}`.trim()}
     >
       <TitanNoticePanel
-        title="품질 공지"
+        title="공지사항"
         notices={notices}
         previewLimit={HOME_NOTICES_PREVIEW_LIMIT}
         headClassName="home-panel__head"
         onExpandedChange={setExpanded}
       />
+    </Card>
+  );
+}
+
+export function HomeRecentWorkPanel({ records }) {
+  const [activeTab, setActiveTab] = useState(HOME_RECENT_TABS[0]?.id ?? "incoming");
+  const items = useMemo(
+    () => buildRecentListByTab(records, activeTab).slice(0, 5),
+    [records, activeTab]
+  );
+
+  return (
+    <Card className="home-panel home-panel--recent">
+      <div className="home-panel__head">
+        <h3>{HOME_RECENT_LIST_TITLE}</h3>
+      </div>
+      <div className="home-recent-tabs" role="tablist" aria-label={HOME_RECENT_LIST_TITLE}>
+        {HOME_RECENT_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`home-recent-tabs__btn${activeTab === tab.id ? " is-active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <ul className="home-recent-list">
+        {items.length === 0 ? (
+          <li className="home-empty">표시할 이력이 없습니다.</li>
+        ) : (
+          items.map((item) => (
+            <li key={`${activeTab}-${item.managementId}`} className="home-recent-list__item">
+              <div className="home-recent-list__main">
+                <strong>{item.managementId}</strong>
+                <span>{item.company}</span>
+                <span>{item.partName}</span>
+              </div>
+              <div className="home-recent-list__meta">
+                <StatusChip variant={item.statusVariant}>{item.statusLabel}</StatusChip>
+                <span>{item.registeredAt}</span>
+              </div>
+            </li>
+          ))
+        )}
+      </ul>
     </Card>
   );
 }

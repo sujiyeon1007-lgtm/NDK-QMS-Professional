@@ -14,15 +14,14 @@ export const AUTO_JOURNAL_CATEGORIES = [
 ];
 
 export const MANUAL_JOURNAL_CATEGORIES = [
+  "입고 검사",
+  "성적서 발행",
+  "고객 대응",
+  "NCR",
   "회의",
-  "고객 방문",
-  "전화 상담",
-  "출장",
   "설비 점검",
-  "교육",
-  "문서 작성",
-  "개선 활동",
-  "기타 업무",
+  "특이사항",
+  "개선사항",
 ];
 
 const DISPLAY_TIMES = [

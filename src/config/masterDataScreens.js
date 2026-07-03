@@ -117,6 +117,15 @@ export const MASTER_DATA_SCREENS = {
       { key: "note", label: "비고" },
       { key: "activeLabel", label: "사용 여부", render: "active" },
     ],
+    expandFields: [
+      { key: "code", label: "관리번호" },
+      { key: "partNo", label: "품번" },
+      { key: "material", label: "재질" },
+      { key: "spec", label: "규격" },
+      { key: "unitPriceLabel", label: "기본단가" },
+      { key: "activeLabel", label: "상태", render: "active" },
+      { key: "note", label: "비고" },
+    ],
     formFields: [
       { key: "code", label: "관리번호", required: true, placeholder: "예: SE_20260702_001" },
       { key: "company", label: "업체명", required: true, optionsKey: "companies", placeholder: "업체 선택" },

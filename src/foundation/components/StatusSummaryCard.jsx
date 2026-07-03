@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
 
-export default function StatusSummaryCard({ label, subLabel, count, icon: Icon, to, tone = "blue" }) {
+export default function StatusSummaryCard({
+  label,
+  subLabel,
+  count,
+  icon: Icon,
+  to,
+  tone = "blue",
+  countSuffix = "건",
+}) {
   return (
     <Link to={to} className="titan-kpi-card">
       <span className="titan-kpi-card__label titan-word-wrap">{label}</span>
@@ -9,7 +17,7 @@ export default function StatusSummaryCard({ label, subLabel, count, icon: Icon, 
       </span>
       <strong className="titan-kpi-card__count">
         {count}
-        <small>건</small>
+        {countSuffix ? <small>{countSuffix}</small> : null}
       </strong>
       <span className="titan-kpi-card__sub titan-word-wrap">{subLabel}</span>
     </Link>

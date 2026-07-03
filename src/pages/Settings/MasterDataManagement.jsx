@@ -13,6 +13,8 @@ import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
+import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
+import TitanCommonExpandRow from "../../foundation/components/TitanCommonExpandRow";
 
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
@@ -21,6 +23,7 @@ import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import { EMPTY_BASIC_SEARCH } from "../../config/listSearchStandard";
 
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
+import { useCommonExpandRow } from "../../foundation/hooks/useCommonExpandRow";
 
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 
@@ -98,6 +101,16 @@ function renderDetailValue(row, field) {
 
 }
 
+function buildExpandFields(row, screen) {
+  const fields = screen?.expandFields ?? screen?.detailFields ?? [];
+
+  return fields.map((field) => ({
+    key: field.key,
+    label: field.label,
+    value: renderDetailValue(row, field),
+  }));
+}
+
 
 
 function mapMasterRows(categoryKey, rows) {
@@ -150,8 +163,16 @@ export default function MasterDataManagement({
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [activeId, setActiveId] = useState(null);
-  const [expandedRowId, setExpandedRowId] = useState(null);
+  const {
+    expandedRowId,
+    activeRowId: activeId,
+    setActiveRowId: setActiveId,
+    handleExpandedRowChange,
+    resetForTab,
+    clearExpand,
+  } = useCommonExpandRow({
+    storageKey: isProductsTab ? PRODUCT_SELECTION_KEY : null,
+  });
 
   const [registerOpen, setRegisterOpen] = useState(false);
 
@@ -252,25 +273,19 @@ export default function MasterDataManagement({
   useEffect(() => {
     setPage(1);
     setAdvancedOpen(false);
-    setExpandedRowId(null);
+    resetForTab();
     if (isProductsTab) {
-      setActiveId(sessionStorage.getItem(PRODUCT_SELECTION_KEY) || null);
       setTitanErrorContext({ screen: "제품관리", component: "MasterDataManagement", path: window.location.pathname });
     } else {
-      setActiveId(null);
       clearTitanErrorContext(["screen", "component"]);
     }
-  }, [tabId, isProductsTab, setPage]);
-
-
+  }, [tabId, isProductsTab, resetForTab]);
 
   useEffect(() => {
-
-    if (!isProductsTab || !activeId) return;
-
-    sessionStorage.setItem(PRODUCT_SELECTION_KEY, activeId);
-
-  }, [activeId, isProductsTab]);
+    if (expandedRowId && !pagedRows.some((row) => row.id === expandedRowId)) {
+      clearExpand();
+    }
+  }, [pagedRows, expandedRowId, clearExpand]);
 
 
 
@@ -288,7 +303,7 @@ export default function MasterDataManagement({
 
     }
 
-  }, [activeId, allRows]);
+  }, [activeId, allRows, setActiveId]);
 
 
 
@@ -416,14 +431,6 @@ export default function MasterDataManagement({
     return canDeleteProduct(deleteTarget.partNo);
 
   }, [deleteTarget, screen?.categoryKey]);
-
-
-
-  const selectRow = (row) => {
-
-    setActiveId(row.id);
-
-  };
 
 
 
@@ -564,15 +571,11 @@ export default function MasterDataManagement({
     >
 
       {panelTitle ? (
-        <div className="master-data-split-page__nav-head">
-          <div>
-            <h2>{panelTitle}</h2>
-            <span>{screen?.kpiTitle ?? ""}</span>
-          </div>
-          {inlineActions ? (
-            <div className="master-data-split-page__nav-actions">{actionButtons}</div>
-          ) : null}
-        </div>
+        <TitanCommonToolbar
+          title={panelTitle}
+          subtitle={screen?.kpiTitle ?? ""}
+          actions={inlineActions ? actionButtons : null}
+        />
       ) : null}
 
       {!inlineActions ? <SectionPageActions>{actionButtons}</SectionPageActions> : null}
@@ -673,33 +676,14 @@ export default function MasterDataManagement({
 
             expandedRowId={expandedRowId}
 
-            onExpandedRowChange={setExpandedRowId}
+            onExpandedRowChange={handleExpandedRowChange}
 
             renderExpandedRow={(row) => (
-
-              <div className="titan-list-expand">
-
-                <dl className="inbound-detail titan-list-expand__detail">
-
-                  {screen.detailFields.map((field) => (
-
-                    <div key={field.key}>
-
-                      <dt>{field.label}</dt>
-
-                      <dd>{renderDetailValue(row, field)}</dd>
-
-                    </div>
-
-                  ))}
-
-                </dl>
-
-              </div>
-
+              <TitanCommonExpandRow
+                title={row.name ?? row.partName ?? "—"}
+                fields={buildExpandFields(row, screen)}
+              />
             )}
-
-            onRowClick={selectRow}
 
             onRowDoubleClick={(row) => openRegister("edit", row)}
 

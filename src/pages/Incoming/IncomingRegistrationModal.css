@@ -68,6 +68,14 @@ body.incoming-modal-open {
   margin-bottom: 8px;
 }
 
+.mgmt-id-fixed {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  word-break: break-all;
+}
+
 .mgmt-id-controls {
   display: flex;
   flex-wrap: wrap;

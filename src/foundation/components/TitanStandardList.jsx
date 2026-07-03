@@ -24,13 +24,16 @@ function resolveColDefinition(col) {
   return col;
 }
 
-function buildRowClassName(rowId, { activeRowId, selectedRowIds, clickable }) {
+function buildRowClassName(rowId, { activeRowId, selectedRowIds, clickable, isExpanded }) {
   const classes = ["titan-table__row"];
   if (clickable) {
     classes.push("titan-table__row--clickable");
   }
   if (activeRowId != null && rowId === activeRowId) {
     classes.push("titan-table__row--active");
+  }
+  if (isExpanded) {
+    classes.push("titan-table__row--expanded");
   }
   if (selectedRowIds?.includes(rowId)) {
     classes.push("titan-table__row--selected");
@@ -139,9 +142,10 @@ export default function TitanStandardList({
                 <Fragment key={rowId}>
                   <tr
                     className={buildRowClassName(rowId, {
-                      activeRowId: isExpanded ? rowId : activeRowId,
+                      activeRowId,
                       selectedRowIds,
                       clickable,
+                      isExpanded,
                     })}
                     onClick={clickable ? () => handleRowClick(row) : undefined}
                     aria-expanded={expandable ? isExpanded : undefined}

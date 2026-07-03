@@ -10,7 +10,7 @@ import {
 import { getStockQty } from "./inventory";
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
-import { HOME_STATUS_GROUPS } from "../config/homeDashboard";
+import { HOME_WORKFLOW_PHASES } from "../config/homeDashboard";
 import { matchesExtendedSearch } from "../config/listSearchStandard";
 import {
   TODAY_SUMMARY_PHASE_KEYS,
@@ -233,18 +233,30 @@ export function buildTodayWorkSummary(records = getSessionProductionRecords()) {
 }
 
 export function buildHomeTopKpiCounts(records = getSessionProductionRecords()) {
-  const todayRecords = filterRecordsByPeriod(records, "today");
-  const base = todayRecords.length > 0 ? todayRecords : records;
+  const today = new Date().toISOString().slice(0, 10);
   const counts = countHomeStatusCards(records);
 
+  const todayIncoming = records.filter((record) => {
+    if (!isIncomingRegistered(record)) return false;
+    return getRecordDate(record) === today;
+  }).length;
+
+  const currentStock = records
+    .filter((record) => isIncomingRegistered(record))
+    .reduce((sum, record) => sum + getStockQty(record), 0);
+
+  const todayShipment = records.filter((record) => {
+    if (record.shipmentStatus !== SHIPMENT_STATUS.DONE) return false;
+    const shipDate = String(record.outboundDate ?? record.shipDate ?? "").slice(0, 10);
+    return shipDate === today;
+  }).length;
+
   return {
-    todayIncoming: base.filter((r) => isIncomingRegistered(r)).length,
-    prodProgress: counts.prodProgress,
+    todayIncoming,
+    currentStock,
+    workProgress: counts.prodProgress,
     inspectWait: counts.inspectWaiting,
-    shipScheduled: counts.shipWaiting,
-    certWait: records.filter(
-      (r) => r.certificateStatus === CERTIFICATE_STATUS.PENDING && r.registered
-    ).length,
+    todayShipment,
   };
 }
 
@@ -334,32 +346,57 @@ export function getProductWorkflowSignal(record, status = getHomeDisplayStatus(r
   return getStatusLabelProcessKey(status.label);
 }
 
+function isHomeWorkflowPhaseDone(record, phaseKey) {
+  switch (phaseKey) {
+    case "incoming":
+      return isIncomingRegistered(record);
+    case "production":
+      return Boolean(record?.registered && record?.lotNo?.trim());
+    case "inspection":
+      return hasInspectionLogForManagementId(record?.id);
+    case "certificate":
+      return record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
+    case "shipment":
+      return record?.shipmentStatus === SHIPMENT_STATUS.DONE;
+    default:
+      return false;
+  }
+}
+
 export function buildHomeWorkflowPhases(record) {
-  const incomingDone = isIncomingRegistered(record);
-  const prodDone = Boolean(record?.registered && record?.lotNo?.trim());
-  const inspectDone = hasInspectionLogForManagementId(record?.id);
-  const certDone = record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
-  const shipDone = record?.shipmentStatus === SHIPMENT_STATUS.DONE;
+  const hasLot = Boolean(record?.lotNo?.trim());
+  const phaseDefs = HOME_WORKFLOW_PHASES.map(({ key, label }) => ({
+    key,
+    label,
+    done: isHomeWorkflowPhaseDone(record, key),
+  }));
 
-  const phaseDefs = [
-    { key: "incoming", label: "입고", done: incomingDone },
-    { key: "production", label: "생산중", done: prodDone },
-    { key: "inspection", label: "검사", done: inspectDone },
-    { key: "certificate", label: "성적서", done: certDone },
-    { key: "shipment", label: "출고완료", done: shipDone },
-  ];
-
-  const activeIndex = phaseDefs.findIndex((phase) => !phase.done);
-
-  if (activeIndex === -1) {
+  if (phaseDefs.every((phase) => phase.done)) {
     return phaseDefs.map(({ key, label }) => ({ key, label, state: "done" }));
   }
 
-  return phaseDefs.map(({ key, label }, index) => ({
-    key,
-    label,
-    state: index < activeIndex ? "done" : index === activeIndex ? "active" : "pending",
-  }));
+  let activeIndex = phaseDefs.findIndex((phase) => !phase.done);
+
+  // LOT 없으면 작업중(생산) 단계를 active 로 표시하지 않음
+  if (activeIndex >= 0 && phaseDefs[activeIndex].key === "production" && !hasLot) {
+    activeIndex = -1;
+  }
+
+  return phaseDefs.map((phase, index) => {
+    if (phase.done) {
+      return { key: phase.key, label: phase.label, state: "done" };
+    }
+    if (activeIndex === -1) {
+      return { key: phase.key, label: phase.label, state: "pending" };
+    }
+    if (index === activeIndex) {
+      return { key: phase.key, label: phase.label, state: "active" };
+    }
+    if (index < activeIndex) {
+      return { key: phase.key, label: phase.label, state: "done" };
+    }
+    return { key: phase.key, label: phase.label, state: "pending" };
+  });
 }
 
 /** @param {'done' | 'active' | 'pending'} state */
@@ -369,7 +406,7 @@ export function getPhaseStateLabel(state) {
   return "대기";
 }
 
-const WORKFLOW_DONE_PROGRESS = {
+const WORKFLOW_PHASE_PROGRESS = {
   incoming: 20,
   production: 40,
   inspection: 60,
@@ -377,28 +414,82 @@ const WORKFLOW_DONE_PROGRESS = {
   shipment: 100,
 };
 
-const WORKFLOW_ACTIVE_PROGRESS = {
-  incoming: 20,
-  production: 40,
-  inspection: 75,
-  certificate: 80,
-  shipment: 90,
-};
+/** 목록 · 상세 공통 — 현재 공정 (Badge · Progress Bar 기준) */
+export function resolveHomeWorkflowCurrentPhase(record, phases = buildHomeWorkflowPhases(record)) {
+  const active = phases.find((phase) => phase.state === "active");
+  if (active) {
+    return { key: active.key, label: active.label };
+  }
 
-/** 입고(20%) → 생산(40%) → 검사(60%) → 성적서(80%) → 출고(100%) */
+  if (phases.every((phase) => phase.state === "done")) {
+    return { key: "shipment", label: "출고" };
+  }
+
+  const incomingDone = phases.find((phase) => phase.key === "incoming")?.state === "done";
+  const productionBlocked =
+    incomingDone &&
+    !record?.lotNo?.trim() &&
+    phases.find((phase) => phase.key === "production")?.state === "pending";
+
+  if (productionBlocked) {
+    return { key: "incoming", label: "입고" };
+  }
+
+  const lastDone = [...phases].reverse().find((phase) => phase.state === "done");
+  if (lastDone) {
+    return { key: lastDone.key, label: lastDone.label };
+  }
+
+  return { key: "incoming", label: "입고" };
+}
+
+/** 입고(20%) → 작업(40%) → 검사(60%) → 성적서(80%) → 출고(100%) */
 export function getProductWorkflowProgressPercent(record) {
   const phases = buildHomeWorkflowPhases(record);
   if (phases.every((phase) => phase.state === "done")) return 100;
 
-  let progress = 0;
+  const active = phases.find((phase) => phase.state === "active");
+  if (active) return WORKFLOW_PHASE_PROGRESS[active.key] ?? 0;
+
+  let lastDoneKey = null;
   for (const phase of phases) {
     if (phase.state === "done") {
-      progress = WORKFLOW_DONE_PROGRESS[phase.key] ?? progress;
-    } else if (phase.state === "active") {
-      return WORKFLOW_ACTIVE_PROGRESS[phase.key] ?? progress;
+      lastDoneKey = phase.key;
+    } else {
+      break;
     }
   }
-  return progress;
+  if (lastDoneKey) return WORKFLOW_PHASE_PROGRESS[lastDoneKey] ?? 0;
+
+  return 0;
+}
+
+/** HOME Row — phases · currentProcess · progressPercent 단일 소스 */
+export function buildHomeRowWorkflow(record) {
+  const phases = buildHomeWorkflowPhases(record);
+  const current = resolveHomeWorkflowCurrentPhase(record, phases);
+
+  return {
+    phases,
+    currentProcessLabel: current.label,
+    currentProcessKey: current.key,
+    progressPercent: getProductWorkflowProgressPercent(record),
+  };
+}
+
+export function getActiveWorkflowPhase(phases = []) {
+  return phases.find((phase) => phase.state === "active") ?? null;
+}
+
+export function getNextWorkflowPhaseLabel(phases = []) {
+  const activeIndex = phases.findIndex((phase) => phase.state === "active");
+  if (activeIndex === -1) {
+    if (phases.every((phase) => phase.state === "done")) return "완료";
+    const firstPending = phases.find((phase) => phase.state === "pending");
+    return firstPending?.label ?? "—";
+  }
+  const next = phases[activeIndex + 1];
+  return next?.label ?? "완료";
 }
 
 export function getDueDateDisplay(record) {
@@ -428,14 +519,15 @@ export function buildProductWorkflowPreview(records = getSessionProductionRecord
       const status = getHomeDisplayStatus(record);
       const row = mapStandardProductListRow(record, status);
       const due = getDueDateDisplay(record);
+      const workflow = buildHomeRowWorkflow(record);
       return {
         ...row,
         managementId: record.id,
-        currentProcess: status.label,
-        processKey: getStatusLabelProcessKey(status.label),
-        signal: getProductWorkflowSignal(record, status),
-        phases: buildHomeWorkflowPhases(record),
-        progressPercent: getProductWorkflowProgressPercent(record),
+        currentProcess: workflow.currentProcessLabel,
+        processKey: workflow.currentProcessKey,
+        statusLabel: workflow.currentProcessLabel,
+        phases: workflow.phases,
+        progressPercent: workflow.progressPercent,
         dueDateLabel: due.label,
         dueDateTone: due.tone,
         dueDate: record.dueDate ?? "",
@@ -460,14 +552,10 @@ export function buildRecentListByTab(records = getSessionProductionRecords(), ta
     scoped = scoped.filter((r) => r.registered || r.htlNo);
   } else if (tab === "inspection") {
     scoped = scoped.filter((r) => r.registered && r.lotNo?.trim());
-  } else if (tab === "certificate") {
-    scoped = scoped.filter(
-      (r) =>
-        r.certificateStatus === CERTIFICATE_STATUS.PENDING ||
-        r.certificateStatus === CERTIFICATE_STATUS.ISSUED
-    );
   } else if (tab === "shipment") {
-    scoped = scoped.filter((r) => isIncomingRegistered(r));
+    scoped = scoped.filter(
+      (r) => r.shipmentStatus === SHIPMENT_STATUS.DONE || getRecordWorkflowState(r) === "출고완료"
+    );
   }
 
   return buildRecentWorkList(scoped, { requireIncoming: tab === "incoming" });

@@ -33,10 +33,9 @@
 }
 
 .master-data-split-page__nav-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
   flex-shrink: 0;
 }
 
@@ -54,14 +53,11 @@
 }
 
 .master-data-split-page__nav-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  flex-shrink: 0;
+  display: contents;
 }
 
-.master-data-split-page__nav-actions .primary-button,
-.master-data-split-page__nav-actions .secondary-button {
+.master-data-split-page .titan-toolbar__actions .primary-button,
+.master-data-split-page .titan-toolbar__actions .secondary-button {
   min-height: 30px;
   padding: 0 10px;
   font-size: 12px;

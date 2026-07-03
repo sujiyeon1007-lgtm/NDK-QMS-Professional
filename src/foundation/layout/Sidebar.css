@@ -43,7 +43,19 @@
   padding: 6px;
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+.titan-sidebar__group {
+  display: flex;
+  flex-direction: column;
   gap: 1px;
+}
+
+.titan-sidebar__group--divider {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .titan-sidebar__link {

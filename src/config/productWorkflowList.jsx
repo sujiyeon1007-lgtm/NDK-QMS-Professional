@@ -1,75 +1,44 @@
 /**
-
- * Project TITAN V1.0 — 제품 진행현황 Standard List 컬럼
-
- *
-
- * HOME · 입고 · 생산 · 검사 · 성적서 · 출고 · 이력조회 공통 기준
-
- *
-
- * HOME Dashboard: 납기일 · 진행상태는 Row Expand에서만 표시 (리스트 중복 제거)
-
+ * Project TITAN V1.3 — HOME 제품 진행 리스트 컬럼
  */
 
-
-
-import TitanProcessNameCell from "../foundation/components/TitanProcessNameCell";
-
+import HomeCurrentProcessBadgeCell from "../pages/Home/HomeCurrentProcessBadgeCell";
 import { titanColumn } from "./tableColumnPresets";
 
-
-
-/** @typedef {import("./tableColumnPresets").TitanColumnDef} TitanColumnDef */
-
-
-
-/**
-
- * @returns {TitanColumnDef[]}
-
- */
-
-export function buildProductWorkflowListColumns() {
-
+/** HOME HomeProductProgressTable — Dashboard 간결 목록 */
+export function buildHomeProductProgressTableColumns() {
   return [
-
-    titanColumn("managementId"),
-
-    titanColumn("lotNo"),
-
     titanColumn("company"),
-
-    titanColumn("partName", { widthPercent: 20 }),
-
-    titanColumn("qty", { widthPercent: 8 }),
-
+    titanColumn("partName", { widthPercent: 18 }),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("qty", { widthPercent: 6 }),
     titanColumn("currentProcess", {
-
       label: "현재공정",
-
-      widthPercent: 14,
-
-      render: (row) => (
-
-        <TitanProcessNameCell
-
-          label={row.currentProcess ?? row.statusLabel ?? row.processName ?? "—"}
-
-          processKey={row.processKey ?? "incoming"}
-
-        />
-
-      ),
-
+      widthPercent: 12,
+      render: (row) => <HomeCurrentProcessBadgeCell row={row} />,
     }),
-
   ];
-
 }
 
+/** @deprecated buildHomeProductProgressTableColumns 사용 */
+export function buildHomeProgressColumns() {
+  return buildHomeProductProgressTableColumns();
+}
 
+/** @deprecated buildHomeProductProgressTableColumns 사용 */
+export function buildHomeProductProgressColumns() {
+  return buildHomeProductProgressTableColumns();
+}
 
-export const PRODUCT_WORKFLOW_LIST_COLUMNS = buildProductWorkflowListColumns();
+/** @deprecated buildHomeProductProgressTableColumns 사용 */
+export function buildHomeProgressOverviewColumns() {
+  return buildHomeProductProgressTableColumns();
+}
 
+/** @deprecated buildHomeProductProgressTableColumns 사용 */
+export function buildProductWorkflowListColumns() {
+  return buildHomeProductProgressTableColumns();
+}
 
+export const PRODUCT_WORKFLOW_LIST_COLUMNS = buildHomeProductProgressTableColumns();

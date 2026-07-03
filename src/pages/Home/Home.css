@@ -15,14 +15,14 @@
   flex: 1 1 auto;
 }
 
-/* HOME — 좌/우 독립 Flex Column (1.5 : 8.5) */
+/* HOME — 좌/우 2열 (1.5 : 8.5) · 승인 레이아웃 */
 .home-board {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: flex-start;
   gap: var(--home-grid-gap);
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .home-board__left,
@@ -31,13 +31,11 @@
   flex-direction: column;
   gap: var(--home-grid-gap);
   min-width: 0;
-  min-height: 0;
 }
 
 .home-board__left {
   flex: 1.5 1 0;
   max-width: min(280px, 18%);
-  align-self: flex-start;
 }
 
 .home-board__left > .home-panel {
@@ -47,6 +45,64 @@
 
 .home-board__right {
   flex: 8.5 1 0;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.home-board__cell--search {
+  flex: 0 0 auto;
+  height: auto;
+  overflow: visible;
+}
+
+.home-board__cell--progress {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-board__cell--recent {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.home-panel--progress {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-panel--progress .titan-standard-list-wrap,
+.home-panel--progress .titan-table-wrap {
+  flex: 1 1 auto;
+  min-height: 280px;
+  max-height: min(640px, calc(100vh - 280px));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.home-progress-overview {
+  margin-bottom: 10px;
+}
+
+.home-progress-overview__chips.titan-status-chip-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-progress-overview__chips .titan-status-chip__count {
+  color: var(--titan-process-text, #0f172a);
+}
+
+.home-panel--progress .titan-standard-list {
+  flex: 0 0 auto;
   min-height: 0;
 }
 
@@ -70,6 +126,290 @@
   min-height: 0;
   width: 100%;
   height: 100%;
+}
+
+.home-panel--kpi {
+  width: 100%;
+}
+
+.home-progress-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #475569);
+}
+
+.home-current-process-badge {
+  white-space: nowrap;
+}
+
+.home-current-process-badge__empty {
+  color: var(--titan-text-muted, #94a3b8);
+}
+
+.home-workflow-expand .titan-workflow-step-track-wrap {
+  margin-bottom: 0;
+}
+
+.home-workflow-expand__divider {
+  height: 1px;
+  margin: 12px 0;
+  background: #e2e8f0;
+}
+
+.home-workflow-progress-rate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.home-workflow-progress-rate__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.home-workflow-progress-rate--low {
+  color: #b91c1c;
+}
+
+.home-workflow-progress-rate--low .home-workflow-progress-rate__dot {
+  background: #ef4444;
+}
+
+.home-workflow-progress-rate--medium {
+  color: #c2410c;
+}
+
+.home-workflow-progress-rate--medium .home-workflow-progress-rate__dot {
+  background: #ea580c;
+}
+
+.home-workflow-progress-rate--high {
+  color: #1d4ed8;
+}
+
+.home-workflow-progress-rate--high .home-workflow-progress-rate__dot {
+  background: #3b82f6;
+}
+
+.home-workflow-progress-rate--complete {
+  color: #15803d;
+}
+
+.home-workflow-progress-rate--complete .home-workflow-progress-rate__dot {
+  background: #16a34a;
+}
+
+/* MES/ERP Progress Bar (HOME) */
+.home-progress-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 88px;
+}
+
+.home-progress-bar__track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--home-progress-track, var(--titan-process-bar, #dbeafe));
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.home-progress-bar__fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--home-progress-fill, #3b82f6) 88%, #fff),
+    var(--home-progress-fill, #3b82f6)
+  );
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-progress-bar__value {
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--titan-process-text, #334155);
+  align-self: flex-end;
+}
+
+.home-progress-cell {
+  position: relative;
+  padding: 2px 0;
+}
+
+.home-progress-cell__tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 168px;
+  padding: 8px 10px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  font-size: 11px;
+  color: #475569;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+.home-progress-cell__tooltip strong {
+  color: #1e293b;
+  margin-right: 4px;
+}
+
+.home-progress-cell:hover .home-progress-cell__tooltip,
+.home-progress-cell:focus-within .home-progress-cell__tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.home-workflow-step-cell__empty {
+  color: var(--titan-text-muted, #94a3b8);
+}
+
+.home-panel--progress .titan-workflow-step-track--table-compact {
+  margin-bottom: 0;
+}
+
+.home-panel--progress .titan-workflow-step-track--table-compact .titan-workflow-step-track {
+  padding: 2px 0;
+}
+
+.home-panel--progress .titan-workflow-step-track--table-compact .titan-workflow-step-track__label {
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+.home-panel--progress .titan-workflow-step-track--table-compact .titan-workflow-step-track__item--active .titan-workflow-step-track__dot {
+  width: 18px;
+  height: 18px;
+}
+
+.home-panel--progress .titan-workflow-step-track--table-compact .titan-workflow-step-track__dot-inner {
+  width: 9px;
+  height: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-progress-bar__fill {
+    transition: none;
+  }
+}
+
+.home-recent-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.home-recent-tabs__btn {
+  border: 1px solid var(--titan-border, #dde6f0);
+  background: var(--titan-surface, #fff);
+  color: var(--titan-text-secondary, #475569);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.home-recent-tabs__btn.is-active {
+  background: var(--titan-primary-soft, #edf4fd);
+  border-color: var(--titan-primary-border, #bfd7f5);
+  color: var(--titan-primary, #2563eb);
+  font-weight: 600;
+}
+
+.home-recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-recent-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  background: var(--titan-surface, #fff);
+}
+
+.home-recent-list__main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.home-recent-list__main strong {
+  font-size: 13px;
+  color: var(--titan-text, #1e293b);
+}
+
+.home-recent-list__main span {
+  font-size: 12px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.home-recent-list__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.home-recent-list__meta > span:last-child {
+  font-size: 11px;
+  color: var(--titan-text-muted, #94a3b8);
+}
+
+.home-board__left .home-panel--recent {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.home-board__left .home-recent-tabs__btn {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.home-board__left .home-recent-list__item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.home-board__left .home-recent-list__meta {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .home-panel {
@@ -130,13 +470,21 @@
 }
 
 .home-panel--search {
-  min-height: var(--home-search-collapsed-h);
   padding: 0 !important;
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
 }
 
-.home-search-collapse.is-open {
-  min-height: var(--home-search-expanded-min-h);
+.home-panel--search:not(.is-open) {
+  min-height: var(--home-search-collapsed-h);
+}
+
+.home-panel--search.is-open {
+  min-height: 0;
+}
+
+.home-panel--search .home-full-search.titan-search-panel {
+  overflow: visible;
 }
 
 .home-panel--today.home-panel--status-bar {
@@ -233,6 +581,24 @@
 .home-search-collapse__body {
   padding: 0 var(--home-card-padding) 12px;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.home-search-collapse:not(.is-open) .titan-collapsible-search__body,
+.home-search-collapse:not(.is-open) .home-search-collapse__body {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.home-search-collapse.is-open .titan-collapsible-search__body,
+.home-search-collapse.is-open .home-search-collapse__body {
+  overflow: visible;
+}
+
+.home-search-collapse .home-full-search .titan-advanced-search {
+  position: static;
+  z-index: auto;
 }
 
 .home-search-collapse.is-open .home-full-search .titan-search-panel__basic {

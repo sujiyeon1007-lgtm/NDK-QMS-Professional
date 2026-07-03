@@ -1,0 +1,254 @@
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+
+import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import TitanDataTable from "../../foundation/components/DataTable";
+import TitanTableFooter from "../../foundation/components/TitanTableFooter";
+import { useListPagination } from "../../foundation/hooks/useListPagination";
+import { COMPANY_LIST_COLUMNS } from "../../config/companyDetailSections";
+import { getMasterDataScreen } from "../../config/masterDataScreens";
+import {
+  formatMasterRowForDisplay,
+  getMasterDataByCategory,
+  searchMasterData,
+  stageMasterAdd,
+  stageMasterDelete,
+  stageMasterUpdate,
+} from "../../utils/masterData";
+import CompanyDetailModal from "./CompanyDetailModal";
+import MasterDataBackLink from "./MasterDataBackLink";
+import MasterDataRegisterModal from "./MasterDataRegisterModal";
+import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
+
+import "../InOut/InboundManagement.css";
+import "./CompanyManagement.css";
+
+const COMPANY_SELECTION_KEY = "titan-master-selected-company-id";
+
+function renderActiveLabel(row) {
+  return row.activeLabel ?? (row.active === false ? "미사용" : "사용");
+}
+
+/** 기준정보관리 — 거래처관리 (거래처 리스트 전용) */
+export default function CompanyManagementPage() {
+  const screen = getMasterDataScreen("companies");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(
+    () => sessionStorage.getItem(COMPANY_SELECTION_KEY) ?? ""
+  );
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerMode, setRegisterMode] = useState("add");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [detailCompany, setDetailCompany] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const allCompanies = useMemo(() => {
+    return getMasterDataByCategory("companies").map((row) => formatMasterRowForDisplay(row));
+  }, [refreshKey]);
+
+  const filteredCompanies = useMemo(() => {
+    const keyword = searchKeyword.trim();
+    if (!keyword) return allCompanies;
+    const matchedIds = new Set(searchMasterData("companies", keyword).map((row) => row.id));
+    return allCompanies.filter((row) => matchedIds.has(row.id));
+  }, [allCompanies, searchKeyword]);
+
+  const {
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    pagedItems: pagedCompanies,
+    setPage,
+    setPageSize,
+  } = useListPagination(filteredCompanies);
+
+  const selectedCompany = useMemo(
+    () => allCompanies.find((row) => row.id === selectedCompanyId) ?? null,
+    [allCompanies, selectedCompanyId]
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchKeyword, setPage]);
+
+  useEffect(() => {
+    if (!selectedCompanyId) return;
+    const exists = allCompanies.some((row) => row.id === selectedCompanyId);
+    if (!exists) {
+      setSelectedCompanyId("");
+      sessionStorage.removeItem(COMPANY_SELECTION_KEY);
+    }
+  }, [allCompanies, selectedCompanyId]);
+
+  useEffect(() => {
+    if (!selectedCompanyId) return;
+    sessionStorage.setItem(COMPANY_SELECTION_KEY, selectedCompanyId);
+  }, [selectedCompanyId]);
+
+  useEffect(() => {
+    if (!detailOpen || !detailCompany?.id) return;
+    const latest = allCompanies.find((row) => row.id === detailCompany.id);
+    if (latest) setDetailCompany(latest);
+  }, [allCompanies, detailCompany?.id, detailOpen]);
+
+  const tableColumns = useMemo(
+    () =>
+      COMPANY_LIST_COLUMNS.map((col) => ({
+        key: col.key,
+        label: col.label,
+        widthPercent: col.widthPercent,
+        render:
+          col.render === "active"
+            ? (row) => (
+                <span className={`status-badge ${row.active === false ? "미사용" : "사용"}`}>
+                  {renderActiveLabel(row)}
+                </span>
+              )
+            : undefined,
+      })),
+    []
+  );
+
+  const openDetail = (row) => {
+    setSelectedCompanyId(row.id);
+    setDetailCompany(row);
+    setDetailOpen(true);
+  };
+
+  const openRegister = (mode, row = null) => {
+    setRegisterMode(mode);
+    setRegisterOpen(true);
+    if (mode === "edit" && row) setSelectedCompanyId(row.id);
+  };
+
+  const handleSave = (form) => {
+    const result =
+      registerMode === "edit" && selectedCompany
+        ? stageMasterUpdate("companies", selectedCompany.id, form)
+        : stageMasterAdd("companies", form);
+
+    if (!result.ok) return;
+    setRefreshKey((key) => key + 1);
+    setRegisterOpen(false);
+    if (result.row?.id) {
+      setSelectedCompanyId(result.row.id);
+      if (detailOpen) {
+        setDetailCompany(formatMasterRowForDisplay(result.row));
+      }
+    }
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    const result = stageMasterDelete("companies", deleteTarget.id);
+    if (!result.ok) return;
+    setDeleteTarget(null);
+    if (selectedCompanyId === deleteTarget.id) {
+      setSelectedCompanyId("");
+      sessionStorage.removeItem(COMPANY_SELECTION_KEY);
+    }
+    if (detailCompany?.id === deleteTarget.id) {
+      setDetailOpen(false);
+      setDetailCompany(null);
+    }
+    setRefreshKey((key) => key + 1);
+  };
+
+  return (
+    <>
+      <div className="company-management-page">
+        <MasterDataBackLink />
+
+        <div className="company-management-page__head">
+          <div>
+            <h2>거래처관리</h2>
+            <p className="company-management-page__intro">
+              거래처 목록을 관리합니다. 거래처를 클릭하면 상세 Popup에서 담당자 · 거래 이력을
+              확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <div className="company-management-page__search">
+          <input
+            type="search"
+            value={searchKeyword}
+            onChange={(event) => setSearchKeyword(event.target.value)}
+            placeholder="업체명 · 코드 · 담당자 검색"
+            aria-label="거래처 검색"
+          />
+        </div>
+
+        <div className="company-management-page__table-wrap">
+          <TitanDataTable
+            className="inbound-page__table"
+            columns={tableColumns}
+            rows={pagedCompanies}
+            activeRowId={selectedCompanyId}
+            onRowClick={openDetail}
+            onRowDoubleClick={(row) => openRegister("edit", row)}
+            emptyMessage="등록된 거래처가 없습니다."
+          />
+
+          <TitanTableFooter
+            totalCount={totalCount}
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+
+        <div className="company-management-page__actions">
+          <PrimaryButton type="button" onClick={() => openRegister("add")}>
+            <Plus size={14} aria-hidden="true" />
+            등록
+          </PrimaryButton>
+          <SecondaryButton
+            type="button"
+            onClick={() => openRegister("edit", selectedCompany)}
+            disabled={!selectedCompany}
+          >
+            <Pencil size={14} aria-hidden="true" />
+            수정
+          </SecondaryButton>
+          <SecondaryButton
+            type="button"
+            onClick={() => setDeleteTarget(selectedCompany)}
+            disabled={!selectedCompany}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+            삭제
+          </SecondaryButton>
+        </div>
+      </div>
+
+      <CompanyDetailModal
+        open={detailOpen}
+        company={detailCompany}
+        onClose={() => setDetailOpen(false)}
+      />
+
+      <MasterDataRegisterModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSave={handleSave}
+        screen={screen}
+        mode={registerMode}
+        initialRow={registerMode === "edit" ? selectedCompany : null}
+      />
+
+      {deleteTarget ? (
+        <MasterDataDeleteDialog
+          row={deleteTarget}
+          categoryLabel={screen?.title ?? "거래처"}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
+        />
+      ) : null}
+    </>
+  );
+}

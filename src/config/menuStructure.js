@@ -1,7 +1,7 @@
 /**
  * Project TITAN — PQMS Menu Structure (Presentation Version)
- * Menu Freeze V1.0 (2026-07-03) — @see src/config/menuFreezeV1.js
- * Sidebar: 1Depth · 9 menus · 순서 변경 금지
+ * Menu Freeze V1.3 (2026-07-03) — @see src/config/menuFreezeV1.js
+ * Sidebar: 1Depth · 12 menus · 기준정보관리 2번 · 그룹 구분선
  *
  * Source of truth: src/config/menuConfig.js
  */
@@ -21,7 +21,7 @@ import { MENU_FREEZE_SIDEBAR_ORDER } from "./menuFreezeV1";
 /** @typedef {{ id: string, label: string, icon: import("react").ComponentType, path: string, end?: boolean }} SidebarItem */
 /** @typedef {{ id: string, label: string, pathPrefix: string, defaultTab: string, tabs: MenuTab[], deprecated?: boolean }} MenuSection */
 
-/** @type {SidebarItem[]} — menuConfig · Menu Freeze V1.0 */
+/** @type {SidebarItem[]} — menuConfig · Menu Freeze V1.3 */
 export const SIDEBAR_MENU = buildSidebarMenuFromConfig(TITAN_MENU_ORDER);
 
 export {
@@ -214,27 +214,38 @@ export const LEGACY_ROUTE_REDIRECTS = {
   "/production-results": "/production/results",
   "/inspection-log": "/quality/inspection",
   "/certificate": "/quality/certificate",
-  "/work-schedule": "/department-work/all",
-  "/work-journal": "/department-work/all",
-  "/personal": "/department-work/all",
-  "/personal/pending": "/department-work/all",
-  "/personal/progress": "/department-work/all",
-  "/personal/journal": "/department-work/all",
+  "/work-schedule": "/work-journal",
+  "/work-journal": "/work-journal",
+  "/department-work": "/work-journal",
+  "/department-work/all": "/work-journal",
+  "/department-work/production": "/work-journal",
+  "/department-work/quality": "/work-journal",
+  "/department-work/sales": "/work-journal",
+  "/personal": "/work-journal",
+  "/personal/pending": "/work-journal",
+  "/personal/progress": "/work-journal",
+  "/personal/journal": "/work-journal",
   "/lot-lookup": "/history",
+  "/stock": "/inventory",
+  "/inventory-status": "/inventory",
   "/statistics/history": "/history",
   "/statistics/inquiry-legacy": "/statistics/inquiry",
   "/statistics": "/statistics/inquiry",
   "/settings/items": "/settings",
   "/settings/codes": "/environment/customCodes",
   "/master-data": "/settings",
-  "/settings/companies": "/settings",
-  "/settings/products": "/settings",
-  "/settings/company": "/settings",
-  "/settings/materials": "/settings",
-  "/settings/processes": "/settings",
-  "/settings/equipment": "/settings",
-  "/settings/workers": "/settings",
-  "/settings/baseline": "/settings",
+  "/settings/companies": "/settings/companies",
+  "/settings/products": "/settings/products",
+  "/settings/company": "/settings/companies",
+  "/settings/materials": "/settings/materials",
+  "/settings/processes": "/settings/processes",
+  "/settings/equipment": "/settings/equipment",
+  "/settings/workers": "/settings/workers",
+  "/settings/baseline": "/settings/materials",
+  "/settings/baseline/materials": "/settings/materials",
+  "/settings/baseline/processes": "/settings/processes",
+  "/settings/baseline/equipment": "/settings/equipment",
+  "/settings/baseline/workers": "/settings/workers",
   "/settings/employees": "/environment/employees",
   "/settings/inspection": "/documents/inspection",
   "/settings/customCodes": "/environment/customCodes",

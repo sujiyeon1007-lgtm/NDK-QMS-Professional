@@ -6,6 +6,18 @@
   overflow-x: visible;
 }
 
+.inbound-page .titan-search-panel__fields--inbound {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+@media (max-width: 1280px) {
+  .inbound-page .titan-search-panel__fields--inbound {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .inbound-page__kpi {
   margin: 0;
   padding: 0;

@@ -11,7 +11,10 @@ import {
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getProductUnitOptions, parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
-import { INBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
+import {
+  INBOUND_EDIT_LABEL,
+  INBOUND_REGISTER_LABEL,
+} from "../../config/registerModalStandard";
 import TitanRegisterSummaryText from "../../foundation/components/TitanRegisterSummaryText";
 import "./IncomingRegistrationModal.css";
 
@@ -31,6 +34,7 @@ const emptyProductFields = {
 
 const emptyForm = {
   company: "",
+  manager: "",
   ...emptyProductFields,
   qty: "",
   unit: "EA",
@@ -81,19 +85,24 @@ function AdminSelectField({
 function IncomingRegistrationModal({
   onClose,
   onRegister,
+  onUpdate,
   companyCodeMap: companyCodeMapProp,
   initialForm = null,
+  mode = "create",
+  editManagementId = null,
 }) {
+  const isEdit = mode === "edit" && Boolean(editManagementId);
   const navigate = useNavigate();
   const companyCodeMap = useMemo(
     () => companyCodeMapProp ?? getCompanyCodeMap(),
     [companyCodeMapProp]
   );
   const companyOptions = useMemo(() => getActiveMasterNames("companies"), []);
+  const managerOptions = useMemo(() => getActiveMasterNames("workers"), []);
   const unitOptions = useMemo(() => getProductUnitOptions(), []);
 
-  const [autoId, setAutoId] = useState(true);
-  const [manualId, setManualId] = useState("");
+  const [autoId, setAutoId] = useState(() => !isEdit);
+  const [manualId, setManualId] = useState(() => (isEdit ? editManagementId : ""));
   const [form, setForm] = useState(() =>
     initialForm
       ? { ...emptyForm, incomingDate: getJournalReferenceDate(), ...initialForm }
@@ -123,9 +132,14 @@ function IncomingRegistrationModal({
     ? `${companyCodeMap[form.company] || "XX"}_${getJournalReferenceDate().replace(/-/g, "")}_001`
     : "업체코드_날짜_순번";
 
-  const displayId = autoId
-    ? `자동 생성 예정\n(${previewAutoId})`
-    : manualId.trim() || "번호 미입력";
+  const displayId = isEdit
+    ? editManagementId
+    : autoId
+      ? `자동 생성 예정\n(${previewAutoId})`
+      : manualId.trim() || "번호 미입력";
+
+  const modalTitle = isEdit ? INBOUND_EDIT_LABEL : INBOUND_REGISTER_LABEL;
+  const submitLabel = isEdit ? "저장" : "등록";
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -160,13 +174,12 @@ function IncomingRegistrationModal({
       partName: selection.partName,
       partNo: selection.partNo,
       drawingNo: selection.drawingNo,
-      ...(selection.partNo
+      ...(selection.partName
         ? {}
         : {
             material: "",
             spec: "",
             unitPrice: "",
-            heatTreatment: prev.heatTreatment,
           }),
     }));
   };
@@ -186,22 +199,35 @@ function IncomingRegistrationModal({
     navigate(path ?? "/settings/companies");
   };
 
-  const handleRegisterClick = () => {
+  const buildPayload = () => {
     if (!form.company || !form.partName || !form.partNo || !form.qty) {
-      console.log("[UI] 입고 등록 — 필수값 미입력", form);
-      return;
+      window.alert("거래처 · 품명 · 품번 · 수량은 필수입니다.");
+      return null;
     }
 
-    const managementId = autoId
-      ? `${companyCodeMap[form.company] || "XX"}_${getJournalReferenceDate().replace(/-/g, "")}_${String(Date.now()).slice(-3)}`
-      : manualId.trim();
+    const managementId = isEdit
+      ? editManagementId
+      : autoId
+        ? `${companyCodeMap[form.company] || "XX"}_${getJournalReferenceDate().replace(/-/g, "")}_${String(Date.now()).slice(-3)}`
+        : manualId.trim();
 
     if (!managementId) {
-      console.log("[UI] 입고 등록 — 관리번호 없음");
-      return;
+      window.alert("관리번호를 입력하세요.");
+      return null;
     }
 
-    onRegister?.(form, managementId);
+    return { form, managementId };
+  };
+
+  const handleSubmitClick = () => {
+    const payload = buildPayload();
+    if (!payload) return;
+
+    if (isEdit) {
+      onUpdate?.(payload.form, payload.managementId);
+    } else {
+      onRegister?.(payload.form, payload.managementId);
+    }
     onClose();
   };
 
@@ -216,39 +242,45 @@ function IncomingRegistrationModal({
       >
         <header className="incoming-modal-header">
           <div>
-            <p className="incoming-modal-kicker">입출고관리</p>
-            <h2 id="incoming-modal-title">{INBOUND_REGISTER_LABEL}</h2>
+            <p className="incoming-modal-kicker">입고현황</p>
+            <h2 id="incoming-modal-title">{modalTitle}</h2>
           </div>
 
           <div className="mgmt-id-area">
             <span className="mgmt-id-label">관리번호</span>
-            <div className="mgmt-id-controls">
-              <label className="auto-id-toggle">
-                <input
-                  type="checkbox"
-                  checked={autoId}
-                  onChange={(event) => setAutoId(event.target.checked)}
-                />
-                자동생성
-              </label>
-              <span className="mgmt-or">또는</span>
-              <button
-                type="button"
-                className="mgmt-generate-btn"
-                onClick={() => setAutoId(false)}
-              >
-                <Sparkles size={15} />
-                관리번호 생성
-              </button>
-            </div>
-            {!autoId && (
-              <input
-                type="text"
-                className="mgmt-manual-input"
-                placeholder="SE_20260627_001"
-                value={manualId}
-                onChange={(event) => setManualId(event.target.value)}
-              />
+            {isEdit ? (
+              <strong className="mgmt-id-fixed">{editManagementId}</strong>
+            ) : (
+              <>
+                <div className="mgmt-id-controls">
+                  <label className="auto-id-toggle">
+                    <input
+                      type="checkbox"
+                      checked={autoId}
+                      onChange={(event) => setAutoId(event.target.checked)}
+                    />
+                    자동생성
+                  </label>
+                  <span className="mgmt-or">또는</span>
+                  <button
+                    type="button"
+                    className="mgmt-generate-btn"
+                    onClick={() => setAutoId(false)}
+                  >
+                    <Sparkles size={15} />
+                    관리번호 생성
+                  </button>
+                </div>
+                {!autoId && (
+                  <input
+                    type="text"
+                    className="mgmt-manual-input"
+                    placeholder="SE_20260627_001"
+                    value={manualId}
+                    onChange={(event) => setManualId(event.target.value)}
+                  />
+                )}
+              </>
             )}
           </div>
 
@@ -264,22 +296,61 @@ function IncomingRegistrationModal({
 
         <div className="incoming-modal-body">
           <section className="incoming-form-section">
-            <h3>기본정보</h3>
-            <p className="incoming-form-desc">업체 선택 후 Product Master에서 제품을 선택하세요</p>
+            <h3>입고 정보</h3>
+            <p className="incoming-form-desc">
+              품명을 선택하면 제품 Master에서 품번 · 재질 · 규격이 자동 입력됩니다.
+            </p>
 
             <div className="incoming-form-grid">
+              <label className="form-field">
+                <span>입고일</span>
+                <input
+                  type="date"
+                  value={form.incomingDate}
+                  onChange={(event) => updateField("incomingDate", event.target.value)}
+                />
+              </label>
+
               <AdminSelectField
                 className="span-2"
-                label="업체명"
+                label="거래처"
                 value={form.company}
                 options={companyOptions}
-                placeholder="업체 선택"
+                placeholder="거래처 선택"
                 onChange={handleCompanyChange}
                 onAdminClick={() => handleAdminManage("업체명")}
               />
 
+              <label className="form-field">
+                <span>담당자</span>
+                <input
+                  type="text"
+                  list="inbound-manager-suggestions"
+                  placeholder="담당자 입력 또는 선택"
+                  value={form.manager}
+                  onChange={(event) => updateField("manager", event.target.value)}
+                />
+                <datalist id="inbound-manager-suggestions">
+                  {managerOptions.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+              </label>
+
+              <label className="form-field">
+                <span>발주번호</span>
+                <input
+                  type="text"
+                  placeholder="선택 입력"
+                  value={form.purchaseOrderNo}
+                  onChange={(event) => updateField("purchaseOrderNo", event.target.value)}
+                />
+              </label>
+
               <TitanCascadeProductPicker
                 inline
+                partNameOnly
+                showDrawingNo={false}
                 company={form.company}
                 value={{
                   partName: form.partName,
@@ -290,9 +361,6 @@ function IncomingRegistrationModal({
                 autoFields={{
                   material: form.material,
                   spec: form.spec,
-                  unitPrice: form.unitPrice,
-                  process: form.heatTreatment,
-                  drawingNo: form.drawingNo,
                 }}
                 fieldClassName="form-field"
                 kicker="입고 등록"
@@ -324,16 +392,6 @@ function IncomingRegistrationModal({
               </label>
 
               <label className="form-field">
-                <span>LOT.NO</span>
-                <input
-                  type="text"
-                  placeholder="LOT.NO"
-                  value={form.lotNo}
-                  onChange={(event) => updateField("lotNo", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
                 <span>업체 LOT</span>
                 <input
                   type="text"
@@ -341,49 +399,6 @@ function IncomingRegistrationModal({
                   value={form.customerLotNo}
                   onChange={(event) => updateField("customerLotNo", event.target.value)}
                 />
-              </label>
-
-              <label className="form-field">
-                <span>발주번호</span>
-                <input
-                  type="text"
-                  placeholder="Purchase Order No."
-                  value={form.purchaseOrderNo}
-                  onChange={(event) => updateField("purchaseOrderNo", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>입고일</span>
-                <input
-                  type="date"
-                  value={form.incomingDate}
-                  onChange={(event) => updateField("incomingDate", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field">
-                <span>납기</span>
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(event) => updateField("dueDate", event.target.value)}
-                />
-              </label>
-
-              <label className="form-field toggle-field">
-                <span>긴급 여부</span>
-                <div className="toggle-wrap">
-                  <button
-                    type="button"
-                    className={`toggle-btn${form.urgent ? " on" : ""}`}
-                    onClick={() => updateField("urgent", !form.urgent)}
-                    aria-pressed={form.urgent}
-                  >
-                    <span className="toggle-knob" />
-                  </button>
-                  <span className="toggle-label">{form.urgent ? "긴급" : "일반"}</span>
-                </div>
               </label>
 
               <label className="form-field span-2">
@@ -409,24 +424,24 @@ function IncomingRegistrationModal({
             <div className="summary-divider" />
 
             <div className="summary-block">
-              <p>업체 / 품번</p>
+              <p>거래처 / 품명</p>
               <TitanRegisterSummaryText text={form.company || "-"} as="strong" />
-              <TitanRegisterSummaryText text={form.partNo || "품번 미선택"} />
+              <TitanRegisterSummaryText text={form.partName || "품명 미선택"} />
+              <TitanRegisterSummaryText text={form.partNo || "품번 자동"} />
+            </div>
+
+            <div className="summary-divider" />
+
+            <div className="summary-block">
+              <p>담당자</p>
+              <TitanRegisterSummaryText text={form.manager || "-"} as="strong" />
             </div>
 
             <div className="summary-divider" />
 
             <div className="summary-block">
               <p>현재 상태</p>
-              <span className="status-badge 입고예정">입고예정</span>
-            </div>
-
-            <div className="summary-divider" />
-
-            <div className="summary-next-task">
-              <p>다음 업무</p>
-              <TitanRegisterSummaryText text="Workflow 자유 선택" as="strong" />
-              <TitanRegisterSummaryText text="거래명세서 · 출고 즉시 가능" />
+              <span className="status-badge 입고예정">입고등록</span>
             </div>
           </aside>
         </div>
@@ -435,8 +450,8 @@ function IncomingRegistrationModal({
           <SecondaryButton type="button" onClick={onClose}>
             취소
           </SecondaryButton>
-          <PrimaryButton type="button" onClick={handleRegisterClick}>
-            등록
+          <PrimaryButton type="button" onClick={handleSubmitClick}>
+            {submitLabel}
           </PrimaryButton>
         </footer>
       </div>

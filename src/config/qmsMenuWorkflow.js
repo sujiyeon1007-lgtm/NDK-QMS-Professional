@@ -52,17 +52,19 @@ export const QMS_IN_SYSTEM_WORK_PRINCIPLES = [
 /** Workflow First · Menu Freeze V1.0 이후 */
 export const QMS_WORKFLOW_FIRST_PIPELINE = [
   "Workflow",
-  "기능",
   "UI",
+  "기능",
   "구현",
   "테스트",
+  "검토",
+  "승인",
 ];
 
-/** Menu Freeze V1.0 — 1차 최종 승인 사이드바 (9 menus · menuConfig 기준) */
+/** Menu Freeze V1.1 — 1차 최종 승인 사이드바 (11 menus · menuConfig 기준) */
 export const QMS_APPROVED_SIDEBAR_MENUS = getApprovedSidebarMenuDefs();
 
 export const QMS_MENU_APPROVAL = {
-  menuStructure: { status: "menu-freeze-v1", revision: "V1.0", date: "2026-07-03", locked: true },
+  menuStructure: { status: "menu-freeze-v1.3", revision: "V1.3", date: "2026-07-03", locked: true },
   home: {
     status: "role-approved",
     capabilities: ["Dashboard", "공지사항", "오늘 할 일", "진행현황", "최근 작업"],
@@ -75,10 +77,20 @@ export const QMS_MENU_APPROVAL = {
     titanOwns: INBOUND_WORKFLOW_ROLE.titanOwns,
     config: "inboundStatusWorkflow.js",
   },
+  inventoryStatus: {
+    status: "menu-freeze-v1.1",
+    note: "입고+작업일보+출고 자동 계산 · 직접 입력 ❌",
+    route: "/inventory",
+  },
   workDaily: {
     status: "role-approved",
-    note: "생산관리 메뉴 ❌ · LOT 생성 = TITAN Traceability 기준",
+    note: "제품 중심 — LOT · 생산 이력",
     mergedFrom: ["생산관리", "생산일보"],
+  },
+  workJournal: {
+    status: "menu-freeze-v1.2",
+    note: "사람 중심 업무 기록 · Workflow 미포함",
+    route: "/work-journal",
   },
   quality: {
     status: "role-approved",
@@ -101,6 +113,11 @@ export const QMS_MENU_APPROVAL = {
     titanOwns: "출고 준비 · 품질 관련 출고 업무",
   },
   history: { status: "role-approved", note: "전체 Traceability 조회" },
+  statisticsInquiry: {
+    status: "menu-freeze-v1.1",
+    note: "Dashboard · 업무 데이터 자동 집계 · 조회 전용",
+    route: "/statistics/inquiry",
+  },
   environment: {
     status: "menu-freeze-v1",
     note: "①시스템 ②사용자 ③정보관리 ④관리자",

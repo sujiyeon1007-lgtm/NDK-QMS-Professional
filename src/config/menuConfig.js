@@ -2,23 +2,30 @@
  * Project TITAN (NDK PQMS) — menuConfig (Single Source of Truth)
  * Sidebar · Router Section · Breadcrumb · Page Meta — 한 곳만 수정
  *
- * @see src/config/menuFreezeV1.js — Menu Freeze V1.0 잠금
+ * @see src/config/menuFreezeV1.js — Menu Freeze V1.3 잠금
  * @see src/config/menuStructure.js — re-export · legacy sections
  */
 
 import {
   Home,
   ClipboardList,
+  Package,
   NotebookPen,
+  BookOpen,
   ShieldCheck,
   Layers,
   FileText,
   Truck,
   History,
+  BarChart3,
   SlidersHorizontal,
 } from "lucide-react";
 
-import { MENU_FREEZE_SIDEBAR_ORDER } from "./menuFreezeV1";
+import {
+  MENU_FREEZE_SIDEBAR_ORDER,
+  MENU_FREEZE_SIDEBAR_GROUPS,
+  buildSidebarGroups,
+} from "./menuFreezeV1";
 
 /** @typedef {{ id: string, label: string, path: string }} MenuTab */
 /** @typedef {{ id: string, label: string, icon: import("react").ComponentType, path: string, end?: boolean }} SidebarItem */
@@ -74,6 +81,25 @@ export const TITAN_MENU_CATALOG = {
     },
     breadcrumb: ["입고현황"],
   },
+  inventoryStatus: {
+    id: "inventoryStatus",
+    label: "재고현황",
+    path: "/inventory",
+    icon: Package,
+    end: true,
+    section: {
+      pathPrefix: "/inventory",
+      defaultTab: "status",
+      tabs: [{ id: "status", label: "재고현황", path: "/inventory" }],
+    },
+    pageMeta: {
+      kicker: "PQMS Inventory",
+      title: "재고현황",
+      description:
+        "입고현황 · 작업일보 · 출고현황 데이터 기반 자동 계산 — 직접 입력 없음 · One Source of Truth",
+    },
+    breadcrumb: ["재고현황"],
+  },
   workDaily: {
     id: "workDaily",
     label: "작업일보",
@@ -90,6 +116,25 @@ export const TITAN_MENU_CATALOG = {
       description: "LOT 생성 · Traceability 기준 — 작업일·작업자·설비·처리조건·작업수량·작업 완료",
     },
     breadcrumb: ["작업일보"],
+  },
+  workJournal: {
+    id: "workJournal",
+    label: "업무일지",
+    path: "/work-journal",
+    icon: BookOpen,
+    end: true,
+    section: {
+      pathPrefix: "/work-journal",
+      defaultTab: "journal",
+      tabs: [{ id: "journal", label: "업무일지", path: "/work-journal" }],
+    },
+    pageMeta: {
+      kicker: "업무 기록",
+      title: "업무일지",
+      description:
+        "담당자 업무 기록 · 특이사항 — 사람 중심 (Workflow 미포함) · 입고검사 · 성적서 · NCR · 회의 · 설비점검",
+    },
+    breadcrumb: ["업무일지"],
   },
   quality: {
     id: "quality",
@@ -182,6 +227,30 @@ export const TITAN_MENU_CATALOG = {
     },
     breadcrumb: ["이력조회"],
   },
+  statisticsInquiry: {
+    id: "statisticsInquiry",
+    label: "통계조회",
+    path: "/statistics/inquiry",
+    icon: BarChart3,
+    section: {
+      pathPrefix: "/statistics",
+      defaultTab: "inquiry",
+      tabs: [
+        { id: "inquiry", label: "통계조회", path: "/statistics/inquiry" },
+        { id: "production", label: "생산통계", path: "/statistics/production" },
+        { id: "quality", label: "품질통계", path: "/statistics/quality" },
+        { id: "shipment", label: "출고통계", path: "/statistics/shipment" },
+        { id: "sales", label: "영업실적", path: "/statistics/sales" },
+      ],
+    },
+    pageMeta: {
+      kicker: "PQMS Analytics",
+      title: "통계조회",
+      description:
+        "Dashboard · 입고 · 출고 · 재고 · 품질 · LOT · 작업량 · 성적서 — 업무 데이터 자동 집계 (조회 전용)",
+    },
+    breadcrumb: ["통계조회"],
+  },
   environment: {
     id: "environment",
     label: "환경설정",
@@ -210,7 +279,7 @@ export const TITAN_MENU_CATALOG = {
   },
 };
 
-/** Menu Freeze V1.0 — Sidebar 순서 (id) */
+/** Menu Freeze V1.3 — Sidebar 순서 (id) */
 export const TITAN_MENU_ORDER = MENU_FREEZE_SIDEBAR_ORDER;
 
 /** @type {SidebarItem[]} */
@@ -306,3 +375,5 @@ export function getApprovedSidebarMenuDefs(order = TITAN_MENU_ORDER) {
     .filter(Boolean)
     .map((item) => ({ id: item.id, label: item.label, path: item.path }));
 }
+
+export { MENU_FREEZE_SIDEBAR_GROUPS, buildSidebarGroups };

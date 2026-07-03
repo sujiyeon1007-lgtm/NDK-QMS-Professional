@@ -5,6 +5,7 @@ import TitanSearchableSelect from "./TitanSearchableSelect";
 import {
   findCompanyProduct,
   findCompanyProductByPartNo,
+  findCompanyProductByPartName,
   getCompanyDrawingNoOptions,
   getCompanyPartNoOptions,
   getCompanyProductNameOptions,
@@ -27,6 +28,7 @@ export default function TitanCascadeProductPicker({
   onProductSelect,
   showDrawingNo = true,
   showAutoFields = true,
+  partNameOnly = false,
   autoFields = {},
   fieldClassName = "",
   gridClassName = "titan-cascade-product-picker",
@@ -80,6 +82,29 @@ export default function TitanCascadeProductPicker({
 
   const handlePartNameChange = (partName) => {
     setUnknownPrompt(null);
+    if (!partName) {
+      onChange?.({ partName: "", partNo: "", drawingNo: "" }, null);
+      return;
+    }
+
+    if (partNameOnly) {
+      const product = findCompanyProductByPartName(company, partName);
+      if (product) {
+        const autofill = mapProductToFormAutofill(product);
+        emitSelection(
+          {
+            partName: autofill.partName,
+            partNo: autofill.partNo,
+            drawingNo: autofill.drawingNo,
+          },
+          product
+        );
+        return;
+      }
+      onChange?.({ partName, partNo: "", drawingNo: "" }, null);
+      return;
+    }
+
     const next = { partName, partNo: "", drawingNo: "" };
     onChange?.(next, null);
   };
@@ -161,17 +186,21 @@ export default function TitanCascadeProductPicker({
           onEmptySearch={(query) => handleUnknownSearch(query, "partName")}
         />
 
-        <TitanSearchableSelect
-          className={fieldClassName}
-          label="품번"
-          value={value.partNo}
-          onChange={handlePartNoChange}
-          options={partNoOptions}
-          placeholder={value.partName ? "품번 선택" : "품명 또는 품번 선택"}
-          disabled={isDisabled}
-          emptySearchMessage="등록되지 않은 제품입니다."
-          onEmptySearch={(query) => handleUnknownSearch(query, "partNo")}
-        />
+        {!partNameOnly ? (
+          <TitanSearchableSelect
+            className={fieldClassName}
+            label="품번"
+            value={value.partNo}
+            onChange={handlePartNoChange}
+            options={partNoOptions}
+            placeholder={value.partName ? "품번 선택" : "품명 또는 품번 선택"}
+            disabled={isDisabled}
+            emptySearchMessage="등록되지 않은 제품입니다."
+            onEmptySearch={(query) => handleUnknownSearch(query, "partNo")}
+          />
+        ) : (
+          renderReadonly("품번", value.partNo)
+        )}
 
         {showDrawingSelect ? (
           <TitanSearchableSelect

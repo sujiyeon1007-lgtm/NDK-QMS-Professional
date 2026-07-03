@@ -8,6 +8,7 @@ export function buildInboundListColumns({ renderStatus, renderProcess }) {
     titanColumn("lotNo"),
     titanColumn("customerLotNo"),
     titanColumn("company"),
+    titanColumn("manager", { key: "managerName" }),
     titanColumn("partName"),
     titanColumn("partNo"),
     titanColumn("material"),
@@ -15,6 +16,37 @@ export function buildInboundListColumns({ renderStatus, renderProcess }) {
     titanColumn("process", { key: "processName", render: renderProcess }),
     titanColumn("incomingDate", { key: "registeredDate", label: "입고일" }),
     titanColumn("dueDate"),
+    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+  ];
+}
+
+/** 업무일지 — 사람 중심 업무 기록 */
+export function buildWorkJournalListColumns({ renderSource }) {
+  return [
+    titanColumn("incomingDate", { key: "date", label: "일자" }),
+    titanColumn("registeredAt", { key: "time", label: "시간", widthPercent: 7 }),
+    titanColumn("process", { key: "category", label: "업무구분", widthPercent: 11 }),
+    titanColumn("taskTitle", { key: "title", label: "업무내용", widthPercent: 24 }),
+    titanColumn("company"),
+    titanColumn("managementId"),
+    titanColumn("lotNo"),
+    titanColumn("status", { key: "sourceLabel", label: "구분", render: renderSource, widthPercent: 8 }),
+    titanColumn("note", { widthPercent: 14 }),
+  ];
+}
+
+/** 재고현황 — 입고·작업·출고 기반 자동 집계 (조회 전용) */
+export function buildInventoryStatusListColumns({ renderStatus }) {
+  return [
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("spec"),
+    titanColumn("currentStock", { key: "currentStockLabel" }),
+    titanColumn("inboundQty", { key: "inboundQtyLabel" }),
+    titanColumn("workInputQty", { key: "workInputQtyLabel" }),
+    titanColumn("shippedQty", { key: "shippedQtyLabel" }),
+    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }
