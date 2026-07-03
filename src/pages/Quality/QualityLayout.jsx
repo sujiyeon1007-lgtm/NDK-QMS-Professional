@@ -1,10 +1,10 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getSectionById } from "../../config/menuStructure";
+import { getSectionByPathname } from "../../config/menuStructure";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 
 export default function QualityLayout() {
   const location = useLocation();
-  const section = getSectionById("quality");
+  const section = getSectionByPathname(location.pathname);
   if (!section) return null;
 
   if (location.pathname === "/quality" || location.pathname === "/quality/") {

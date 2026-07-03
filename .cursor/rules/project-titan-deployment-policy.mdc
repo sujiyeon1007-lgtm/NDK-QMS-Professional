@@ -1,0 +1,68 @@
+---
+description: Project TITAN 배포 정책 REV.5 — Vercel Beta CEO Demo · Version 3 QMS · localhost 개발
+alwaysApply: true
+---
+
+# Project TITAN — Deployment Policy (REV.5)
+
+**Source:** `src/config/titanDeploymentPolicy.js`  
+**Framework:** Version 3 QMS Presentation Build — see `titanV1DevelopmentDirection.js`
+
+---
+
+## 원칙
+
+1. **Vercel은 항상 안정 버전(Beta Release)만 배포한다 — CEO Demo · Version 3 QMS Presentation Build.**
+2. **개발은 localhost에서 진행한다 (Version 3 QMS · SessionStorage Demo).**
+3. **승인되지 않은 개발 중 기능은 Vercel에 배포하지 않는다.**
+4. **Presentation Sprint 완료 + PM 승인 후 GitHub Push → Vercel 배포.**
+
+---
+
+## 환경
+
+| 환경 | 용도 | Vercel 배포 |
+|------|------|-------------|
+| **Localhost** (`npm run dev`) | 일상 개발 · 테스트 · 미승인 기능 | ❌ |
+| **Beta Release** (`ndk-qms-beta.vercel.app`) | 회의 · Demo · PM 승인 Sprint | ✅ |
+| **Release** (`main` · Electron EXE) | 정식 운영 | ❌ (Vercel 아님) |
+
+**Vercel branch:** `beta-demo`
+
+---
+
+## 배포 Flow
+
+```text
+localhost Version 3 QMS 개발 → 테스트 → PM 승인
+  ↓
+git commit → git push (beta-demo)
+  ↓
+Vercel 자동 배포 (Beta Release)
+  ↓
+회의 · Demo · 피드백
+```
+
+---
+
+## Vercel 배포 금지
+
+- Sprint 진행 중 미완성 기능
+- PM 미승인 UI/Workflow 변경
+- Console/Terminal Error 존재 빌드
+- 개발 중 실험 Edition/Repository 전환
+
+---
+
+## Do Not
+
+- Sprint 미완료 상태에서 Vercel push (PM 승인 없이)
+- localhost 전용 실험 코드를 Beta에 포함
+- Vercel을 일상 개발/디버그 환경으로 사용
+
+---
+
+## Companion
+
+- `.cursor/rules/project-titan-master-policy-v1.mdc` — Git branch · Demo policy
+- `.cursor/rules/project-titan-progress-v1.mdc` — Sprint 완료 기준

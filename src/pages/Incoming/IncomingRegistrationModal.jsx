@@ -34,6 +34,10 @@ const emptyForm = {
   ...emptyProductFields,
   qty: "",
   unit: "EA",
+  lotNo: "",
+  customerLotNo: "",
+  purchaseOrderNo: "",
+  incomingDate: "",
   dueDate: "",
   urgent: false,
   note: "",
@@ -91,7 +95,9 @@ function IncomingRegistrationModal({
   const [autoId, setAutoId] = useState(true);
   const [manualId, setManualId] = useState("");
   const [form, setForm] = useState(() =>
-    initialForm ? { ...emptyForm, ...initialForm } : emptyForm
+    initialForm
+      ? { ...emptyForm, incomingDate: getJournalReferenceDate(), ...initialForm }
+      : { ...emptyForm, incomingDate: getJournalReferenceDate() }
   );
 
   useEffect(() => {
@@ -315,6 +321,45 @@ function IncomingRegistrationModal({
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="form-field">
+                <span>LOT.NO</span>
+                <input
+                  type="text"
+                  placeholder="LOT.NO"
+                  value={form.lotNo}
+                  onChange={(event) => updateField("lotNo", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>업체 LOT</span>
+                <input
+                  type="text"
+                  placeholder="업체 LOT"
+                  value={form.customerLotNo}
+                  onChange={(event) => updateField("customerLotNo", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>발주번호</span>
+                <input
+                  type="text"
+                  placeholder="Purchase Order No."
+                  value={form.purchaseOrderNo}
+                  onChange={(event) => updateField("purchaseOrderNo", event.target.value)}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>입고일</span>
+                <input
+                  type="date"
+                  value={form.incomingDate}
+                  onChange={(event) => updateField("incomingDate", event.target.value)}
+                />
               </label>
 
               <label className="form-field">

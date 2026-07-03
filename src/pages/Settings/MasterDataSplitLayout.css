@@ -1,0 +1,187 @@
+.master-data-split-page {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.master-data-split-page__grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 34%) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.master-data-split-page__nav,
+.master-data-split-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: var(--titan-surface, #fff);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.master-data-split-page__nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.master-data-split-page__nav-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.master-data-split-page__nav-head span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.master-data-split-page__nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.master-data-split-page__nav-actions .primary-button,
+.master-data-split-page__nav-actions .secondary-button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.master-data-split-page__nav-search {
+  flex-shrink: 0;
+}
+
+.master-data-split-page__nav-search input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.master-data-split-page__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.master-data-split-page__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.master-data-split-page__menu-link {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.master-data-split-page__menu-link:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.master-data-split-page__menu-link--active {
+  background: #edf4fd;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.master-data-split-page__empty {
+  margin: auto 0;
+  padding: 32px 16px;
+  border: 1px dashed var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+/* Popup 내부 MasterDataManagement — 단일 리스트 · 우측 Detail 패널 없음 */
+.master-data-page--panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  gap: 10px;
+}
+
+.master-data-page--panel .master-data-split-page__nav-head {
+  margin-bottom: 0;
+}
+
+.master-data-page--panel .inbound-page__workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: 1fr;
+}
+
+.master-data-page--panel .inbound-page__list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.master-data-page--panel .titan-search-panel {
+  flex-shrink: 0;
+}
+
+.master-data-split-page__content > .inbound-page,
+.master-data-split-page__content > .master-data-page--panel {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.master-data-page--panel .titan-search-panel {
+  flex-shrink: 0;
+}

@@ -39,7 +39,7 @@ export default function Home() {
   );
 
   useEffect(() => {
-    setTitanErrorContext({ screen: "HOME", component: "Home", path: "/" });
+    setTitanErrorContext({ screen: "HOME", component: "Home", path: "/home" });
     return () => clearTitanErrorContext(["screen", "component"]);
   }, []);
 

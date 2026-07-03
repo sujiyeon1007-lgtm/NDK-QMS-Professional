@@ -12,7 +12,7 @@
 
 .titan-header__title {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--titan-font-lg);
   font-weight: 800;
   color: var(--titan-text);
   flex-shrink: 0;
@@ -21,7 +21,7 @@
 
 .titan-header__note {
   margin-left: 12px;
-  font-size: 11px;
+  font-size: var(--titan-font-xs);
   font-weight: 600;
   color: var(--titan-text-muted);
 }

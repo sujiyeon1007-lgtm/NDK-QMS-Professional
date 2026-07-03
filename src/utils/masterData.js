@@ -5,6 +5,11 @@
 
 import { canDeleteProduct } from "./productUsage";
 import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
+import {
+  buildCompanyAbbreviation,
+  getCompanyAbbreviation,
+  shouldAutoUpdateAbbreviation,
+} from "./companyAbbreviation";
 
 const STORAGE_KEY = "project-titan-master-data-v3";
 
@@ -71,7 +76,8 @@ export const MASTER_DATA = {
     },
     {
       id: "c3",
-      code: "DE",
+      code: "DS",
+      abbreviation: "DS",
       name: "두산에너빌리티",
       bizNo: "",
       manager: "",
@@ -343,10 +349,37 @@ function migrateLegacyWorkers(rows = []) {
   }));
 }
 
+function migrateCompanyMaster(rows = []) {
+  return rows.map((row, index) => {
+    const others = rows.filter((_, i) => i !== index);
+    const abbreviation = row.abbreviation?.trim()
+      ? getCompanyAbbreviation(row)
+      : row.abbreviationLocked && row.code?.trim()
+        ? row.code.trim().toUpperCase()
+        : buildCompanyAbbreviation(row.name, others);
+
+    return {
+      ...row,
+      abbreviation,
+      code: row.code?.trim() || abbreviation,
+      abbreviationLocked: Boolean(row.abbreviationLocked),
+      abbreviationManual: Boolean(row.abbreviationManual),
+      defaultRequirements: row.defaultRequirements ?? "",
+      inspectionStandard: row.inspectionStandard ?? "",
+      certificateForm: row.certificateForm ?? "",
+      statementForm: row.statementForm ?? "",
+    };
+  });
+}
+
 function loadMasterDataFromStorage() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return cloneMasterData(MASTER_DATA);
+    if (!raw) {
+      const data = cloneMasterData(MASTER_DATA);
+      data.companies = migrateCompanyMaster(data.companies);
+      return data;
+    }
     const parsed = JSON.parse(raw);
     const merged = cloneMasterData(MASTER_DATA);
     Object.keys(merged).forEach((key) => {
@@ -376,10 +409,17 @@ function loadMasterDataFromStorage() {
       });
       merged.equipment = hasNdkLotEquipment ? parsed.equipment : cloneMasterData(MASTER_DATA).equipment;
     }
+    if (Array.isArray(merged.companies)) {
+      merged.companies = migrateCompanyMaster(merged.companies);
+    } else {
+      merged.companies = migrateCompanyMaster(merged.companies ?? []);
+    }
     delete merged.items;
     return merged;
   } catch {
-    return cloneMasterData(MASTER_DATA);
+    const data = cloneMasterData(MASTER_DATA);
+    data.companies = migrateCompanyMaster(data.companies);
+    return data;
   }
 }
 
@@ -473,8 +513,46 @@ export function getCompanyCodeMap() {
   return Object.fromEntries(
     getMasterDataByCategory("companies")
       .filter((row) => row.active !== false)
-      .map((row) => [row.name, row.code])
+      .map((row) => [row.name, getCompanyAbbreviation(row)])
   );
+}
+
+function enrichCompanyRecord(normalized, rawPayload, mode, existingId) {
+  const rows = getMasterDataByCategory("companies").filter((row) => row.id !== existingId);
+  const current =
+    existingId != null
+      ? getMasterDataByCategory("companies").find((row) => row.id === existingId)
+      : null;
+
+  const manualAbbrev = String(rawPayload?.abbreviation ?? "").trim().toUpperCase();
+  const manualLock = Boolean(rawPayload?.abbreviationManual || rawPayload?.abbreviationLocked);
+
+  if (mode === "edit" && current && (manualLock || current.abbreviationLocked)) {
+    normalized.abbreviation = manualAbbrev || getCompanyAbbreviation(current);
+    normalized.abbreviationLocked = true;
+    normalized.abbreviationManual = true;
+  } else if (mode === "edit" && current && !shouldAutoUpdateAbbreviation(current, rawPayload)) {
+    normalized.abbreviation = getCompanyAbbreviation(current);
+    normalized.abbreviationLocked = Boolean(current.abbreviationLocked);
+    normalized.abbreviationManual = Boolean(current.abbreviationManual);
+  } else {
+    normalized.abbreviation = buildCompanyAbbreviation(normalized.name, rows, {
+      manualAbbreviation: manualLock ? manualAbbrev : "",
+    });
+    normalized.abbreviationLocked = manualLock;
+    normalized.abbreviationManual = manualLock;
+  }
+
+  if (!normalized.code) {
+    normalized.code = normalized.abbreviation;
+  }
+
+  normalized.defaultRequirements = rawPayload?.defaultRequirements?.trim() ?? normalized.defaultRequirements ?? "";
+  normalized.inspectionStandard = rawPayload?.inspectionStandard?.trim() ?? normalized.inspectionStandard ?? "";
+  normalized.certificateForm = rawPayload?.certificateForm?.trim() ?? normalized.certificateForm ?? "";
+  normalized.statementForm = rawPayload?.statementForm?.trim() ?? normalized.statementForm ?? "";
+
+  return normalized;
 }
 
 function nextMasterRowId(categoryKey) {
@@ -498,12 +576,19 @@ function normalizePayload(categoryKey, payload) {
   if (categoryKey === "companies") {
     return {
       ...base,
+      abbreviation: payload.abbreviation?.trim().toUpperCase() ?? "",
+      abbreviationLocked: Boolean(payload.abbreviationLocked),
+      abbreviationManual: Boolean(payload.abbreviationManual),
       bizNo: payload.bizNo?.trim() ?? "",
       manager: payload.manager?.trim() ?? "",
       phone: payload.phone?.trim() ?? "",
       mobile: payload.mobile?.trim() ?? "",
       email: payload.email?.trim() ?? "",
       address: payload.address?.trim() ?? "",
+      defaultRequirements: payload.defaultRequirements?.trim() ?? "",
+      inspectionStandard: payload.inspectionStandard?.trim() ?? "",
+      certificateForm: payload.certificateForm?.trim() ?? "",
+      statementForm: payload.statementForm?.trim() ?? "",
     };
   }
   if (categoryKey === "products" || categoryKey === "items") {
@@ -582,10 +667,14 @@ function normalizePayload(categoryKey, payload) {
 
 export function validateMasterRow(categoryKey, row, mode, existingId) {
   const resolvedKey = resolveCategoryKey(categoryKey);
-  const normalized = normalizePayload(resolvedKey, row);
+  let normalized = normalizePayload(resolvedKey, row);
   const storageKey = resolveStorageCategory(resolvedKey);
 
-  if (!normalized.code) {
+  if (resolvedKey === "companies") {
+    normalized = enrichCompanyRecord(normalized, row, mode, existingId);
+  }
+
+  if (resolvedKey !== "companies" && !normalized.code) {
     return {
       ok: false,
       message:
@@ -596,6 +685,11 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
             : "코드를 입력하세요.",
     };
   }
+
+  if (resolvedKey === "companies" && !normalized.abbreviation) {
+    return { ok: false, message: "거래처 약칭을 생성할 수 없습니다. 업체명을 확인하세요." };
+  }
+
   if (!normalized.name) {
     return {
       ok: false,
@@ -615,8 +709,19 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
   if (codeDup) {
     return {
       ok: false,
-      message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 코드입니다.",
+      message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 거래처코드입니다.",
     };
+  }
+
+  if (resolvedKey === "companies") {
+    const abbrevDup = rows.some(
+      (item) =>
+        getCompanyAbbreviation(item).toLowerCase() === normalized.abbreviation.toLowerCase() &&
+        item.id !== existingId
+    );
+    if (abbrevDup) {
+      return { ok: false, message: "이미 사용 중인 거래처 약칭입니다. 관리자 설정에서 수정하세요." };
+    }
   }
 
   if (resolvedKey === "products" && normalized.partNo && normalized.company) {
@@ -718,9 +823,12 @@ export function formatMasterRowForDisplay(row) {
   if (!row) return row;
   const employmentStatus =
     row.employmentStatus ?? (row.active === false ? "퇴사" : row.department ? "재직" : undefined);
+  const abbreviation = getCompanyAbbreviation(row);
   return {
     ...row,
+    abbreviation: row.abbreviation ?? abbreviation,
     activeLabel: row.active === false ? "미사용" : "사용",
+    abbreviationLockedLabel: row.abbreviationLocked ? "고정 (관리자 수정)" : "자동 생성",
     employmentStatusLabel: employmentStatus ?? "—",
     description: row.description ?? row.note ?? "",
     unitPriceLabel:
@@ -785,10 +893,7 @@ export function generateProductManagementCode(companyName, existingCodes = null)
   const codeMap = getCompanyCodeMap();
   const companyCode =
     codeMap[companyName] ??
-    (String(companyName ?? "")
-      .trim()
-      .slice(0, 2)
-      .toUpperCase() || "XX");
+    buildCompanyAbbreviation(companyName, getMasterDataByCategory("companies"));
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const prefix = `${companyCode}_${datePart}_`;
   const codes =
@@ -805,7 +910,12 @@ export function generateProductManagementCode(companyName, existingCodes = null)
 export function findCompanyByCode(code) {
   const q = String(code ?? "").trim().toLowerCase();
   if (!q) return null;
-  return getMasterDataByCategory("companies").find((row) => row.code?.toLowerCase() === q) ?? null;
+  return (
+    getMasterDataByCategory("companies").find(
+      (row) =>
+        row.code?.toLowerCase() === q || getCompanyAbbreviation(row).toLowerCase() === q
+    ) ?? null
+  );
 }
 
 export function findMaterialByCode(code) {

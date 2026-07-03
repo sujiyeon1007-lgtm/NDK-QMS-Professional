@@ -6,10 +6,12 @@ import "./TitanErrorBoundary.css";
 
 function resolveScreenLabel(pathname = "") {
   if (pathname.includes("/settings/products")) return "제품관리";
-  if (pathname.includes("/settings/inspection")) return "검사기준관리";
+  if (pathname.includes("/documents/inspection")) return "검사기준서";
   if (pathname.includes("/settings/")) return "기준정보관리";
-  if (pathname.includes("/inout/incoming")) return "입고관리";
-  if (pathname.includes("/inout/shipment")) return "출고관리";
+  if (pathname.includes("/documents")) return "문서관리";
+  if (pathname.includes("/inout/incoming")) return "입고현황";
+  if (pathname.includes("/inout/shipment")) return "출고현황";
+  if (pathname.includes("/production/daily-report")) return "작업일보";
   if (pathname.includes("/production/")) return "생산관리";
   if (pathname.includes("/quality/")) return "품질관리";
   if (pathname === "/" || pathname === "") return "HOME";

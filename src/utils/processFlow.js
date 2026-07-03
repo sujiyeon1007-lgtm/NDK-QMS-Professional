@@ -134,6 +134,8 @@ export function mapStandardProductListRow(record, status) {
     id: record.id,
     managementId: record.id,
     lotNo: record.lotNo?.trim() || "—",
+    customerLotNo: record.customerLotNo?.trim() || "—",
+    purchaseOrderNo: record.purchaseOrderNo?.trim() || "—",
     company: record.company ?? "—",
     partName: record.partName ?? "—",
     partNo: record.partNo ?? "—",

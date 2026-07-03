@@ -1,0 +1,69 @@
+---
+description: Project TITAN (NDK PQMS) Menu Freeze V1.0 — FINAL · no menu changes without PM
+alwaysApply: true
+---
+
+# Menu Freeze V1.0 (최종 확정)
+
+**Source of truth:** `src/config/menuConfig.js` · `src/config/menuFreezeV1.js` · `src/config/menuStructure.js` (re-export)
+
+**Status:** `MENU_FREEZE_LOCKED = true` — **메뉴 구조 변경 금지**
+
+## Sidebar 순서 (9 menus · 고정)
+
+1. HOME
+2. 입고현황
+3. 작업일보
+4. 품질관리
+5. **문서관리** (`/documents`)
+6. **기준정보관리** (`/settings`)
+7. 출고현황
+8. 이력조회
+9. 환경설정
+
+## 역할 분리 (고정)
+
+| 메뉴 | 역할 |
+|------|------|
+| 기준정보관리 | Master 데이터 — 업체·제품·재질·공정·설비·작업자 |
+| 문서관리 | 품질 문서 — 도면·검사기준서·작업표준서·FMEA·품질공지 등 |
+| 환경설정 | 시스템 — 프로그램·사용자·권한·직원정보·코드·관리자 |
+
+## 기준정보관리 탭 (6)
+
+- ① 업체관리: 거래처 정보 · 제품 Master (Core Hub)
+- ② 기준정보: 재질 · 공정 · 설비 · 작업자 Master
+
+## 문서관리 탭 (10)
+
+도면 · 검사기준서 · 작업표준서 · 관리계획서 · FMEA · 고객 요구사항 · 특채 승인서 · 품질공지 · NCR 문서 · 기타 문서
+
+## 환경설정 그룹 (4)
+
+- ① 시스템 · ② 사용자 · ③ 정보관리 · ④ 관리자
+
+## 개발 원칙 (Menu Freeze 이후)
+
+```text
+Workflow → 기능 → UI → 구현 → 테스트
+```
+
+**목표:** Version 3 — NDK PQMS (Presentation Version)
+
+## Do Not
+
+- Sidebar 메뉴 추가·삭제·순서 변경
+- 기준정보관리 ↔ 문서관리 ↔ 환경설정 통합
+- Menu Freeze 없이 PM 승인 없이 메뉴 구조 변경
+
+## UI 수정 시 필수 확인 (재발 방지)
+
+Sidebar · Router · Menu Config · Layout 변경 후 **반드시** 확인:
+
+1. `menuConfig.js` · `menuFreezeV1.js` · `menuStructure.js` — 9개 메뉴 유지
+2. `AppRouter.jsx` — `/documents` · `/history` Route 존재
+3. DEV 부팅 — `assertMenuIntegrityInDev()` 오류 없음 (`src/utils/menuIntegrity.js`)
+4. Sidebar 9개 표시 · 클릭 시 페이지 정상 (ErrorBoundary가 Sidebar를 가리지 않음)
+5. `npm run build` 통과
+
+신규 메뉴 추가 체크리스트는 Menu Freeze V1.0 **이후에는 적용 ❌** (메뉴 변경 자체 금지).

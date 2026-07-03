@@ -1,122 +1,168 @@
 ---
-description: Project TITAN V1.0 Development Direction — Official 2026-07-02 · Standalone QMS · MES V1.1
+description: Project TITAN Development Direction — Architecture Roadmap V1/V2/V3 · Version 3 Current · 2026-07-03
 alwaysApply: true
 ---
 
-# Project TITAN V1.0 — Development Direction (Official · 2026-07-02)
+# Project TITAN — Development Direction (Architecture Roadmap · 2026-07-03)
 
-**Source of truth (code):** `src/config/titanV1DevelopmentDirection.js`
+**Source of truth:** `src/config/titanV1DevelopmentDirection.js` · `src/config/presentationBuildPolicy.js`
 
----
-
-## Project Vision
-
-Project TITAN은 NDK의 품질관리 업무를 통합 관리하는 **품질관리 시스템(QMS)** 을 구축하는 것을 목표로 한다.
-
-- **V1.0:** 실제 업무에 사용할 수 있는 **독립적인 품질관리 시스템** 완성
-- **V1.1:** MES와 연동하여 기존 업무와 자연스럽게 연결
-- **V2.0:** 문서관리 · Traceability 고도화
-
-**Core promise:** *"MES 때문에 흔들리지 않는다"* — MES is integration target, not development direction driver.
+**Important:** Version 1 / 2 / 3 are **Architecture Roadmap** evolution directions — **NOT program versions** or user-selectable menus.
 
 ---
 
-## V1.0 Lock
+## Current Build (ONLY)
+
+**Version 3 — NDK Production & Quality Management System (Presentation Version)** — NDK 1공장 · SessionStorage · **HOME 직행**
+
+**Version 3 = 현재 구축 중인 NDK PQMS Presentation Version** — "독립형 운영"이 아닌 **NDK 1공장 생산·품질 통합 구축**
+
+See: `.cursor/rules/project-titan-presentation-build-policy.mdc`
+
+---
+
+## Ultimate Goal
+
+**생산·품질 업무 TITAN 내부 완결 (POP + QMS)** + **사장님 시연 가능한 NDK 1공장 PQMS**
+
+---
+
+## Architecture Roadmap (NOT user-selectable · V1/V2 = docs only)
+
+| Roadmap | Meaning | Status |
+|---------|---------|--------|
+| **Version 1** | MES full integration (Oracle, API, Repository, Master auto-sync, eliminate duplicate entry) | 장기 계획 (long-term) |
+| **Version 2** | MES + TITAN collaboration (MES = company ops, TITAN = production·quality PQMS, partial sync) | 향후 검토 (future review) |
+| **Version 3 ★** | **NDK PQMS (Presentation Version)** — NDK 1 factory production + quality unified system | **현재 구현 대상 (CURRENT)** |
+
+---
+
+## Architecture Only (UI/기능 ❌ · Roadmap 문서만)
+
+| Item | Status |
+|------|--------|
+| Version 1 — MES 완전 연동 | long-term (Architecture only) |
+| Version 2 — MES + TITAN 협업 (Hybrid) | future-review (Architecture only) |
+| Factory Mode (1/2/전체공장) | Architecture only |
+| Operation Mode Welcome | disabled (`OPERATION_MODE_WELCOME_ENABLED = false`) |
+
+---
+
+## Version 3 Lock (Current Implementation)
 
 | Constant | Value |
 |----------|-------|
-| `V1_0_OFFICIAL_DATE` | `2026-07-02` |
-| `V1_0_EDITION_LOCK` | `standalone` (독립 실행형 QMS) |
-| `V1_0_SHOW_EDITION_BOOT_MODAL` | `false` |
+| `PRESENTATION_VERSION_DATE` | `2026-07-03` |
+| `CURRENT_DEVELOPMENT_VERSION` | `v3` |
+| `PRESENTATION_EDITION_LOCK` | `standalone` (SessionStorage Demo) |
+| `PRESENTATION_SHOW_EDITION_BOOT_MODAL` | `false` |
 | Repository | `session` only (SessionStorage Demo) |
+
+**Legacy aliases:** `VERSION_2_*` / `V1_0_*` constants map to `VERSION_3_*` for backward compatibility.
 
 ---
 
-## Development Strategy
+## Operation Modes (Architecture mapping · Welcome disabled)
 
-### V1.0 — 독립 실행형 NDK QMS
+**Disabled:** App launch → `/` → **HOME** (`/home`) directly.
 
-입고관리 · LOT 관리 · 생산일보 · 검사등록 · 외관검사 · 경도 · 유효경화깊이 · 조직사진 · 성적서 · 문서관리 · QR · Traceability · 품질이력 · 출력물
+| Mode | Roadmap | Status |
+|------|---------|--------|
+| **Standalone (🟢)** | **Version 3** — current QMS | **CURRENT IMPLEMENTATION** |
+| **Hybrid (🟡)** | **Version 2** — MES+TITAN collaboration | Architecture · Preview only |
+| **Future (🔵)** | **Version 1** — MES full integration | Architecture · long-term |
 
-※ **SessionStorage 기반 Demo 및 Workflow 완성**
+**Config:** `src/config/operationMode.js` · Welcome UI code retained · **활성화 ❌**
 
-### V1.1 — MES 연동
+---
 
-MES(Oracle/API/CSV) · 제품 Master 조회 · 거래처 조회 · 입고/출고 조회 · Repository → Oracle 교체
+## Version 3 Scope (Current QMS · 8 menus)
 
-### V2.0 — 고도화
+HOME · 입고현황 · 작업일보 · 품질관리 · 문서관리 · 출고현황 · 이력조회 · 환경설정
 
-Revision Control · Approval Workflow · Effective History · Document Compare · 통계 고도화
+Full workflow: 입고현황 → 작업일보(LOT) → 검사 → 성적서 → 문서관리 → 출고현황 → 이력조회 → 출력물
+
+※ **SessionStorage 기반 · 실제 업무 Workflow · Demo-ready**
+
+**Completion criterion:** *"실제 업무에서 이렇게 사용하면 되겠구나"* — CEO Demo · 내부 검토 수준의 Polish
+
+---
+
+## Presentation Priorities (in order)
+
+```text
+HOME → 입고현황 → 작업일보 → 품질관리 → 문서관리 → 출고현황 → 이력조회
+```
+
+**Workflow·화면 Polish > 100% 기능 완성**
 
 ---
 
 ## Current Development Principles
 
-1. **현재 Sprint에서는 MES 연동을 구현하지 않는다**
-2. **NDK에서 실제 사용할 수 있는 QMS를 완성한다**
-3. **MES 연동은 Repository 구조 유지 · V1.1에서 진행**
-4. UI/Workflow 먼저 · 기존 설계 유지 · 불필요한 변경 금지
+1. **Version 3 PQMS (Presentation Version)만 구현한다**
+2. **Version 1·2 = Architecture Roadmap 문서만 — Oracle/MES 연동 구현 ❌**
+3. **Presentation Build = Version 3 delivery label (별도 architecture version ❌)**
+4. SessionStorage 유지 · UI/UX·Workflow·화면 완성도 우선
+5. CRUD 동작 · PDF/Preview 출력 · Demo 데이터 · Demo-ready
+6. 기존 설계 유지 · 불필요한 변경 금지
 
 ---
 
-## ON HOLD (NOT delete)
+## Architecture Roadmap ON HOLD (NOT delete · NOT Version 3)
 
-### Editions
+### Version 1 (long-term)
 
-- Quality Edition (narrow scope — alternate path)
-- MES Connected Edition → **V1.1**
+- MES Connected Edition · Oracle · API · CSV · SQLite Repository
+- MES 실시간 연동 · Master auto-sync · 중복 입력 제거
 
-### Repositories
+### Version 2 (future-review)
 
-- Oracle · API · CSV · SQLite → **V1.1**
-
-### Features
-
-- MES 연동 · 출고(MES 조회) · 재고 · 거래명세서 · V2.0 문서 고도화
+- MES + TITAN Hybrid collaboration · partial data sync
 
 ---
 
-## V1.0 Workflow
+## Version 3 Workflow
 
 ```text
-입고관리 → LOT 관리 → 생산일보 → 검사등록 → 외관검사 → 경도 → 유효경화깊이
-→ 조직사진 → 성적서 → 문서관리 → QR · Traceability → 품질이력 → 출력물
+HOME → 입고현황 → 작업일보 → 품질관리 → 문서관리 → 출고현황 → 이력조회 → 환경설정
 ```
-
-**Sidebar (Standalone):** HOME · 입출고관리 · 생산관리 · 품질관리 · 부서별 업무 · 통계 · 기준정보 · 환경설정
 
 ---
 
-## Sprint Order
+## Sprint Order (Version 3 QMS)
 
 | Sprint | Scope |
 |--------|-------|
-| **Sprint 3** | Print Engine · 성적서 · 출력물 · 문서관리 기본 구조 |
-| **Sprint 4** | 품질접수 · 검사등록 · 경도 · 유효경화깊이 · 조직사진 |
-| **Sprint 5** | 품질이력 · 통계 · Dashboard |
-| **Sprint 6** | 문서관리 고도화 · QR · PDF · 검색 기능 |
-| **After PoC** | Oracle PoC → MES 연동 여부 → V1.1 → V2.0 |
+| **Sprint 1** | HOME Dashboard Polish · 입고현황 Workflow |
+| **Sprint 2** | 검사등록 · 성적서관리 · Print Engine · PDF/Preview |
+| **Sprint 3** | 문서관리 · 출고관리 · 거래명세서 · 출력물 |
+| **Sprint 4** | 품질이력 · QR 구조 · 통계 · Dashboard Polish |
+| **Version 1 Gate** | 정부/MES 방향 · Oracle PoC → Version 1 (long-term roadmap) |
 
 ---
 
 ## Vision Path
 
 ```text
-V1.0 독립 실행형 QMS → V1.1 MES 연동 → V2.0 문서/Traceability 고도화
+Version 1 MES 완전 연동 (long-term) → Version 2 MES+TITAN 협업 (future-review) → Version 3 NDK PQMS (Presentation Version) ★ (CURRENT)
+
+**운영 이후 발전:** 사장님 승인 및 실제 운영 → Version 2 → Version 1
 ```
 
 ---
 
-## Do Not (Current Sprint)
+## Do Not (Current Development)
 
-- Implement MES Oracle/API/CSV repository integration
-- Switch edition to MES Connected before V1.1 gate
+- Implement Version 1 MES Oracle/API/CSV repository integration
+- Implement Version 2 Hybrid Mode as selectable program version
+- Re-enable Operation Mode Welcome or version/factory selection UI
 - Delete PoC/Electron/inout/production infrastructure
-- Let MES PoC status drive V1.0 QMS development direction
+- Let MES PoC status drive Version 3 QMS priorities
 
 ---
 
 ## Companion Rules
 
 - `.cursor/rules/project-titan-progress-v1.mdc` — sprint status
-- `.cursor/rules/project-titan-mes-integration-poc.mdc` — PoC (parallel · V1.1 decision input)
+- `.cursor/rules/project-titan-mes-integration-poc.mdc` — PoC (Version 1 roadmap input)

@@ -271,7 +271,7 @@ export default function ProductDrawingDetailPanel({ product, detailFields, refre
                 ))}
               </dl>
               <div className="product-drawing-detail__inspection-action">
-                <SecondaryButton type="button" onClick={() => navigate("/settings/inspection")}>
+                <SecondaryButton type="button" onClick={() => navigate("/documents/inspection")}>
                   <ExternalLink size={14} />
                   검사기준관리 열기
                 </SecondaryButton>
@@ -281,7 +281,7 @@ export default function ProductDrawingDetailPanel({ product, detailFields, refre
             <>
               <p className="product-drawing-detail__empty">등록된 검사기준이 없습니다.</p>
               <div className="product-drawing-detail__inspection-action">
-                <SecondaryButton type="button" onClick={() => navigate("/settings/inspection")}>
+                <SecondaryButton type="button" onClick={() => navigate("/documents/inspection")}>
                   <ExternalLink size={14} />
                   검사기준관리 열기
                 </SecondaryButton>

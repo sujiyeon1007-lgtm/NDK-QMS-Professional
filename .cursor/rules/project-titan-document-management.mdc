@@ -1,51 +1,103 @@
 ---
-description: Project TITAN 문서관리 — V1.0 공식 정책 REV.3 핵심 모듈
+description: Project TITAN 문서관리 — REV.4 · 품질 공지 통합 · V1.0 공식 정책
 alwaysApply: true
 ---
 
-# 문서관리 (V1.0 공식 · REV.3)
+# 문서관리 (Document Management · REV.4)
 
-**최우선:** `project-titan-v1-official-policy-rev3.mdc` · `src/config/titanV1OfficialPolicy.js`
+**Source:** `src/config/qualityDocumentManagement.js` · `src/config/titanV1OfficialPolicy.js`
 
-**구현:** `src/config/qualityDocumentManagement.js`
-
----
-
-## 문서 종류
-
-도면 · 검사기준서 · 관리계획서 · 작업표준서 · FMEA · 고객 요구사항 · 특채 승인서 · NCR · 품질 공지 · 기타 품질 문서
+**Companion:** `project-titan-v1-official-policy-rev3.mdc`
 
 ---
 
-## 관리 방식 (고정)
+## 핵심 원칙
+
+**Project TITAN은 일반 게시판을 운영하지 않는다.**
+
+품질과 관련된 공지는 **Document Management**에서 관리한다.
+
+```text
+공지사항 (독립 메뉴) ❌
+  ↓
+Document Management → 품질 공지 (Quality Notice)
+```
+
+**품질 공지 = 문서(Document)의 한 종류** (`quality_notice`)
+
+---
+
+## 지원 문서 종류
+
+도면 · 검사기준서 · 관리계획서 · 작업표준서 · FMEA · 고객 요구사항 · NCR · 특채 승인서 · **품질 공지** · Check Sheet · 시험성적서 · 기타 품질문서
+
+---
+
+## Revision 문서 관리 (품번 기준)
 
 ```text
 품번 → Revision → 승인자 → 개정일 → PDF → 이력관리
 ```
 
 - **Owner:** TITAN (MES ❌)
-- **개정·승인·검색·연결:** TITAN
+- 검사등록 + 품번 → 최신 도면 · 검사기준서 · 관리계획서 · 작업표준서 **자동 연결**
 
 ---
 
-## 관리번호
+## 품질 공지 (Quality Notice) 필드
 
-- **MES 생성** (예: DL260702-016) · TITAN **조회·연결만**
-- 검사등록 + **품번** → 최신 도면 · 검사기준서 · 관리계획서 · 작업표준서 자동 연결
+| 필드 | 필수 |
+|------|------|
+| 제목 · 내용 · 작성자 · 작성일 · 적용일 | ✅ |
+| 첨부파일 · 관련 품번 · 관련 재질 · 관련 문서 | 선택 |
+| 상태 (공지중 / 종료) | ✅ |
+
+Config: `QUALITY_NOTICE_FIELDS` · `QUALITY_NOTICE_STATUS` in `qualityDocumentManagement.js`
 
 ---
 
-## 생산 vs 품질 문서
+## V1.0 구현 (품질 공지 · 문서관리)
 
-| 구분 | Owner | 방식 |
-|------|-------|------|
-| **생산 데이터** | MES | 조회 중심 |
-| **품질 문서** | TITAN | 버전관리 · 개정이력 · 승인 · 검색 · 연결 |
+- **경로:** Sidebar **문서관리** (`/documents`) — **기준정보관리와 독립**
+- **기능:** 목록 · 등록 · 수정 · 삭제 · 상세 · 검색(제목/작성자/날짜/상태)
+- **저장:** `src/utils/qualityNoticeSession.js` · `src/utils/qualityDocumentRegistry.js` (SessionStorage)
+- **UI:** `src/pages/Documents/DocumentManagementPage.jsx`
+- HOME 미리보기: `getActiveQualityNoticesForHome()` · `/notices` → `/documents` 리다이렉트
+- **레거시:** `/environment/documents` → `/documents` 리다이렉트
+
+## V2.0 (미구현)
+
+| 기능 | 상태 |
+|------|------|
+| 읽음(ACK) | V2.0 |
+| Revision/기준 변경 자동 공지 | V1.1+ |
+| 공지 대상 · 팝업 공지 | V2.0 |
+
+---
+
+## UI 위치
+
+| 시점 | 위치 |
+|------|------|
+| **V1.0 (현재)** | Sidebar **문서관리** (`/documents`) — 기준정보관리(`/settings`)와 **별도 메뉴** |
+
+**기준정보관리와 문서관리 통합 ❌** · 환경설정 탭으로 대체 ❌
+
+HOME `공지사항` 패널 · `/notices` → `/documents` 리다이렉트
+
+---
+
+## 향후 (자동 품질 공지 생성)
+
+- Revision 변경 · 검사기준 변경 · 도면 변경 · 고객 요구사항 변경 시 품질 공지 자동 생성
+
+Config: `QUALITY_NOTICE_AUTO_GENERATION`
 
 ---
 
 ## Do Not
 
-- 품질 PDF/개정을 **MES Master**에 중복 저장
-- Revision 없이 PDF만 업로드 (이력 필수)
-- 검사 시 **수동 폴더 탐색** 전제 UI (자동 연결 우선)
+- 일반 게시판 / 독립 공지사항 메뉴 신규 추가 (V1.0)
+- 품질 공지를 MES Master에 중복 저장
+- V1.0에서 ACK(읽음) 기능 구현 (V2.0)
+- Revision 없이 PDF만 업로드 (Revision 문서 이력 필수)

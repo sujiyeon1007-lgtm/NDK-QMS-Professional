@@ -1,10 +1,10 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getSectionById } from "../../config/menuStructure";
+import { getSectionByPathname } from "../../config/menuStructure";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 
 export default function StatisticsLayout() {
   const location = useLocation();
-  const section = getSectionById("statistics");
+  const section = getSectionByPathname(location.pathname);
   if (!section) return null;
 
   if (location.pathname === "/statistics" || location.pathname === "/statistics/") {

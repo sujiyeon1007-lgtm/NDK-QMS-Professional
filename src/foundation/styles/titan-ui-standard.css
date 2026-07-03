@@ -1,0 +1,293 @@
+/**
+ * Project TITAN PQMS — UI Layout Standard V1.0 (최종 확정)
+ * ERP/MES: 레이아웃 고정 · 축소/반응형 ❌ · 스크롤로 처리
+ * @see src/config/titanUiStandard.js
+ * @see .cursor/rules/project-titan-ui-layout-standard-v1.mdc
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   1. Control dimensions (통일 — 축소 금지)
+   ═══════════════════════════════════════════════════════════════ */
+.titan-input,
+.titan-search-panel__select,
+.titan-search-ac__input {
+  min-height: var(--titan-control-h);
+  height: var(--titan-control-h);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.titan-btn {
+  min-height: var(--titan-btn-min-h);
+  height: auto;
+  padding: 8px var(--titan-btn-padding-x);
+  gap: var(--titan-btn-gap);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. Search Panel — 고정 1행 · 좁으면 가로 스크롤 (줄바꿈/축소 ❌)
+   ═══════════════════════════════════════════════════════════════ */
+.titan-search-panel {
+  padding: var(--titan-search-panel-padding) !important;
+  overflow-x: auto;
+  overflow-y: visible;
+  flex-shrink: 0;
+}
+
+.titan-search-panel__basic {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: var(--titan-search-col-gap);
+  min-width: max-content;
+}
+
+.titan-search-panel__fields {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--titan-search-fields-gap);
+  flex: 0 0 auto;
+  min-width: var(--titan-search-fields-min-w);
+}
+
+.titan-search-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 var(--titan-search-field-w);
+  width: var(--titan-search-field-w);
+  min-width: var(--titan-search-field-w);
+  max-width: var(--titan-search-field-w);
+}
+
+.titan-search-panel__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--titan-btn-gap);
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. Table — Header/Row 높이 · 정렬 통일
+   ═══════════════════════════════════════════════════════════════ */
+.titan-table__cell--head,
+.titan-table__cell {
+  min-height: var(--titan-table-row-min-h);
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.titan-table-wrap {
+  overflow: auto;
+  max-width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4. Card · Toolbar — padding/gap 통일 · nowrap
+   ═══════════════════════════════════════════════════════════════ */
+.titan-card {
+  padding: var(--titan-card-padding);
+  box-sizing: border-box;
+}
+
+.titan-search-panel.titan-card {
+  padding: var(--titan-search-panel-padding) !important;
+}
+
+.titan-menu-toolbar {
+  flex-wrap: nowrap;
+  gap: var(--titan-grid-gap-standard);
+  overflow-x: auto;
+}
+
+.titan-menu-toolbar__actions {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: var(--titan-btn-gap);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. List workspace — 리스트+상세 2단 고정 (스택 ❌)
+   ═══════════════════════════════════════════════════════════════ */
+.inbound-page__workspace,
+.titan-list-workspace,
+.titan-split-workspace {
+  grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  min-height: var(--titan-workspace-min-h);
+}
+
+.inbound-page__list {
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Popup/Panel 내부 단일 리스트 모드 */
+.titan-workspace-modal .inbound-page__workspace,
+.master-data-page--panel .inbound-page__workspace {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. Workspace Modal (Popup Standard V1.0) — Portal · 90vw×90vh · 내부 scroll
+   ═══════════════════════════════════════════════════════════════ */
+.titan-modal--workspace {
+  width: min(var(--titan-popup-width), var(--titan-popup-max-width));
+  height: min(var(--titan-popup-height), var(--titan-popup-max-height));
+  max-width: var(--titan-popup-max-width);
+  max-height: var(--titan-popup-max-height);
+}
+
+.titan-workspace-modal__table .master-data-split-page,
+.titan-workspace-modal__table-inner .master-data-split-page,
+.titan-workspace-modal__table .qms-document-modal-body,
+.titan-workspace-modal__table-inner .qms-document-modal-body {
+  min-height: var(--titan-popup-min-height);
+}
+
+.master-data-split-page {
+  min-width: var(--titan-popup-split-min-w);
+}
+
+.master-data-split-page__grid {
+  gap: var(--titan-grid-gap-standard);
+  align-items: stretch;
+  min-width: var(--titan-popup-split-min-w);
+}
+
+.master-data-split-page__nav,
+.master-data-split-page__content {
+  padding: var(--titan-panel-padding);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.master-data-split-page__scroll,
+.master-data-page--panel .inbound-page__list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Panel toolbar row — 1행 고정 · overflow scroll */
+.master-data-page--panel .master-data-split-page__nav-head,
+.titan-workspace-modal .master-data-split-page__nav-head {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--titan-grid-gap-standard);
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.master-data-page--panel .master-data-split-page__nav-actions,
+.titan-workspace-modal .master-data-split-page__nav-actions {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.master-data-page--panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Document modal — table region scroll */
+.qms-document-modal-body {
+  min-width: var(--titan-document-modal-min-w);
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.qms-document-modal-body .qms-document-status-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. App scroll policy — 레이아웃 유지 · viewport 작으면 scroll
+   ═══════════════════════════════════════════════════════════════ */
+.titan-section-page__body,
+.titan-main {
+  overflow-x: auto;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.titan-inbound-page,
+.inbound-page {
+  min-width: var(--titan-page-content-min-w);
+}
+
+/* Hub — 고정 2열 · 축소 ❌ */
+.titan-hub-page__cards,
+.titan-hub-page__workflow {
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  min-width: min(100%, 560px);
+}
+
+.titan-hub-page {
+  max-width: none;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. Typography — 공통 Component (Popup · Table · Search · Toolbar · Badge)
+   ═══════════════════════════════════════════════════════════════ */
+.primary-button,
+.secondary-button,
+.titan-btn {
+  font-size: var(--titan-font-sm);
+}
+
+.titan-table__cell,
+.titan-table__cell--head {
+  font-size: var(--titan-font-sm);
+}
+
+.titan-search-panel__field > span,
+.titan-search-panel label,
+.titan-advanced-search__field > span {
+  font-size: var(--titan-font-xs);
+}
+
+.titan-search-ac__input,
+.titan-search-panel__select,
+.titan-input {
+  font-size: var(--titan-font-sm);
+}
+
+.titan-modal__header h2,
+.titan-workspace-modal__header h2 {
+  font-size: var(--titan-font-xl);
+}
+
+.titan-modal__kicker,
+.titan-workspace-modal .titan-modal__kicker {
+  font-size: var(--titan-font-xs);
+}
+
+.titan-status-chip,
+.titan-document-status {
+  font-size: var(--titan-font-xs);
+}
+
+.titan-menu-toolbar__actions .primary-button,
+.titan-menu-toolbar__actions .secondary-button {
+  font-size: var(--titan-font-sm);
+}

@@ -1,0 +1,202 @@
+.titan-welcome {
+  min-height: 100vh;
+  min-width: var(--titan-app-min-width);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--titan-success) 8%, transparent), transparent 42%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--titan-primary) 8%, transparent), transparent 38%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--titan-warning) 6%, transparent), transparent 45%),
+    var(--titan-bg);
+}
+
+.titan-welcome__shell {
+  width: min(1120px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.titan-welcome__hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.titan-welcome__brand {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--titan-text-muted);
+}
+
+.titan-welcome__title {
+  margin: 0;
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--titan-text);
+}
+
+.titan-welcome__version {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--titan-text-muted);
+}
+
+.titan-welcome__section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.titan-welcome__section-title {
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--titan-text-muted);
+}
+
+.titan-welcome__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.titan-welcome__card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 320px;
+  padding: 24px 22px 22px;
+  border-radius: var(--titan-card-radius);
+  border: 1px solid var(--titan-card-border);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow);
+  transition:
+    border-color var(--titan-transition-fast),
+    box-shadow var(--titan-transition-fast),
+    transform var(--titan-transition-fast);
+}
+
+.titan-welcome__card::before {
+  content: "";
+  display: block;
+  height: 3px;
+  margin: -24px -22px 0;
+  border-radius: var(--titan-card-radius) var(--titan-card-radius) 0 0;
+  background: color-mix(in srgb, var(--mode-accent) 65%, var(--titan-border));
+}
+
+.titan-welcome__card:hover {
+  border-color: color-mix(in srgb, var(--mode-accent) 30%, var(--titan-border));
+  box-shadow: var(--titan-shadow), 0 12px 32px rgba(15, 23, 42, 0.06);
+  transform: translateY(-2px);
+}
+
+.titan-welcome__card--active {
+  border-color: color-mix(in srgb, var(--titan-success) 35%, var(--titan-border));
+  box-shadow: var(--titan-shadow), 0 0 0 1px color-mix(in srgb, var(--titan-success) 15%, transparent);
+}
+
+.titan-welcome__card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.titan-welcome__emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.titan-welcome__card-head h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--titan-text);
+}
+
+.titan-welcome__badge {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+  word-break: keep-all;
+}
+
+.titan-welcome__desc {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--titan-text-muted);
+  word-break: keep-all;
+}
+
+.titan-welcome__features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titan-welcome__features li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--titan-text);
+  word-break: keep-all;
+}
+
+.titan-welcome__features li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mode-accent);
+}
+
+.titan-welcome__card-action {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.titan-welcome__card-action .titan-btn {
+  width: 100%;
+}
+
+.titan-welcome__footer {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--titan-text-muted);
+}
+
+@media (max-width: 1100px) {
+  .titan-welcome__cards {
+    grid-template-columns: 1fr;
+  }
+
+  .titan-welcome__card {
+    min-height: 0;
+  }
+}

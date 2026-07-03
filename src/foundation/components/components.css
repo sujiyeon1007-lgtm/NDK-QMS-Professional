@@ -648,34 +648,7 @@ button.titan-status-chip {
   border-color: var(--titan-search-panel-border);
 }
 
-.titan-search-panel {
-  padding: 12px 14px !important;
-}
-
-.titan-search-panel__basic {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: nowrap;
-  gap: 12px;
-  min-height: auto;
-}
-
-.titan-search-panel__fields {
-  flex: 1 1 auto;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  min-width: 560px;
-}
-
-.titan-search-panel__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1 1 0;
-  min-width: 150px;
-  max-width: none;
-}
+/* Search Panel — titan-ui-standard.css V1.0 (flex nowrap + scroll) */
 
 .titan-search-panel__label {
   font-size: 11px;
@@ -696,7 +669,7 @@ button.titan-status-chip {
 .titan-search-panel__actions {
   display: flex;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
@@ -1065,6 +1038,7 @@ button.titan-status-chip {
 }
 
 /* ── TitanRegisterModal (공통 등록 모달) ── */
+html.titan-modal-open,
 body.titan-modal-open {
   overflow: hidden;
 }
@@ -1072,12 +1046,17 @@ body.titan-modal-open {
 .titan-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--titan-popup-z-index, 1200);
   background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.titan-modal-overlay--workspace {
+  z-index: var(--titan-popup-z-index, 1200);
 }
 
 .titan-modal {
@@ -1094,6 +1073,100 @@ body.titan-modal-open {
 
 .titan-modal--wide {
   width: min(960px, 78vw);
+}
+
+.titan-modal--workspace {
+  width: min(var(--titan-popup-width, 90vw), var(--titan-popup-max-width, 1800px));
+  height: min(var(--titan-popup-height, 90vh), var(--titan-popup-max-height, 95vh));
+  max-width: var(--titan-popup-max-width, 1800px);
+  max-height: var(--titan-popup-max-height, 95vh);
+}
+
+.titan-workspace-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.titan-workspace-modal__header {
+  flex-shrink: 0;
+}
+
+.titan-workspace-modal__toolbar,
+.titan-workspace-modal__search,
+.titan-workspace-modal__footer {
+  flex-shrink: 0;
+}
+
+.titan-workspace-modal__toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--titan-btn-gap);
+  padding: 0 var(--titan-panel-padding) 10px;
+  border-bottom: 1px solid var(--titan-border);
+  overflow-x: auto;
+}
+
+.titan-workspace-modal__search {
+  padding: 0 var(--titan-panel-padding);
+}
+
+.titan-workspace-modal__main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--titan-workspace-modal-padding);
+  gap: var(--titan-grid-gap-standard);
+}
+
+.titan-workspace-modal__main--with-detail {
+  flex-direction: row;
+}
+
+.titan-workspace-modal__table {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.titan-workspace-modal__table-inner {
+  flex: 1;
+  min-width: var(--titan-popup-min-width, 1400px);
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.titan-workspace-modal__detail {
+  flex: 0 0 var(--titan-side-max, 240px);
+  min-width: var(--titan-side-max, 240px);
+  max-width: var(--titan-side-max, 240px);
+  overflow: auto;
+  border-left: 1px solid var(--titan-border);
+  padding-left: var(--titan-panel-padding);
+}
+
+.titan-workspace-modal__footer {
+  padding: 10px var(--titan-panel-padding) 14px;
+  border-top: 1px solid var(--titan-border);
+}
+
+/* Legacy alias — body slot maps to table region */
+.titan-workspace-modal__body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--titan-workspace-modal-padding);
+  display: flex;
+  flex-direction: column;
 }
 
 .titan-modal__header {

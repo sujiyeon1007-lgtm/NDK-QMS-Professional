@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
+import TitanErrorBoundary from "../components/TitanErrorBoundary";
 import TitanEditionBootModal from "../components/TitanEditionBootModal";
 import { V1_0_SHOW_EDITION_BOOT_MODAL } from "../../config/titanV1DevelopmentDirection";
 import {
@@ -17,6 +18,16 @@ function resolveInitialEditionReady() {
     return true;
   }
   return isTitanEditionSelected();
+}
+
+function MainContent() {
+  const location = useLocation();
+
+  return (
+    <TitanErrorBoundary resetKey={location.pathname}>
+      <Outlet />
+    </TitanErrorBoundary>
+  );
 }
 
 export default function AppShell() {
@@ -34,7 +45,7 @@ export default function AppShell() {
       <div className="titan-app-body">
         <Sidebar />
         <main className="titan-main">
-          <Outlet />
+          <MainContent />
         </main>
       </div>
       <Footer />

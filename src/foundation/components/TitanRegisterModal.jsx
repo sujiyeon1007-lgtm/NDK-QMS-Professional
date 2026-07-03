@@ -25,8 +25,13 @@ export default function TitanRegisterModal({
   useEffect(() => {
     if (!open) return undefined;
 
-    const previousOverflow = document.body.style.overflow;
+    const root = document.documentElement;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = root.style.overflow;
+
+    root.classList.add("titan-modal-open");
     document.body.classList.add("titan-modal-open");
+    root.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
 
     const handleKey = (event) => {
@@ -36,8 +41,10 @@ export default function TitanRegisterModal({
 
     return () => {
       window.removeEventListener("keydown", handleKey);
+      root.classList.remove("titan-modal-open");
       document.body.classList.remove("titan-modal-open");
-      document.body.style.overflow = previousOverflow;
+      root.style.overflow = previousRootOverflow;
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, [open, onClose]);
 

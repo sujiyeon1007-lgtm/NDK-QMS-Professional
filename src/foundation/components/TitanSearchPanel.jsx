@@ -28,6 +28,7 @@ export default function TitanSearchPanel({
   records = [],
   extraSuggestions = {},
   showStatusField = false,
+  statusFieldLabel = "현재상태",
   className = "",
   enableEnterSearch = true,
 }) {
@@ -90,7 +91,7 @@ export default function TitanSearchPanel({
           />
           {showStatusField ? (
             <TitanSearchField
-              label="현재상태"
+              label={statusFieldLabel}
               fieldKey="status"
               value={draft.status ?? ""}
               onChange={(value) => update("status", value)}

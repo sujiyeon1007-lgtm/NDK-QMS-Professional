@@ -13,6 +13,7 @@
 @import "../../styles/titan-ui-quality.css";
 @import "../../styles/workflow-process-colors.css";
 @import "../../styles/titan-desktop-layout.css";
+@import "./titan-ui-standard.css";
 
 *,
 *::before,
@@ -34,6 +35,7 @@ html {
 
 body {
   font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
+  font-size: var(--titan-font-base);
   background: var(--titan-bg);
   color: var(--titan-text);
 }

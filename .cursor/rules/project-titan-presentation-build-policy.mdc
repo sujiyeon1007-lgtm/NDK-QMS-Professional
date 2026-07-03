@@ -1,0 +1,37 @@
+---
+description: NDK 1공장 Version 3 PQMS Presentation Build — HOME 직행 · V1/V2 Architecture Roadmap only
+alwaysApply: true
+---
+
+# Presentation Build Policy (NDK 1공장 · Version 3)
+
+**Lock:** 2026-07-03 · **Source:** `src/config/presentationBuildPolicy.js`
+
+## Terminology
+
+- **Version 3** = **NDK PQMS (Presentation Version)** — 현재 구현 대상
+- **Presentation Version** = Version 3의 공식 명칭 (NDK 1공장 생산·품질 통합 구축)
+- **Version 1·2** = Architecture Roadmap only (NOT implemented · NOT user-selectable)
+
+## 현재 구현 대상
+
+**Version 3 — NDK Production & Quality Management System (Presentation Version)** — SessionStorage · **실행 즉시 HOME**
+
+## Architecture Roadmap only (UI/기능 ❌)
+
+- Version 1 — MES 완전 연동 (long-term)
+- Version 2 — MES + TITAN 협업 (Hybrid · future-review)
+- Factory Mode (1공장 / 2공장 / 전체공장)
+- 운영 모드 선택 · Architecture Roadmap 버전 선택 · 공장 선택 Welcome 화면
+
+`OPERATION_MODE_WELCOME_ENABLED = false` · `/` → `/home`
+
+## 현재 메뉴 (Version 3 · 9)
+
+HOME · 입고현황 · 작업일보 · 품질관리 · **기준정보관리** · **문서관리** · 출고현황 · 이력조회 · 환경설정
+
+## 개발 목표
+
+사장님 시연용 NDK 1공장 PQMS (Presentation Version) — **Workflow·사용성 최우선**
+
+확장 기능 = 사장님 승인 · 운영 검토 후 단계적 구현

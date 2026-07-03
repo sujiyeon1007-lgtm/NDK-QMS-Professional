@@ -126,11 +126,18 @@ function mapMasterRows(categoryKey, rows) {
 
 
 
-export default function MasterDataManagement() {
+export default function MasterDataManagement({
+  forcedTabId = null,
+  companyFilter = null,
+  layoutMode = "full",
+  registerDefaults = null,
+  panelTitle = "",
+  inlineActions = false,
+}) {
 
   const { tab: tabParam } = useParams();
 
-  const tabId = resolveMasterDataTab(tabParam);
+  const tabId = resolveMasterDataTab(forcedTabId ?? tabParam);
 
   const screen = getMasterDataScreen(tabId);
 
@@ -184,6 +191,10 @@ export default function MasterDataManagement() {
 
     let rows = allRows;
 
+    if (companyFilter) {
+      rows = rows.filter((row) => row.company === companyFilter);
+    }
+
     const keyword = getMasterSearchKeyword(search);
 
     if (keyword) {
@@ -214,7 +225,7 @@ export default function MasterDataManagement() {
 
     return rows;
 
-  }, [allRows, search, screen?.categoryKey, isProductsTab]);
+  }, [allRows, search, screen?.categoryKey, isProductsTab, companyFilter]);
 
 
 
@@ -505,52 +516,78 @@ export default function MasterDataManagement() {
 
 
 
+  const isPanelLayout = layoutMode === "panel";
+
+  const actionButtons = (
+    <>
+      <PrimaryButton type="button" onClick={() => openRegister("add")}>
+        <Plus size={14} aria-hidden="true" />
+        등록
+      </PrimaryButton>
+      <SecondaryButton
+        type="button"
+        onClick={() => openRegister("edit", activeRow)}
+        disabled={!activeRow}
+      >
+        <Pencil size={14} aria-hidden="true" />
+        수정
+      </SecondaryButton>
+      <SecondaryButton
+        type="button"
+        onClick={() => setDeleteTarget(activeRow)}
+        disabled={!activeRow}
+      >
+        <Trash2 size={14} aria-hidden="true" />
+        삭제
+      </SecondaryButton>
+      {hasExcelActions ? (
+        <>
+          <SecondaryButton type="button" onClick={() => setImportOpen(true)}>
+            <FileSpreadsheet size={14} aria-hidden="true" />
+            Excel 가져오기
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={handleExportExcel} disabled={exportBusy}>
+            <Download size={14} aria-hidden="true" />
+            Excel 내보내기
+          </SecondaryButton>
+        </>
+      ) : null}
+    </>
+  );
+
   return (
 
-    <div className={`inbound-page master-data-page${isProductsTab ? " master-data-page--products" : ""}`}>
+    <div
+      className={`inbound-page master-data-page${isProductsTab ? " master-data-page--products" : ""}${
+        isPanelLayout ? " master-data-page--panel" : ""
+      }`}
+    >
 
-      <SectionPageActions>
-        <PrimaryButton type="button" onClick={() => openRegister("add")}>
-          <Plus size={14} aria-hidden="true" />
-          등록
-        </PrimaryButton>
-        <SecondaryButton
-          type="button"
-          onClick={() => openRegister("edit", activeRow)}
-          disabled={!activeRow}
-        >
-          <Pencil size={14} aria-hidden="true" />
-          수정
-        </SecondaryButton>
-        <SecondaryButton
-          type="button"
-          onClick={() => setDeleteTarget(activeRow)}
-          disabled={!activeRow}
-        >
-          <Trash2 size={14} aria-hidden="true" />
-          삭제
-        </SecondaryButton>
-        {hasExcelActions ? (
-          <>
-            <SecondaryButton type="button" onClick={() => setImportOpen(true)}>
-              <FileSpreadsheet size={14} aria-hidden="true" />
-              Excel 가져오기
-            </SecondaryButton>
-            <SecondaryButton type="button" onClick={handleExportExcel} disabled={exportBusy}>
-              <Download size={14} aria-hidden="true" />
-              Excel 내보내기
-            </SecondaryButton>
-          </>
-        ) : null}
-      </SectionPageActions>
+      {panelTitle ? (
+        <div className="master-data-split-page__nav-head">
+          <div>
+            <h2>{panelTitle}</h2>
+            <span>{screen?.kpiTitle ?? ""}</span>
+          </div>
+          {inlineActions ? (
+            <div className="master-data-split-page__nav-actions">{actionButtons}</div>
+          ) : null}
+        </div>
+      ) : null}
 
+      {!inlineActions ? <SectionPageActions>{actionButtons}</SectionPageActions> : null}
+
+      {!isPanelLayout ? (
       <TitanKpiBarSlot ariaLabel="현황판" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar items={metricChipItems} ariaLabel="현황판" />
       </TitanKpiBarSlot>
+      ) : null}
 
 
 
       <TitanSearchPanel
+
+        className={isPanelLayout ? "titan-search-panel--in-panel" : ""}
 
         draft={draft}
 
@@ -690,7 +727,7 @@ export default function MasterDataManagement() {
 
 
 
-        {activeRow ? (
+        {activeRow && !isPanelLayout ? (
 
           <TitanDetailPanel
 
@@ -757,6 +794,7 @@ export default function MasterDataManagement() {
         mode={registerMode}
 
         initialRow={registerMode === "edit" ? activeRow : null}
+        defaultValues={registerMode === "add" ? registerDefaults : null}
 
       />
 

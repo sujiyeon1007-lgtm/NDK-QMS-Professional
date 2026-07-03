@@ -1,0 +1,47 @@
+---
+description: Project TITAN PQMS Menu & Workflow STEP 0 · 1차 최종 승인
+alwaysApply: true
+---
+
+# QMS Menu & Workflow (STEP 0 · 1차 최종 승인)
+
+**Lock:** 2026-07-03 · **Source:** `src/config/qmsMenuWorkflow.js`
+
+## Vision
+
+**품질 업무를 시스템 안에서 모두 완료** — Windows 폴더 직접 접근 ❌
+
+## 메뉴 (9 · 기준정보 · 문서관리 독립)
+
+```text
+HOME → 입고현황 → 작업일보 → 품질관리 → 기준정보관리 → 문서관리 → 출고현황 → 이력조회 → 환경설정
+```
+
+| 메뉴 | 역할 요약 |
+|------|-----------|
+| HOME | Dashboard · 공지 · 오늘 할 일 · 진행 · 최근 작업 |
+| 입고현황 | MES 입고 후 품질 진행 (등록=MES) |
+| **작업일보** | **LOT 생성** · Traceability 기준 (생산관리 ❌) |
+| **품질관리** | 검사·성적서·불량·NCR 통합 (핵심) |
+| **기준정보관리** | 거래처·제품·설비·사용자·기타 Master (`/settings`) |
+| **문서관리** | 도면·검사기준서·FMEA·품질공지·NCR 문서 (`/documents`) |
+| 출고현황 | 출고 준비·명세서·잔량 (등록=MES) |
+| 이력조회 | LOT·발주번호 등 전체 Traceability |
+| 환경설정 | 시스템 · 사용자 · 권한 · About |
+
+## 품질관리 Workflow
+
+**합격:** 검사 → 합격 → 성적서 → 출고  
+**불합격:** 검사 → 불합격 → 불량이력 → NCR → 재처리 → 재검사 → 성적서
+
+## LOT Traceability
+
+작업일보(LOT 생성) → 품질관리 → 출고현황 → 이력조회
+
+## 개발 원칙
+
+**Workflow First** — UI 변경 ❌ (현재)
+
+## Legacy (사이드바 ❌)
+
+생산관리 · 검사관리 · 성적서관리 · 불량이력(독립) · 통계 · 부서별 업무

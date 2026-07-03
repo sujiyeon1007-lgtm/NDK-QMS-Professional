@@ -75,7 +75,7 @@ export const MANAGEMENT_NUMBER_POLICY = {
   demoAlias: "record.id === mesManagementNo",
 };
 
-/** ⭐ 문서관리 — TITAN 핵심 모듈 */
+/** ⭐ 문서관리 — TITAN 핵심 모듈 (REV.4: 품질 공지 통합) */
 export const DOCUMENT_MANAGEMENT_TREE = [
   "도면",
   "검사기준서",
@@ -83,11 +83,23 @@ export const DOCUMENT_MANAGEMENT_TREE = [
   "작업표준서",
   "FMEA",
   "고객 요구사항",
-  "특채 승인서",
   "NCR",
+  "특채 승인서",
   "품질 공지",
-  "기타 품질 문서",
+  "Check Sheet",
+  "시험성적서",
+  "기타 품질문서",
 ];
+
+/** REV.4 — 품질 공지 = Document Management 하위 · 일반 게시판 ❌ */
+export const QUALITY_NOTICE_POLICY = {
+  integratedInDocumentManagement: true,
+  standaloneMenu: false,
+  documentType: "quality_notice",
+  v1Features: ["등록", "조회"],
+  v2Features: ["읽음(ACK)"],
+  adminLocation: "Sidebar 문서관리 (/documents)",
+};
 
 export const DOCUMENT_MANAGEMENT_MODEL = [
   "품번",

@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   TITAN_PRINT_DOCUMENT_TYPES,
   getPrintDocumentMeta,
@@ -63,9 +64,9 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, o
     }
   }, [isInbound, notifyAfterPrint, printProps]);
 
-  if (!printProps) return null;
+  if (!open || !printProps) return null;
 
-  return (
+  return createPortal(
     <TitanPrintPreviewModal
       open={open}
       onClose={onClose}
@@ -81,7 +82,8 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, o
       ) : (
         <OutboundListPrint {...printProps} shipDate={printProps.workDate} />
       )}
-    </TitanPrintPreviewModal>
+    </TitanPrintPreviewModal>,
+    document.body
   );
 }
 

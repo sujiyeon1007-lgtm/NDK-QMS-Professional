@@ -1,9 +1,10 @@
-import { Outlet } from "react-router-dom";
-import { getSectionById } from "../../config/menuStructure";
+import { Outlet, useLocation } from "react-router-dom";
+import { getSectionByPathname } from "../../config/menuStructure";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 
 export default function ProductionLayout() {
-  const section = getSectionById("production");
+  const location = useLocation();
+  const section = getSectionByPathname(location.pathname);
   if (!section) return null;
 
   return (

@@ -224,6 +224,8 @@ export function normalizeInspectionReport(report) {
     partNo: report.partNo?.trim() || "—",
     drawingNo: report.drawingNo?.trim() || "—",
     lotNo: report.lotNo?.trim() || "—",
+    purchaseOrderNo: report.purchaseOrderNo?.trim() || "—",
+    customerLotNo: report.customerLotNo?.trim() || "—",
     managementId: report.managementId?.trim() || "—",
     material: report.material?.trim() || "—",
     process: report.process?.trim() || "—",

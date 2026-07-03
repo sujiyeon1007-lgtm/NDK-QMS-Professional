@@ -12,6 +12,8 @@ import {
   ManagerField,
   NoteField,
   ProcessField,
+  PurchaseOrderNoField,
+  CustomerLotNoField,
   StatusSelectField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -23,7 +25,8 @@ import { INBOUND_KPI_CONFIG } from "../../config/inboundDashboard";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import { createEmptyInboundSearch, matchesBasicSearch } from "../../config/listSearchStandard";
-import { buildStandardProductListColumns } from "../../config/standardProductList";
+import { buildInboundListColumns } from "../../config/standardProductList";
+import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
 import { getHeatTreatmentProcessTone } from "../../config/heatTreatmentProcessColors";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
@@ -33,6 +36,7 @@ import { addSessionProductionRecord, getSessionProductionRecords } from "../../u
 import {
   INBOUND_REGISTER_LABEL,
   INBOUND_PRINT_LIST_LABEL,
+  INBOUND_LIST_PRINT_TOOLBAR_LABEL,
 } from "../../config/registerModalStandard";
 import { parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
@@ -72,19 +76,9 @@ function resolveInboundListRecords(search) {
 
 function matchesInboundSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
-  if (search.managementId && !record.id.toLowerCase().includes(search.managementId.toLowerCase())) {
-    return false;
-  }
+  if (!matchesInboundDataSearch(search, record)) return false;
   if (search.incomingDateFrom && record.incomingDate < search.incomingDateFrom) return false;
   if (search.incomingDateTo && record.incomingDate > search.incomingDateTo) return false;
-  if (
-    search.lotNo &&
-    !String(record.lotNo ?? "")
-      .toLowerCase()
-      .includes(search.lotNo.toLowerCase())
-  ) {
-    return false;
-  }
   if (search.qty && !String(record.qty).includes(search.qty)) return false;
   if (search.process && getProductionProcessName(record) !== search.process) return false;
   const manager = record.registrar ?? "관리자";
@@ -111,8 +105,7 @@ export default function InboundManagement() {
     useTitanListSearch(createEmptyInboundSearch, { storageKey: "inbound" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [inOutPrintOpen, setInOutPrintOpen] = useState(false);
-  const [inOutPrintProps, setInOutPrintProps] = useState(null);
+  const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
   const chipRecords = useMemo(
     () => filterInboundManagementRecords(getSessionProductionRecords()),
     [refreshKey]
@@ -167,43 +160,45 @@ export default function InboundManagement() {
   const printTargetRows = useMemo(() => {
     if (selectedRows.length > 0) return selectedRows;
     if (activeRow) return [activeRow];
+    const incomingRows = rows.filter((row) => isIncomingRegistered(row.record ?? row));
+    if (incomingRows.length > 0) return incomingRows;
     return [];
-  }, [selectedRows, activeRow]);
+  }, [selectedRows, activeRow, rows]);
 
-  const htlPrintResolution = useMemo(
-    () => resolveHtlPrintRows(printTargetRows),
-    [printTargetRows]
-  );
-
+  const resolvedPrintRows = useMemo(() => {
+    const htl = resolveHtlPrintRows(printTargetRows);
+    if (htl.rows.length > 0) return htl;
+    const registered = printTargetRows.filter((row) => isIncomingRegistered(row.record ?? row));
+    if (registered.length > 0) return { rows: registered, mode: "presentation" };
+    return { rows: [], mode: "none" };
+  }, [printTargetRows]);
 
   const handleInOutPrinted = useCallback(
     (printProps) => {
-      if (!printProps?.listNo || htlPrintResolution.rows.length === 0) return;
-      const managementIds = htlPrintResolution.rows.map((row) => row.managementId ?? row.id);
+      if (!printProps?.listNo || !printProps?.rows?.length) return;
+      const managementIds = printProps.rows.map((row) => row.managementId ?? row.id);
       applyHtlWorkListPrinted(managementIds, printProps.listNo, {
         isReprint: printProps.printMode === "reprint",
       });
       setRefreshKey((key) => key + 1);
     },
-    [htlPrintResolution.rows]
+    []
   );
 
   const openInOutPrintPreview = () => {
-    if (htlPrintResolution.rows.length === 0) {
-      window.alert(
-        "출력 대상이 없습니다.\n입고완료 · 열처리 미진행 · 미출력(또는 재출력 가능) 상태만 출력됩니다."
-      );
+    if (resolvedPrintRows.rows.length === 0) {
+      window.alert("출력할 입고 등록 제품이 없습니다.");
       return;
     }
-    setInOutPrintProps(
-      buildInOutListPrintProps(htlPrintResolution.rows, {
+    setInOutPrintSession({
+      open: true,
+      props: buildInOutListPrintProps(resolvedPrintRows.rows, {
         listNoPrefix: "HTL",
         outputDate: getPrintOutputDate(),
         records: getSessionProductionRecords(),
-        printMode: htlPrintResolution.mode,
-      })
-    );
-    setInOutPrintOpen(true);
+        printMode: resolvedPrintRows.mode,
+      }),
+    });
   };
 
   const toggleRow = (id) => {
@@ -220,7 +215,7 @@ export default function InboundManagement() {
 
   const columns = useMemo(
     () =>
-      buildStandardProductListColumns({
+      buildInboundListColumns({
         renderStatus: (row) => (
           <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
         ),
@@ -259,6 +254,10 @@ export default function InboundManagement() {
       spec: record.spec || "",
       unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
       heatTreatment: record.heatTreatment || "",
+      lotNo: record.lotNo || "",
+      customerLotNo: record.customerLotNo || "",
+      purchaseOrderNo: record.purchaseOrderNo || "",
+      incomingDate: record.incomingDate || "",
       qty: record.qty != null ? String(record.qty) : "",
       unit: record.unit || "EA",
       dueDate: record.dueDate || "",
@@ -283,13 +282,16 @@ export default function InboundManagement() {
       unitPrice: form.unitPrice ? Number(String(form.unitPrice).replace(/,/g, "")) || null : null,
       qty: Number(parsed.qty) || 0,
       unit: parsed.unit,
-      incomingDate: today,
+      incomingDate: form.incomingDate || today,
+      incomingRegistered: true,
       dueDate: form.dueDate || today,
+      lotNo: form.lotNo?.trim() || "",
+      customerLotNo: form.customerLotNo?.trim() || "",
+      purchaseOrderNo: form.purchaseOrderNo?.trim() || "",
       heatTreatment: form.heatTreatment,
       note: form.note,
       urgent: form.urgent,
       htlNo: "",
-      lotNo: "",
       equipment: "",
       workDate: "",
       completionStatus: "",
@@ -314,9 +316,9 @@ export default function InboundManagement() {
           <Plus size={14} aria-hidden="true" />
           {INBOUND_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={htlPrintResolution.rows.length === 0}>
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={resolvedPrintRows.rows.length === 0}>
           <Printer size={14} aria-hidden="true" />
-          {INBOUND_PRINT_LIST_LABEL}
+          {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
         </SecondaryButton>
         <SecondaryButton type="button">
           <FileSpreadsheet size={14} aria-hidden="true" />
@@ -352,8 +354,10 @@ export default function InboundManagement() {
               draft={draft}
               onDraftChange={onDraftChange}
             />
+            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">수량</span>
@@ -384,8 +388,8 @@ export default function InboundManagement() {
                 <strong>{selectedQty} EA</strong>
               </span>
               <div>
-                <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={htlPrintResolution.rows.length === 0}>
-                  {INBOUND_PRINT_LIST_LABEL}
+                <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={resolvedPrintRows.rows.length === 0}>
+                  {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
                   선택 해제
@@ -427,12 +431,20 @@ export default function InboundManagement() {
             detailContent={
               <dl className="inbound-detail">
                 <div>
+                  <dt>발주번호</dt>
+                  <dd>{activeRow.purchaseOrderNo}</dd>
+                </div>
+                <div>
                   <dt>관리번호</dt>
                   <dd>{activeRow.managementId}</dd>
                 </div>
                 <div>
                   <dt>LOT.NO</dt>
                   <dd>{activeRow.lotNo}</dd>
+                </div>
+                <div>
+                  <dt>업체 LOT</dt>
+                  <dd>{activeRow.customerLotNo}</dd>
                 </div>
                 <div>
                   <dt>업체명</dt>
@@ -467,6 +479,10 @@ export default function InboundManagement() {
                   <dd>{activeRow.qty}</dd>
                 </div>
                 <div>
+                  <dt>입고일</dt>
+                  <dd>{activeRow.record.incomingDate || "—"}</dd>
+                </div>
+                <div>
                   <dt>납기</dt>
                   <dd>{activeRow.record.dueDate || "—"}</dd>
                 </div>
@@ -494,10 +510,10 @@ export default function InboundManagement() {
       ) : null}
 
       <InOutListPrintPreviewModal
-        open={inOutPrintOpen}
-        onClose={() => setInOutPrintOpen(false)}
+        open={inOutPrintSession.open}
+        onClose={() => setInOutPrintSession({ open: false, props: null })}
         documentType={TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST}
-        printProps={inOutPrintProps}
+        printProps={inOutPrintSession.props}
         onAfterPrint={handleInOutPrinted}
       />
     </div>

@@ -68,27 +68,17 @@ body,
 
 /* ── Search: desktop baseline field widths ── */
 .titan-search-panel__basic {
-  flex-wrap: nowrap;
-  align-items: flex-end;
+  /* baseline — titan-ui-standard.css Grid Layout 적용 */
+  align-items: end;
   min-height: auto;
 }
 
 .titan-search-panel__fields {
-  flex: 1 1 auto;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  min-width: 560px;
+  min-width: var(--titan-search-fields-min-w, 640px);
 }
 
 .titan-search-panel__field {
-  flex: 1 1 0;
-  min-width: 150px;
-  max-width: none;
-}
-
-.titan-search-panel__actions {
-  flex-shrink: 0;
+  min-width: var(--titan-search-field-w, 150px);
 }
 
 .titan-advanced-search__grid {

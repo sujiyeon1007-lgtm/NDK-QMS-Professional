@@ -5,6 +5,7 @@
  */
 
 import { getStockQty, syncShipmentStatus } from "./inventory";
+import { normalizeInboundDataFields } from "./inboundDataFields";
 
 export const PRODUCTION_RECORDS = [
   {
@@ -21,6 +22,8 @@ export const PRODUCTION_RECORDS = [
     shippedQty: 0,
     stockQty: 12,
     dueDate: "2026-07-10",
+    purchaseOrderNo: "PO-20260701-001",
+    customerLotNo: "SA-BG-001",
     heatTreatment: "이온질화",
     lotNo: "",
     equipment: "",
@@ -51,6 +54,8 @@ export const PRODUCTION_RECORDS = [
     shippedQty: 0,
     stockQty: 24,
     dueDate: "2026-07-12",
+    purchaseOrderNo: "PO-20260701-002",
+    customerLotNo: "SA-BG-002",
     heatTreatment: "이온질화",
     lotNo: "260701-3S1A",
     lotCreatedAt: "2026-07-01T08:30:00.000Z",
@@ -83,6 +88,8 @@ export const PRODUCTION_RECORDS = [
     shippedQty: 8,
     stockQty: 0,
     dueDate: "2026-07-05",
+    purchaseOrderNo: "PO-20260628-003",
+    customerLotNo: "SA-PG-001",
     heatTreatment: "이온질화",
     lotNo: "260629-3S2A",
     lotCreatedAt: "2026-06-28T09:00:00.000Z",
@@ -159,10 +166,10 @@ export function groupRecordsByLot(records) {
 }
 
 /** UI 세션 공유 (향후 SQLite 단일 소스로 대체) */
-let sessionRecords = PRODUCTION_RECORDS.map((record) => ({ ...record }));
+let sessionRecords = PRODUCTION_RECORDS.map((record) => normalizeInboundDataFields({ ...record }));
 
 export function getSessionProductionRecords() {
-  return sessionRecords;
+  return sessionRecords.map((record) => normalizeInboundDataFields(record));
 }
 
 export function getSessionLotGroups() {
@@ -172,7 +179,7 @@ export function getSessionLotGroups() {
 export function updateSessionProductionRecord(id, patch) {
   sessionRecords = sessionRecords.map((record) => {
     if (record.id !== id) return record;
-    const merged = { ...record, ...patch };
+    const merged = normalizeInboundDataFields({ ...record, ...patch });
     const synced = syncShipmentStatus(merged);
     return { ...merged, ...synced, stockQty: getStockQty(merged) };
   });
@@ -190,12 +197,13 @@ export function updateSessionProductionRecordsByLot(lotKey, patch) {
 }
 
 export function addSessionProductionRecord(record) {
-  const synced = syncShipmentStatus(record);
+  const normalized = normalizeInboundDataFields(record);
+  const synced = syncShipmentStatus(normalized);
   const newRecord = {
-    ...record,
+    ...normalized,
     ...synced,
-    stockQty: getStockQty(record),
-    shippedQty: record.shippedQty ?? 0,
+    stockQty: getStockQty(normalized),
+    shippedQty: normalized.shippedQty ?? 0,
     incomingRegistered: true,
   };
   sessionRecords = [newRecord, ...sessionRecords];

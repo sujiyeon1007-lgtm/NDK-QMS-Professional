@@ -296,6 +296,7 @@ export function HomeNoticePanel({ refreshKey }) {
       className={`home-panel home-panel--notice${expanded ? " is-expanded" : ""}`.trim()}
     >
       <TitanNoticePanel
+        title="품질 공지"
         notices={notices}
         previewLimit={HOME_NOTICES_PREVIEW_LIMIT}
         headClassName="home-panel__head"

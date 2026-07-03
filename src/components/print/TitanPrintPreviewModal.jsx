@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -239,7 +240,7 @@ function TitanPrintPreviewModal({
   const pageSize = getPageSizePx(orientation);
   const marginClass = `titan-print-modal-margin-${margin}`;
 
-  return (
+  return createPortal(
     <div className="titan-print-modal-overlay" role="presentation" onClick={onClose}>
       <div
         className="titan-print-modal"
@@ -476,7 +477,8 @@ function TitanPrintPreviewModal({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

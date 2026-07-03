@@ -9,6 +9,10 @@ import TitanSearchPanel, {
   TitanAdvancedSearchField,
   useSearchSuggestionHelpers,
 } from "../../foundation/components/TitanSearchPanel";
+import {
+  CustomerLotNoField,
+  PurchaseOrderNoField,
+} from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
@@ -172,6 +176,7 @@ export default function InspectionLogManagement() {
         records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
+            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <TitanAdvancedSearchField
               label="관리번호"
               fieldKey="managementId"
@@ -188,6 +193,7 @@ export default function InspectionLogManagement() {
               suggestions={getSuggestions("lotNo", draft.lotNo)}
               placeholder="LOT.NO"
             />
+            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">공정</span>
               <select
@@ -288,8 +294,16 @@ export default function InspectionLogManagement() {
                   <dd>{activeRow.managementId}</dd>
                 </div>
                 <div>
+                  <dt>발주번호</dt>
+                  <dd>{activeRow.purchaseOrderNo}</dd>
+                </div>
+                <div>
                   <dt>LOT.NO</dt>
                   <dd>{activeRow.lotNo}</dd>
+                </div>
+                <div>
+                  <dt>업체 LOT</dt>
+                  <dd>{activeRow.customerLotNo}</dd>
                 </div>
                 <div>
                   <dt>업체명</dt>

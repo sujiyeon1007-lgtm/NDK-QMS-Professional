@@ -3,15 +3,22 @@
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
+import { matchesInboundDataSearch } from "./inboundDataFields";
+import { getSessionProductionRecords } from "./productionRecords";
 import { getCertificateFileStatus } from "./certificateSession";
 import { formatQtyWithUnit } from "./productUnits";
 
 export function mapCertificateEntryToListRow(entry) {
   const status = getCertificateFileStatus(entry);
+  const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
+  const purchaseOrderNo = entry.purchaseOrderNo || record?.purchaseOrderNo || "";
+  const customerLotNo = entry.customerLotNo || record?.customerLotNo || "";
   return {
     id: entry.id,
     managementId: entry.managementId || "—",
-    lotNo: entry.lotNo?.trim() || "—",
+    lotNo: entry.lotNo?.trim() || record?.lotNo?.trim() || "—",
+    purchaseOrderNo: purchaseOrderNo || "—",
+    customerLotNo: customerLotNo || "—",
     company: entry.company || "—",
     partName: entry.partName || "—",
     partNo: entry.partNo || "—",
@@ -30,24 +37,16 @@ export function mapCertificateEntryToListRow(entry) {
 
 export function matchesCertificateSearch(row, search) {
   const entry = row.entry;
-  if (!matchesBasicSearch(search, entry)) return false;
-
-  if (
-    search.managementId &&
-    !String(entry.managementId ?? "")
-      .toLowerCase()
-      .includes(search.managementId.toLowerCase())
-  ) {
-    return false;
-  }
-  if (
-    search.lotNo &&
-    !String(entry.lotNo ?? "")
-      .toLowerCase()
-      .includes(search.lotNo.toLowerCase())
-  ) {
-    return false;
-  }
+  const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
+  const merged = {
+    ...entry,
+    purchaseOrderNo: entry.purchaseOrderNo || record?.purchaseOrderNo,
+    customerLotNo: entry.customerLotNo || record?.customerLotNo,
+    lotNo: entry.lotNo || record?.lotNo,
+    managementId: entry.managementId || record?.id,
+  };
+  if (!matchesBasicSearch(search, merged)) return false;
+  if (!matchesInboundDataSearch(search, merged)) return false;
   if (search.process && row.processName !== search.process) return false;
   if (search.registeredDateFrom && row.registeredDate < search.registeredDateFrom) return false;
   if (search.registeredDateTo && row.registeredDate > search.registeredDateTo) return false;

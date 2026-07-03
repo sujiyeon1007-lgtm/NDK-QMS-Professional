@@ -1,0 +1,264 @@
+.qms-document-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-height: 0;
+  overflow-x: visible;
+}
+
+.qms-document-page__list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.qms-document-page__table {
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.qms-document-hub__summary {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.qms-document-hub__modal-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text-primary, #0f172a);
+  flex-shrink: 0;
+}
+
+.qms-document-modal-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.qms-document-page__company-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.qms-document-page__company-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.qms-document-page__company-field span {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.qms-document-page__company-field select {
+  min-height: 34px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--titan-surface, #fff);
+}
+
+.qms-document-page__workflow-note {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.qms-document-page__split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+
+.qms-document-page__panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.qms-document-page__panel-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.qms-document-page__panel-head span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.qms-document-page__products,
+.qms-document-page__status {
+  min-width: 0;
+}
+
+.qms-document-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.qms-document-card {
+  padding: 12px 14px;
+}
+
+.qms-document-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.qms-document-card__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.qms-document-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.qms-document-card__field {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.qms-document-card__field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.qms-document-card__label {
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.qms-document-card__value {
+  color: var(--titan-text-primary, #0f172a);
+  word-break: keep-all;
+}
+
+.qms-document-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qms-document-card__actions .primary-button,
+.qms-document-card__actions .secondary-button {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 공식 Document Status 색상 — 프로젝트 전체 통일 */
+.titan-document-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.titan-document-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 8px;
+}
+
+.titan-document-status--current {
+  background: #ecfdf5;
+  color: #047857;
+}
+.titan-document-status--current .titan-document-status__dot {
+  background: #22c55e;
+}
+
+.titan-document-status--revision-required {
+  background: #fffbeb;
+  color: #b45309;
+}
+.titan-document-status--revision-required .titan-document-status__dot {
+  background: #f59e0b;
+}
+
+.titan-document-status--pending-approval {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.titan-document-status--pending-approval .titan-document-status__dot {
+  background: #3b82f6;
+}
+
+.titan-document-status--unregistered {
+  background: #f8fafc;
+  color: #475569;
+}
+.titan-document-status--unregistered .titan-document-status__dot {
+  background: #64748b;
+}
+
+.titan-document-status--obsolete {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.titan-document-status--obsolete .titan-document-status__dot {
+  background: #ef4444;
+}
+
+.qms-document-detail__empty {
+  margin: 24px 0 0;
+  padding: 24px 16px;
+  border: 1px dashed var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}

@@ -229,6 +229,12 @@ export default function InspectionReportDocument({
               </td>
             </tr>
             <tr>
+              <th>발주번호</th>
+              <td>{report.purchaseOrderNo || "—"}</td>
+              <th>업체 LOT</th>
+              <td colSpan={3}>{report.customerLotNo || "—"}</td>
+            </tr>
+            <tr>
               <th>재질</th>
               <td>
                 <BasicCell

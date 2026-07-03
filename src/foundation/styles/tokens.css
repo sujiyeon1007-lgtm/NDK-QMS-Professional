@@ -96,9 +96,9 @@
   --titan-status-chip-radius-pill: 999px;
   --titan-status-chip-radius: 8px;
   --titan-status-chip-gap: 6px;
-  --titan-status-chip-label-size: 11px;
-  --titan-status-chip-count-size: 16px;
-  --titan-status-chip-count-unit-size: 11px;
+  --titan-status-chip-label-size: 12px;
+  --titan-status-chip-count-size: 17px;
+  --titan-status-chip-count-unit-size: 12px;
   --titan-status-chip-count-color: #1f2937;
   --titan-status-chip-icon-size: 16px;
   --titan-status-chip-border: #d8e2f1;
@@ -114,4 +114,43 @@
   /* Collapsible Search Panel */
   --titan-collapsible-search-min-h: 40px;
   --titan-collapsible-search-body-py: 0 20px 12px;
+
+  /* Typography — ERP/MES 가독성 (V1.0 +1 step) */
+  --titan-font-base: 14px;
+  --titan-font-sm: 13px;
+  --titan-font-xs: 12px;
+  --titan-font-lg: 15px;
+  --titan-font-xl: 16px;
+  --titan-font-2xl: 18px;
+
+  /* UI Standard (Project TITAN PQMS — 공통 Component) */
+  --titan-control-h: 36px;
+  --titan-btn-min-h: 38px;
+  --titan-btn-gap: 6px;
+  --titan-btn-padding-x: 14px;
+  --titan-search-panel-padding: 12px 14px;
+  --titan-search-fields-gap: 10px;
+  --titan-search-row-gap: 10px;
+  --titan-search-col-gap: 12px;
+  --titan-search-field-min-w: 130px;
+  --titan-panel-padding: 12px;
+  /* Popup Standard V1.0 — workspace / app dialog */
+  --titan-popup-width: 90vw;
+  --titan-popup-height: 90vh;
+  --titan-popup-max-width: 1800px;
+  --titan-popup-max-height: 95vh;
+  --titan-popup-min-width: 1400px;
+  --titan-popup-min-height: 800px;
+  --titan-popup-z-index: 1200;
+  --titan-workspace-modal-width: var(--titan-popup-width);
+  --titan-workspace-modal-height: var(--titan-popup-height);
+  --titan-workspace-modal-padding: 12px 16px 16px;
+  --titan-workspace-min-h: 420px;
+  --titan-page-content-min-w: 1120px;
+  --titan-popup-split-min-w: 920px;
+  --titan-document-modal-min-w: 720px;
+  --titan-search-fields-min-w: 640px;
+  --titan-search-field-w: 150px;
+  --titan-grid-gap-standard: 12px;
+  --titan-table-row-min-h: 42px;
 }

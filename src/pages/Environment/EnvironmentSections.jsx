@@ -45,6 +45,7 @@ import {
   getSelectableEditions,
 } from "../../config/titanEditionArchitecture";
 import { PLATFORM_ARCHITECTURE_VERSION, TITAN_PLATFORM_VISION, PLATFORM_LAYERS } from "../../config/titanPlatformArchitecture";
+import { DEVELOPMENT_STRATEGY, CURRENT_DEVELOPMENT_VERSION } from "../../config/titanV1DevelopmentDirection";
 import { getRepositoryBackendLabel } from "../../repositories";
 import { isTitanAdminUser, getTitanUserRole, isDemoAdminModeActive } from "../../utils/titanAdminAccess";
 import {
@@ -908,6 +909,24 @@ export function ArchitectureSection() {
       <p className="environment-form-note">
         MES 연동 검증은 <strong>관리자 → MES PoC</strong> 탭에서 수행합니다.
       </p>
+      <h4 className="environment-subtitle">Architecture Roadmap (Version 1 · 2 · 3)</h4>
+      <p className="environment-form-note">
+        Version 1 / 2 / 3은 프로그램 선택 기능이 아닌 향후 발전 방향입니다. 현재 구현은{" "}
+        <strong>Version 3 — NDK PQMS (Presentation Version)</strong> 기준입니다.
+      </p>
+      <dl className="environment-info-list environment-info-list--architecture">
+        {Object.values(DEVELOPMENT_STRATEGY).map((item) => (
+          <div key={item.id}>
+            <dt>
+              {item.label}
+              {item.id === CURRENT_DEVELOPMENT_VERSION ? " ★ 현재" : ""}
+            </dt>
+            <dd>
+              {item.title} — {item.note}
+            </dd>
+          </div>
+        ))}
+      </dl>
     </AdminOnlySection>
   );
 }
@@ -1021,6 +1040,10 @@ export function AboutSection({ refreshKey, onRefresh }) {
         <div>
           <dt>Stack</dt>
           <dd>React · Electron · SQLite</dd>
+        </div>
+        <div>
+          <dt>Architecture Roadmap</dt>
+          <dd>Version 3 — NDK PQMS (Presentation Version · 현재 구현) · Version 1/2 — 향후 Roadmap</dd>
         </div>
       </dl>
 

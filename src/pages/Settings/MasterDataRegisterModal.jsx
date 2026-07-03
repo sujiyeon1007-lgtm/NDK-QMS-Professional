@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
-import { getActiveMasterNames, validateMasterRow } from "../../utils/masterData";
+import { buildCompanyAbbreviation } from "../../utils/companyAbbreviation";
+import { getActiveMasterNames, getMasterDataByCategory, validateMasterRow } from "../../utils/masterData";
 
 const DEFAULT_FORM = { code: "", name: "", note: "", active: true };
 
-function buildInitialForm(screen, initialRow) {
+function buildInitialForm(screen, initialRow, defaultValues = null) {
   if (!initialRow) {
     const form = { ...DEFAULT_FORM };
     screen.formFields.forEach((field) => {
@@ -12,6 +13,13 @@ function buildInitialForm(screen, initialRow) {
       else if (field.type === "select") form[field.key] = field.selectOptions?.[0]?.value ?? "";
       else form[field.key] = "";
     });
+    form.abbreviationManual = false;
+    form.abbreviationLocked = false;
+    if (defaultValues && typeof defaultValues === "object") {
+      Object.entries(defaultValues).forEach(([key, value]) => {
+        if (value != null && value !== "") form[key] = value;
+      });
+    }
     return form;
   }
 
@@ -25,16 +33,19 @@ function buildInitialForm(screen, initialRow) {
       form[field.key] = initialRow[field.key] ?? "";
     }
   });
+  form.abbreviationManual = Boolean(initialRow.abbreviationManual);
+  form.abbreviationLocked = Boolean(initialRow.abbreviationLocked);
   return form;
 }
 
-function MasterFieldInput({ field, value, onChange, options = [] }) {
+function MasterFieldInput({ field, value, onChange, options = [], readOnly = false, helperText = "" }) {
   if (field.type === "textarea") {
     return (
       <textarea
         rows={2}
         placeholder={field.placeholder}
         value={value}
+        readOnly={readOnly}
         onChange={(event) => onChange(event.target.value)}
       />
     );
@@ -71,13 +82,25 @@ function MasterFieldInput({ field, value, onChange, options = [] }) {
     );
   }
 
+  if (field.type === "readonly" || readOnly) {
+    return (
+      <>
+        <input type="text" className="master-form-readonly" value={value} readOnly aria-readonly="true" />
+        {helperText ? <small className="master-form-helper">{helperText}</small> : null}
+      </>
+    );
+  }
+
   return (
-    <input
-      type="text"
-      placeholder={field.placeholder}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    />
+    <>
+      <input
+        type="text"
+        placeholder={field.placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {helperText ? <small className="master-form-helper">{helperText}</small> : null}
+    </>
   );
 }
 
@@ -88,16 +111,39 @@ export default function MasterDataRegisterModal({
   screen,
   mode = "add",
   initialRow = null,
+  defaultValues = null,
 }) {
-  const [form, setForm] = useState(() => buildInitialForm(screen, initialRow));
+  const [form, setForm] = useState(() => buildInitialForm(screen, initialRow, defaultValues));
   const [error, setError] = useState("");
+
+  const isCompanyScreen = screen?.categoryKey === "companies";
 
   useEffect(() => {
     if (open) {
-      setForm(buildInitialForm(screen, initialRow));
+      setForm(buildInitialForm(screen, initialRow, defaultValues));
       setError("");
     }
-  }, [open, screen, initialRow]);
+  }, [open, screen, initialRow, defaultValues]);
+
+  const companyPeers = useMemo(() => {
+    if (!isCompanyScreen) return [];
+    return getMasterDataByCategory("companies").filter((row) => row.id !== initialRow?.id);
+  }, [open, isCompanyScreen, initialRow?.id]);
+
+  const autoAbbreviation = useMemo(() => {
+    if (!isCompanyScreen || !form.name?.trim()) return "";
+    return buildCompanyAbbreviation(form.name, companyPeers);
+  }, [isCompanyScreen, form.name, companyPeers]);
+
+  useEffect(() => {
+    if (!open || !isCompanyScreen) return;
+    if (form.abbreviationManual || form.abbreviationLocked) return;
+    if (!autoAbbreviation) return;
+    setForm((prev) => {
+      if (prev.abbreviation === autoAbbreviation && prev.code === autoAbbreviation) return prev;
+      return { ...prev, abbreviation: autoAbbreviation, code: autoAbbreviation };
+    });
+  }, [open, isCompanyScreen, autoAbbreviation, form.abbreviationManual, form.abbreviationLocked]);
 
   const optionMap = useMemo(
     () => ({
@@ -110,14 +156,28 @@ export default function MasterDataRegisterModal({
   );
 
   const updateField = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (isCompanyScreen && key === "abbreviation") {
+        next.abbreviationManual = true;
+        next.abbreviationLocked = mode === "edit";
+        next.code = String(value ?? "").trim().toUpperCase() || prev.code;
+      }
+      return next;
+    });
     setError("");
   };
 
   const handleSubmit = () => {
+    const payload = { ...form };
+    if (isCompanyScreen && !payload.abbreviationManual && !payload.abbreviationLocked) {
+      payload.abbreviation = autoAbbreviation || payload.abbreviation;
+      payload.code = payload.code || payload.abbreviation;
+    }
+
     const validation = validateMasterRow(
       screen.categoryKey,
-      form,
+      payload,
       mode === "edit" ? "edit" : "add",
       initialRow?.id
     );
@@ -125,7 +185,30 @@ export default function MasterDataRegisterModal({
       setError(validation.message);
       return;
     }
-    onSave(form);
+    onSave(payload);
+  };
+
+  const getAbbreviationFieldProps = (field) => {
+    if (field.type !== "abbreviation") return { readOnly: false, helperText: "" };
+
+    if (mode === "add") {
+      return {
+        readOnly: true,
+        helperText: "업체명 기준 자동 생성 · 사용자 직접 입력 불가",
+      };
+    }
+
+    if (form.abbreviationLocked) {
+      return {
+        readOnly: true,
+        helperText: "관리자 수정 완료 · 약칭 고정",
+      };
+    }
+
+    return {
+      readOnly: false,
+      helperText: "충돌·부적합 시 관리자 1회 수정 가능 · 저장 후 고정",
+    };
   };
 
   if (!open || !screen) return null;
@@ -145,23 +228,29 @@ export default function MasterDataRegisterModal({
         </p>
       ) : null}
       <div className="master-register-modal__grid">
-        {screen.formFields.map((field) => (
-          <label
-            key={field.key}
-            className={`master-register-modal__field${field.span === 2 ? " span-2" : ""}`}
-          >
-            <span>
-              {field.label}
-              {field.required ? " *" : ""}
-            </span>
-            <MasterFieldInput
-              field={field}
-              value={form[field.key] ?? ""}
-              onChange={(value) => updateField(field.key, value)}
-              options={field.optionsKey ? optionMap[field.optionsKey] ?? [] : []}
-            />
-          </label>
-        ))}
+        {screen.formFields.map((field) => {
+          const abbrevProps = getAbbreviationFieldProps(field);
+          const fieldType = field.type === "abbreviation" ? "text" : field.type;
+          return (
+            <label
+              key={field.key}
+              className={`master-register-modal__field${field.span === 2 ? " span-2" : ""}`}
+            >
+              <span>
+                {field.label}
+                {field.required ? " *" : ""}
+              </span>
+              <MasterFieldInput
+                field={{ ...field, type: fieldType }}
+                value={form[field.key] ?? ""}
+                onChange={(value) => updateField(field.key, value)}
+                options={field.optionsKey ? optionMap[field.optionsKey] ?? [] : []}
+                readOnly={abbrevProps.readOnly}
+                helperText={abbrevProps.helperText}
+              />
+            </label>
+          );
+        })}
       </div>
     </TitanRegisterModal>
   );

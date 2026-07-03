@@ -6,8 +6,12 @@ import { SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import {
+  CustomerLotNoField,
   EquipmentField,
+  LotNoField,
+  ManagementIdField,
   ProcessField,
+  PurchaseOrderNoField,
   WorkerField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -282,6 +286,10 @@ export default function StatisticsScreen() {
 
     return (
       <div className="titan-advanced-search__grid">
+        <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+        <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+        <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+        <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
         <label className="titan-advanced-search__field">
           <span className="titan-advanced-search__label">단위</span>
           <select

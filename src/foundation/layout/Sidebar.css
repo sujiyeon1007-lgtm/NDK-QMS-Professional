@@ -50,13 +50,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 10px;
   margin-top: 1px;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
-  font-size: 12px;
+  font-size: var(--titan-font-sm);
   font-weight: 600;
 }
 

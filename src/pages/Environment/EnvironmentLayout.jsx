@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getSectionById } from "../../config/menuStructure";
+import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
 import { getEnvironmentTabGroups, isEnvironmentAdminTab } from "../../config/environmentSettings";
 import { SectionPageActionsProvider } from "../../foundation/layout/SectionPageActionsContext";
 import { useSectionPageActionsContext } from "../../foundation/layout/SectionPageActionsContext";
@@ -29,16 +29,16 @@ function EnvironmentMenuToolbar() {
 
 export default function EnvironmentLayout() {
   const location = useLocation();
-  const section = getSectionById("environment");
+  const section = getSectionByPathname(location.pathname) ?? getSectionById("environment");
   if (!section) return null;
 
   if (location.pathname === "/environment" || location.pathname === "/environment/") {
-    return <Navigate to="/environment/company" replace />;
+    return <Navigate to="/environment/program" replace />;
   }
 
   const tabParam = location.pathname.split("/").pop();
   if (isEnvironmentAdminTab(tabParam) && !isTitanAdminUser()) {
-    return <Navigate to="/environment/company" replace />;
+    return <Navigate to="/environment/program" replace />;
   }
 
   return (

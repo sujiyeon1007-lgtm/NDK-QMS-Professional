@@ -21,6 +21,8 @@ export const TITAN_COLUMN_WIDTHS = {
   dueDate: { label: "납기", widthPercent: 9 },
   shipDate: { label: "작업일", widthPercent: 9 },
   lotNo: { label: "LOT.NO", widthPercent: 9 },
+  customerLotNo: { label: "업체 LOT", widthPercent: 10 },
+  purchaseOrderNo: { label: "발주번호", widthPercent: 11 },
   process: { label: "공정", widthPercent: 11 },
   currentProcess: { label: "현재공정", widthPercent: 12 },
   workQty: { label: "수량", widthPercent: 7 },

@@ -30,6 +30,32 @@ export function LotNoField({ draft, onDraftChange, getSuggestions }) {
   );
 }
 
+export function CustomerLotNoField({ draft, onDraftChange, getSuggestions }) {
+  return (
+    <TitanAdvancedSearchField
+      label="업체 LOT"
+      fieldKey="customerLotNo"
+      value={draft.customerLotNo ?? ""}
+      onChange={(value) => onDraftChange({ ...draft, customerLotNo: value })}
+      suggestions={getSuggestions("customerLotNo", draft.customerLotNo)}
+      placeholder="업체 LOT"
+    />
+  );
+}
+
+export function PurchaseOrderNoField({ draft, onDraftChange, getSuggestions }) {
+  return (
+    <TitanAdvancedSearchField
+      label="발주번호"
+      fieldKey="purchaseOrderNo"
+      value={draft.purchaseOrderNo ?? ""}
+      onChange={(value) => onDraftChange({ ...draft, purchaseOrderNo: value })}
+      suggestions={getSuggestions("purchaseOrderNo", draft.purchaseOrderNo)}
+      placeholder="발주번호"
+    />
+  );
+}
+
 export function DrawingNoField({ draft, onDraftChange, getSuggestions }) {
   return (
     <TitanAdvancedSearchField

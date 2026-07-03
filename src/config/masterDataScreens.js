@@ -9,11 +9,14 @@ import {
   ClipboardCheck,
   Tags,
 } from "lucide-react";
+import { MASTER_DATA_TAB_GROUPS } from "./menuFreezeV1";
 
-/** @typedef {"text" | "textarea" | "select" | "toggle"} MasterFieldType */
+export { MASTER_DATA_TAB_GROUPS };
+
+/** @typedef {"text" | "textarea" | "select" | "toggle" | "readonly" | "abbreviation"} MasterFieldType */
 
 /**
- * Project TITAN V1.0 — 기준정보관리 8탭 화면 설정
+ * Project TITAN V1.0 — 기준정보관리 6탭 화면 설정 (Master 데이터 전용)
  * @type {Record<string, {
  *   tabId: string,
  *   categoryKey: string,
@@ -30,40 +33,54 @@ export const MASTER_DATA_SCREENS = {
   companies: {
     tabId: "companies",
     categoryKey: "companies",
-    title: "업체관리",
-    registerLabel: "업체\n등록",
-    kpiTitle: "업체 현황",
+    title: "거래처 Master",
+    registerLabel: "거래처\n등록",
+    kpiTitle: "거래처 현황",
     icon: Building2,
     columns: [
-      { key: "code", label: "업체코드", widthPercent: 10 },
       { key: "name", label: "업체명", widthPercent: 16 },
+      { key: "code", label: "거래처코드", widthPercent: 10 },
+      { key: "abbreviation", label: "거래처 약칭", widthPercent: 10 },
       { key: "manager", label: "담당자", widthPercent: 10 },
       { key: "phone", label: "연락처", widthPercent: 10 },
-      { key: "mobile", label: "휴대전화", widthPercent: 10 },
       { key: "email", label: "이메일", widthPercent: 14 },
       { key: "activeLabel", label: "사용", widthPercent: 8, render: "active" },
     ],
     detailFields: [
-      { key: "code", label: "업체코드" },
       { key: "name", label: "업체명" },
-      { key: "bizNo", label: "사업자등록번호" },
+      { key: "code", label: "거래처코드" },
+      { key: "abbreviation", label: "거래처 약칭" },
+      { key: "abbreviationLockedLabel", label: "약칭 고정" },
       { key: "manager", label: "담당자" },
       { key: "phone", label: "연락처" },
-      { key: "mobile", label: "휴대전화" },
       { key: "email", label: "이메일" },
       { key: "address", label: "주소" },
+      { key: "bizNo", label: "사업자등록번호" },
+      { key: "defaultRequirements", label: "기본 요구사항" },
+      { key: "inspectionStandard", label: "검사 기준" },
+      { key: "certificateForm", label: "성적서 양식" },
+      { key: "statementForm", label: "거래명세서 양식" },
       { key: "note", label: "비고" },
       { key: "activeLabel", label: "사용 여부", render: "active" },
     ],
     formFields: [
-      { key: "code", label: "업체코드", required: true, placeholder: "예: WS" },
-      { key: "name", label: "업체명", required: true, placeholder: "예: 우성기계" },
-      { key: "bizNo", label: "사업자등록번호", placeholder: "000-00-00000" },
+      { key: "name", label: "업체명", required: true, placeholder: "예: 서암열처리" },
+      {
+        key: "abbreviation",
+        label: "거래처 약칭",
+        type: "abbreviation",
+        placeholder: "업체명 기준 자동 생성",
+      },
+      { key: "code", label: "거래처코드", type: "readonly", placeholder: "약칭과 동일 자동 적용" },
       { key: "manager", label: "담당자", placeholder: "담당자명" },
       { key: "phone", label: "연락처", placeholder: "031-000-0000" },
-      { key: "mobile", label: "휴대전화", placeholder: "010-0000-0000" },
       { key: "email", label: "이메일", placeholder: "email@example.com" },
       { key: "address", label: "주소", span: 2, placeholder: "주소" },
+      { key: "bizNo", label: "사업자등록번호", placeholder: "000-00-00000" },
+      { key: "defaultRequirements", label: "기본 요구사항", type: "textarea", span: 2, placeholder: "향후 연동" },
+      { key: "inspectionStandard", label: "검사 기준", placeholder: "향후 연동" },
+      { key: "certificateForm", label: "성적서 양식", placeholder: "향후 연동" },
+      { key: "statementForm", label: "거래명세서 양식", placeholder: "향후 연동" },
       { key: "note", label: "비고", type: "textarea", span: 2 },
       { key: "active", label: "사용 여부", type: "toggle" },
     ],
@@ -346,9 +363,6 @@ export const MASTER_DATA_TAB_ORDER = [
   "processes",
   "equipment",
   "workers",
-  "employees",
-  "inspection",
-  "customCodes",
 ];
 
 export function getMasterDataScreen(tabId) {
@@ -358,6 +372,10 @@ export function getMasterDataScreen(tabId) {
 export function resolveMasterDataTab(tabParam) {
   if (tabParam === "items") return "products";
   if (tabParam === "prices") return "products";
+  if (tabParam === "company") return "companies";
+  if (tabParam === "employees" || tabParam === "customCodes" || tabParam === "inspection") {
+    return "companies";
+  }
   if (tabParam && MASTER_DATA_SCREENS[tabParam]) return tabParam;
   return "companies";
 }

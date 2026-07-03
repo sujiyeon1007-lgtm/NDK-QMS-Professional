@@ -1,0 +1,32 @@
+# Project TITAN — 거래처 Master · 거래처 약칭
+
+## Source of truth
+
+- `src/config/companyMasterArchitecture.js` — 필드 · 정책
+- `src/utils/companyAbbreviation.js` — 자동 생성 엔진
+- `src/utils/masterData.js` — 저장 · 마이그레이션 · 관리번호 연동
+
+## 거래처 Master 필드
+
+업체명 · 거래처코드 · **거래처 약칭 (자동)** · 담당자 · 연락처 · 이메일 · 주소 · 사업자등록번호 · 기본 요구사항 · 검사 기준 · 성적서 양식 · 거래명세서 양식 · 사용 여부 · 비고
+
+## 거래처 약칭 정책
+
+- **사용자 직접 입력 ❌** — 업체명 분석 후 자동 생성
+- **관리자 1회 수정** — 충돌·부적합 시 `abbreviationManual` + `abbreviationLocked` 저장 후 고정
+- **공통 식별 코드** — 관리번호 · LOT · 출력 · QR · 검색 · 통계
+
+## 예시
+
+| 업체명 | 약칭 |
+|--------|------|
+| 서암열처리 | SE |
+| 두산에너빌리티 | DS |
+| GE | GE |
+| 현대로템 | HR |
+
+## Do Not
+
+- 등록 화면에서 약칭 필수 수동 입력
+- 약칭 생성 로직을 페이지별로 중복 구현
+- `getCompanyCodeMap()` / `generateProductManagementCode()` 우회하여 임의 2자리 코드 사용

@@ -7,6 +7,11 @@
   min-height: 520px;
 }
 
+.master-data-page--panel.master-data-page--products .inbound-page__workspace {
+  grid-template-columns: 1fr;
+  min-height: 0;
+}
+
 .product-detail-panel .titan-collapse__body {
   max-height: calc(100vh - 280px);
   overflow: auto;
@@ -103,6 +108,21 @@
   font-size: 13px;
   font-weight: 800;
   color: #334155;
+}
+
+.master-form-readonly {
+  background: #f8fafc;
+  color: #475569;
+  cursor: not-allowed;
+}
+
+.master-form-helper {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 .master-register-modal__error {

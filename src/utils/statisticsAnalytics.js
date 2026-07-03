@@ -3,6 +3,7 @@
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
+import { matchesInboundDataSearch } from "./inboundDataFields";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getSessionProductionRecords } from "./productionRecords";
 import { getInspectionLogs } from "./inspectionLogSession";
@@ -107,6 +108,30 @@ function isInSearchDateRange(dateValue, search) {
   return true;
 }
 
+function mergeInboundSearchRecord(item, productionRecords) {
+  const linked = productionRecords.find((record) => record.id === item.managementId);
+  if (!linked) return item;
+  return {
+    ...item,
+    id: item.id ?? linked.id,
+    managementId: item.managementId ?? linked.id,
+    company: item.company || linked.company,
+    partName: item.partName || linked.partName,
+    partNo: item.partNo || linked.partNo,
+    material: item.material || linked.material,
+    purchaseOrderNo: item.purchaseOrderNo || linked.purchaseOrderNo,
+    customerLotNo: item.customerLotNo || linked.customerLotNo,
+    lotNo: item.lotNo || linked.lotNo,
+  };
+}
+
+function passesInboundRecordSearch(search, record, productionRecords = []) {
+  const merged = record.managementId ? mergeInboundSearchRecord(record, productionRecords) : record;
+  if (!matchesBasicSearch(search, merged)) return false;
+  if (!matchesInboundDataSearch(search, merged)) return false;
+  return true;
+}
+
 function matchesStatisticsSearch(row, search) {
   const record = {
     company: row.company,
@@ -157,6 +182,7 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
   };
 
   productionRecords.forEach((record) => {
+    if (!passesInboundRecordSearch(search, record, productionRecords)) return;
     const date = getRecordWorkDate(record) || record.incomingDate;
     if (!isInPeriod(date, period, referenceDate) || !isInSearchDateRange(date, search)) return;
 
@@ -175,6 +201,7 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
   });
 
   shipments.forEach((event) => {
+    if (!passesInboundRecordSearch(search, event, productionRecords)) return;
     if (!isInPeriod(event.shippedAt, period, referenceDate) || !isInSearchDateRange(event.shippedAt, search)) {
       return;
     }
@@ -188,6 +215,7 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
   });
 
   inspections.forEach((log) => {
+    if (!passesInboundRecordSearch(search, log, productionRecords)) return;
     if (!isInPeriod(log.inspectionDate, period, referenceDate) || !isInSearchDateRange(log.inspectionDate, search)) {
       return;
     }
@@ -204,6 +232,7 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
   });
 
   defects.forEach((defect) => {
+    if (!passesInboundRecordSearch(search, defect, productionRecords)) return;
     if (!isInPeriod(defect.occurredDate, period, referenceDate) || !isInSearchDateRange(defect.occurredDate, search)) {
       return;
     }
@@ -218,6 +247,7 @@ function aggregateCompanyMetrics(period, referenceDate, unitFilter = "", search 
   });
 
   statements.forEach((item) => {
+    if (!passesInboundRecordSearch(search, item, productionRecords)) return;
     if (!isInPeriod(item.printedAt, period, referenceDate) || !isInSearchDateRange(item.printedAt, search)) {
       return;
     }
@@ -1007,6 +1037,10 @@ export function createEmptyStatisticsSearch() {
     partName: "",
     partNo: "",
     material: "",
+    purchaseOrderNo: "",
+    customerLotNo: "",
+    managementId: "",
+    lotNo: "",
     unit: "",
     periodFrom: "",
     periodTo: "",

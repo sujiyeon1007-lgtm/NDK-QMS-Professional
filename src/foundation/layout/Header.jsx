@@ -37,7 +37,7 @@ export default function Header() {
 
   return (
     <header className="titan-header">
-      <h1 className="titan-header__title">NDK QMS Professional</h1>
+      <h1 className="titan-header__title">NDK PQMS Professional</h1>
       <span className="titan-header__note">Project TITAN V1.0</span>
       <div className="titan-header__spacer" />
       {isDemoAdminModeActive() ? (

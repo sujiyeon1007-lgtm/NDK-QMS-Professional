@@ -25,6 +25,8 @@ export { default as TitanSearchPanel } from "./TitanSearchPanel";
 export { default as TitanAdvancedSearch } from "./TitanAdvancedSearch";
 export { default as TitanDetailPanel } from "./TitanDetailPanel";
 export { default as TitanRegisterModal } from "./TitanRegisterModal";
+export { default as TitanWorkspaceModal } from "./TitanWorkspaceModal";
+export { default as TitanAppDialog } from "./TitanWorkspaceModal";
 export { default as TitanMultilineText } from "./TitanMultilineText";
 export { default as TitanRegisterSummaryText } from "./TitanRegisterSummaryText";
 export { default as CollapsePanel } from "./CollapsePanel";

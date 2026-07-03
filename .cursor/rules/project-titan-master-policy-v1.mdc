@@ -32,19 +32,26 @@ Simultaneous and all required for **done**:
 ## 2. Development Flow
 
 ```text
-Local Host (vite --host) → develop → test → Build
-→ Git Commit → Git Push → Beta → meeting → feedback → fix
+Localhost (npm run dev) → develop → test → PM 승인
+→ Git Commit → Git Push (beta-demo) → Vercel Beta Release
+→ meeting → feedback → fix
 ```
+
+**배포 정책:** `.cursor/rules/project-titan-deployment-policy.mdc` · `src/config/titanDeploymentPolicy.js`
+
+- **개발:** localhost only
+- **Vercel:** 안정 Beta Release only · Sprint 완료 + Push 후
+- **미승인 개발 중 기능:** Vercel 배포 ❌
 
 ---
 
 ## 3. Environments
 
-| Env | Use |
-|-----|-----|
-| **Local Host** | Development |
-| **Beta** (`ndk-qms-beta.vercel.app`) | Meeting · demo · review |
-| **Release** | Electron EXE + SQLite — production |
+| Env | Use | Vercel |
+|-----|-----|--------|
+| **Local Host** | Development · 미승인 기능 | ❌ |
+| **Beta** (`ndk-qms-beta.vercel.app`) | Meeting · demo · review · **Sprint 완료 버전** | ✅ |
+| **Release** | Electron EXE + SQLite — production | ❌ |
 
 ---
 

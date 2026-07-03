@@ -1,0 +1,53 @@
+---
+description: Project TITAN PQMS — UI Layout Standard V1.0 (최종 확정)
+alwaysApply: true
+---
+
+# UI Layout Standard V1.0
+
+Project TITAN(PQMS)은 **ERP/MES 업무 시스템**입니다. 일반 반응형 웹처럼 레이아웃을 줄이지 않습니다.
+
+**Source of truth (code):**
+- `src/config/titanUiStandard.js`
+- `src/foundation/styles/titan-ui-standard.css`
+- `src/foundation/styles/tokens.css`
+
+## 핵심 원칙
+
+1. **레이아웃 고정** — 모든 해상도·Zoom(80~150%)에서 동일 UI
+2. **축소 금지** — 버튼 · 검색 · Table · Popup · 상세패널 크기 자동 줄임 ❌
+3. **스크롤 처리** — 좁아지면 `overflow: auto` (가로·세로)
+4. **공통 수정** — 페이지별 CSS ❌ → `titan-ui-standard.css` 먼저
+
+## Popup Standard V1.0 (기준정보 · 문서관리 · Workspace)
+
+**Component:** `TitanWorkspaceModal` (`TitanAppDialog` alias) — Portal → `document.body`
+
+| Token | Value |
+|---|---|
+| Width / Height | 90vw × 90vh |
+| Max | 1800px × 95vh |
+| Min layout | 1400px × 800px (축소 ❌ — popup 내부 scroll) |
+
+**Layout slots:** Header · Toolbar · Search · Table (flex:1) · Footer · Detail
+
+**Rules:**
+- Page body scroll lock when open (`html` + `body`)
+- Overlay fixed · backdrop · high z-index
+- Header/Toolbar/Search/Footer fixed; table region `flex:1 min-height:0 overflow:auto`
+- Split min-width 920px — 좁으면 popup table region 가로 스크롤
+- 등록 Submit 모달(`TitanRegisterModal`)은 별도 compact shell — workspace popup ❌
+
+## Search Panel
+
+- **1행 고정** · 필드 **150px** · nowrap
+- 영역 부족 → `.titan-search-panel` **가로 스크롤** (줄바꿈 ❌)
+
+## List + Detail
+
+- `inbound-page__workspace`: list + side panel **2단 고정** (스택 ❌)
+- App min-width **1600px** — viewport 작으면 페이지 가로 스크롤
+
+## 완료 기준
+
+`TITAN_UI_QA_CHECKLIST` in `titanUiStandard.js` — Overlap · Cut · Layout break · Scroll error = 0

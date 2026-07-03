@@ -1,0 +1,43 @@
+.master-data-tab-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.master-data-menu-toolbar {
+  align-items: center;
+}
+
+.master-data-tab-groups__primary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.master-data-tab-groups__primary-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.master-data-tab-groups__primary-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.master-data-tab-groups__primary-link--active {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}

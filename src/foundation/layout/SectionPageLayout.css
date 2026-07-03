@@ -16,14 +16,14 @@
 
 .titan-section-page__title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--titan-font-xl);
   white-space: nowrap;
 }
 
 .titan-section-page__desc {
   margin: 4px 0 0;
   padding-left: calc(var(--titan-title-accent-gap) + var(--titan-title-accent-width));
-  font-size: 12px;
+  font-size: var(--titan-font-sm);
   color: var(--titan-text-muted);
 }
 

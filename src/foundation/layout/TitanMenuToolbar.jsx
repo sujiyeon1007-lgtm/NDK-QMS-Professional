@@ -13,9 +13,11 @@ export default function TitanMenuToolbar({ tabs }) {
     return null;
   }
 
+  const visibleTabs = tabs?.length > 1 ? tabs : null;
+
   return (
     <div className="titan-menu-toolbar" role="region" aria-label="메뉴 작업영역">
-      <SectionTabs tabs={tabs} className="titan-menu-toolbar__tabs" />
+      {visibleTabs ? <SectionTabs tabs={visibleTabs} className="titan-menu-toolbar__tabs" /> : null}
       {actions ? (
         <div className="titan-menu-toolbar__actions" role="toolbar" aria-label="화면 기능">
           {actions}

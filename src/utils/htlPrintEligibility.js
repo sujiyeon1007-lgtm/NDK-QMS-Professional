@@ -66,5 +66,8 @@ export function resolveHtlPrintRows(rowOrRows) {
   if (firstPrint.length > 0) return { rows: firstPrint, mode: "first" };
   const reprint = rows.filter((row) => isHtlReprintTarget(row.record ?? row));
   if (reprint.length > 0) return { rows: reprint, mode: "reprint" };
+  const presentation = rows.filter((row) => isIncomingRegistered(row.record ?? row));
+  if (presentation.length > 0) return { rows: presentation, mode: "presentation" };
+  if (rows.length > 0) return { rows, mode: "presentation" };
   return { rows: [], mode: "none" };
 }

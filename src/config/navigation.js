@@ -11,6 +11,10 @@ export {
   matchSidebarActive,
   getActiveTab,
   LEGACY_ROUTE_REDIRECTS,
+  getBreadcrumbByPathname,
+  getMenuCatalogItem,
+  getPageMetaByMenuId,
+  TITAN_MENU_CATALOG,
 } from "./menuStructure";
 
 /** @deprecated Use matchSidebarActive from menuStructure */

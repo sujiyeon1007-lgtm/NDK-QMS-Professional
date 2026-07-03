@@ -25,7 +25,7 @@ export const HOME_STATUS_GROUPS = [
     id: "inout",
     title: "입출고 현황",
     titleIcon: Truck,
-    footerLabel: "입출고관리 바로가기",
+    footerLabel: "입고현황 바로가기",
     footerTo: "/inout/incoming",
     cards: [
       {
@@ -58,7 +58,7 @@ export const HOME_STATUS_GROUPS = [
     id: "production",
     title: "생산 현황",
     titleIcon: Factory,
-    footerLabel: "생산관리 바로가기",
+    footerLabel: "작업일보 바로가기",
     footerTo: "/production/daily-report",
     cards: [
       {
@@ -82,7 +82,7 @@ export const HOME_STATUS_GROUPS = [
         label: "생산 완료",
         subLabel: "생산 완료 건",
         icon: CircleCheck,
-        to: "/production/results",
+        to: "/production/daily-report",
         tone: "purple",
       },
     ],
@@ -187,7 +187,8 @@ export const HOME_WORKFLOW_FULL_VIEW_PATH = "/inout/incoming";
 /** Status Chip KPI — @deprecated statusChipConfigs.js WORKFLOW_CHIP_STATUS_FILTER */
 export { WORKFLOW_CHIP_STATUS_FILTER } from "./statusChipConfigs";
 export const HOME_NOTICES_PREVIEW_LIMIT = 3;
-export const HOME_NOTICES_FULL_VIEW_PATH = "/notices";
+/** 품질 공지 — Document Management */
+export const HOME_NOTICES_FULL_VIEW_PATH = "/documents";
 
 /** HOME 업무일정 — 미리보기 건수 */
 export const HOME_WORK_SCHEDULE_PREVIEW_LIMIT = 5;
@@ -234,7 +235,7 @@ export const HOME_PRODUCTION_PERIODS = [
 
 export const HOME_QUICK_MENUS = [
   { id: "incoming", label: "입고등록", to: "/inout/incoming" },
-  { id: "daily", label: "생산일보", to: "/production/daily-report" },
+  { id: "daily", label: "작업일보", to: "/production/daily-report" },
   { id: "inspection", label: "검사등록", to: "/quality/inspection/register" },
   { id: "certificate", label: "성적서관리", to: "/quality/certificate" },
   { id: "shipment", label: "출고등록", to: "/inout/shipment" },

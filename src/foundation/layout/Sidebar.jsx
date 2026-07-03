@@ -9,7 +9,7 @@ export default function Sidebar() {
   return (
     <aside className="titan-sidebar">
       <div className="titan-sidebar__brand">
-        <strong>NDK QMS</strong>
+        <strong>NDK PQMS</strong>
         <span>Project TITAN V1.0</span>
         <span className="titan-sidebar__edition">{getTitanEditionDisplayLabel()}</span>
       </div>

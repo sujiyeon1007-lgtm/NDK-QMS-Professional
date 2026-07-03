@@ -27,6 +27,8 @@ export const EMPTY_BASIC_SEARCH = {
 export function createEmptyInboundSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    purchaseOrderNo: "",
+    customerLotNo: "",
     incomingDateFrom: "",
     incomingDateTo: "",
     managementId: "",
@@ -42,6 +44,8 @@ export function createEmptyInboundSearch() {
 export function createEmptyOutboundSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    purchaseOrderNo: "",
+    customerLotNo: "",
     shipDateFrom: "",
     shipDateTo: "",
     managementId: "",
@@ -110,6 +114,8 @@ export function createEmptyDefectHistorySearch() {
 export function createEmptyInspectionLogSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    purchaseOrderNo: "",
+    customerLotNo: "",
     managementId: "",
     lotNo: "",
     process: "",
@@ -150,6 +156,8 @@ export function createEmptyInspectionLogRegister() {
 export function createEmptyCertificateSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    purchaseOrderNo: "",
+    customerLotNo: "",
     managementId: "",
     lotNo: "",
     process: "",
@@ -179,6 +187,8 @@ export function createEmptyCertificateRegister() {
 export function createEmptyHomeSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    purchaseOrderNo: "",
+    customerLotNo: "",
     drawingNo: "",
     managementId: "",
     lotNo: "",
@@ -204,6 +214,27 @@ export function createEmptyDepartmentWorkSearch() {
   };
 }
 
+/** Document Management — 제품 문서현황 리스트 검색 */
+export function createEmptyDocumentManagementSearch() {
+  return {
+    ...EMPTY_BASIC_SEARCH,
+    status: "",
+  };
+}
+
+/** Document Management — 품질 공지 검색 */
+export function createEmptyQualityNoticeSearch() {
+  return {
+    title: "",
+    author: "",
+    status: "",
+    createdDateFrom: "",
+    createdDateTo: "",
+    effectiveDateFrom: "",
+    effectiveDateTo: "",
+  };
+}
+
 export function matchesExtendedSearch(search, record) {
   if (!matchesBasicSearch(search, record)) return false;
 
@@ -216,6 +247,8 @@ export function matchesExtendedSearch(search, record) {
   if (!includes(record.drawingNo, search.drawingNo)) return false;
   if (!includes(record.managementId ?? record.id, search.managementId)) return false;
   if (!includes(record.lotNo, search.lotNo)) return false;
+  if (!includes(record.purchaseOrderNo, search.purchaseOrderNo)) return false;
+  if (!includes(record.customerLotNo, search.customerLotNo)) return false;
   if (
     search.process &&
     !includes(record.process ?? record.heatTreatment ?? record.processName, search.process)

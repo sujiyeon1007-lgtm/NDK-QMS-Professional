@@ -4,10 +4,12 @@ import { PrimaryButton, SecondaryButton } from "../../foundation/components/Butt
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import {
   AssigneeField,
+  CustomerLotNoField,
   DateRangeField,
   LotNoField,
   ManagementIdField,
   ProcessField,
+  PurchaseOrderNoField,
   StatusSelectField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import StatusChip from "../../foundation/components/StatusChip";
@@ -229,8 +231,10 @@ export default function CertificateManagement() {
         records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
+            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <DateRangeField
               label="등록일"
@@ -289,8 +293,16 @@ export default function CertificateManagement() {
                   <dd>{activeRow.managementId}</dd>
                 </div>
                 <div>
+                  <dt>발주번호</dt>
+                  <dd>{activeRow.purchaseOrderNo}</dd>
+                </div>
+                <div>
                   <dt>LOT.NO</dt>
                   <dd>{activeRow.lotNo}</dd>
+                </div>
+                <div>
+                  <dt>업체 LOT</dt>
+                  <dd>{activeRow.customerLotNo}</dd>
                 </div>
                 <div>
                   <dt>업체명</dt>

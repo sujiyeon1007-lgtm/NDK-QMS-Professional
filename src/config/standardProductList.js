@@ -1,5 +1,24 @@
 import { titanColumn } from "./tableColumnPresets";
 
+/** 입고관리 — 발주번호 · 업체 LOT 포함 */
+export function buildInboundListColumns({ renderStatus, renderProcess }) {
+  return [
+    titanColumn("managementId"),
+    titanColumn("purchaseOrderNo"),
+    titanColumn("lotNo"),
+    titanColumn("customerLotNo"),
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("qty"),
+    titanColumn("process", { key: "processName", render: renderProcess }),
+    titanColumn("incomingDate", { key: "registeredDate", label: "입고일" }),
+    titanColumn("dueDate"),
+    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+  ];
+}
+
 /**
  * Project TITAN V1.0 — 제품 리스트 공통 컬럼 (생산일보 기준)
  * @param {{ renderStatus: Function, renderProcess: Function }} renderers
@@ -24,7 +43,9 @@ export function buildStandardProductListColumns({ renderStatus, renderProcess })
 export function buildOutboundListColumns({ renderStatus, renderProcess, renderStatementStatus }) {
   return [
     titanColumn("managementId"),
+    titanColumn("purchaseOrderNo"),
     titanColumn("lotNo"),
+    titanColumn("customerLotNo"),
     titanColumn("company"),
     titanColumn("partName"),
     titanColumn("partNo"),
@@ -78,7 +99,9 @@ export function buildDefectHistoryListColumns({ renderProcess, renderHandlingSta
 export function buildInspectionLogListColumns({ renderStatus, renderProcess }) {
   return [
     titanColumn("managementId"),
+    titanColumn("purchaseOrderNo"),
     titanColumn("lotNo"),
+    titanColumn("customerLotNo"),
     titanColumn("company"),
     titanColumn("partName"),
     titanColumn("partNo"),
@@ -197,7 +220,9 @@ export function buildDepartmentWorkListColumns({ renderStatus, renderPriority })
 export function buildCertificateListColumns({ renderStatus, renderProcess, renderExcel, renderPdf }) {
   return [
     titanColumn("managementId"),
+    titanColumn("purchaseOrderNo"),
     titanColumn("lotNo"),
+    titanColumn("customerLotNo"),
     titanColumn("company"),
     titanColumn("partName"),
     titanColumn("partNo"),

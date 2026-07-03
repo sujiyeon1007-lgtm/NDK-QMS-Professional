@@ -1,10 +1,7 @@
 /**
- * Project TITAN V1.0 — 공지사항 Panel (Foundation)
- *
- * HOME · 향후 공지 영역 공통
- * - 최근 N건 미리보기
- * - "+ 더보기" → 카드 아래 Accordion 확장 (페이지 이동 없음)
- * - "접기"로 축소
+ * Project TITAN — Notice Panel (Foundation)
+ * @deprecated REV.4 — HOME 레거시 미리보기 · 품질 공지는 Document Management (`quality_notice`)
+ * - 최근 N건 미리보기 · Accordion 확장
  */
 
 import { useMemo, useState } from "react";

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Project TITAN Professional V1.0 — Development Standard (PM Final)
 
-**Purpose:** **MES 연동 기반 QMS** for NDK heat-treatment quality. Prioritize **design and consistency** over speed.
+**Purpose:** **NDK PQMS (Production & Quality Management System)** — MES 연동 기반 생산·품질 실무. Prioritize **design and consistency** over speed.
 
 **Architecture (FINAL):** `.cursor/rules/project-titan-mes-architecture-final.mdc` · `src/config/mesArchitecturePolicy.js`
 
@@ -29,6 +29,14 @@ Every screen follows this sequence. **No coding before design is complete.**
 ```
 
 **Completion criteria:** Sidebar → Router → Layout → Tab → click test → Console/Terminal Error = 0. **Build success alone is not completion.**
+
+### 설계 승인 = UI 반영
+
+Config·Rule만 변경하고 실제 Sidebar · Route · Page(UI)에 반영하지 않으면 **미완료**입니다.
+
+**Code:** `DESIGN_APPROVAL_UI_SYNC_PRINCIPLE` · `COMPLETION_CHECKLIST` in `developmentStandard.js`
+
+체크: Rule → Config → Workflow → Sidebar → Route → Page(UI) → browser verify → `npm run build`
 
 See also: `.cursor/rules/project-titan-progress-v1.mdc` for menu status and next priorities.
 
@@ -132,6 +140,12 @@ See `WORKFLOW_STEPS` in `src/config/menuStructure.js`.
 - UI layout intact · responsive behavior · data binding · button actions · search · CRUD · workflow links
 - **Console Error = 0 · Terminal Error = 0**
 - Actual click test in browser — not build-only verification
+
+## 12.1 Menu Addition Checklist
+
+**Menu Freeze V1.0 (2026-07-03) — 메뉴 구조 변경 금지.** See `src/config/menuFreezeV1.js` and `.cursor/rules/project-titan-menu-freeze-v1.mdc`.
+
+이후 개발 순서: **Workflow → 기능 → UI → 구현 → 테스트**
 
 ## 13. Cursor Rules (Strict)
 

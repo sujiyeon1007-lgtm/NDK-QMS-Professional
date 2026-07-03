@@ -1,0 +1,42 @@
+.titan-future-vision {
+  position: relative;
+  margin: 0 0 20px;
+  padding: 28px 24px 24px;
+  border: 1px solid color-mix(in srgb, var(--titan-primary) 25%, var(--titan-border));
+  border-radius: var(--titan-radius);
+  background: color-mix(in srgb, var(--titan-primary) 4%, var(--titan-surface));
+}
+
+.titan-future-vision__badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 6px 14px;
+  border-radius: var(--titan-status-chip-radius-pill);
+  border: 1px solid color-mix(in srgb, var(--titan-primary) 30%, var(--titan-border));
+  background: var(--titan-surface);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--titan-primary);
+}
+
+.titan-future-vision__list {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.titan-future-vision__list li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--titan-text);
+  word-break: keep-all;
+}
+
+.titan-future-vision__list li::marker {
+  color: var(--titan-primary);
+}

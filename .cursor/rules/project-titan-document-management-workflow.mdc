@@ -1,0 +1,30 @@
+# Project TITAN — 문서관리 Workflow (최종 확정)
+
+**Source of truth:** `src/config/documentManagementWorkflow.js` · `src/config/documentStatusPolicy.js`
+
+## Workflow
+
+```text
+거래처 선택 → 제품 리스트 → 제품 선택 → 문서현황
+```
+
+## 공식 Document Status (5종 · 프로젝트 전체 통일)
+
+| Status | 색 |
+|--------|-----|
+| 🟢 최신 | green |
+| 🟡 개정 필요 | amber |
+| 🔵 승인 대기 | blue |
+| ⚫ 미등록 | gray |
+| 🔴 폐기 | red |
+
+자동 전환: Revision 변경 → 개정 필요 → 등록 → 승인 대기 → 승인 → 최신 → 폐기
+
+## 문서현황 필드
+
+문서명 · 등록 여부 · Status · Revision · 승인자 · 등록일 · 최종 수정일 · 보기 · 등록 · 다운로드 · 비고
+
+## Do Not
+
+- 문서종류별 Tab/Sidebar 분리 UI
+- Status 색상/명칭 화면별 임의 변경

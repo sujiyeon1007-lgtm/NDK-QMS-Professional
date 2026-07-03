@@ -12,6 +12,8 @@ import {
   ManagerField,
   NoteField,
   ProcessField,
+  PurchaseOrderNoField,
+  CustomerLotNoField,
   StatusSelectField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -49,6 +51,7 @@ import {
 } from "../../utils/outboundManagementStatus";
 import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
+import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import {
   OUTBOUND_REGISTER_LABEL,
   OUTBOUND_LIST_LABEL,
@@ -121,19 +124,9 @@ function resolveOutboundListRecords(search) {
 
 function matchesOutboundSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
-  if (search.managementId && !record.id.toLowerCase().includes(search.managementId.toLowerCase())) {
-    return false;
-  }
+  if (!matchesInboundDataSearch(search, record)) return false;
   if (search.qty && !String(row.stockQtyLabel ?? row.qty).includes(search.qty)) return false;
   if (search.process && getProductionProcessName(record) !== search.process) return false;
-  if (
-    search.lotNo &&
-    !String(record.lotNo ?? "")
-      .toLowerCase()
-      .includes(search.lotNo.toLowerCase())
-  ) {
-    return false;
-  }
   if (search.manager && !row.manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
   if (search.__chipProductShipWait && row.statusLabel !== OUTBOUND_STATUS_LABELS.SHIP_WAIT) {
@@ -436,6 +429,10 @@ export default function OutboundManagement() {
         records={searchRecords}
         advancedContent={
           <div className="titan-advanced-search__grid">
+            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <DateRangeField
               label="출고일"
               fromKey="shipDateFrom"
@@ -443,8 +440,6 @@ export default function OutboundManagement() {
               draft={draft}
               onDraftChange={onDraftChange}
             />
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">수량</span>
@@ -521,8 +516,16 @@ export default function OutboundManagement() {
                   <dd>{activeRow.managementId}</dd>
                 </div>
                 <div>
+                  <dt>발주번호</dt>
+                  <dd>{activeRow.purchaseOrderNo}</dd>
+                </div>
+                <div>
                   <dt>LOT.NO</dt>
                   <dd>{activeRow.lotNo}</dd>
+                </div>
+                <div>
+                  <dt>업체 LOT</dt>
+                  <dd>{activeRow.customerLotNo}</dd>
                 </div>
                 <div>
                   <dt>업체명</dt>

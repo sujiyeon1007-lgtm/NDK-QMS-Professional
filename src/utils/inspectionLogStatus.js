@@ -3,6 +3,7 @@
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
+import { matchesInboundDataSearch } from "./inboundDataFields";
 import { getProductionProcessName } from "../config/productionProcessCodes";
 import { formatQtyWithUnit } from "./productUnits";
 import { getSessionProductionRecords } from "./productionRecords";
@@ -27,10 +28,15 @@ function resolveProcessName(log) {
 
 export function mapInspectionLogToListRow(log) {
   const status = getInspectionLogDisplayStatus(log);
+  const record = getSessionProductionRecords().find((item) => item.id === log.managementId);
+  const purchaseOrderNo = log.purchaseOrderNo || record?.purchaseOrderNo || "";
+  const customerLotNo = log.customerLotNo || record?.customerLotNo || "";
   return {
     id: log.id,
     managementId: log.managementId || "—",
-    lotNo: log.lotNo?.trim() || "—",
+    lotNo: log.lotNo?.trim() || record?.lotNo?.trim() || "—",
+    purchaseOrderNo: purchaseOrderNo || "—",
+    customerLotNo: customerLotNo || "—",
     company: log.company || "—",
     partName: log.partName || "—",
     partNo: log.partNo || "—",
@@ -48,24 +54,16 @@ export function mapInspectionLogToListRow(log) {
 
 export function matchesInspectionLogSearch(row, search) {
   const log = row.log;
-  if (!matchesBasicSearch(search, log)) return false;
-
-  if (
-    search.managementId &&
-    !String(log.managementId ?? "")
-      .toLowerCase()
-      .includes(search.managementId.toLowerCase())
-  ) {
-    return false;
-  }
-  if (
-    search.lotNo &&
-    !String(log.lotNo ?? "")
-      .toLowerCase()
-      .includes(search.lotNo.toLowerCase())
-  ) {
-    return false;
-  }
+  const record = getSessionProductionRecords().find((item) => item.id === log.managementId);
+  const merged = {
+    ...log,
+    purchaseOrderNo: log.purchaseOrderNo || record?.purchaseOrderNo,
+    customerLotNo: log.customerLotNo || record?.customerLotNo,
+    lotNo: log.lotNo || record?.lotNo,
+    managementId: log.managementId || record?.id,
+  };
+  if (!matchesBasicSearch(search, merged)) return false;
+  if (!matchesInboundDataSearch(search, merged)) return false;
   if (search.process && row.processName !== search.process) return false;
   if (search.inspectionDateFrom && log.inspectionDate < search.inspectionDateFrom) return false;
   if (search.inspectionDateTo && log.inspectionDate > search.inspectionDateTo) return false;
