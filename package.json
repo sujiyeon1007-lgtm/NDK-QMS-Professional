@@ -9,6 +9,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:beta": "vite preview --port 4175 --host",
+    "beta:sync": "git push origin presentation && git checkout beta-demo && git merge presentation && git push origin beta-demo && git checkout presentation",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:build": "npm run build && electron ."
   },
