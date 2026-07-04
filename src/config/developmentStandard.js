@@ -80,16 +80,22 @@ export const DEVELOPMENT_PROCESS = [
   "다음 화면",
 ];
 
-/** 오류 수정 · 긴급 복구 프로세스 (V1.3) — 분석 없이 수정 금지 */
-export const INCIDENT_FIX_PROCESS = [
-  "원인 분석 (Console · Router · 최근 변경 · 무한 렌더 · Mock 예외)",
-  "영향 범위 분석",
-  "수정 계획 보고",
-  "최소 범위 수정",
-  "Regression Test",
-  "npm run build",
-  "최종 보고 (수정 파일 · 원인 · 테스트 · Build · 영향 페이지)",
+/**
+ * White Screen · 치명 오류 — Git 기반 복구 (임시 패치 금지)
+ * @see docs/WHITE_SCREEN_GIT_RECOVERY_REPORT.md
+ */
+export const GIT_BASED_INCIDENT_RECOVERY = [
+  "마지막 정상 Commit 확인 (Baseline — LAST_KNOWN_GOOD_COMMIT)",
+  "git diff Baseline..HEAD 로 변경 파일 · AppRouter import 체인 대조",
+  "Console ReferenceError 로 White Screen 원인 파일 특정",
+  "문제 파일만 git checkout Baseline -- <path> 또는 해당 파일만 수정",
+  "npm run build · 실행 테스트 · Regression Test",
+  "정상 확인 후 기능별 순차 재적용 (기능 하나 = Commit 하나)",
+  "최종 보고 (원인 파일 · Diff 근거 · 테스트 · Build)",
 ];
+
+/** @deprecated GIT_BASED_INCIDENT_RECOVERY 우선 — 추측·임시 수정 금지 */
+export const INCIDENT_FIX_PROCESS = GIT_BASED_INCIDENT_RECOVERY;
 
 /** @deprecated INCIDENT_FIX_PROCESS — 동일 절차 */
 export const BUG_FIX_PROCESS = INCIDENT_FIX_PROCESS;
@@ -100,28 +106,45 @@ export const BUG_FIX_PROCESS = INCIDENT_FIX_PROCESS;
  */
 export const OFFICIAL_DEVELOPMENT_PROCESS = [
   "분석",
-  "원인·영향 보고",
+  "원인·영향 보고 (Git diff)",
   "PM 승인",
-  "최소 범위 수정",
+  "단일 기능/화면 수정 (Git checkout 또는 최소 수정)",
   "npm run build",
   "실행 테스트 (해당 화면)",
   "Regression Test",
-  "Git Commit",
+  "Git Commit (기능 1개)",
   "다음 작업",
 ];
 
 /**
- * 화면·기능 단위 작업 순서 — 한 번에 여러 페이지 수정 금지
- * @example 검사관리 수정 → Build → 실행 테스트 → Commit → 다음 화면
+ * 하루 작업 단위 — 기능 하나 = Commit 하나
+ * @example 검사관리 → Build → 실행 테스트 → Commit → 문서관리 → …
  */
-export const SINGLE_SCREEN_WORKFLOW = [
-  "단일 화면/기능 수정",
+export const DAILY_WORK_COMMIT_POLICY = [
+  "단일 기능/화면 개발",
   "npm run build",
   "실행 테스트 (해당 화면)",
   "Regression Test",
-  "Git Commit",
-  "다음 화면",
+  "Git Commit (기능 1개)",
+  "다음 기능",
 ];
+
+/** @deprecated DAILY_WORK_COMMIT_POLICY — 동일 원칙 */
+export const SINGLE_SCREEN_WORKFLOW = DAILY_WORK_COMMIT_POLICY;
+
+/** 개발 절대 금지 (V1.3) */
+export const DEVELOPMENT_ABSOLUTE_PROHIBITIONS = [
+  "5~6개 화면을 한 번에 수정",
+  "공통 컴포넌트 수정 후 테스트 없이 다음 작업 진행",
+  "Build 실패 상태에서 계속 개발",
+  "White Screen 상태에서 Git Push",
+  "White Screen 상태에서 Beta 사이트 배포",
+  "임시방편(추측) 수정 — Git diff 없이 파일 무작위 수정",
+  "전체 재작성 또는 대량 일괄 Refactor를 한 Commit에 묶기",
+];
+
+/** White Screen 복구 Baseline (Presentation Build V0.9.0 RC) */
+export const LAST_KNOWN_GOOD_COMMIT = "01d8747";
 
 /** 매 작업 후 필수 Regression Test */
 export const REGRESSION_TEST_CHECKLIST = [
