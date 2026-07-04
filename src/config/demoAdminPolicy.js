@@ -5,8 +5,8 @@
  * Rule: .cursor/rules/project-titan-demo-admin-policy.mdc
  */
 
-/** V1.0 Demo: 관리자 UI 항상 활성 (업무 로직과 분리 · UI만 제어) */
-export const DEMO_ADMIN_MODE = true;
+/** V1.0 Demo: false — 로그인 · 권한 시스템 활성 */
+export const DEMO_ADMIN_MODE = false;
 
 /** V1.1 Role 인터페이스 (구조만 준비 · Demo 미사용) */
 export const TITAN_USER_ROLES = {

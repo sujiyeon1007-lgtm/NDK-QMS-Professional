@@ -15,6 +15,8 @@ import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanCommonExpandRow from "../../foundation/components/TitanCommonExpandRow";
+import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
@@ -186,6 +188,8 @@ export default function MasterDataManagement({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const [detailPopupRow, setDetailPopupRow] = useState(null);
 
 
 
@@ -685,7 +689,11 @@ export default function MasterDataManagement({
               />
             )}
 
-            onRowDoubleClick={(row) => openRegister("edit", row)}
+            onRowClick={(row) => setActiveId(row.id)}
+
+            onRowDoubleClick={(row) => {
+              openRowDetailPopup(row, { setActiveId, setDetailPopupRow });
+            }}
 
             emptyMessage="등록된 기준정보가 없습니다."
 
@@ -821,6 +829,25 @@ export default function MasterDataManagement({
         />
 
       ) : null}
+
+      <TitanScreenDetailPopup
+        screenKey="masterData"
+        open={Boolean(detailPopupRow)}
+        onClose={() => setDetailPopupRow(null)}
+        record={detailPopupRow}
+        context={{
+          detailContent: detailPopupRow ? (
+            <dl className="inbound-detail">
+              {buildExpandFields(detailPopupRow, screen).map((field) => (
+                <div key={field.key}>
+                  <dt>{field.label}</dt>
+                  <dd>{field.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null,
+        }}
+      />
 
     </div>
 

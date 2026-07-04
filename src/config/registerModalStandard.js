@@ -19,6 +19,8 @@ export const PRODUCTION_DAILY_EDIT_LABEL = "생산일보 수정";
 export const PRODUCTION_DAILY_CANCEL_LABEL = "생산일보 취소";
 export const PRODUCTION_DAILY_EDIT_MODAL_TITLE = "생산일보 수정";
 export const PRODUCTION_DAILY_PRINT_LABEL = "생산일보 출력";
+export const PRODUCTION_DAILY_COMPLETE_LABEL = "생산 완료";
+export const PRODUCTION_DAILY_PDF_LABEL = "PDF 출력";
 
 export const INSPECTION_LOG_REGISTER_LABEL = "검사일지 등록";
 export const INSPECTION_REPORT_LABEL = "검사 리포트";

@@ -5,15 +5,15 @@ import Input from "../../foundation/components/Input";
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   CustomerLotNoField,
+  DateRangeField,
   EquipmentField,
-  LotNoField,
-  ManagementIdField,
   ProcessField,
-  PurchaseOrderNoField,
   WorkerField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
+import { STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
@@ -172,7 +172,7 @@ export default function StatisticsScreen() {
   const renderAdvancedSearch = () => {
     if (statisticsTab === "production") {
       return (
-        <div className="titan-advanced-search__grid">
+        <TitanAdvancedSearchGrid>
           <EquipmentField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
           <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
           <WorkerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
@@ -193,16 +193,17 @@ export default function StatisticsScreen() {
               ))}
             </select>
           </label>
-        </div>
+        </TitanAdvancedSearchGrid>
       );
     }
 
     if (statisticsTab === "quality") {
       return (
-        <div className="titan-advanced-search__grid">
+        <TitanAdvancedSearchGrid>
           <label className="titan-advanced-search__field">
             <span className="titan-advanced-search__label">검사자</span>
             <Input
+              className="titan-advanced-search__text-input"
               value={draft.assignee}
               onChange={(e) => onDraftChange({ ...draft, assignee: e.target.value })}
               placeholder="검사자"
@@ -224,13 +225,13 @@ export default function StatisticsScreen() {
               ))}
             </select>
           </label>
-        </div>
+        </TitanAdvancedSearchGrid>
       );
     }
 
     if (statisticsTab === "shipment") {
       return (
-        <div className="titan-advanced-search__grid">
+        <TitanAdvancedSearchGrid>
           <label className="titan-advanced-search__field">
             <span className="titan-advanced-search__label">단위</span>
             <select
@@ -251,18 +252,19 @@ export default function StatisticsScreen() {
           <label className="titan-advanced-search__field">
             <span className="titan-advanced-search__label">출고 담당자</span>
             <Input
+              className="titan-advanced-search__text-input"
               value={draft.manager}
               onChange={(e) => onDraftChange({ ...draft, manager: e.target.value })}
               placeholder="출고 담당자"
             />
           </label>
-        </div>
+        </TitanAdvancedSearchGrid>
       );
     }
 
     if (statisticsTab === "sales") {
       return (
-        <div className="titan-advanced-search__grid">
+        <TitanAdvancedSearchGrid>
           <label className="titan-advanced-search__field">
             <span className="titan-advanced-search__label">단위</span>
             <select
@@ -280,15 +282,12 @@ export default function StatisticsScreen() {
               ))}
             </select>
           </label>
-        </div>
+        </TitanAdvancedSearchGrid>
       );
     }
 
     return (
-      <div className="titan-advanced-search__grid">
-        <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-        <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-        <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+      <TitanAdvancedSearchGrid>
         <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
         <label className="titan-advanced-search__field">
           <span className="titan-advanced-search__label">단위</span>
@@ -307,23 +306,14 @@ export default function StatisticsScreen() {
             ))}
           </select>
         </label>
-        <label className="titan-advanced-search__field">
-          <span className="titan-advanced-search__label">조회기간</span>
-          <div className="titan-advanced-search__date-range">
-            <Input
-              type="date"
-              value={draft.periodFrom}
-              onChange={(e) => onDraftChange({ ...draft, periodFrom: e.target.value })}
-            />
-            <span>~</span>
-            <Input
-              type="date"
-              value={draft.periodTo}
-              onChange={(e) => onDraftChange({ ...draft, periodTo: e.target.value })}
-            />
-          </div>
-        </label>
-      </div>
+        <DateRangeField
+          label="조회기간"
+          fromKey="periodFrom"
+          toKey="periodTo"
+          draft={draft}
+          onDraftChange={onDraftChange}
+        />
+      </TitanAdvancedSearchGrid>
     );
   };
 
@@ -356,6 +346,7 @@ export default function StatisticsScreen() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={analytics.rows}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
         advancedContent={renderAdvancedSearch()}
       />
 

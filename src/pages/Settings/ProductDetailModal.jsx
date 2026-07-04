@@ -30,7 +30,8 @@ export default function ProductDetailModal({ open, product, onClose }) {
   if (!product) return null;
 
   const title = product.name || product.partNo || "제품";
-  const kicker = [product.partNo, product.company].filter(Boolean).join(" · ") || "제품 Master";
+  const kicker =
+    [product.company, product.partNo].filter(Boolean).join(" | ") || "제품 Master";
 
   return (
     <TitanWorkspaceModal
@@ -44,9 +45,9 @@ export default function ProductDetailModal({ open, product, onClose }) {
         </SecondaryButton>
       }
     >
-      <div className="company-detail-modal">
+      <div className="company-detail-modal product-detail-modal">
         <ProductDetailSection title="① 제품 정보">
-          <dl className="company-detail-section__grid">
+          <dl className="company-detail-section__grid product-detail-modal__grid">
             {PRODUCT_PROFILE_FIELDS.map((field) => (
               <div key={field.key}>
                 <dt>{field.label}</dt>
@@ -57,7 +58,7 @@ export default function ProductDetailModal({ open, product, onClose }) {
         </ProductDetailSection>
 
         <ProductDetailSection title="② 추가 정보">
-          <dl className="company-detail-section__grid">
+          <dl className="company-detail-section__grid product-detail-modal__grid product-detail-modal__grid--extra">
             {PRODUCT_DETAIL_FIELDS.map((field) => (
               <div key={field.key}>
                 <dt>{field.label}</dt>

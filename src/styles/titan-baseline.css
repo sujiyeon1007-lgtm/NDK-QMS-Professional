@@ -26,7 +26,7 @@
   --titan-main-padding-x: 16px;
   --titan-page-gap: 16px;
   --titan-page-top-bar-min-h: 0;
-  --titan-page-top-bar-padding: 8px 14px;
+  --titan-page-top-bar-padding: var(--titan-page-top-bar-padding-block-legacy, 8px) 14px;
   --titan-page-top-bar-radius: 12px;
   --titan-panel-padding-y: 20px;
   --titan-panel-padding-x: 20px;
@@ -34,10 +34,9 @@
   --titan-kpi-height: 118px;
   --titan-kpi-summary-height: 108px;
   --titan-status-card-h: 52px;
-  --titan-list-ratio-primary: 8.6fr;
-  --titan-list-ratio-side: 1.4fr;
-  --titan-list-columns: minmax(0, var(--titan-list-ratio-primary))
-    minmax(180px, min(240px, var(--titan-list-ratio-side)));
+  --titan-list-ratio-primary: 7.8fr;
+  --titan-list-ratio-side: 2.2fr;
+  --titan-list-columns: var(--titan-left-widget-width, 280px) minmax(0, 1fr);
   --titan-table-th-padding: 10px 10px;
   --titan-table-td-padding: 9px 10px;
   --titan-toolbar-btn-h: 36px;
@@ -94,9 +93,11 @@
   flex-shrink: 0;
   min-height: var(--titan-page-top-bar-min-h);
   padding: var(--titan-page-top-bar-padding);
-  border: 1px solid #e2e8f0;
+  padding-left: calc(14px + var(--titan-title-accent-gap));
+  border: 1px solid var(--titan-page-header-border);
+  border-left: var(--titan-page-header-accent-width) solid var(--titan-page-header-accent-color);
   border-radius: var(--titan-page-top-bar-radius);
-  background: #ffffff;
+  background: var(--titan-page-header-bg);
   box-shadow: var(--ndk-card-shadow, 0 1px 3px rgba(15, 23, 42, 0.06));
   box-sizing: border-box;
 }
@@ -110,7 +111,7 @@
   margin: 0 0 6px;
   font-size: 11px;
   font-weight: 800;
-  color: var(--titan-point, #2563eb);
+  color: var(--titan-page-header-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -118,11 +119,8 @@
 
 .titan-page .page-title-block h2 {
   margin: 0;
-  font-size: 24px;
-  line-height: 1.25;
-  font-weight: 900;
-  color: var(--ndk-text, #37474f);
-  letter-spacing: -0.03em;
+  font-size: var(--titan-font-page-title);
+  font-weight: var(--titan-weight-semibold);
   white-space: nowrap;
 }
 
@@ -130,7 +128,7 @@
   margin: 6px 0 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ndk-text-muted, #64748b);
+  color: var(--titan-page-header-text-muted);
   line-height: 1.45;
   max-width: 720px;
 }
@@ -143,24 +141,24 @@
   margin-top: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--titan-page-header-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .titan-page .breadcrumb a {
-  color: var(--titan-point, #4682b4);
+  color: #93c5fd;
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .titan-page .breadcrumb a:hover {
-  color: #1d4ed8;
+  color: #bfdbfe;
 }
 
 .titan-page .breadcrumb span {
-  color: #475569;
+  color: var(--titan-page-header-text-secondary);
   flex-shrink: 0;
 }
 

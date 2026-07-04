@@ -4,12 +4,12 @@ import { ArrowDown, CheckCircle2, Circle, History, Search } from "lucide-react";
 
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   CustomerLotNoField,
-  LotNoField,
-  ManagementIdField,
   PurchaseOrderNoField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
+import { STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
@@ -50,13 +50,12 @@ function HistorySearchPanel({
       advancedOpen={advancedOpen}
       onAdvancedToggle={onAdvancedToggle}
       companies={companies}
+      basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
       advancedContent={
-        <div className="titan-advanced-search__grid">
-          <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-          <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+        <TitanAdvancedSearchGrid>
           <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
           <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-        </div>
+        </TitanAdvancedSearchGrid>
       }
     />
   );

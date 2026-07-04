@@ -39,6 +39,8 @@ export const TITAN_UI_DIMENSIONS = {
   popupMinHeight: "var(--titan-popup-min-height)",
   workspaceModalWidth: "var(--titan-popup-width)",
   workspaceModalHeight: "var(--titan-popup-height)",
+  leftWidgetWidth: "var(--titan-left-widget-width)",
+  leftWidgetWidthMax: "var(--titan-left-widget-width-max)",
   popupSplitMinWidth: "var(--titan-popup-split-min-w)",
 };
 

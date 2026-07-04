@@ -1,0 +1,39 @@
+# Project TITAN — Login System V1.1 (PM Final Official Design)
+
+**Source:** `src/config/titanLoginSystem.js` · `src/pages/Login/`
+
+## 화면 구성
+
+| 영역 | 내용 |
+|---|---|
+| **좌측 브랜드** | NDK 공식 로고(이미지, V1.0 대비 ~35% 확대) · Integrated Management System(작은 글씨) · 아이콘+한 줄(Quality/Production/Certificate/Document) · One Platform/One Workflow/One Data · 하단 Quality · Process · Data · Future |
+| **우측 카드** | LOGIN · Project TITAN · ID · PASSWORD · ☑ 아이디 저장 · [LOGIN] (HOME Primary Blue · Hover · MUI Ripple) |
+| **Footer** | 좌 © NDK Co., Ltd. All rights reserved. · 가운데 Security First / Data Integrity / Trusted Solution · 우 Project TITAN / Version 1.0.0 / Presentation Build |
+
+## 정책
+
+| 지원 | 미지원 |
+|---|---|
+| 아이디 저장(ID만) · 로그인 · 로그아웃 · 비밀번호 변경 | 회원가입 · 비밀번호 찾기 · 비밀번호 저장 |
+
+- **기본 관리자:** `admin` / `1234` · Role Program Administrator · 최초 설치 시 자동 생성
+- **첫 로그인:** 모달 "비밀번호를 변경하시겠습니까?" · [지금 변경] [나중에]
+- **5회 실패:** 임시 잠금 (5분)
+- **흐름:** Login → Loading → HOME
+
+## Header 사용자 표시
+
+- **일반:** 👤 이름 / 부서 / 직급 (예: 정반이 / 품질관리부 / 사원)
+- **관리자:** 👤 Program Administrator
+
+## Architecture
+
+- Presentation Build: SessionStorage/localStorage (`titanAuthDataSession.js` · SQLite schema mirror)
+- 권한: 환경설정에서 관리 · 하드코딩 ❌
+- Router: `/login` → `LoginGuard` → guards → `MainLayout`
+- `DEMO_ADMIN_MODE = false`
+
+## Do Not
+
+- 텍스트 로고 사용 · 비밀번호 저장 · 회원가입/비밀번호 찾기 UI 추가
+- 2분할 레이아웃 변경 · HOME 디자인 시스템 이탈

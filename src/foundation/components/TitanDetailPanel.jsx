@@ -4,8 +4,8 @@ import TitanMultilineText from "./TitanMultilineText";
 import { PROCESS_FLOW_PANEL_TITLE } from "../../utils/processFlow";
 
 /**
- * Project TITAN V1.0 — 우측 패널 공통
- * ① 상세정보 → ② 주요 기능 버튼 → ③ 공정 흐름도
+ * Project TITAN V1.0 — 좌측 Widget 패널 공통
+ * ① 상세정보 → ② 공정 흐름도 → ③ 주요 기능 버튼
  */
 export default function TitanDetailPanel({
   detailContent,
@@ -19,31 +19,15 @@ export default function TitanDetailPanel({
   showProcessFlow = true,
   className = "",
 }) {
+  const hasPrimaryAction = Boolean(actionLabel && onAction);
+  const hasSecondaryAction = Boolean(secondaryActionLabel && onSecondaryAction);
+  const hasActions = hasPrimaryAction || hasSecondaryAction;
+
   return (
     <aside className={`titan-detail-panel inbound-page__detail ${className}`.trim()}>
       <CollapsePanel title="상세정보" defaultOpen>
         {detailContent}
       </CollapsePanel>
-
-      <hr className="titan-detail-panel__divider" />
-
-      <PrimaryButton type="button" className="titan-detail-panel__action" onClick={onAction}>
-        {ActionIcon ? <ActionIcon size={14} aria-hidden="true" className="titan-btn__icon" /> : null}
-        <TitanMultilineText text={actionLabel} format={false} />
-      </PrimaryButton>
-
-      {secondaryActionLabel && onSecondaryAction ? (
-        <SecondaryButton
-          type="button"
-          className="titan-detail-panel__action titan-detail-panel__action--secondary"
-          onClick={onSecondaryAction}
-        >
-          {SecondaryActionIcon ? (
-            <SecondaryActionIcon size={14} aria-hidden="true" className="titan-btn__icon" />
-          ) : null}
-          <TitanMultilineText text={secondaryActionLabel} format={false} />
-        </SecondaryButton>
-      ) : null}
 
       {showProcessFlow ? (
         <>
@@ -59,6 +43,32 @@ export default function TitanDetailPanel({
               ))}
             </ol>
           </CollapsePanel>
+        </>
+      ) : null}
+
+      {hasActions ? (
+        <>
+          <hr className="titan-detail-panel__divider" />
+
+          {hasPrimaryAction ? (
+            <PrimaryButton type="button" className="titan-detail-panel__action" onClick={onAction}>
+              {ActionIcon ? <ActionIcon size={14} aria-hidden="true" className="titan-btn__icon" /> : null}
+              <TitanMultilineText text={actionLabel} format={false} />
+            </PrimaryButton>
+          ) : null}
+
+          {hasSecondaryAction ? (
+            <SecondaryButton
+              type="button"
+              className="titan-detail-panel__action titan-detail-panel__action--secondary"
+              onClick={onSecondaryAction}
+            >
+              {SecondaryActionIcon ? (
+                <SecondaryActionIcon size={14} aria-hidden="true" className="titan-btn__icon" />
+              ) : null}
+              <TitanMultilineText text={secondaryActionLabel} format={false} />
+            </SecondaryButton>
+          ) : null}
         </>
       ) : null}
     </aside>

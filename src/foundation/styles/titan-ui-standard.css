@@ -27,39 +27,44 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   2. Search Panel — 고정 1행 · 좁으면 가로 스크롤 (줄바꿈/축소 ❌)
+   2. Search Panel — V1.3 · 최대 3줄 · 가로 스크롤 없음
    ═══════════════════════════════════════════════════════════════ */
 .titan-search-panel {
   padding: var(--titan-search-panel-padding) !important;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: visible;
   flex-shrink: 0;
 }
 
 .titan-search-panel__basic {
+  width: 100%;
+  min-width: 0;
+}
+
+.titan-search-panel__row--primary {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--titan-search-col-gap);
-  min-width: max-content;
+  gap: var(--titan-search-col-gap, 10px);
+  width: 100%;
+  min-width: 0;
 }
 
 .titan-search-panel__fields {
   display: flex;
-  flex-wrap: nowrap;
-  gap: var(--titan-search-fields-gap);
-  flex: 0 0 auto;
-  min-width: var(--titan-search-fields-min-w);
+  flex: 1 1 480px;
+  flex-wrap: wrap;
+  gap: var(--titan-search-fields-gap, 10px);
+  min-width: 0;
 }
 
 .titan-search-panel__field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 0 0 var(--titan-search-field-w);
-  width: var(--titan-search-field-w);
-  min-width: var(--titan-search-field-w);
-  max-width: var(--titan-search-field-w);
+  flex: 1 1 var(--titan-search-field-w, 140px);
+  min-width: var(--titan-search-field-min-w, 120px);
+  max-width: var(--titan-search-field-max-w, 180px);
+  width: auto;
 }
 
 .titan-search-panel__actions {
@@ -67,9 +72,9 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--titan-btn-gap);
+  gap: var(--titan-btn-gap, 6px);
   flex: 0 0 auto;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -112,24 +117,158 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   5. List workspace — 리스트+상세 2단 고정 (스택 ❌)
+   5. List workspace — 좌측 Widget + 우측 리스트 (HOME 동일 · 스택 ❌)
    ═══════════════════════════════════════════════════════════════ */
 .inbound-page__workspace,
 .titan-list-workspace,
 .titan-split-workspace {
-  grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  display: grid;
+  grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr) !important;
+  gap: var(--titan-gap);
+  align-items: stretch;
   min-height: var(--titan-workspace-min-h);
+  /* V1.3 — management pages only (HOME UI Freeze: home-board__left) */
+  --titan-left-widget-width: 280px;
+  --titan-left-widget-width-max: 300px;
 }
 
-.inbound-page__list {
+.titan-list-workspace.is-left-collapsed,
+.inbound-page__workspace.is-left-collapsed {
+  grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr) !important;
+}
+
+.inbound-page__list,
+.titan-list-workspace__main {
   min-width: 0;
+  flex: 1 1 auto;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Popup/Panel 내부 단일 리스트 모드 */
 .titan-workspace-modal .inbound-page__workspace,
 .master-data-page--panel .inbound-page__workspace {
   grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.titan-workspace-modal .titan-left-widget-panel,
+.master-data-page--panel .titan-left-widget-panel {
+  display: none;
+}
+
+/* ── 좌측 Widget 패널 (HOME home-board__left 동일 · 고정폭 보조 패널) ── */
+.titan-left-widget-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--titan-left-widget-width);
+  min-width: var(--titan-left-widget-width);
+  max-width: var(--titan-left-widget-width-max, 300px);
+  flex: 0 0 var(--titan-left-widget-width);
+  min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.titan-list-workspace.is-left-collapsed .titan-left-widget-panel {
+  width: var(--titan-left-widget-collapsed-width);
+  min-width: var(--titan-left-widget-collapsed-width);
+  max-width: var(--titan-left-widget-collapsed-width);
+  flex-basis: var(--titan-left-widget-collapsed-width);
+}
+
+.titan-left-widget-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-gap);
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  opacity: 1;
+  overflow: auto;
+  transition: opacity 0.2s ease;
+}
+
+.titan-left-widget-panel.is-collapsed .titan-left-widget-panel__inner {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Floating collapse toggle — viewport fixed (TitanFloatingPanelToggle) */
+.titan-floating-panel-toggle {
+  position: fixed;
+  top: 50%;
+  z-index: var(--titan-floating-panel-toggle-z, 110);
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 8px;
+  background: var(--titan-surface, #fff);
+  color: var(--titan-text-secondary, #475569);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--titan-shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.08));
+  transition:
+    left 0.25s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.titan-floating-panel-toggle:hover {
+  border-color: var(--titan-primary-border, #bfd7f5);
+  background: var(--titan-primary-soft, #edf4fd);
+  color: var(--titan-primary, #2563eb);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-floating-panel-toggle {
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+}
+
+.titan-list-workspace-empty {
+  padding: var(--titan-card-padding, 14px) !important;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.titan-list-workspace-empty p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.titan-left-widget-panel .titan-detail-panel,
+.titan-left-widget-panel .titan-card {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-left-widget-panel__inner,
+  .titan-list-workspace,
+  .inbound-page__workspace {
+    transition: none;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -250,47 +389,50 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   8. Typography — 공통 Component (Popup · Table · Search · Toolbar · Badge)
+   8. Typography — V1.0 tokens (typography.css가 상세 적용)
    ═══════════════════════════════════════════════════════════════ */
 .primary-button,
 .secondary-button,
 .titan-btn {
-  font-size: var(--titan-font-sm);
+  font-size: var(--titan-font-button);
+  font-weight: var(--titan-weight-medium);
 }
 
 .titan-table__cell,
 .titan-table__cell--head {
-  font-size: var(--titan-font-sm);
+  font-size: var(--titan-font-table);
+  font-weight: var(--titan-weight-regular);
 }
 
 .titan-search-panel__field > span,
 .titan-search-panel label,
 .titan-advanced-search__field > span {
-  font-size: var(--titan-font-xs);
+  font-size: var(--titan-font-footer);
 }
 
 .titan-search-ac__input,
 .titan-search-panel__select,
 .titan-input {
-  font-size: var(--titan-font-sm);
+  font-size: var(--titan-font-input);
 }
 
 .titan-modal__header h2,
 .titan-workspace-modal__header h2 {
-  font-size: var(--titan-font-xl);
+  font-size: var(--titan-font-section-title);
+  font-weight: var(--titan-weight-semibold);
 }
 
 .titan-modal__kicker,
 .titan-workspace-modal .titan-modal__kicker {
-  font-size: var(--titan-font-xs);
+  font-size: var(--titan-font-footer);
 }
 
 .titan-status-chip,
 .titan-document-status {
-  font-size: var(--titan-font-xs);
+  font-size: var(--titan-font-footer);
 }
 
 .titan-menu-toolbar__actions .primary-button,
 .titan-menu-toolbar__actions .secondary-button {
-  font-size: var(--titan-font-sm);
+  font-size: var(--titan-font-button);
 }

@@ -6,4 +6,8 @@ export { default as SectionPageLayout } from "./layout/SectionPageLayout";
 export { default as PageTopBar } from "./layout/PageTopBar";
 export * from "./components";
 export { default as PagePlaceholder } from "./pages/PagePlaceholder";
+export {
+  default as TitanComingSoonPlaceholder,
+  TITAN_COMING_SOON_MESSAGE,
+} from "./pages/TitanComingSoonPlaceholder";
 export { default as SectionPage } from "./pages/SectionPage";

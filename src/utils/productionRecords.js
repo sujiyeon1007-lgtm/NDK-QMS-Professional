@@ -25,7 +25,8 @@ export const PRODUCTION_RECORDS = [
     purchaseOrderNo: "PO-20260701-001",
     customerLotNo: "SA-BG-001",
     heatTreatment: "이온질화",
-    lotNo: "",
+    lotNo: "260701-3S1A",
+    lotCreatedAt: "2026-07-10T08:30:00.000Z",
     equipment: "",
     workDate: "",
     completionStatus: "",
@@ -70,6 +71,36 @@ export const PRODUCTION_RECORDS = [
     htlPrintStatus: "출력완료",
     htlPrintHistory: [{ at: "2026-07-01T09:00:00.000Z", docNo: "HTL-20260701-001", reprint: false }],
     certificateStatus: "발행완료",
+    shipmentStatus: "출고대기",
+    urgent: false,
+  },
+  {
+    id: "SE_20260703_0003",
+    company: "서암기계공업",
+    partName: "SHAFT",
+    partNo: "H2E-SHAFT-01",
+    drawingNo: "",
+    material: "SNCM439",
+    qty: 6,
+    unit: "EA",
+    incomingDate: "2026-07-10",
+    incomingRegistered: true,
+    shippedQty: 0,
+    stockQty: 6,
+    dueDate: "2026-07-12",
+    purchaseOrderNo: "PO-20260710-003",
+    customerLotNo: "SA-SF-001",
+    heatTreatment: "이온질화",
+    lotNo: "260701-3S1A",
+    lotCreatedAt: "2026-07-10T08:30:00.000Z",
+    equipment: "3S-1",
+    workDate: "2026-07-10",
+    completionStatus: "생산완료",
+    workflowStatus: "검사진행",
+    registered: true,
+    qrGenerated: true,
+    workSheetGenerated: true,
+    certificateStatus: "미발행",
     shipmentStatus: "출고대기",
     urgent: false,
   },
@@ -208,6 +239,12 @@ export function addSessionProductionRecord(record) {
   };
   sessionRecords = [newRecord, ...sessionRecords];
   return newRecord;
+}
+
+export function deleteSessionProductionRecord(id) {
+  const before = sessionRecords.length;
+  sessionRecords = sessionRecords.filter((record) => record.id !== id);
+  return { ok: sessionRecords.length < before, message: sessionRecords.length < before ? "" : "관리번호를 찾을 수 없습니다." };
 }
 
 export function processShipment(id, shipQty, meta = {}) {

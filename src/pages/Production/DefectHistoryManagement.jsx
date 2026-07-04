@@ -2,11 +2,10 @@ import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   DateRangeField,
   EquipmentField,
-  LotNoField,
-  ManagementIdField,
   ProcessField,
   StatusSelectField,
   WorkerField,
@@ -21,7 +20,7 @@ import {
   DEFECT_STATUS_METRIC_CARDS,
   DEFECT_STATUS_PANEL,
 } from "../../config/productionDashboard";
-import { createEmptyDefectHistorySearch, matchesBasicSearch } from "../../config/listSearchStandard";
+import { createEmptyDefectHistorySearch, matchesBasicSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildDefectHistoryListColumns } from "../../config/standardProductList";
 import { DEFECT_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getProcessChipVariant, getProductionProcessCodes } from "../../config/productionProcessCodes";
@@ -214,10 +213,9 @@ export default function DefectHistoryManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
         advancedContent={
-          <div className="titan-advanced-search__grid">
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+          <TitanAdvancedSearchGrid>
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <EquipmentField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <WorkerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
@@ -240,7 +238,7 @@ export default function DefectHistoryManagement() {
               draft={draft}
               onDraftChange={onDraftChange}
             />
-          </div>
+          </TitanAdvancedSearchGrid>
         }
       />
 

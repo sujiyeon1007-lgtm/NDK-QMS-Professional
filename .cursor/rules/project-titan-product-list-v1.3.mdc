@@ -1,0 +1,75 @@
+# Project TITAN V1.3 — Product List Standard (FINAL)
+
+**Source of truth (code):** `src/config/standardProductList.js` · `src/config/productListRowActionPolicy.js` · `src/utils/processFlow.js` (`mapV13ProductListRow`)
+
+**Companion:** `.cursor/rules/project-titan-master-detail-v1.3.mdc` · `.cursor/rules/project-titan-search-system.mdc`
+
+---
+
+## Common product list columns (ALL product-related management screens)
+
+Fixed order:
+
+1. 입고일 (`incomingDate`)
+2. 생산일 (`productionDate`)
+3. LOT.NO
+4. 업체명
+5. 품명
+6. 품번
+7. 입고수량 (`inboundQtyLabel`)
+8. 작업수량 (`workQtyLabel`)
+9. 현재공정 (`currentProcess`)
+10. 비고 (`remark`)
+11. 작업 (Action — last column)
+
+**Builder:** `buildV13ProductListColumns()` in `standardProductList.js`
+
+---
+
+## List-only fields REMOVED (Detail Popup only)
+
+관리번호 · 업체 LOT · 발주번호 · 재질 · 규격 · 담당자 · 검사일 · 검사자 · 등록자 · 수정자 · 생성일 · Revision · QR상태 · 승인상태 · 문서상태 · 설비 · 작업시간 · 첨부파일 · 기타 상세정보
+
+---
+
+## Row actions (per screen)
+
+| Screen | Actions |
+|--------|---------|
+| 입고관리 | [상세] [수정] [삭제] |
+| 생산관리 | [상세] [완료] [취소] |
+| 검사관리 | [상세] [등록] [수정] [삭제] |
+| 성적서관리 | [상세] [발행] [수정] [취소] |
+| 출고관리 | [상세] [출고] [수정] [취소] |
+| 문서관리 | [상세] [등록] [수정] [삭제] |
+| 재고관리 | [상세] [수정] |
+| QR관리(입출고) | [상세] [출력] [재생성] [삭제] |
+
+**Components:** `TitanTableRowActions` + page row action components (`InboundRowActions`, `ProductionDailyRowActions`, etc.)
+
+---
+
+## Search (V1.3)
+
+**Basic (1행):** 관리번호 · 업체명 · 품명 · 품번 · LOT.NO · 현재상태 + 조회/초기화/상세검색 (우측 고정)
+
+**Advanced (2·3행):** 입고일 · 생산일 · 담당자 · 업체 LOT · 재질 · 공정 · 수량 · 비고
+
+**Component:** `TitanStandardProductAdvancedSearch` · `STANDARD_PRODUCT_BASIC_SEARCH_FIELDS`
+
+---
+
+## Detail Popup tabs (common)
+
+기본정보 · 작업정보 · QR 작업이력 · 공정 Timeline · 첨부파일 · 비고
+
+**Policy:** `src/config/detailPopupPolicy.js` · `TitanScreenDetailPopup`
+
+---
+
+## Do Not
+
+- Add removed fields back to product list columns
+- Per-page table column CSS or custom column order on product workflow screens
+- Change HOME Dashboard list (UI Freeze)
+- Statistics / aggregated inventory (품목별·거래처별) — specialized columns OK; LOT별 uses V1.3

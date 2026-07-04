@@ -5,9 +5,11 @@ import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
+import { DateRangeField } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
-import { createEmptyWorkJournalSearch } from "../../config/listSearchStandard";
+import { createEmptyWorkJournalSearch, WORK_JOURNAL_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildWorkJournalListColumns } from "../../config/standardProductList";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
@@ -154,11 +156,13 @@ export default function WorkJournal() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={rows}
+        basicFields={WORK_JOURNAL_BASIC_SEARCH_FIELDS}
         advancedContent={
-          <div className="titan-advanced-search__grid">
+          <TitanAdvancedSearchGrid>
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">업무구분</span>
               <select
+                className="titan-search-panel__select"
                 value={draft.category ?? ""}
                 onChange={(e) => onDraftChange({ ...draft, category: e.target.value })}
               >
@@ -173,46 +177,23 @@ export default function WorkJournal() {
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">업무내용</span>
               <Input
+                className="titan-advanced-search__text-input"
                 value={draft.title ?? ""}
                 onChange={(e) => onDraftChange({ ...draft, title: e.target.value })}
                 placeholder="업무내용"
               />
             </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">관리번호</span>
-              <Input
-                value={draft.managementId ?? ""}
-                onChange={(e) => onDraftChange({ ...draft, managementId: e.target.value })}
-                placeholder="관리번호"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">LOT.NO</span>
-              <Input
-                value={draft.lotNo ?? ""}
-                onChange={(e) => onDraftChange({ ...draft, lotNo: e.target.value })}
-                placeholder="LOT.NO"
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">일자 From</span>
-              <Input
-                type="date"
-                value={draft.dateFrom ?? ""}
-                onChange={(e) => onDraftChange({ ...draft, dateFrom: e.target.value })}
-              />
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">일자 To</span>
-              <Input
-                type="date"
-                value={draft.dateTo ?? ""}
-                onChange={(e) => onDraftChange({ ...draft, dateTo: e.target.value })}
-              />
-            </label>
+            <DateRangeField
+              label="일자"
+              fromKey="dateFrom"
+              toKey="dateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
             <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">구분</span>
               <select
+                className="titan-search-panel__select"
                 value={draft.source ?? ""}
                 onChange={(e) => onDraftChange({ ...draft, source: e.target.value })}
               >
@@ -221,7 +202,7 @@ export default function WorkJournal() {
                 <option value="manual">수동</option>
               </select>
             </label>
-          </div>
+          </TitanAdvancedSearchGrid>
         }
       />
 

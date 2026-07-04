@@ -98,7 +98,7 @@ export default function CompanyManagementPage() {
       COMPANY_LIST_COLUMNS.map((col) => ({
         key: col.key,
         label: col.label,
-        widthPercent: col.widthPercent,
+        identifier: col.identifier,
         render:
           col.render === "active"
             ? (row) => (
@@ -165,8 +165,8 @@ export default function CompanyManagementPage() {
           <div>
             <h2>거래처관리</h2>
             <p className="company-management-page__intro">
-              거래처 목록을 관리합니다. 거래처를 클릭하면 상세 Popup에서 담당자 · 거래 이력을
-              확인할 수 있습니다.
+              거래처 목록을 관리합니다. 거래처를 클릭하면 상세 Popup에서 기본정보 · 담당자 · 거래
+              이력을 확인할 수 있습니다.
             </p>
           </div>
         </div>
@@ -176,19 +176,19 @@ export default function CompanyManagementPage() {
             type="search"
             value={searchKeyword}
             onChange={(event) => setSearchKeyword(event.target.value)}
-            placeholder="업체명 · 코드 · 담당자 검색"
+            placeholder="업체명 · 코드 · 대표자 · 담당자 · 이메일 검색"
             aria-label="거래처 검색"
           />
         </div>
 
-        <div className="company-management-page__table-wrap">
+        <div className="company-management-page__table-wrap company-management-page__table-wrap--compact master-data-grid">
           <TitanDataTable
-            className="inbound-page__table"
+            className="inbound-page__table company-management-page__table--compact"
             columns={tableColumns}
             rows={pagedCompanies}
             activeRowId={selectedCompanyId}
-            onRowClick={openDetail}
-            onRowDoubleClick={(row) => openRegister("edit", row)}
+            onRowClick={(row) => setSelectedCompanyId(row.id)}
+            onRowDoubleClick={(row) => openDetail(row)}
             emptyMessage="등록된 거래처가 없습니다."
           />
 
@@ -202,7 +202,7 @@ export default function CompanyManagementPage() {
           />
         </div>
 
-        <div className="company-management-page__actions">
+        <div className="company-management-page__actions master-data-actions">
           <PrimaryButton type="button" onClick={() => openRegister("add")}>
             <Plus size={14} aria-hidden="true" />
             등록

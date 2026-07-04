@@ -262,3 +262,67 @@
   font-weight: 600;
   color: var(--titan-text-muted, #64748b);
 }
+
+.qms-document-page__detail-dl {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.qms-document-page__detail-dl div {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.qms-document-page__detail-dl dt {
+  margin: 0;
+  color: var(--titan-text-muted);
+  font-weight: 700;
+}
+
+.qms-document-page__detail-dl dd {
+  margin: 0;
+  color: var(--titan-text);
+  font-weight: 600;
+}
+
+.document-master-detail__trace-host.titan-product-traceability--master-detail {
+  display: contents;
+}
+
+.document-master-detail__history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+
+.document-master-detail__history-item {
+  display: grid;
+  gap: 8px;
+}
+
+.document-master-detail__history-head {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.document-master-detail__history-head strong {
+  color: var(--titan-text-primary, #0f172a);
+  font-weight: 800;
+}
+
+.document-master-detail__history-head span {
+  color: var(--titan-text-secondary, #475569);
+  font-weight: 600;
+}
+
+.document-master-detail__history-divider {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--titan-border, #dde6f0);
+}

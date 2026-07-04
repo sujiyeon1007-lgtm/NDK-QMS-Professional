@@ -123,9 +123,53 @@ export const HOME_STATUS_GROUPS = [
 
 export const HOME_PAGE_META = {
   title: "HOME",
-  kicker: "PQMS 통합 Dashboard",
-  description: "금일 입고부터 작업, 검사, 출고까지 전체 진행 상황을 한눈에 확인합니다.",
+  kicker: "Project TITAN · Integrated Dashboard",
+  description: "KPI · 진행현황 · 금일 업무 · 통합 검색을 한 화면에서 확인합니다.",
 };
+
+/** HOME 금일 업무현황 — 5종 KPI 카드 (승인 Mockup) */
+export const HOME_TODAY_WORK_CARDS = [
+  {
+    summaryId: "incoming",
+    label: "입고완료",
+    subLabel: "입고 완료",
+    icon: Package,
+    to: "/inout/incoming",
+    tone: "blue",
+  },
+  {
+    summaryId: "production",
+    label: "생산중",
+    subLabel: "작업 진행",
+    icon: Cog,
+    to: "/production/daily-report",
+    tone: "orange",
+  },
+  {
+    summaryId: "inspect",
+    label: "검사대기",
+    subLabel: "검사 대기",
+    icon: Search,
+    to: "/quality/inspection",
+    tone: "amber",
+  },
+  {
+    summaryId: "cert",
+    label: "성적서대기",
+    subLabel: "성적서 대기",
+    icon: ClipboardCheck,
+    to: "/quality/certificate",
+    tone: "purple",
+  },
+  {
+    summaryId: "ship",
+    label: "출고예정",
+    subLabel: "출고 예정",
+    icon: Truck,
+    to: "/inout/shipment",
+    tone: "green",
+  },
+];
 
 /** HOME 상단 KPI — Presentation V1.3 (5종) */
 export const HOME_TOP_KPI_CARDS = [
@@ -185,16 +229,17 @@ export const HOME_WORKFLOW_PHASES = [
   { key: "shipment", label: "출고" },
 ];
 
-export const HOME_WORKFLOW_PREVIEW_LIMIT = 6;
+export const HOME_WORKFLOW_PREVIEW_LIMIT = 12;
 
 /** HOME 진행현황 — 전체 보기 → 이력조회 */
 export const HOME_WORKFLOW_FULL_VIEW_PATH = "/history";
 
 /** Status Chip KPI — @deprecated statusChipConfigs.js WORKFLOW_CHIP_STATUS_FILTER */
 export { WORKFLOW_CHIP_STATUS_FILTER } from "./statusChipConfigs";
+/** HOME 공지사항 — HOME Final V1.1 (SessionStorage · HOME 전용) */
 export const HOME_NOTICES_PREVIEW_LIMIT = 3;
-/** 품질 공지 — Document Management */
-export const HOME_NOTICES_FULL_VIEW_PATH = "/documents";
+/** @deprecated HOME_NOTICES_FULL_VIEW_PATH — HOME에서 더보기/접기 */
+export const HOME_NOTICES_FULL_VIEW_PATH = "/home";
 
 /** HOME 업무일정 — 미리보기 건수 */
 export const HOME_WORK_SCHEDULE_PREVIEW_LIMIT = 5;
@@ -213,16 +258,14 @@ export const HOME_STATUS_SUMMARY_TABS = [
 export const HOME_WORKFLOW_STATUS_OPTIONS = [
   "입고대기",
   "입고완료",
-  "생산대기",
   "생산중",
   "생산완료",
   "검사대기",
-  "검사중",
   "검사완료",
-  "성적서등록대기",
-  "성적서완료",
-  "출고대기",
-  "출고완료",
+  "성적서 대기",
+  "성적서 완료",
+  "출고 준비",
+  "출고 완료",
 ];
 
 export const HOME_RECENT_TABS = [
@@ -246,5 +289,17 @@ export const HOME_QUICK_MENUS = [
   { id: "shipment", label: "출고등록", to: "/inout/shipment" },
 ];
 
-export const HOME_RECENT_LIST_TITLE = "최근 작업 이력";
+/** HOME 오늘 해야 할 일 — Workflow 기반 액션 미리보기 */
+export const HOME_TODAY_TASKS_LIMIT = 6;
+
+/** HOME 관리자 전용 바로가기 */
+export const HOME_ADMIN_SHORTCUTS = [
+  { id: "adminUsers", label: "사용자관리", to: "/environment/users" },
+  { id: "adminPermissions", label: "권한관리", to: "/environment/permissions" },
+  { id: "adminModules", label: "모듈관리", to: "/environment/modules" },
+  { id: "adminStorage", label: "Storage 관리", to: "/environment/storage" },
+  { id: "adminLogs", label: "시스템 로그", to: "/environment/logs" },
+];
+
+export const HOME_RECENT_LIST_TITLE = "최근 작업";
 export const HOME_PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];

@@ -4,6 +4,8 @@
 
  * Official lock date: 2026-07-03
 
+ * Official Architecture lock: 2026-07-04 — Smart Access · Workflow · MES Ready
+
  *
 
  * Architecture Roadmap: Version 1 / 2 / 3 are evolution directions — NOT program versions.
@@ -13,6 +15,10 @@
  * "Presentation Version" = delivery/build label for Version 3 — NOT a separate architecture version.
 
  *
+
+ * @see docs/TITAN_OFFICIAL_ARCHITECTURE.md — Official Architecture (Primary SSoT)
+
+ * @see src/config/titanOfficialArchitecture.js
 
  * @see src/config/presentationBuildPolicy.js
 
@@ -925,7 +931,78 @@ export function getDevelopmentDirectionSummary() {
 
     frameworkDate: PRESENTATION_VERSION_DATE,
 
+    officialArchitectureLock: "2026-07-04",
+
+    officialArchitecture: {
+      doc: "docs/TITAN_OFFICIAL_ARCHITECTURE.md",
+      config: "src/config/titanOfficialArchitecture.js",
+      rule: ".cursor/rules/project-titan-official-architecture.mdc",
+      devPriority: "Workflow → UI → Database → 개발 → 테스트 → 현장 피드백 → 개선",
+      smartAccessIdScheme: "NDK:// (canonical) · NDK| (legacy alias)",
+    },
+
     currentVersion: CURRENT_DEVELOPMENT_VERSION,
+
+    operationalLayer: "v1.2-smart-access-platform",
+
+    smartAccessPlatform: {
+      version: "V1.2",
+      doc: "docs/TITAN_V12_SMART_ACCESS_PLATFORM.md",
+      config: "src/config/titanV12SmartAccessPlatform.js",
+      rule: ".cursor/rules/project-titan-v12-smart-access-platform.mdc",
+      versionRoadmap: "V1.0 QMS → V1.1 Workflow → V1.2 QR → V2.0 NFC → V3.0 MES",
+      qrPrintCenter: "QR 출력센터",
+    },
+
+    menuArchitecture: {
+      version: "V1.2",
+      doc: "docs/TITAN_V12_MENU_ARCHITECTURE.md",
+      config: "src/config/titanV12MenuArchitecture.js",
+      rule: ".cursor/rules/project-titan-v12-menu-architecture.mdc",
+      philosophy: "Menu Simple, Function Deep — 메뉴 10~12개 · 기능은 메뉴 내부 확장",
+      runtimeSidebar: "Menu Freeze V1.3 (PM 승인 후 V1.2 Sidebar 전환)",
+    },
+
+    moduleExpansion: {
+      version: "V1.2",
+      doc: "docs/TITAN_V12_MODULE_EXPANSION.md",
+      config: "src/config/titanV12ModuleExpansion.js",
+      rule: ".cursor/rules/project-titan-v12-module-expansion.mdc",
+      philosophy: "선택형 Module — ON/OFF만 · 데이터 유지 · MES/ERP 대체 ❌",
+      moduleManagement: "/environment/modules",
+      newModules: ["경리관리", "회계관리"],
+    },
+
+    v12OfficialArchitecture: {
+      version: "V1.2",
+      doc: "docs/TITAN_V12_OFFICIAL_ARCHITECTURE.md",
+      config: "src/config/titanV12OfficialArchitecture.js",
+      sections: [
+        "Menu Architecture",
+        "Module System",
+        "QR/NFC Smart Access",
+        "QR Print Center",
+        "NFC Ready",
+        "Storage Architecture",
+        "Storage Manager",
+        "Storage Location",
+        "경리관리",
+        "회계관리",
+        "Company Asset Management",
+        "HOME",
+        "Development Philosophy",
+        "Final Goal",
+      ],
+      storage: "SQLite 메타 + Storage 파일",
+      finalGoal: "MES 대체 ❌ — MES 후 QMS+DMS+Smart Access+경리+회계 통합 플랫폼",
+    },
+
+    smartAccessArchitecture: {
+      doc: "docs/SMART_ACCESS_ARCHITECTURE.md",
+      config: "src/config/smartAccessArchitecture.js",
+      philosophy: "One Time Input → One Scan → One Workflow",
+      modes: ["Paper", "Smart (QR)", "Future (NFC — same Smart Access ID as QR)"],
+    },
 
     buildLabel: VERSION_3_DEFINITION.fullLabel,
 

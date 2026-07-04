@@ -68,8 +68,8 @@
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
-  font-size: var(--titan-font-sm);
-  font-weight: 600;
+  font-size: var(--titan-font-menu);
+  font-weight: var(--titan-weight-medium);
 }
 
 .titan-sidebar__link:hover {

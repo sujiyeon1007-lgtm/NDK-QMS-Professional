@@ -23,6 +23,13 @@
   --titan-sidebar-bg: #0f172a;
   --titan-sidebar-active: #2563eb;
 
+  /* App chrome — Sidebar · 페이지 상단 바 공통 진한색 */
+  --titan-app-chrome-bg: var(--titan-sidebar-bg);
+  --titan-app-chrome-border: rgba(255, 255, 255, 0.1);
+  --titan-app-chrome-text: rgba(255, 255, 255, 0.88);
+  --titan-app-chrome-text-muted: rgba(255, 255, 255, 0.55);
+  --titan-app-chrome-text-strong: #ffffff;
+
   /* Text */
   --titan-text: #1f2937;
   --titan-text-muted: #6b7280;
@@ -36,10 +43,25 @@
   --titan-search-panel-bg: #fafbfd;
   --titan-search-panel-border: #d8e2f1;
 
-  /* Title accent (vertical line) */
+  /* Title accent (vertical line · card/section titles) */
   --titan-title-accent-width: 3px;
-  --titan-title-accent-color: #2563eb;
+  --titan-title-accent-color: var(--titan-sidebar-active);
   --titan-title-accent-gap: 10px;
+
+  /* Page header — Sidebar와 동일 진한색 (HOME · 각 메뉴 PageTopBar) */
+  --titan-page-header-accent-width: 3px;
+  --titan-page-header-accent-color: var(--titan-sidebar-active);
+  --titan-page-header-bg: var(--titan-app-chrome-bg);
+  --titan-page-header-border: var(--titan-app-chrome-border);
+  --titan-page-header-title-color: var(--titan-app-chrome-text-strong);
+  --titan-page-header-text-secondary: var(--titan-app-chrome-text);
+  --titan-page-header-text-muted: var(--titan-app-chrome-text-muted);
+
+  /* PageTopBar · Section 헤더 — 세로 0.5cm 추가 */
+  --titan-page-top-bar-v-extra: 0.5cm;
+  --titan-page-top-bar-padding-block: calc(12px + calc(var(--titan-page-top-bar-v-extra) / 2));
+  --titan-page-top-bar-padding-block-compact: calc(4px + calc(var(--titan-page-top-bar-v-extra) / 2));
+  --titan-page-top-bar-padding-block-legacy: calc(8px + calc(var(--titan-page-top-bar-v-extra) / 2));
 
   /* Table (PM 공통 리스트) */
   --titan-table-header: #f7f9fc;
@@ -71,9 +93,13 @@
   --titan-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
   --titan-transition-fast: 175ms ease;
 
-  /* List-first layout */
-  --titan-list-ratio: 86%;
+  /* List-first layout — 좌측 Widget (관리 페이지 · TitanListWorkspace) */
+  --titan-list-ratio: 78%;
   --titan-side-max: 240px;
+  /* V1.3 compact: 280~300px on .titan-list-workspace — HOME uses --home-left-panel-width (UI Freeze) */
+  --titan-left-widget-width: 280px;
+  --titan-left-widget-width-max: 300px;
+  --titan-left-widget-collapsed-width: 36px;
 
   /* Desktop program baseline (no mobile) */
   --titan-app-min-width: 1600px;
@@ -96,9 +122,9 @@
   --titan-status-chip-radius-pill: 999px;
   --titan-status-chip-radius: 8px;
   --titan-status-chip-gap: 6px;
-  --titan-status-chip-label-size: 12px;
-  --titan-status-chip-count-size: 17px;
-  --titan-status-chip-count-unit-size: 12px;
+  --titan-status-chip-label-size: var(--titan-font-footer);
+  --titan-status-chip-count-size: var(--titan-font-section-title);
+  --titan-status-chip-count-unit-size: var(--titan-font-footer);
   --titan-status-chip-count-color: #1f2937;
   --titan-status-chip-icon-size: 16px;
   --titan-status-chip-border: #d8e2f1;
@@ -115,13 +141,30 @@
   --titan-collapsible-search-min-h: 40px;
   --titan-collapsible-search-body-py: 0 20px 12px;
 
-  /* Typography — ERP/MES 가독성 (V1.0 +1 step) */
-  --titan-font-base: 14px;
-  --titan-font-sm: 13px;
-  --titan-font-xs: 12px;
-  --titan-font-lg: 15px;
-  --titan-font-xl: 16px;
-  --titan-font-2xl: 18px;
+  /* Typography V1.0 — Pretendard Variable (공식) */
+  --titan-font-family: "Pretendard Variable", Pretendard, "Malgun Gothic", "맑은 고딕", sans-serif;
+  --titan-weight-regular: 400;
+  --titan-weight-medium: 500;
+  --titan-weight-semibold: 600;
+  --titan-weight-bold: 700;
+
+  --titan-font-page-title: 27px;
+  --titan-font-section-title: 19px;
+  --titan-font-menu: 15px;
+  --titan-font-body: 14px;
+  --titan-font-table: 14px;
+  --titan-font-button: 14px;
+  --titan-font-input: 14px;
+  --titan-font-kpi: 34px;
+  --titan-font-footer: 12px;
+
+  /* Legacy aliases → V1.0 sizes */
+  --titan-font-base: var(--titan-font-body);
+  --titan-font-sm: var(--titan-font-body);
+  --titan-font-xs: var(--titan-font-footer);
+  --titan-font-lg: var(--titan-font-menu);
+  --titan-font-xl: var(--titan-font-section-title);
+  --titan-font-2xl: 20px;
 
   /* UI Standard (Project TITAN PQMS — 공통 Component) */
   --titan-control-h: 36px;
@@ -142,6 +185,7 @@
   --titan-popup-min-width: 1400px;
   --titan-popup-min-height: 800px;
   --titan-popup-z-index: 1200;
+  --titan-floating-panel-toggle-z: 110;
   --titan-workspace-modal-width: var(--titan-popup-width);
   --titan-workspace-modal-height: var(--titan-popup-height);
   --titan-workspace-modal-padding: 12px 16px 16px;

@@ -1,6 +1,6 @@
 /**
- * Project TITAN V1.0 — 환경설정 메뉴 구성 (Menu Freeze V1.0)
- * @see src/config/menuFreezeV1.js — ENVIRONMENT_TAB_GROUPS_FREEZE
+ * Project TITAN V1.0 — 환경설정 / 관리자 메뉴 구성
+ * @see Menu Freeze V1.3 + V1.2 Admin Architecture
  */
 
 import {
@@ -20,26 +20,31 @@ import {
   Bug,
   Tags,
   UserCog,
+  LayoutGrid,
+  QrCode,
+  HardDrive,
 } from "lucide-react";
 
-/** @typedef {"system" | "users" | "info" | "admin"} EnvironmentTabGroupId */
+/** @typedef {"admin" | "system" | "info" | "dev"} EnvironmentTabGroupId */
 
 /** @type {Array<{ id: EnvironmentTabGroupId, label: string, adminOnly?: boolean }>} */
 export const ENVIRONMENT_TAB_GROUPS = [
-  { id: "system", label: "① 시스템" },
-  { id: "users", label: "② 사용자" },
-  { id: "info", label: "③ 정보관리" },
-  { id: "admin", label: "④ 관리자", adminOnly: true },
+  { id: "admin", label: "관리자" },
+  { id: "system", label: "시스템" },
+  { id: "info", label: "정보관리" },
+  { id: "dev", label: "개발자", adminOnly: true },
 ];
 
 /** @type {Array<{ id: string, group: EnvironmentTabGroupId, label: string, path: string, icon: import("react").ComponentType, desc?: string, adminOnly?: boolean, masterDataTab?: boolean }>} */
 export const ENVIRONMENT_TABS = [
+  { id: "users", group: "admin", label: "사용자관리", path: "/environment/users", icon: Users, desc: "관리자가 사용자 계정 생성 · 수정 · 삭제" },
+  { id: "permissions", group: "admin", label: "권한관리", path: "/environment/permissions", icon: Shield, desc: "권한별 메뉴 · 기능 접근" },
+  { id: "modules", group: "admin", label: "모듈관리", path: "/environment/modules", icon: LayoutGrid, desc: "기능 모듈 ON/OFF · Sidebar · HOME · 라우트" },
+  { id: "storage", group: "admin", label: "Storage 관리", path: "/environment/storage", icon: HardDrive, desc: "Storage 폴더 · SQLite 메타 · 사용량", adminOnly: true },
+  { id: "backup", group: "admin", label: "백업 / 복원", path: "/environment/backup", icon: Archive, desc: "원클릭 전체 백업" },
+  { id: "logs", group: "admin", label: "시스템 로그", path: "/environment/logs", icon: ScrollText, desc: "로그인 · 변경 · 오류" },
   { id: "program", group: "system", label: "프로그램 설정", path: "/environment/program", icon: Settings, desc: "저장 경로 · 자동 백업" },
   { id: "status", group: "system", label: "시스템 설정", path: "/environment/status", icon: Activity, desc: "라이선스 · 시스템 상태 · 업데이트" },
-  { id: "backup", group: "system", label: "백업 / 복원", path: "/environment/backup", icon: Archive, desc: "원클릭 전체 백업" },
-  { id: "logs", group: "system", label: "로그관리", path: "/environment/logs", icon: ScrollText, desc: "로그인 · 변경 · 오류" },
-  { id: "users", group: "users", label: "사용자관리", path: "/environment/users", icon: Users, desc: "프로그램 사용자" },
-  { id: "permissions", group: "users", label: "권한관리", path: "/environment/permissions", icon: Shield, desc: "권한별 메뉴 접근" },
   {
     id: "employees",
     group: "info",
@@ -58,14 +63,14 @@ export const ENVIRONMENT_TABS = [
     desc: "상태 · 긴급 · 우선순위 · 단위 코드",
     masterDataTab: true,
   },
-  { id: "about", group: "admin", label: "About", path: "/environment/about", icon: Info, desc: "프로그램 정보 · 업데이트", adminOnly: true },
-  { id: "architecture", group: "admin", label: "Architecture", path: "/environment/architecture", icon: Layers, desc: "공식 정책 · 아키텍처", adminOnly: true },
-  { id: "mes-poc", group: "admin", label: "MES PoC", path: "/environment/mes-poc", icon: Server, desc: "MES 연동 사전 검증", adminOnly: true },
-  { id: "repository-status", group: "admin", label: "Repository Status", path: "/environment/repository-status", icon: GitBranch, desc: "Repository Layer 상태", adminOnly: true },
-  { id: "debug", group: "admin", label: "Debug", path: "/environment/debug", icon: Bug, desc: "개발·Demo 디버그 정보", adminOnly: true },
-  { id: "company", group: "admin", label: "회사정보", path: "/environment/company", icon: Building2, desc: "회사 기본 정보 · 로고", adminOnly: true },
-  { id: "notifications", group: "admin", label: "알림설정", path: "/environment/notifications", icon: Bell, desc: "업무 알림", adminOnly: true },
-  { id: "data", group: "admin", label: "데이터 관리", path: "/environment/data", icon: Database, desc: "샘플 · 정리 · 최적화", adminOnly: true },
+  { id: "about", group: "dev", label: "About", path: "/environment/about", icon: Info, desc: "프로그램 정보 · 업데이트", adminOnly: true },
+  { id: "architecture", group: "dev", label: "Architecture", path: "/environment/architecture", icon: Layers, desc: "공식 정책 · 아키텍처", adminOnly: true },
+  { id: "mes-poc", group: "dev", label: "MES PoC", path: "/environment/mes-poc", icon: Server, desc: "MES 연동 사전 검증", adminOnly: true },
+  { id: "repository-status", group: "dev", label: "Repository Status", path: "/environment/repository-status", icon: GitBranch, desc: "Repository Layer 상태", adminOnly: true },
+  { id: "debug", group: "dev", label: "Debug", path: "/environment/debug", icon: Bug, desc: "개발·Demo 디버그 정보", adminOnly: true },
+  { id: "company", group: "dev", label: "회사정보", path: "/environment/company", icon: Building2, desc: "회사 기본 정보 · 로고", adminOnly: true },
+  { id: "notifications", group: "dev", label: "알림설정", path: "/environment/notifications", icon: Bell, desc: "업무 알림", adminOnly: true },
+  { id: "data", group: "dev", label: "데이터 관리", path: "/environment/data", icon: Database, desc: "샘플 · 정리 · 최적화", adminOnly: true },
 ];
 
 /**
@@ -88,19 +93,26 @@ export function getEnvironmentTabGroups(isAdmin = false) {
     .filter((group) => group.tabs.length > 0);
 }
 
-export function getEnvironmentTabMeta(tabId) {
-  return ENVIRONMENT_TABS.find((tab) => tab.id === tabId) ?? ENVIRONMENT_TABS[0];
+export function getEnvironmentTabById(tabId) {
+  return ENVIRONMENT_TABS.find((tab) => tab.id === tabId) ?? null;
 }
 
-export function resolveEnvironmentTab(tabParam) {
-  const tab = ENVIRONMENT_TABS.find((item) => item.id === tabParam);
-  return tab?.id ?? "program";
+export function getEnvironmentDefaultTab(isAdmin = false) {
+  return isAdmin ? "users" : "program";
 }
 
 export function isEnvironmentAdminTab(tabId) {
-  return Boolean(ENVIRONMENT_TABS.find((tab) => tab.id === tabId)?.adminOnly);
+  const tab = getEnvironmentTabById(tabId);
+  return Boolean(tab?.adminOnly);
 }
 
-export function isEnvironmentMasterDataTab(tabId) {
-  return Boolean(ENVIRONMENT_TABS.find((tab) => tab.id === tabId)?.masterDataTab);
+/**
+ * URL :tab 파라미터 → ENVIRONMENT_TABS id
+ * @param {string} [tabParam]
+ * @param {boolean} [isAdmin]
+ */
+export function resolveEnvironmentTab(tabParam, isAdmin = false) {
+  const tab = String(tabParam ?? "").trim();
+  if (getEnvironmentTabById(tab)) return tab;
+  return getEnvironmentDefaultTab(isAdmin);
 }

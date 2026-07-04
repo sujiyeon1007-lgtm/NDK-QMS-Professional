@@ -4,6 +4,7 @@
 
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
 import { getStockQty } from "./inventory";
+import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { isIncomingRegistered } from "./productionRecords";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
@@ -35,6 +36,9 @@ export function getProductionDailyReportStatus(record) {
   }
 
   if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) {
+    if (!hasInspectionLogForManagementId(record.id)) {
+      return { label: "검사대기", variant: "complete" };
+    }
     return { label: "생산완료", variant: "complete" };
   }
 
@@ -50,11 +54,15 @@ export function getProductionDailyReportStatus(record) {
     return { label: PRODUCTION_DAILY_REPORT_STATUS.SHIP_WAIT, variant: "ship-wait" };
   }
 
-  if (
-    record.completionStatus === "생산완료" ||
-    (record.registered && record.lotNo?.trim() && record.workDate)
-  ) {
+  if (record.completionStatus === "생산완료") {
+    if (!hasInspectionLogForManagementId(record.id)) {
+      return { label: "검사대기", variant: "complete" };
+    }
     return { label: PRODUCTION_DAILY_REPORT_STATUS.COMPLETE, variant: "complete" };
+  }
+
+  if (record.registered && record.lotNo?.trim()) {
+    return { label: "생산중", variant: "production" };
   }
 
   if (record.htlNo || record.workSheetGenerated || record.lotNo?.trim()) {

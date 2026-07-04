@@ -1,0 +1,53 @@
+---
+description: Project TITAN UI Design Standard — Grid · Table · Search · Typography
+alwaysApply: true
+---
+
+# Project TITAN UI Design Standard
+
+ERP/MES 스타일. **정보는 왼쪽 Compact · Table/Card는 항상 100% 폭.**
+
+## Grid / Table (필수)
+
+**Source of truth:** `TitanDataTable` · `TitanStandardList` · `TitanTableFrame` · `useTitanTableAutoLayout`
+
+| 규칙 | 구현 |
+|------|------|
+| Table Card 100% | `.titan-table--compact { width: 100% }` · `.titan-table-wrap { width: 100% }` |
+| 컬럼 Compact | 데이터/Header 기준 auto min-width · 왼쪽 정렬 |
+| 오른쪽 여백 | `titan-col--fill` / `titan-table__cell--fill` — Hover·Border·선택색 Row 전체 적용 |
+| Header | 절대 겹침/잘림 금지 · `white-space: nowrap` |
+| Hover / 선택 | `<tr>` 기준 — fill 셀 포함 Row 전체 배경 |
+| 공간 부족 | ① 데이터 컬럼 축소(Header 미만 불가) → ② 가로 스크롤 → ③ Tooltip → ④ Body만 `...` |
+| 페이지별 CSS Table | 금지 — `components.css` + 공통 컴포넌트만 |
+
+```jsx
+// ✅ 모든 리스트
+<TitanDataTable columns={...} rows={...} layout="compact" />
+
+// ❌ 페이지별 table-layout / widthPercent-only 커스텀 테이블
+```
+
+## Search / DatePicker
+
+- `TitanSearchPanel` + `useTitanListSearch` (Live Search)
+- 날짜 범위: `DateRangeField` (`TitanSearchAdvancedFields.jsx`) 단일 컴포넌트 · `titan-advanced-search__field--date-range`
+
+## Typography · Spacing
+
+- Design Tokens: `src/foundation/styles/tokens.css` — 색상/간격 하드코딩 금지
+- Table: `12px` body · Header `--titan-table-header` · cell padding `--titan-table-cell-*`
+- 버튼/제목: `word-break: keep-all` · `TitanMultilineText` / `formatTitanButtonLabel`
+
+## Layout (리스트 화면)
+
+```text
+KPI → 검색 → Table(100%) → Footer pagination
+우측: 상세정보 → 액션 버튼 → 공정 흐름도
+```
+
+## Do Not
+
+- Table `width: max-content`만 사용 (Card 중간에서 Border 끊김)
+- Header ellipsis · 컬럼 `width: 1%` 강제 축소
+- Legacy `src/components/layout/` · 페이지별 `.inbound-table` 스타일 신규 추가

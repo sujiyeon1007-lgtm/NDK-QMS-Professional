@@ -6,18 +6,6 @@
   overflow-x: visible;
 }
 
-.inbound-page .titan-search-panel__fields--inbound {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px 12px;
-}
-
-@media (max-width: 1280px) {
-  .inbound-page .titan-search-panel__fields--inbound {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .inbound-page__kpi {
   margin: 0;
   padding: 0;
@@ -33,9 +21,14 @@
 
 .inbound-page__workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--titan-side-max);
+  grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr);
   gap: var(--titan-gap);
   min-height: 420px;
+  align-items: stretch;
+}
+
+.inbound-page__workspace.is-left-collapsed {
+  grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr);
 }
 
 .inbound-page__list {
@@ -72,8 +65,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--titan-gap);
-  min-width: var(--titan-side-max);
-  max-width: var(--titan-side-max);
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   flex-shrink: 0;
 }
 
@@ -146,13 +140,14 @@
   margin-top: auto;
 }
 
-/* ── TitanDetailPanel (우측 패널 공통) ── */
+/* ── TitanDetailPanel (좌측 Widget 공통) ── */
 .titan-detail-panel {
   display: flex;
   flex-direction: column;
   gap: var(--titan-gap);
-  min-width: var(--titan-side-max);
-  max-width: var(--titan-side-max);
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   flex-shrink: 0;
 }
 

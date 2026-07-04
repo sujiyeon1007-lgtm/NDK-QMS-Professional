@@ -1,9 +1,8 @@
 /**
- * Project TITAN — PQMS Menu Structure (Presentation Version)
- * Menu Freeze V1.3 (2026-07-03) — @see src/config/menuFreezeV1.js
- * Sidebar: 1Depth · 12 menus · 기준정보관리 2번 · 그룹 구분선
+ * Project TITAN — PQMS Menu Structure
+ * Menu Freeze V1.0 (2026-07-04) — 15 Sidebar menus · Menu Simple, Function Deep
  *
- * Source of truth: src/config/menuConfig.js
+ * Source of truth: src/config/menuConfig.js · src/config/menuFreezeV1.js
  */
 
 import {
@@ -16,6 +15,7 @@ import {
   TITAN_MENU_ORDER,
 } from "./menuConfig";
 import { MENU_FREEZE_SIDEBAR_ORDER } from "./menuFreezeV1";
+import { MODULE_SIDEBAR_EXTRAS } from "./titanV12ModuleExpansion";
 
 /** @typedef {{ id: string, label: string, path: string }} MenuTab */
 /** @typedef {{ id: string, label: string, icon: import("react").ComponentType, path: string, end?: boolean }} SidebarItem */
@@ -46,6 +46,8 @@ export const SIDEBAR_MENU_BY_ID = Object.fromEntries(
 /** @type {Record<string, MenuSection>} */
 export const MENU_SECTIONS = {
   ...buildMenuSectionsFromConfig(TITAN_MENU_ORDER),
+  /** Module-gated Sidebar extras (QR 관리 · 경리 · 회계) */
+  ...buildMenuSectionsFromConfig(MODULE_SIDEBAR_EXTRAS),
   /** @deprecated Presentation 이전 — 라우트 유지 */
   inout: {
     id: "inout",
@@ -153,14 +155,17 @@ export const INOUT_TAB_FEATURES = {
 /** QMS Traceability Workflow — Menu Freeze V1.0 */
 export const WORKFLOW_STEPS = [
   "HOME",
-  "입고현황",
-  "작업일보",
-  "품질관리",
-  "문서관리",
   "기준정보관리",
-  "출고현황",
+  "입고관리",
+  "생산관리",
+  "검사관리",
+  "성적서관리",
+  "출고관리",
+  "재고관리",
   "이력조회",
-  "환경설정",
+  "문서관리",
+  "통계관리",
+  "관리자",
 ];
 
 export function getSectionById(sectionId) {
@@ -212,7 +217,7 @@ export const LEGACY_ROUTE_REDIRECTS = {
   "/work-sheet": "/production/daily-report",
   "/production/register": "/production/daily-report",
   "/production-results": "/production/results",
-  "/inspection-log": "/quality/inspection",
+  "/inspection-log": "/quality/inspection/mass",
   "/certificate": "/quality/certificate",
   "/work-schedule": "/work-journal",
   "/work-journal": "/work-journal",

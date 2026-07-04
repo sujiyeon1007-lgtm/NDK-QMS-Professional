@@ -1,0 +1,45 @@
+# Project TITAN V1.3 — QR관리 (Phase 1)
+
+**Source:** `src/config/qrManagementPolicy.js` · `src/pages/QrManagement/` · `src/utils/qrRegistryStore.js`
+
+## 메뉴
+
+- Sidebar **QR관리** (`/qr-management`) — Module: `qrSystem`
+- Tab: **입출고 QR** (`/qr-management/inout`) · **설비 QR** (`/qr-management/equipment`)
+
+## 입출고 QR
+
+- 리스트: 관리번호 · LOT · 업체 · 품명 · 품번 · QR상태 · 생성일 · QR관리
+- Row: `[상세] [생성] [출력] [삭제]`
+- Toolbar: QR 생성 · QR 출력 · QR 재출력 · 삭제
+- Payload: 관리번호 · LOT번호 · 업체명 · 품명 · 품번
+- Store: `qrRegistryStore` · type `inout`
+
+## 설비 QR
+
+- 리스트: 설비번호 · 설비명 · 위치 · 상태 · QR상태 · 생성일 · QR관리
+- Row/Toolbar: 입출고 QR과 동일
+- Payload: 설비번호 · 설비명 · 위치 · 점검주기
+- Master: `getMasterDataByCategory("equipment")` · `inspectionCycle` (default `월 1회`)
+- Store: `qrRegistryStore` · type `equipment`
+
+## Storage
+
+- Schema: `src/database/schemas/qrRegistry.sql`
+- API: `src/utils/qrRegistryStore.js` (sessionStorage · Electron IPC stub ready)
+- Session facade: `src/utils/qrManagementSession.js`
+
+## Detail Popup (Phase 1)
+
+- 입출고: QR정보 · QR 미리보기 only
+- 설비: QR정보 · QR 미리보기 only
+- V2 tabs hidden: Timeline · 동일 LOT · 작업이력
+
+## Print
+
+- `QrPrintSheet` wrapped in `.titan-print-document` for `titanPrintEngine`
+
+## Do Not (V2.0)
+
+- Production/inspection/certificate/shipment QR types
+- Co-LOT tracking · auto Timeline

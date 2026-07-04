@@ -45,6 +45,31 @@
   color: var(--titan-text-muted, #64748b);
 }
 
+.inventory-status-page__view-modes {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.inventory-status-page__view-mode {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  background: var(--titan-surface, #fff);
+  color: var(--titan-text-muted, #64748b);
+  font-size: var(--titan-font-sm, 13px);
+  cursor: pointer;
+}
+
+.inventory-status-page__view-mode.is-active {
+  border-color: var(--titan-primary, #2563eb);
+  background: var(--titan-primary-soft, #edf4fd);
+  color: var(--titan-primary, #2563eb);
+  font-weight: 600;
+}
+
 .inventory-status-page__list {
   display: flex;
   flex-direction: column;

@@ -30,6 +30,36 @@ Every screen follows this sequence. **No coding before design is complete.**
 
 **Completion criteria:** Sidebar → Router → Layout → Tab → click test → Console/Terminal Error = 0. **Build success alone is not completion.**
 
+### 공식 개발 프로세스 (V1.3 최종)
+
+**Code:** `OFFICIAL_DEVELOPMENT_PROCESS` · `SINGLE_SCREEN_WORKFLOW` · `REGRESSION_TEST_CHECKLIST` · `SHARED_COMPONENT_CHANGE_POLICY` in `developmentStandard.js`
+
+```text
+분석 → 원인·영향 보고 → PM 승인 → 최소 범위 수정
+→ npm run build → 실행 테스트 → Regression Test → Git Commit → 다음 작업
+```
+
+**한 번에 여러 페이지 수정 금지.** Commit 단위 = 하나의 화면/기능.
+
+```text
+[예: 검사관리 수정] → Build → 실행 테스트 → Commit → [다음 화면]
+```
+
+**Regression Test (매 작업 후):** HOME · 로그인 · Sidebar · Router · 모든 메뉴 진입 · White Screen 없음 · Console Error = 0
+
+**공통 컴포넌트 수정 시:** TitanDataTable · TitanSearchPanel · TitanScreenDetailPopup · TitanTableRowActions 등 — **사용하는 모든 페이지 테스트 + 영향 목록·결과 보고** 후에만 완료 처리.
+
+### 오류 수정 · 긴급 복구 (V1.3)
+
+`INCIDENT_FIX_PROCESS` in `developmentStandard.js` — **분석 없이 바로 수정 금지**
+
+```text
+① 원인 분석 → ② 영향 범위 → ③ 수정 계획 보고 → ④ 최소 범위 수정
+→ ⑤ Regression Test → ⑥ npm run build → ⑦ 최종 보고
+```
+
+- 추측성 수정 금지 · UI 변경 없이 오류만 복구 · HOME UI Freeze 유지
+
 ### 설계 승인 = UI 반영
 
 Config·Rule만 변경하고 실제 Sidebar · Route · Page(UI)에 반영하지 않으면 **미완료**입니다.
@@ -40,9 +70,13 @@ Config·Rule만 변경하고 실제 Sidebar · Route · Page(UI)에 반영하지
 
 See also: `.cursor/rules/project-titan-progress-v1.mdc` for menu status and next priorities.
 
-## 3. Screen Build Order (One at a Time)
+## 3. Screen Build Order (One at a Time — Commit 단위)
 
-Build **one screen at a time**. Do not start the next screen until the current one is **PM-approved**.
+Build **one screen at a time**. Do not start the next screen until the current one is **PM-approved** and **committed**.
+
+- **Do not** modify multiple management pages in one change set.
+- **Do not** mark complete without browser test on the changed screen + Regression Test.
+- **Do not** batch large refactors (e.g. product list standardization across all pages) without PM-approved phased plan.
 
 **Current priority:** ① 품질관리 (검사일지 · 성적서) → ② 불량이력 → ③ 부서별 업무 (V1.0) → …
 

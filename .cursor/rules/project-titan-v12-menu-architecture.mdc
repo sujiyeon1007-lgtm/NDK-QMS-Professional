@@ -1,0 +1,64 @@
+---
+description: Project TITAN V1.2 Menu Architecture — Menu Simple, Function Deep
+globs:
+  - src/config/titanV12MenuArchitecture.js
+  - src/config/menuConfig.js
+  - src/config/menuFreezeV1.js
+  - src/config/menuStructure.js
+  - docs/TITAN_V12_MENU_ARCHITECTURE.md
+---
+
+# Project TITAN V1.2 — Menu Architecture
+
+**Architecture Lock — Runtime Sidebar V1.3 유지 until PM approval**
+
+## Philosophy
+
+> **메뉴는 적게 · 기능은 깊게** (Menu Simple, Function Deep)
+
+- Main menu: **10~12개**
+- Functions expand **inside** each menu — not as separate Sidebar items
+- HOME: quick start · recent work · QR entry — reduce menu hunting
+- QR/NFC: same philosophy — scan → work screen
+
+## V1.2 Main Menu (11 active)
+
+HOME · 기준정보관리 · 입고관리 · 생산관리 · 검사관리 · 성적서관리 · 출고관리 · 이력조회 · 문서관리 · **통계관리** · **관리자**
+
+Future (module-gated): 경리관리 · 회계관리 — @see titanV12ModuleExpansion.js
+
+## SSoT
+
+- **Target architecture:** `src/config/titanV12MenuArchitecture.js`
+  - `V12_MAIN_MENU` · `V12_MENU_FUNCTIONS` · `V13_TO_V12_MENU_MIGRATION`
+- **Runtime sidebar (current):** `menuFreezeV1.js` · `menuConfig.js` — **V1.3 freeze**
+
+## Rules
+
+1. **New features** — register under `V12_MENU_FUNCTIONS` target menu first
+2. **Reuse existing screens** — map path in config; do not duplicate pages
+3. **Statistics** — one menu · internal tabs only
+4. **Admin** — includes QR 출력센터 · Smart Access 관리 (planned paths)
+5. **Do NOT change Sidebar** without PM approval — architecture config only until transition
+
+## V1.3 → V1.2 Key Changes (planned)
+
+| V1.3 | V1.2 |
+|------|------|
+| 입고현황 | 입고관리 (group) |
+| 작업일보 | 생산관리 (group) |
+| 품질관리 | 검사관리 + 성적서관리 (split) |
+| 통계조회 | 통계관리 (unified tabs) |
+| 환경설정 | 관리자 (expanded) |
+
+## Companion
+
+- `.cursor/rules/project-titan-v12-smart-access-platform.mdc` — QR ↔ menu entry
+- `.cursor/rules/project-titan-official-architecture.mdc` — workflow · dev principles
+
+## Do Not
+
+- Add Sidebar items for every sub-function
+- Remove Paper workflow or existing screens
+- Change approved UI during architecture-only work
+- Implement 경리/회계 menus before PM approval (structure only)

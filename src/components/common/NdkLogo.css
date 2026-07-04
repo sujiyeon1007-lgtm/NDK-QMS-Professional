@@ -38,3 +38,17 @@
   max-width: 42mm;
   margin: 0;
 }
+
+.ndk-logo--login {
+  width: auto;
+  height: 117px;
+  max-width: 450px;
+  object-fit: contain;
+}
+
+.ndk-logo--login-loading {
+  width: auto;
+  height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+}

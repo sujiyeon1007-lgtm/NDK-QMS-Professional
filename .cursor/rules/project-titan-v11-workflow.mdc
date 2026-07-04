@@ -1,0 +1,58 @@
+---
+description: Project TITAN V1.1 Workflow — Paper · Smart · MES Ready · Smart Factory Lite
+alwaysApply: false
+globs:
+  - src/config/titanV11Workflow.js
+  - src/config/titanOfficialArchitecture.js
+  - src/utils/smartProducibleWorkList.js
+  - src/utils/equipmentQr.js
+  - docs/TITAN_V11_WORKFLOW.md
+  - docs/TITAN_OFFICIAL_ARCHITECTURE.md
+---
+
+# Project TITAN V1.1 — Workflow (QMS + Smart Factory Lite)
+
+> **Primary:** `.cursor/rules/project-titan-official-architecture.mdc` · `docs/TITAN_OFFICIAL_ARCHITECTURE.md`
+
+**Smart Access:** `.cursor/rules/project-titan-smart-access-architecture.mdc` · `docs/SMART_ACCESS_ARCHITECTURE.md`
+
+## Principles
+
+- **One Time Input → One Scan → One Workflow**
+- **Not a design change** — reuse existing screens (작업일보, 입고, 출고, 검사).
+- **Paper Workflow must not be removed** — HTL/OUT/INV/DPR prints stay.
+- **Smart Workflow is additive** — Smart Access ID → existing screens via `SMART_ACCESS_TARGETS`.
+- **NFC = same Smart Access ID as QR** — no separate handler.
+- **Product Master** — `products.process` / `record.heatTreatment` drives process filter.
+- **Do not replace MES** — MES Ready · Repository swap only · UI unchanged.
+
+## Paper Mode (fixed)
+
+입고 → 입고리스트(DOC-01) → 생산 → 검사 → 성적서 → 출고 → 통계
+
+## Smart Mode (full chain)
+
+QR/NFC → 설비/위치 인식 → 공정 확인 → 생산 가능 목록 → LOT → 생산중 → 생산완료 → 검사대기 → **검사 → 성적서 → 출고**
+
+## Code SSoT
+
+- `src/config/titanOfficialArchitecture.js` — PAPER_WORKFLOW_CHAIN · SMART_WORKFLOW_CHAIN
+- `src/config/smartAccessArchitecture.js` — Route Registry · Smart Access ID
+- `src/config/titanV11Workflow.js` — re-exports + producible sources
+- `src/utils/equipmentQr.js` — `NDK://EQ/{code}` + `NDK|EQ|{code}`
+- `src/utils/smartProducibleWorkList.js`
+- `src/utils/titanWorkflowStatus.js` — status machine (do not duplicate)
+
+## Smart Entry URL
+
+```
+/production/daily-report?equipment=ION-01
+/production/daily-report?qr=NDK://EQ/ION-01
+/production/daily-report?qr=NDK|EQ|ION-01   (legacy)
+```
+
+## Do Not
+
+- Remove print buttons or paper flows
+- Create separate mobile UI (QR → browser URL until field mode approved)
+- Change approved list layouts for Smart features — panel only inside 작업일보

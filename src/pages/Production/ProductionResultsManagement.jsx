@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   DateRangeField,
   EquipmentField,
   ProcessField,
-  StatusSelectField,
   WorkerField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import StatusChip from "../../foundation/components/StatusChip";
@@ -20,7 +20,7 @@ import {
   PRODUCTION_RESULTS_METRIC_CARDS,
   PRODUCTION_RESULTS_STATUS_PANEL,
 } from "../../config/productionDashboard";
-import { createEmptyProductionResultsSearch } from "../../config/listSearchStandard";
+import { createEmptyProductionResultsSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildProductionResultsListColumns } from "../../config/standardProductList";
 import { getProcessChipVariant, getProductionProcessCodes } from "../../config/productionProcessCodes";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
@@ -42,7 +42,6 @@ import {
   mapProductionResultRow,
   matchesProductionResultsSearch,
   narrowRecordsForSelectedRow,
-  PRODUCTION_RESULTS_STATUS_OPTIONS,
 } from "../../utils/productionAnalytics";
 import "../InOut/InboundManagement.css";
 import "./ProductionManagement.css";
@@ -264,8 +263,10 @@ export default function ProductionResultsManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
+        showStatusField
         advancedContent={
-          <div className="titan-advanced-search__grid">
+          <TitanAdvancedSearchGrid>
             <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <DateRangeField
               label="작업일"
@@ -276,13 +277,7 @@ export default function ProductionResultsManagement() {
             />
             <EquipmentField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
             <WorkerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <StatusSelectField
-              label="현재상태"
-              value={draft.status}
-              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
-              options={PRODUCTION_RESULTS_STATUS_OPTIONS}
-            />
-          </div>
+          </TitanAdvancedSearchGrid>
         }
       />
 

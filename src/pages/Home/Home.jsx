@@ -1,21 +1,52 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import PageTopBar from "../../foundation/layout/PageTopBar";
 import { HOME_PAGE_META } from "../../config/homeDashboard";
+import { TITAN_MODULE_REGISTRY } from "../../config/titanV12ModuleExpansion";
 import { buildProductWorkflowPreview } from "../../utils/homeDashboardData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { setTitanErrorContext, clearTitanErrorContext } from "../../utils/titanErrorContext";
 import {
   HomeIntegratedSearchPanel,
-  HomeKpiPanel,
   HomeNoticePanel,
   HomeProgressPanel,
   HomeRecentWorkPanel,
-  HomeWorkSchedulePanel,
+  HomeTodaySummary,
+  HomeTodayTasksPanel,
 } from "./HomeDashboardPanels";
+import HomeLeftPanel from "./HomeLeftPanel";
 import { useHomeIntegratedSearch } from "./useHomeIntegratedSearch";
 import "./Home.css";
+
+function HomeAccessNotice() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const moduleId = location.state?.moduleBlocked;
+  const permissionBlocked = location.state?.permissionBlocked;
+
+  useEffect(() => {
+    if (!moduleId && !permissionBlocked) return undefined;
+    const timer = window.setTimeout(() => {
+      navigate(location.pathname, { replace: true, state: null });
+    }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [moduleId, permissionBlocked, location.pathname, navigate]);
+
+  if (!moduleId && !permissionBlocked) return null;
+
+  const moduleLabel = moduleId ? TITAN_MODULE_REGISTRY[moduleId]?.label ?? moduleId : null;
+  const message = permissionBlocked
+    ? "해당 메뉴에 접근할 권한이 없습니다. 환경설정에서 권한을 확인하세요."
+    : `${moduleLabel ?? "해당"} 모듈이 비활성화되어 HOME으로 이동했습니다. 환경설정 → 모듈관리에서 ON/OFF를 변경할 수 있습니다.`;
+
+  return (
+    <div className="home-access-notice" role="status">
+      {message}
+    </div>
+  );
+}
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -52,22 +83,26 @@ export default function Home() {
       <PageTopBar
         title={HOME_PAGE_META.title}
         kicker={HOME_PAGE_META.kicker}
-        description={HOME_PAGE_META.description}
         onRefresh={handleRefresh}
+        compact
       />
 
-      <HomeKpiPanel records={records} />
+      <HomeAccessNotice />
 
-      <div className="home-board">
-        <aside className="home-board__left" aria-label="업무 지원 · 최근 이력">
-          <HomeNoticePanel refreshKey={refreshKey} />
-          <HomeWorkSchedulePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
-          <div className="home-board__cell home-board__cell--recent" aria-label="최근 작업 이력">
-            <HomeRecentWorkPanel records={records} />
-          </div>
-        </aside>
+      <HomeTodaySummary records={records} />
 
-        <div className="home-board__right" aria-label="검색 · 진행현황">
+      <div className="home-board" aria-label="HOME Dashboard">
+        <HomeLeftPanel>
+          <HomeNoticePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
+          <HomeTodayTasksPanel
+            records={records}
+            refreshKey={refreshKey}
+            onRefresh={handleRefresh}
+          />
+          <HomeRecentWorkPanel records={records} />
+        </HomeLeftPanel>
+
+        <div className="home-board__right" aria-label="통합검색 · 진행현황">
           <div className="home-board__cell home-board__cell--search">
             <HomeIntegratedSearchPanel
               draft={draft}

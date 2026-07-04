@@ -1,0 +1,141 @@
+---
+description: Project TITAN Official Architecture — Primary SSoT · Smart Access · Workflow · MES Ready · Dev Principles
+alwaysApply: true
+---
+
+# Project TITAN — Official Architecture (PRIMARY)
+
+**Lock:** 2026-07-04 · **V1.2 Primary:** `docs/TITAN_V12_OFFICIAL_ARCHITECTURE.md` · `src/config/titanV12OfficialArchitecture.js`  
+**Parent SSoT:** `src/config/titanOfficialArchitecture.js` · `docs/TITAN_OFFICIAL_ARCHITECTURE.md`
+
+## Identity
+
+**Project TITAN** = QMS + Smart Factory Lite + Mobile + QR + Future NFC + MES Ready — 통합 업무 플랫폼
+
+## Philosophy
+
+> *"기존 업무를 없애는 시스템이 아니라 기존 업무를 더 편하게 만드는 시스템"*
+
+- Paper Workflow **유지** · Smart Workflow **추가** · 사용자 Paper OR Smart 선택
+- **One Time Input → One Scan → One Workflow**
+
+## Development Priority (Mandatory)
+
+```text
+Workflow → UI → Database → 개발 → 테스트 → 현장 피드백 → 개선
+```
+
+**Workflow > UI** — 업무 흐름 확정 후 화면 · DB · 구현
+
+## One Time Input Data Flow
+
+```text
+제품관리 → 입고 → 생산 → 검사 → 성적서 → 출고 → 통계
+```
+
+중복 입력 ❌ · Master Data 적극 활용
+
+## Support Modes (Parallel · Never Delete Paper)
+
+| Mode | Rule |
+|------|------|
+| **Paper** | HTL · OUT · INV · DPR 출력 **삭제 금지** |
+| **Smart (QR)** | Smart Access ID → 기존 화면 deep link |
+| **NFC (Future)** | QR와 **동일 Smart Access ID** · Handler 공유 |
+
+## Workflows
+
+**Paper:** 입고 → 입고리스트 출력 → 생산 → 검사 → 성적서 → 출고 → 통계
+
+**Smart:** QR/NFC → 설비/위치 인식 → 공정 → 생산 가능 목록 → LOT → 생산중 → 생산완료 → 검사대기 → 검사 → 성적서 → 출고
+
+## Smart Access ID (Canonical)
+
+| ID | Screen |
+|----|--------|
+| `NDK://INCOMING` | 입고등록 |
+| `NDK://OUTGOING` | 출고등록 |
+| `NDK://INSPECTION` | 검사등록 |
+| `NDK://CERTIFICATE` | 성적서관리 |
+| `NDK://EQ/{code}` | 설비 (ION-01 · ION-02 · GAS-01 · SOFT-01) |
+
+**Legacy alias:** `NDK|EQ|{code}` · `NDK|IN|REG` etc. — backward compat in `equipmentQr.js` · `parseSmartAccessId()`
+
+**Route mapping:** `src/config/smartAccessArchitecture.js` → `SMART_ACCESS_TARGETS`
+
+## Equipment QR Rules
+
+- NOT per product · NOT per LOT
+- **ONE QR per equipment** · multi-copy print OK
+- Official codes: ION-01 · ION-02 · GAS-01 · SOFT-01
+
+## V1.2 Pillars (Consolidated)
+
+### Menu (§1) — Menu Simple, Function Deep
+11 core + 경리·회계 module-gated · `titanV12MenuArchitecture.js`
+
+### Module System (§2) — ON/OFF · data retained
+`/environment/modules` · OFF = hide menu · HOME · permissions · `titanV12ModuleExpansion.js`
+
+### Storage (§6–§8) — SQLite meta + Storage files
+- **SQLite:** metadata only (path · name · date · user · revision) — **no file blobs**
+- **Storage folders:** Certificate · Shipment · Inspection · Drawing · Image · Document · Backup
+- **Location:** configurable (local → server → NAS → cloud) — path change only
+- **Manager:** `/environment/storage` — usage · optimize · backup · restore
+
+### Company Assets (§11)
+All files managed inside TITAN — Windows folder direct access ❌
+
+### HOME (§12)
+Program entry — quick menus · recent work · QR · KPI · **금일 업무** · module-aware widgets
+
+### Final Goal (§14)
+MES **does NOT replace** · Before MES = factory ops · After MES = QMS + DMS + Smart Access + 경리 + 회계 platform
+
+## MES Ready
+
+- TITAN **does NOT replace MES**
+- Current: SessionStorage → TITAN · Future: MES → SQLite/API → TITAN
+- **UI·Workflow 불변** — Repository/Data Source만 교체
+
+## Development Principles (10 Rules — Lock)
+
+1. 기존 디자인 임의 변경 금지
+2. 기존 기능 삭제 금지
+3. Workflow 중심 개발
+4. 클릭 최소화
+5. One Time Input
+6. Paper + Smart 병행
+7. QR + NFC Ready
+8. Master Data 적극 활용
+9. 빌드 성공 후 보고
+10. Commit 가능한 상태 유지
+
+## Code SSoT Map
+
+| Area | File |
+|------|------|
+| **V1.2 Official (Consolidated)** | `src/config/titanV12OfficialArchitecture.js` |
+| **Official Architecture** | `src/config/titanOfficialArchitecture.js` |
+| **V1.2 Menu Architecture** | `src/config/titanV12MenuArchitecture.js` |
+| Smart Access Routes | `src/config/smartAccessArchitecture.js` |
+| V1.1 Workflow | `src/config/titanV11Workflow.js` |
+| QMS Menu Workflow | `src/config/qmsMenuWorkflow.js` |
+| Development Direction | `src/config/titanV1DevelopmentDirection.js` |
+
+## Companion Rules
+
+- `.cursor/rules/project-titan-v12-module-expansion.mdc` — ON/OFF modules · 경리 · 회계
+- `.cursor/rules/project-titan-v12-menu-architecture.mdc` — Menu Simple, Function Deep
+- `.cursor/rules/project-titan-v12-smart-access-platform.mdc` — V1.2 QR · 라벨 · Dashboard
+- `.cursor/rules/project-titan-smart-access-architecture.mdc`
+- `.cursor/rules/project-titan-v11-workflow.mdc`
+- `.cursor/rules/project-titan-v1-development-direction.mdc` — Version 3 PQMS scope
+
+## Do Not
+
+- Remove Paper print flows
+- Change approved UI for architecture work
+- Create ad-hoc Smart Access ID schemes outside `titanOfficialArchitecture.js`
+- Store file blobs in SQLite
+- Let users manage files via Windows Explorer directly

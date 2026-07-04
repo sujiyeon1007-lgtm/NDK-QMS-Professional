@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
-import { getEnvironmentTabGroups, isEnvironmentAdminTab } from "../../config/environmentSettings";
+import { getEnvironmentTabGroups, isEnvironmentAdminTab, getEnvironmentDefaultTab } from "../../config/environmentSettings";
 import { SectionPageActionsProvider } from "../../foundation/layout/SectionPageActionsContext";
 import { useSectionPageActionsContext } from "../../foundation/layout/SectionPageActionsContext";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
@@ -33,7 +33,7 @@ export default function EnvironmentLayout() {
   if (!section) return null;
 
   if (location.pathname === "/environment" || location.pathname === "/environment/") {
-    return <Navigate to="/environment/program" replace />;
+    return <Navigate to={`/environment/${getEnvironmentDefaultTab(isTitanAdminUser())}`} replace />;
   }
 
   const tabParam = location.pathname.split("/").pop();

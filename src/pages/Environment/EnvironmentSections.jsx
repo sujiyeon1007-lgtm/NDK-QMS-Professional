@@ -3,11 +3,10 @@ import { Download, FolderOpen, RefreshCw, RotateCcw, Upload } from "lucide-react
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
+import TitanComingSoonPlaceholder from "../../foundation/pages/TitanComingSoonPlaceholder";
 import {
   APP_NAME,
   APP_VERSION,
-  PERMISSION_MENUS,
-  USER_ROLES,
   checkForUpdates,
   estimateStorageUsage,
   getCombinedLogs,
@@ -24,9 +23,7 @@ import {
   saveCompanyInfo,
   saveCompanyLogo,
   saveNotifications,
-  savePermissions,
   saveProgramSettings,
-  updateUser,
 } from "../../utils/environmentSettingsSession";
 import { getTitanArchitectureDisplayInfo } from "../../config/mesArchitecturePolicy";
 import { OFFICIAL_POLICY_DISPLAY } from "../../config/titanV1OfficialPolicy";
@@ -38,6 +35,7 @@ import {
   QUALITY_PRIMARY_KEY,
 } from "../../config/repositoryArchitecture";
 import { DEMO_ADMIN_POLICY_VERSION } from "../../config/demoAdminPolicy";
+import { getEnvironmentTabById } from "../../config/environmentSettings";
 import {
   MES_REPOSITORY_ADAPTER,
   TITAN_EDITION,
@@ -47,6 +45,24 @@ import {
 import { PLATFORM_ARCHITECTURE_VERSION, TITAN_PLATFORM_VISION, PLATFORM_LAYERS } from "../../config/titanPlatformArchitecture";
 import { DEVELOPMENT_STRATEGY, CURRENT_DEVELOPMENT_VERSION } from "../../config/titanV1DevelopmentDirection";
 import { getRepositoryBackendLabel } from "../../repositories";
+import {
+  TITAN_FEATURE_PERMISSIONS,
+  TITAN_MENU_PERMISSIONS,
+} from "../../config/titanLoginSystem";
+import {
+  createAuthRole,
+  createAuthUser,
+  deleteAuthRole,
+  deleteAuthUser,
+  getAuthRoles,
+  getAuthUsers,
+  getLoginHistory,
+  getUserRoleIds,
+  hasQrCreatePermission,
+  setUserPermissionOverride,
+  updateAuthRole,
+  updateAuthUser,
+} from "../../utils/titanAuthDataSession";
 import { isTitanAdminUser, getTitanUserRole, isDemoAdminModeActive } from "../../utils/titanAdminAccess";
 import {
   getTitanEditionState,
@@ -54,6 +70,8 @@ import {
   getTitanEditionDisplayLabel,
 } from "../../utils/titanEditionSession";
 import MesIntegrationPocPanel from "./MesIntegrationPocPanel";
+import ModuleManagementSection from "./ModuleManagementSection";
+import StorageManagementSection from "./StorageManagementSection";
 
 function SettingsPanel({ title, desc, children }) {
   return (
@@ -194,12 +212,21 @@ export function CompanySection({ refreshKey, onRefresh }) {
 }
 
 export function UsersSection({ refreshKey, onRefresh }) {
-  const users = useMemo(() => getEnvironmentSettings().users, [refreshKey]);
+  const users = useMemo(() => getAuthUsers(), [refreshKey]);
+  const roles = useMemo(() => getAuthRoles(), [refreshKey]);
   const [message, setMessage] = useState("");
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [draft, setDraft] = useState({
+    loginId: "",
+    name: "",
+    department: "",
+    rank: "사원",
+    roleIds: [],
+  });
 
   const toggleActive = (user) => {
-    updateUser(user.id, { active: !user.active });
+    updateAuthUser(user.id, { active: !user.active });
     setMessage(`${user.name} 사용자 상태가 변경되었습니다.`);
     onRefresh?.();
   };
@@ -210,15 +237,41 @@ export function UsersSection({ refreshKey, onRefresh }) {
     onRefresh?.();
   };
 
+  const handleDelete = (user) => {
+    const result = deleteAuthUser(user.id);
+    setMessage(result.ok ? `${user.name} 사용자가 삭제되었습니다.` : result.message);
+    onRefresh?.();
+  };
+
+  const handleCreate = () => {
+    const result = createAuthUser({
+      ...draft,
+      roleIds: draft.roleIds,
+    });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setFormOpen(false);
+    setDraft({ loginId: "", name: "", department: "", rank: "사원", roleIds: [] });
+    setMessage("사용자가 등록되었습니다. 초기 비밀번호는 1234 입니다.");
+    onRefresh?.();
+  };
+
   const columns = useMemo(
     () => [
       { key: "loginId", label: "아이디" },
       { key: "name", label: "이름" },
       { key: "department", label: "부서" },
+      { key: "rank", label: "직급" },
       {
-        key: "role",
-        label: "직급/권한",
-        render: (row) => USER_ROLES.find((r) => r.value === row.role)?.label ?? row.role,
+        key: "roles",
+        label: "권한",
+        render: (row) =>
+          getUserRoleIds(row.id)
+            .map((id) => roles.find((role) => role.id === id)?.label)
+            .filter(Boolean)
+            .join(" · ") || "—",
       },
       {
         key: "active",
@@ -234,33 +287,84 @@ export function UsersSection({ refreshKey, onRefresh }) {
         label: "관리",
         render: (row) => (
           <div className="environment-table-actions">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleActive(row);
-              }}
-            >
+            <button type="button" onClick={(e) => { e.stopPropagation(); toggleActive(row); }}>
               {row.active === false ? "사용" : "미사용"}
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleResetPassword(row);
-              }}
-            >
+            <button type="button" onClick={(e) => { e.stopPropagation(); handleResetPassword(row); }}>
               비밀번호 초기화
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+              삭제
             </button>
           </div>
         ),
       },
     ],
-    [refreshKey]
+    [refreshKey, roles]
   );
 
   return (
-    <SettingsPanel title="사용자관리" desc="프로그램 사용자 계정을 관리합니다. (향후 로그인 연동)">
+    <SettingsPanel
+      title="사용자관리"
+      desc="관리자가 사용자를 생성·수정·삭제합니다. 회원가입 · 비밀번호 찾기 · 이메일/휴대폰 인증은 지원하지 않습니다."
+    >
+      <div className="environment-actions environment-actions--top">
+        <PrimaryButton type="button" onClick={() => setFormOpen((open) => !open)}>
+          사용자 추가
+        </PrimaryButton>
+      </div>
+
+      {formOpen ? (
+        <div className="environment-form-grid environment-user-form">
+          <label>
+            <span>아이디</span>
+            <input value={draft.loginId} onChange={(e) => setDraft((p) => ({ ...p, loginId: e.target.value }))} />
+          </label>
+          <label>
+            <span>이름</span>
+            <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} />
+          </label>
+          <label>
+            <span>부서</span>
+            <input value={draft.department} onChange={(e) => setDraft((p) => ({ ...p, department: e.target.value }))} />
+          </label>
+          <label>
+            <span>직급</span>
+            <input value={draft.rank} onChange={(e) => setDraft((p) => ({ ...p, rank: e.target.value }))} />
+          </label>
+          <label className="span-2">
+            <span>권한 (다중 선택)</span>
+            <div className="environment-role-checks">
+              {roles.map((role) => (
+                <label key={role.id}>
+                  <input
+                    type="checkbox"
+                    checked={draft.roleIds.includes(role.id)}
+                    onChange={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        roleIds: prev.roleIds.includes(role.id)
+                          ? prev.roleIds.filter((id) => id !== role.id)
+                          : [...prev.roleIds, role.id],
+                      }))
+                    }
+                  />
+                  {role.label}
+                </label>
+              ))}
+            </div>
+          </label>
+          <div className="environment-actions span-2">
+            <PrimaryButton type="button" onClick={handleCreate}>
+              등록
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={() => setFormOpen(false)}>
+              취소
+            </SecondaryButton>
+          </div>
+        </div>
+      ) : null}
+
       <div className="environment-table-wrap">
         <TitanDataTable
           columns={columns}
@@ -271,27 +375,24 @@ export function UsersSection({ refreshKey, onRefresh }) {
           renderExpandedRow={(row) => (
             <div className="titan-list-expand">
               <dl className="inbound-detail titan-list-expand__detail">
-                <div>
-                  <dt>아이디</dt>
-                  <dd>{row.loginId}</dd>
-                </div>
-                <div>
-                  <dt>이름</dt>
-                  <dd>{row.name}</dd>
-                </div>
-                <div>
-                  <dt>부서</dt>
-                  <dd>{row.department || "—"}</dd>
-                </div>
-                <div>
-                  <dt>직급/권한</dt>
-                  <dd>{USER_ROLES.find((r) => r.value === row.role)?.label ?? row.role}</dd>
-                </div>
-                <div>
-                  <dt>상태</dt>
-                  <dd>{row.active === false ? "미사용" : "사용"}</dd>
-                </div>
+                <div><dt>아이디</dt><dd>{row.loginId}</dd></div>
+                <div><dt>이름</dt><dd>{row.name}</dd></div>
+                <div><dt>부서</dt><dd>{row.department || "—"}</dd></div>
+                <div><dt>직급</dt><dd>{row.rank || "—"}</dd></div>
+                <div><dt>상태</dt><dd>{row.active === false ? "미사용" : "사용"}</dd></div>
               </dl>
+              <label className="environment-user-qr-perm">
+                <input
+                  type="checkbox"
+                  checked={hasQrCreatePermission(row.id)}
+                  onChange={(e) => {
+                    setUserPermissionOverride(row.id, "qrCreate", e.target.checked);
+                    setMessage(`${row.name} — QR 생성 권한이 ${e.target.checked ? "부여" : "해제"}되었습니다.`);
+                    onRefresh?.();
+                  }}
+                />
+                QR 생성 권한
+              </label>
             </div>
           )}
           emptyMessage="등록된 사용자가 없습니다."
@@ -304,37 +405,96 @@ export function UsersSection({ refreshKey, onRefresh }) {
 }
 
 export function PermissionsSection({ refreshKey, onRefresh }) {
-  const permissions = useMemo(() => getEnvironmentSettings().permissions, [refreshKey]);
-  const [draft, setDraft] = useState(permissions);
+  const roles = useMemo(() => getAuthRoles(), [refreshKey]);
+  const [activeRoleId, setActiveRoleId] = useState(roles[0]?.id ?? "");
+  const [draftName, setDraftName] = useState("");
   const [message, setMessage] = useState("");
 
-  const toggle = (role, key) => {
-    setDraft((prev) => ({
-      ...prev,
-      [role]: { ...prev[role], [key]: !prev[role]?.[key] },
-    }));
+  const activeRole = roles.find((role) => role.id === activeRoleId) ?? roles[0];
+
+  const toggleMenu = (key) => {
+    if (!activeRole) return;
+    updateAuthRole(activeRole.id, {
+      menuPermissions: {
+        ...activeRole.menuPermissions,
+        [key]: !activeRole.menuPermissions?.[key],
+      },
+    });
+    onRefresh?.();
+  };
+
+  const toggleFeature = (key) => {
+    if (!activeRole) return;
+    updateAuthRole(activeRole.id, {
+      featurePermissions: {
+        ...activeRole.featurePermissions,
+        [key]: !activeRole.featurePermissions?.[key],
+      },
+    });
+    onRefresh?.();
+  };
+
+  const handleCreateRole = () => {
+    const result = createAuthRole({ name: draftName });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setDraftName("");
+    setActiveRoleId(result.role.id);
+    setMessage("권한이 추가되었습니다.");
+    onRefresh?.();
+  };
+
+  const handleDeleteRole = () => {
+    if (!activeRole) return;
+    const result = deleteAuthRole(activeRole.id);
+    setMessage(result.ok ? "권한이 삭제되었습니다." : result.message);
+    onRefresh?.();
   };
 
   const handleSave = () => {
-    savePermissions(draft);
     setMessage("권한 설정이 저장되었습니다.");
     onRefresh?.();
   };
 
   return (
-    <SettingsPanel title="권한관리" desc="권한별 메뉴 접근을 설정합니다.">
-      <div className="environment-permission-grid">
-        {USER_ROLES.map((role) => (
-          <div key={role.value} className="environment-permission-card">
-            <h4>{role.label}</h4>
+    <SettingsPanel title="권한관리" desc="권한을 자유롭게 추가·수정·삭제하고, 메뉴·기능 접근을 설정합니다. 모듈 OFF 시 해당 메뉴는 모든 사용자에게 숨겨집니다.">
+      <div className="environment-permission-toolbar">
+        <label>
+          <span>권한 선택</span>
+          <select value={activeRole?.id ?? ""} onChange={(e) => setActiveRoleId(e.target.value)}>
+            {roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>새 권한명</span>
+          <input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="예: 품질관리" />
+        </label>
+        <PrimaryButton type="button" onClick={handleCreateRole}>
+          권한 추가
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={handleDeleteRole} disabled={activeRole?.isSystem}>
+          권한 삭제
+        </SecondaryButton>
+      </div>
+
+      {activeRole ? (
+        <div className="environment-permission-grid">
+          <div className="environment-permission-card">
+            <h4>메뉴 권한</h4>
             <ul>
-              {PERMISSION_MENUS.map((menu) => (
+              {TITAN_MENU_PERMISSIONS.map((menu) => (
                 <li key={menu.key}>
                   <label>
                     <input
                       type="checkbox"
-                      checked={Boolean(draft[role.value]?.[menu.key])}
-                      onChange={() => toggle(role.value, menu.key)}
+                      checked={Boolean(activeRole.menuPermissions?.[menu.key])}
+                      onChange={() => toggleMenu(menu.key)}
                     />
                     {menu.label}
                   </label>
@@ -342,13 +502,51 @@ export function PermissionsSection({ refreshKey, onRefresh }) {
               ))}
             </ul>
           </div>
-        ))}
-      </div>
+          <div className="environment-permission-card">
+            <h4>기능 권한</h4>
+            <ul>
+              {TITAN_FEATURE_PERMISSIONS.map((feature) => (
+                <li key={feature.key}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(activeRole.featurePermissions?.[feature.key])}
+                      onChange={() => toggleFeature(feature.key)}
+                    />
+                    {feature.label}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
       <ActionMessage message={message} />
       <div className="environment-actions">
         <PrimaryButton type="button" onClick={handleSave}>
           저장
         </PrimaryButton>
+      </div>
+
+      <div className="environment-login-history">
+        <h4>로그인 이력</h4>
+        <div className="environment-table-wrap">
+          <TitanDataTable
+            columns={[
+              { key: "loginAt", label: "로그인" },
+              { key: "logoutAt", label: "로그아웃", render: (row) => row.logoutAt || "—" },
+              { key: "loginId", label: "사용자" },
+              { key: "userName", label: "이름" },
+              { key: "success", label: "결과", render: (row) => (row.success ? "성공" : "실패") },
+              { key: "failReason", label: "비고", render: (row) => row.failReason || "—" },
+            ]}
+            rows={getLoginHistory().slice(0, 20)}
+            getRowId={(row) => row.id}
+            emptyMessage="로그인 이력이 없습니다."
+            ariaLabel="로그인 이력"
+          />
+        </div>
       </div>
     </SettingsPanel>
   );
@@ -1094,6 +1292,10 @@ export function renderEnvironmentSection(tabId, props) {
       return <DataSection {...props} />;
     case "status":
       return <StatusSection {...props} />;
+    case "modules":
+      return <ModuleManagementSection {...props} />;
+    case "storage":
+      return <StorageManagementSection {...props} />;
     case "mes-poc":
       return <MesPocSection {...props} />;
     case "architecture":
@@ -1104,7 +1306,14 @@ export function renderEnvironmentSection(tabId, props) {
       return <DebugSection {...props} />;
     case "about":
       return <AboutSection {...props} />;
-    default:
-      return <CompanySection {...props} />;
+    default: {
+      const tab = getEnvironmentTabById(tabId);
+      return (
+        <TitanComingSoonPlaceholder
+          title={tab?.label ?? "환경설정"}
+          subtitle="관리자"
+        />
+      );
+    }
   }
 }

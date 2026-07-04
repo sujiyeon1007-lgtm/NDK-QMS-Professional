@@ -4,7 +4,7 @@
 
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getJournalReferenceDate } from "./workJournalData";
-import { onInspectionComplete } from "./titanWorkflowStatus";
+import { onInspectionCancelled, onInspectionComplete } from "./titanWorkflowStatus";
 import { applyProductDefaultsToForm, getProductByPartNo } from "./productRegistrationSession";
 import { cloneSpecification } from "./productSpecificationModel";
 import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
@@ -162,6 +162,7 @@ export function hasInspectionLogForManagementId(managementId) {
 
 export function addInspectionLog(payload) {
   const log = normalizeLog({
+    category: "양산",
     ...payload,
     id: payload.id || createInspectionId(),
     createdAt: new Date().toISOString(),
@@ -195,6 +196,21 @@ export function updateInspectionLog(id, patch) {
 
 export function softDeleteInspectionLog(id) {
   return updateInspectionLog(id, { deleted: true });
+}
+
+/** Soft-delete log · revert workflow when last log for managementId removed */
+export function cancelInspectionRegistration(id) {
+  const log = getInspectionLogById(id);
+  if (!log || log.deleted) return null;
+
+  const managementId = log.managementId?.trim();
+  softDeleteInspectionLog(id);
+
+  if (managementId && !hasInspectionLogForManagementId(managementId)) {
+    onInspectionCancelled(managementId);
+  }
+
+  return log;
 }
 
 export function buildInspectionLogFromRecord(record, overrides = {}) {

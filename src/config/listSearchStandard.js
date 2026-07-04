@@ -24,15 +24,42 @@ export const EMPTY_BASIC_SEARCH = {
   material: "",
 };
 
+/** 제품/입출고/품질 공통 — 1행 기본 검색 (V1.3: 관리번호 · 업체 · 품명 · 품번 · LOT · 현재상태) */
+export const STANDARD_PRODUCT_BASIC_SEARCH_FIELDS = [
+  { key: "managementId", label: "관리번호", placeholder: "관리번호" },
+  { key: "company", label: "업체명", placeholder: "업체명", allowEmpty: true, emptyLabel: "전체" },
+  { key: "partName", label: "품명", placeholder: "품명" },
+  { key: "partNo", label: "품번", placeholder: "품번" },
+  { key: "lotNo", label: "LOT번호", placeholder: "LOT.NO" },
+];
+
+/** V1.3 상세검색 2·3행 — TitanStandardProductAdvancedSearch 참고 */
+export const STANDARD_PRODUCT_ADVANCED_SEARCH_POLICY = {
+  row2: ["incomingDateRange", "productionDateRange", "manager", "customerLotNo", "material", "process"],
+  row3: ["qty", "note"],
+  removedFields: ["purchaseOrderNo", "dueDateRange"],
+};
+
+/** 업무일지 — 1행 기본 검색 */
+export const WORK_JOURNAL_BASIC_SEARCH_FIELDS = [
+  { key: "company", label: "업체명", placeholder: "업체명", allowEmpty: true, emptyLabel: "전체" },
+  { key: "managementId", label: "관리번호", placeholder: "관리번호" },
+  { key: "lotNo", label: "LOT번호", placeholder: "LOT.NO" },
+];
+
 export function createEmptyInboundSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
     managementId: "",
+    lotNo: "",
     purchaseOrderNo: "",
     customerLotNo: "",
     incomingDateFrom: "",
     incomingDateTo: "",
-    lotNo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
+    dueDateFrom: "",
+    dueDateTo: "",
     process: "",
     qty: "",
     manager: "",
@@ -41,17 +68,8 @@ export function createEmptyInboundSearch() {
   };
 }
 
-/** 입고현황 — 기본 검색 8항목 */
-export const INBOUND_BASIC_SEARCH_FIELDS = [
-  { key: "managementId", label: "관리번호", placeholder: "관리번호" },
-  { key: "company", label: "거래처", placeholder: "거래처", allowEmpty: true, emptyLabel: "전체" },
-  { key: "manager", label: "담당자", placeholder: "담당자" },
-  { key: "purchaseOrderNo", label: "발주번호", placeholder: "발주번호" },
-  { key: "partName", label: "품명", placeholder: "품명" },
-  { key: "partNo", label: "품번", placeholder: "품번" },
-  { key: "customerLotNo", label: "업체 LOT", placeholder: "업체 LOT" },
-  { key: "material", label: "재질", placeholder: "재질" },
-];
+/** @deprecated STANDARD_PRODUCT_BASIC_SEARCH_FIELDS 사용 */
+export const INBOUND_BASIC_SEARCH_FIELDS = STANDARD_PRODUCT_BASIC_SEARCH_FIELDS;
 
 export function createEmptyWorkJournalSearch() {
   return {
@@ -73,6 +91,10 @@ export function createEmptyOutboundSearch() {
     customerLotNo: "",
     shipDateFrom: "",
     shipDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
     managementId: "",
     lotNo: "",
     process: "",
@@ -91,9 +113,17 @@ export function createEmptyProductionDailyReportSearch() {
     process: "",
     workDateFrom: "",
     workDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
     equipment: "",
     worker: "",
+    manager: "",
+    qty: "",
+    note: "",
     approvalStatus: "",
+    status: "",
   };
 }
 
@@ -144,10 +174,32 @@ export function createEmptyInspectionLogSearch() {
     managementId: "",
     lotNo: "",
     process: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
     inspectionDateFrom: "",
     inspectionDateTo: "",
     assignee: "",
+    manager: "",
+    qty: "",
+    note: "",
     status: "",
+  };
+}
+
+/** 검사관리 3탭 공통 — 양산 · 개발 · 기타 */
+export function createEmptyInspectionManagementSearch() {
+  return {
+    ...EMPTY_BASIC_SEARCH,
+    managementId: "",
+    lotNo: "",
+    status: "",
+    assignee: "",
+    registeredDateFrom: "",
+    registeredDateTo: "",
+    note: "",
+    category: "",
   };
 }
 
@@ -186,9 +238,16 @@ export function createEmptyCertificateSearch() {
     managementId: "",
     lotNo: "",
     process: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
     registeredDateFrom: "",
     registeredDateTo: "",
     assignee: "",
+    manager: "",
+    qty: "",
+    note: "",
     status: "",
   };
 }
@@ -243,7 +302,18 @@ export function createEmptyDepartmentWorkSearch() {
 export function createEmptyDocumentManagementSearch() {
   return {
     ...EMPTY_BASIC_SEARCH,
+    managementId: "",
+    lotNo: "",
     status: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
+    manager: "",
+    customerLotNo: "",
+    process: "",
+    qty: "",
+    note: "",
   };
 }
 
@@ -272,8 +342,14 @@ export function matchesExtendedSearch(search, record) {
   if (!includes(record.drawingNo, search.drawingNo)) return false;
   if (!includes(record.managementId ?? record.id, search.managementId)) return false;
   if (!includes(record.lotNo, search.lotNo)) return false;
-  if (!includes(record.purchaseOrderNo, search.purchaseOrderNo)) return false;
-  if (!includes(record.customerLotNo, search.customerLotNo)) return false;
+  const customerLotQuery = (search.customerLotNo || search.purchaseOrderNo || "").trim();
+  if (customerLotQuery) {
+    const q = customerLotQuery.toLowerCase();
+    const haystack = [record.customerLotNo, record.purchaseOrderNo].map((value) =>
+      String(value ?? "").toLowerCase()
+    );
+    if (!haystack.some((value) => value.includes(q))) return false;
+  }
   if (
     search.process &&
     !includes(record.process ?? record.heatTreatment ?? record.processName, search.process)

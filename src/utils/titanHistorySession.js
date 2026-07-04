@@ -2,13 +2,15 @@
  * Project TITAN V1.0 — 거래명세서 · 출고 · 불량 이력 (세션)
  */
 
-const CURRENT_USER = "품질관리부 / 정반이 사원";
+import { getAuthUserLabelForAudit } from "./titanAuthSession";
+
+const FALLBACK_USER = "품질관리부 / 정반이 사원";
 
 let transactionStatements = [
   {
     id: "TS-20260629-001",
     printedAt: "2026-06-29",
-    printedBy: CURRENT_USER,
+    printedBy: FALLBACK_USER,
     managementId: "SE_20260703_0005",
     company: "서암기계공업",
     partName: "#2 PINION GEAR",
@@ -28,7 +30,7 @@ let shipmentEvents = [
   {
     id: "SH-20260629-001",
     shippedAt: "2026-06-29",
-    shippedBy: CURRENT_USER,
+    shippedBy: FALLBACK_USER,
     managementId: "SE_20260703_0005",
     company: "서암기계공업",
     partName: "#2 PINION GEAR",
@@ -43,7 +45,8 @@ let shipmentEvents = [
 let defectRecords = [];
 
 export function getCurrentTitanUser() {
-  return CURRENT_USER;
+  const label = getAuthUserLabelForAudit();
+  return label === "—" ? FALLBACK_USER : label;
 }
 
 export function getTransactionStatements(managementId) {
@@ -57,7 +60,7 @@ export function saveTransactionStatement(payload) {
   const row = {
     id: `TS-${Date.now()}`,
     printedAt: payload.printedAt ?? new Date().toISOString().slice(0, 10),
-    printedBy: payload.printedBy ?? CURRENT_USER,
+    printedBy: payload.printedBy ?? getCurrentTitanUser(),
     managementId: payload.managementId,
     company: payload.company,
     partName: payload.partName,
@@ -86,7 +89,7 @@ export function saveShipmentEvent(payload) {
   const row = {
     id: `SH-${Date.now()}`,
     shippedAt: payload.shippedAt ?? new Date().toISOString().slice(0, 10),
-    shippedBy: payload.shippedBy ?? CURRENT_USER,
+    shippedBy: payload.shippedBy ?? getCurrentTitanUser(),
     managementId: payload.managementId,
     company: payload.company,
     partName: payload.partName,

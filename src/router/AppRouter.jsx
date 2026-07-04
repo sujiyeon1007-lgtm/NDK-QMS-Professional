@@ -24,7 +24,7 @@ import DefectHistoryManagement from "../pages/Production/DefectHistoryManagement
 
 import QualityLayout from "../pages/Quality/QualityLayout";
 
-import InspectionLogManagement from "../pages/Quality/InspectionLogManagement";
+import InspectionManagementScreen from "../pages/Quality/InspectionManagementScreen";
 
 import CertificateManagement from "../pages/Quality/CertificateManagement";
 
@@ -71,6 +71,20 @@ import WorkJournalLayout from "../pages/WorkJournal/WorkJournalLayout";
 import WorkJournal from "../pages/WorkJournal/WorkJournal";
 
 import OperationModeGuard from "./OperationModeGuard";
+import ModuleGuard from "./ModuleGuard";
+import LoginGuard from "./LoginGuard";
+import PermissionGuard from "./PermissionGuard";
+
+import LoginPage from "../pages/Login/LoginPage";
+
+import AccountingClerkHubPage from "../pages/AccountingClerk/AccountingClerkHubPage";
+import AccountingClerkFeaturePage from "../pages/AccountingClerk/AccountingClerkFeaturePage";
+import TaxInvoiceStatusPage from "../pages/AccountingClerk/TaxInvoiceStatusPage";
+import AccountingHubPage from "../pages/Accounting/AccountingHubPage";
+import AccountingFeaturePage from "../pages/Accounting/AccountingFeaturePage";
+import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
+import QrInoutScreen from "../pages/QrManagement/QrInoutScreen";
+import QrEquipmentScreen from "../pages/QrManagement/QrEquipmentScreen";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
 
@@ -103,7 +117,12 @@ function AppRoutes() {
           <Route path="/" element={<OperationModeWelcome />} />
         ) : null}
 
+        <Route path="/login" element={<LoginPage />} />
+
+        <Route element={<LoginGuard />}>
         <Route element={<OperationModeGuard />}>
+          <Route element={<ModuleGuard />}>
+          <Route element={<PermissionGuard />}>
           <Route element={<MainLayout />}>
             {!OPERATION_MODE_WELCOME_ENABLED ? (
               <Route path="/" element={<Navigate to="/home" replace />} />
@@ -159,13 +178,15 @@ function AppRoutes() {
 
             <Route path="/quality" element={<QualityLayout />}>
 
-              <Route index element={<Navigate to="inspection" replace />} />
+              <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
 
-              <Route path="inspection" element={<InspectionLogManagement />} />
+              <Route path="inspection" element={<Navigate to="/quality/inspection/mass" replace />} />
 
               <Route path="inspection/register" element={<InspectionLogRegisterView />} />
 
               <Route path="inspection/:logId/report" element={<InspectionReportView />} />
+
+              <Route path="inspection/:inspectionTab" element={<InspectionManagementScreen />} />
 
               <Route path="certificate" element={<CertificateManagement />} />
 
@@ -213,6 +234,29 @@ function AppRoutes() {
 
 
 
+            <Route path="/accounting-clerk" element={<AccountingClerkHubPage />} />
+
+            <Route path="/accounting-clerk/tax-invoices" element={<TaxInvoiceStatusPage />} />
+
+            <Route path="/accounting-clerk/:featureId" element={<AccountingClerkFeaturePage />} />
+
+            <Route path="/accounting" element={<AccountingHubPage />} />
+
+            <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
+
+            <Route path="/qr-management" element={<QrManagementLayout />}>
+              <Route index element={<Navigate to="/qr-management/inout" replace />} />
+              <Route path="inout" element={<QrInoutScreen />} />
+              <Route path="equipment" element={<QrEquipmentScreen />} />
+              <Route path="create" element={<Navigate to="/qr-management/inout" replace />} />
+              <Route path="print" element={<Navigate to="/qr-management/inout" replace />} />
+              <Route path="reprint" element={<Navigate to="/qr-management/inout" replace />} />
+              <Route path="preview" element={<Navigate to="/qr-management/inout" replace />} />
+              <Route path="guide" element={<Navigate to="/qr-management/inout" replace />} />
+            </Route>
+
+            <Route path="/environment/qr" element={<Navigate to="/qr-management/inout" replace />} />
+
             <Route path="/settings" element={<SettingsLayout />}>
 
               <Route index element={<MasterDataHubPage />} />
@@ -241,7 +285,7 @@ function AppRoutes() {
 
             <Route path="/environment" element={<EnvironmentLayout />}>
 
-              <Route index element={<Navigate to="program" replace />} />
+              <Route index element={<Navigate to="users" replace />} />
 
               <Route path="employees" element={<MasterDataManagement forcedTabId="employees" />} />
 
@@ -260,7 +304,9 @@ function AppRoutes() {
             ))}
 
           </Route>
-
+          </Route>
+          </Route>
+          </Route>
         </Route>
 
       </Routes>

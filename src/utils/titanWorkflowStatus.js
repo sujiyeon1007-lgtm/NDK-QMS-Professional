@@ -124,14 +124,15 @@ export function inferWorkflowStatus(record) {
 
   if (
     record.workflowStatus === WORKFLOW_STATUS.PROD_DONE ||
-    (record.registered && record.lotNo?.trim())
+    record.completionStatus === WORKFLOW_STATUS.PROD_DONE
   ) {
     return WORKFLOW_STATUS.PROD_DONE;
   }
 
   if (
     record.workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS ||
-    record.dailyReportDraftStarted
+    record.dailyReportDraftStarted ||
+    (record.registered && record.lotNo?.trim())
   ) {
     return WORKFLOW_STATUS.PROD_PROGRESS;
   }
@@ -245,8 +246,22 @@ export function onDailyReportStarted(managementId) {
   updateSessionProductionRecord(id, patchWorkflowStatus(record, WORKFLOW_STATUS.PROD_PROGRESS));
 }
 
-/** Production daily report saved → 생산완료 */
+/** Production daily report saved → 생산중 */
 export function onDailyReportSaved(managementId, extraPatch = {}) {
+  const id = managementId?.trim();
+  if (!id) return;
+
+  const record = getSessionProductionRecords().find((item) => item.id === id);
+  if (!record) return;
+
+  updateSessionProductionRecord(id, {
+    ...patchWorkflowStatus(record, WORKFLOW_STATUS.PROD_PROGRESS, extraPatch),
+    htlNo: record.htlNo || extraPatch.htlNo || "",
+  });
+}
+
+/** Production complete → 생산완료 (HOME · 리스트: 검사대기 · 양산검사 대기열) */
+export function onProductionComplete(managementId, extraPatch = {}) {
   const id = managementId?.trim();
   if (!id) return;
 
@@ -259,6 +274,25 @@ export function onDailyReportSaved(managementId, extraPatch = {}) {
   });
 }
 
+/** Production complete reverted (row [취소]) → 생산중 · 양산검사 대기열에서 제거 */
+export function onProductionCompleteReverted(managementId, extraPatch = {}) {
+  const id = managementId?.trim();
+  if (!id) return;
+
+  const record = getSessionProductionRecords().find((item) => item.id === id);
+  if (!record) return;
+
+  updateSessionProductionRecord(id, {
+    workflowStatus: WORKFLOW_STATUS.PROD_PROGRESS,
+    completionStatus: "작업중",
+    dailyReportDraftStarted: true,
+    productionEndAt: "",
+    productionCompletedAt: "",
+    productionCompletedBy: "",
+    ...extraPatch,
+  });
+}
+
 /** Inspection complete → 검사완료 */
 export function onInspectionComplete(managementId) {
   const id = managementId?.trim();
@@ -268,6 +302,20 @@ export function onInspectionComplete(managementId) {
   if (!record) return;
 
   updateSessionProductionRecord(id, patchWorkflowStatus(record, WORKFLOW_STATUS.INSPECT_DONE));
+}
+
+/** Inspection cancelled (last log removed) → 생산완료 · 검사대기 */
+export function onInspectionCancelled(managementId) {
+  const id = managementId?.trim();
+  if (!id) return;
+
+  const record = getSessionProductionRecords().find((item) => item.id === id);
+  if (!record) return;
+
+  updateSessionProductionRecord(id, {
+    workflowStatus: WORKFLOW_STATUS.PROD_DONE,
+    completionStatus: WORKFLOW_STATUS.PROD_DONE,
+  });
 }
 
 /** Certificate issued (excel + pdf) → 성적서완료 */

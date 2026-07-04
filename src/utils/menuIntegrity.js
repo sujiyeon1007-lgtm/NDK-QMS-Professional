@@ -1,9 +1,7 @@
 /**
  * Project TITAN — Menu Freeze integrity checks (재발 방지)
- * Menu Freeze V1.3 — masterData #2 · sidebar groups · dev flow 검토
+ * Menu Freeze V1.0 — 15 menus · masterData #2
  * @see src/config/menuFreezeV1.js
- * @see src/config/menuStructure.js
- * @see src/config/qmsMenuWorkflow.js
  */
 
 import {
@@ -23,27 +21,39 @@ import {
 } from "../config/menuConfig";
 import { QMS_APPROVED_SIDEBAR_MENUS } from "../config/qmsMenuWorkflow";
 
-/** Menu Freeze V1.3 — 필수 Sidebar id → 대표 Route */
+/** Menu Freeze V1.0 — Sidebar id → 대표 Route */
 export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   home: "/home",
   masterData: "/settings",
   inboundStatus: "/inout/incoming",
-  inventoryStatus: "/inventory",
   workDaily: "/production/daily-report",
   workJournal: "/work-journal",
   quality: "/quality/inspection",
-  documents: "/documents",
+  certificateStatus: "/quality/certificate",
   outboundStatus: "/inout/shipment",
+  inventoryStatus: "/inventory",
   history: "/history",
+  documents: "/documents",
   statisticsInquiry: "/statistics/inquiry",
+  accountingClerk: "/accounting-clerk",
+  accounting: "/accounting",
+  qrManagement: "/qr-management",
   environment: "/environment",
 };
 
-const MENU_FREEZE_ITEM_COUNT = 12;
+const MENU_FREEZE_ITEM_COUNT = 15;
 
-const CRITICAL_MENU_IDS = ["documents", "history"];
+const CRITICAL_MENU_IDS = ["documents", "history", "inventoryStatus"];
 
-const EXPECTED_SIDEBAR_GROUP_IDS = ["home", "master", "operations", "analysis", "system"];
+const EXPECTED_SIDEBAR_GROUP_IDS = [
+  "home",
+  "master",
+  "operations",
+  "analysis",
+  "business",
+  "smart",
+  "system",
+];
 
 export function validateMenuIntegrity() {
   const errors = [];
@@ -56,8 +66,15 @@ export function validateMenuIntegrity() {
 
   if (MENU_FREEZE_SIDEBAR_ORDER[1] !== "masterData") {
     errors.push(
-      `Menu Freeze V1.3: masterData must be #2 (got ${MENU_FREEZE_SIDEBAR_ORDER[1] ?? "missing"})`
+      `Menu Freeze V1.0: masterData must be #2 (got ${MENU_FREEZE_SIDEBAR_ORDER[1] ?? "missing"})`
     );
+  }
+
+  const inventoryIndex = MENU_FREEZE_SIDEBAR_ORDER.indexOf("inventoryStatus");
+  const outboundIndex = MENU_FREEZE_SIDEBAR_ORDER.indexOf("outboundStatus");
+  const historyIndex = MENU_FREEZE_SIDEBAR_ORDER.indexOf("history");
+  if (inventoryIndex <= outboundIndex || inventoryIndex >= historyIndex) {
+    errors.push("재고관리 must be after 출고관리 and before 이력조회");
   }
 
   if (JSON.stringify(TITAN_MENU_ORDER) !== JSON.stringify(MENU_FREEZE_SIDEBAR_ORDER)) {
@@ -70,7 +87,7 @@ export function validateMenuIntegrity() {
 
   const expectedDevFlow = ["Workflow", "UI", "기능", "구현", "테스트", "검토", "승인"];
   if (JSON.stringify(DEVELOPMENT_FLOW_AFTER_MENU_FREEZE) !== JSON.stringify(expectedDevFlow)) {
-    errors.push("DEVELOPMENT_FLOW_AFTER_MENU_FREEZE must include 검토 before 승인 (V1.3)");
+    errors.push("DEVELOPMENT_FLOW_AFTER_MENU_FREEZE must include 검토 before 승인");
   }
 
   if (PRODUCT_WORKFLOW_CHAIN.length !== 7) {
@@ -147,19 +164,19 @@ export function validateMenuIntegrity() {
     errors.push("MENU_SECTIONS missing: quality");
   } else {
     const hasCertificateTab = menuQualitySection.tabs?.some((tab) => tab.id === "certificate");
-    if (!hasCertificateTab) {
-      errors.push("quality section must include certificate tab");
+    if (hasCertificateTab) {
+      errors.push("quality section must not include certificate tab (성적서관리 is separate sidebar item)");
     }
+  }
+
+  if (!MENU_SECTIONS.certificateStatus) {
+    errors.push("MENU_SECTIONS missing: certificateStatus");
   }
 
   if (QMS_APPROVED_SIDEBAR_MENUS.length !== MENU_FREEZE_ITEM_COUNT) {
     errors.push(
       `QMS_APPROVED_SIDEBAR_MENUS must have ${MENU_FREEZE_ITEM_COUNT} items (got ${QMS_APPROVED_SIDEBAR_MENUS.length})`
     );
-  }
-
-  if (Object.keys(TITAN_MENU_CATALOG).length < MENU_FREEZE_ITEM_COUNT) {
-    errors.push(`TITAN_MENU_CATALOG must define all ${MENU_FREEZE_ITEM_COUNT} Menu Freeze items`);
   }
 
   for (const id of MENU_FREEZE_SIDEBAR_ORDER) {
@@ -169,12 +186,10 @@ export function validateMenuIntegrity() {
   }
 
   const qualitySection = TITAN_MENU_CATALOG.quality?.section;
-  if (qualitySection?.pathPrefix !== "/quality") {
-    errors.push(`quality section pathPrefix must be /quality (got ${qualitySection?.pathPrefix})`);
-  }
-  const qualityTabIds = (qualitySection?.tabs ?? []).map((tab) => tab.id);
-  if (!qualityTabIds.includes("inspection") || !qualityTabIds.includes("certificate")) {
-    errors.push("quality section must include inspection and certificate tabs");
+  if (qualitySection?.pathPrefix !== "/quality/inspection") {
+    errors.push(
+      `quality section pathPrefix must be /quality/inspection (got ${qualitySection?.pathPrefix})`
+    );
   }
 
   const approvedFromConfig = getApprovedSidebarMenuDefs();
@@ -191,7 +206,6 @@ export function validateMenuIntegrity() {
   return { ok: errors.length === 0, errors };
 }
 
-/** DEV — 앱 부팅 시 Menu Freeze 무결성 검사 */
 export function assertMenuIntegrityInDev() {
   if (!import.meta.env.DEV) return validateMenuIntegrity();
 

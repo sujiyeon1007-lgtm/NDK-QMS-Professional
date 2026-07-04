@@ -1,0 +1,93 @@
+---
+description: Project TITAN V1.2 Smart Access Platform — QR/NFC/Mobile Architecture Lock
+globs:
+  - src/config/titanV12SmartAccessPlatform.js
+  - src/config/titanOfficialArchitecture.js
+  - src/config/smartAccessArchitecture.js
+  - src/config/titanV11Workflow.js
+  - src/utils/equipmentQr.js
+  - docs/TITAN_V12_SMART_ACCESS_PLATFORM.md
+  - docs/TITAN_OFFICIAL_ARCHITECTURE.md
+---
+
+# Project TITAN V1.2 — Smart Access Platform
+
+**Architecture Lock — UI 변경 ❌**
+
+## Identity
+
+V1.2 = QMS + Paper + Smart + QR + NFC Ready + MES Ready — **현장 중심 통합 업무 플랫폼**
+
+## Philosophy
+
+- Paper Workflow **유지** · Smart Workflow **추가**
+- 사용자: Paper **OR** Smart 선택
+- Smart Access: QR/NFC → 업무 화면 직행 (메뉴 탐색 ❌)
+
+## Version Roadmap
+
+```text
+V1.0 QMS → V1.1 Paper+Workflow → V1.2 QR Smart Access → V2.0 NFC → V3.0 MES
+```
+
+## SSoT
+
+| Layer | File |
+|-------|------|
+| **V1.2 Platform** | `src/config/titanV12SmartAccessPlatform.js` |
+| Official Architecture | `src/config/titanOfficialArchitecture.js` |
+| Route Registry | `src/config/smartAccessArchitecture.js` |
+| Doc | `docs/TITAN_V12_SMART_ACCESS_PLATFORM.md` |
+
+## Smart Access ID (Mandatory)
+
+**Canonical:** `NDK://` — QR · NFC · Barcode 공통
+
+| ID | Screen |
+|----|--------|
+| `NDK://INCOMING` | 입고등록 |
+| `NDK://OUTGOING` | 출고등록 |
+| `NDK://INSPECTION` | 검사등록 |
+| `NDK://CERTIFICATE` | 성적서 |
+| `NDK://EQ/{code}` | 설비/생산 |
+
+Legacy: `NDK|EQ|{code}` — backward compat in `equipmentQr.js`
+
+## Equipment QR Rules
+
+- ❌ per product · ❌ per LOT
+- ✅ **one QR per equipment** (ION-01, GAS-01, …)
+- ✅ multi-copy print for multiple locations
+
+## QR Print Center (Future)
+
+- Menu: **QR 출력센터** (`/environment/qr`)
+- Features: PDF · 재출력 · 미리보기 · 인쇄
+- Label spec: `QR_LABEL_SPEC` — A6/A7 · 무광 · 설비명/번호/공정 + NFC reserved area
+
+## NFC Ready
+
+QR and NFC call **same Smart Access ID** — no app change when adding NFC tags
+
+## Mobile (Future)
+
+Dedicated screens — NOT shrunk PC · big buttons · ≤3 clicks · field-work only
+
+## Smart Access Dashboard (Future)
+
+HOME — **금일** QR usage stats (입고/생산/검사/출고 회수)
+
+## Implementation Rules
+
+1. Register new Smart targets in `SMART_ACCESS_ID_REGISTRY` + `SMART_ACCESS_TARGETS` first
+2. Use `parseSmartAccessId()` / `buildSmartAccessPath()` — no ad-hoc URLs
+3. Paper prints (HTL/OUT/INV/DPR) — **never remove**
+4. Workflow state — `titanWorkflowStatus.js` only
+5. UI — approved screens + query/deep link only until PM approves mobile
+
+## Do Not
+
+- Change approved UI for V1.2 architecture work
+- Delete Paper workflow or prints
+- Create per-product or per-LOT QR
+- Use `오늘` in user-facing text — use `금일`

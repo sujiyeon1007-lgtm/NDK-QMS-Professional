@@ -13,7 +13,8 @@ export const HOME_INTEGRATED_SEARCH_CONFIG = {
   collapse: {
     closedLabel: "▼ 통합검색",
     openLabel: "▲ 통합검색",
-    defaultOpen: false,
+    defaultOpen: true,
+    alwaysOpen: true,
   },
   debounceMs: 250,
   showStatusField: true,

@@ -1,0 +1,57 @@
+---
+description: Project TITAN 경리관리 / 세금계산서 정책 (V1.0 PM Final)
+globs:
+  - src/config/accountingClerkPolicy.js
+  - src/config/accountingClerkLauncher.js
+  - src/pages/AccountingClerk/**
+  - src/utils/accountingClerkTaxInvoiceSession.js
+---
+
+# Project TITAN — 경리관리 / 세금계산서 (V1.0)
+
+**Lock:** V1.0 PM Final · **SSoT:** `src/config/accountingClerkPolicy.js`
+
+## Philosophy
+
+- **TITAN은 ERP를 대체하지 않는다**
+- 기존 운영(홈택스 전자세금계산서) **유지**
+- TITAN = **관리 · 추적 · 조회** (발행 여부·이력)
+
+## V1.0 포함 (경리관리)
+
+- 거래명세서 출력 / 재출력 / 발행이력
+- 출고 마감 / 월 마감
+- 거래처별 매출 조회
+- 미수금 관리
+- **세금계산서 발행 여부 관리** (직접 발행 ❌)
+- 매출 통계
+
+## V1.0 제외 (구현 금지)
+
+- 전자세금계산서 직접 발행
+- 홈택스 API / 공동인증서 / 국세청 자동 전송
+
+## Workflow
+
+```text
+출고완료 → 거래명세서 → (홈택스 발행) → TITAN 발행여부 등록 → 이력 → 매출통계
+```
+
+## 세금계산서 관리 화면
+
+**필드:** 거래처 · 관리번호 · 출고일 · 공급가액 · 부가세 · 발행 여부(발행/미발행) · 발행일 · 담당자 · 비고
+
+**화면 안내:** *전자세금계산서는 국세청 홈택스에서 발행 · TITAN은 발행 여부·이력만 관리*
+
+**Route:** `/accounting-clerk/tax-invoices`
+
+## Module
+
+- Module ID: `accountingClerk` · `ModuleGuard` 적용
+- OFF = Sidebar/HOME/Route 숨김 · 데이터 유지
+
+## Do Not
+
+- 홈택스 API · 공동인증서 · 국세청 자동 전송 구현
+- TITAN에서 전자세금계산서 직접 발행
+- ERP/홈택스 기능을 TITAN 기능으로 표시

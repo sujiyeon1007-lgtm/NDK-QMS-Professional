@@ -10,6 +10,7 @@ import {
   getCompanyAbbreviation,
   shouldAutoUpdateAbbreviation,
 } from "./companyAbbreviation";
+import { normalizeCompanyNdkAssignees, getCompanyNdkAssigneeLabel } from "./companyNdkAssigneesModel";
 
 const STORAGE_KEY = "project-titan-master-data-v3";
 
@@ -17,7 +18,7 @@ export const MASTER_CATEGORIES = [
   { key: "companies", label: "업체", desc: "입고·생산·성적서 공통 업체" },
   { key: "products", label: "제품", desc: "제품 마스터 · 품번·재질·공정 · 기본단가 기준" },
   { key: "workers", label: "작업자", desc: "생산일보 · 검사 · 성적서 공통 작업자 Master" },
-  { key: "employees", label: "직원", desc: "Project TITAN 사용 직원 마스터" },
+  { key: "employees", label: "직원", desc: "NDK 내부 직원 · 권한 · 재직 상태 (거래처 담당자 ❌)" },
   { key: "materials", label: "재질", desc: "제품 재질 코드" },
   { key: "heatTreatment", label: "공정", desc: "열처리 · 가공 공정" },
   { key: "equipment", label: "설비", desc: "열처리 설비" },
@@ -54,25 +55,71 @@ export const MASTER_DATA = {
       id: "c1",
       code: "SE",
       name: "서암기계공업",
+      ceoName: "김대표",
       bizNo: "",
-      manager: "",
-      phone: "",
-      email: "",
+      phone: "031-000-0000",
+      fax: "031-000-0009",
+      email: "contact@seoam.co.kr",
+      homepage: "https://www.seoam.co.kr",
+      tradeStartDate: "2018-03-01",
       address: "",
       note: "Excel Import",
       active: true,
+      ndkAssignees: [
+        {
+          id: "ndk-c1-1",
+          name: "이영업",
+          department: "영업부",
+          position: "대리",
+          phone: "010-9000-0001",
+          email: "sales@ndk.co.kr",
+        },
+      ],
+      contacts: [
+        {
+          id: "ct-c1-1",
+          name: "김품질",
+          department: "품질",
+          position: "대리",
+          mobile: "010-1111-0001",
+          email: "kim.qc@seoam.co.kr",
+          directPhone: "031-000-0001",
+        },
+        {
+          id: "ct-c1-2",
+          name: "이구매",
+          department: "구매",
+          position: "과장",
+          mobile: "010-1111-0002",
+          email: "lee.buy@seoam.co.kr",
+          directPhone: "",
+        },
+      ],
     },
     {
       id: "c2",
       code: "HW",
       name: "현대위아",
+      ceoName: "정대표",
       bizNo: "",
-      manager: "",
       phone: "",
+      fax: "",
       email: "",
       address: "",
       note: "",
       active: true,
+      ndkAssignees: [],
+      contacts: [
+        {
+          id: "ct-c2-1",
+          name: "박과장",
+          department: "품질",
+          position: "과장",
+          mobile: "010-2222-0001",
+          email: "park@wia.co.kr",
+          directPhone: "",
+        },
+      ],
     },
     {
       id: "c3",
@@ -80,60 +127,82 @@ export const MASTER_DATA = {
       abbreviation: "DS",
       name: "두산에너빌리티",
       bizNo: "",
-      manager: "",
       phone: "",
       email: "",
       address: "",
       note: "",
       active: true,
+      contacts: [],
     },
     {
       id: "c4",
       code: "SN",
       name: "SNT다이내믹스",
       bizNo: "",
-      manager: "",
       phone: "",
       email: "",
       address: "",
       note: "",
       active: true,
+      contacts: [],
     },
     {
       id: "c5",
       code: "HF",
       name: "한화에어로스페이스",
       bizNo: "",
-      manager: "",
       phone: "",
       email: "",
       address: "",
       note: "",
       active: true,
+      contacts: [],
     },
     {
       id: "c6",
       code: "GE",
       name: "GE",
       bizNo: "",
-      manager: "",
       phone: "",
       email: "",
       address: "",
       note: "",
       active: true,
+      contacts: [],
     },
     {
       id: "c7",
       code: "MJ",
       name: "(주)모전기공",
+      ceoName: "손대표",
       bizNo: "314-88-00265",
-      manager: "손두현",
       phone: "051-971-1551",
+      fax: "051-971-1552",
       email: "",
       address: "부산광역시 강서구 과학산단2로43번길 38(지사동)",
       note: "",
       active: true,
+      ndkAssignees: [
+        {
+          id: "ndk-c7-1",
+          name: "박품질",
+          department: "품질부",
+          position: "과장",
+          phone: "010-3333-0001",
+          email: "qc@ndk.co.kr",
+        },
+      ],
+      contacts: [
+        {
+          id: "ct-c7-1",
+          name: "손두현",
+          department: "영업",
+          position: "대표",
+          mobile: "",
+          email: "",
+          directPhone: "051-971-1551",
+        },
+      ],
     },
   ],
   products: [...SEOAM_DEMO_PRODUCTS],
@@ -245,27 +314,27 @@ export const MASTER_DATA = {
     { id: "m12", code: "SACM1", name: "SACM1", spec: "니켈합금강", note: "", active: true },
   ],
   equipment: [
-    { id: "e1", code: "3S-1", name: "3S-1", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e2", code: "3S-2", name: "3S-2", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e3", code: "3S-3", name: "3S-3", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e4", code: "3S-4", name: "3S-4", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e5", code: "10S-01", name: "10S-01", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e6", code: "10S-02", name: "10S-02", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e7", code: "10S-03", name: "10S-03", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e8", code: "10S-04", name: "10S-04", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e9", code: "10S-05", name: "10S-05", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e10", code: "10S-06", name: "10S-06", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e11", code: "10S-07", name: "10S-07", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e12", code: "10S-08", name: "10S-08", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e13", code: "10S-09", name: "10S-09", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e14", code: "10S-10", name: "10S-10", equipType: "이온질화", location: "1공장", note: "", active: true },
-    { id: "e15", code: "61", name: "61", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e16", code: "62", name: "62", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e17", code: "63", name: "63", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e18", code: "64", name: "64", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e19", code: "65", name: "65", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e20", code: "66", name: "66", equipType: "연질화", location: "2공장", note: "", active: true },
-    { id: "e21", code: "67", name: "67", equipType: "연질화", location: "2공장", note: "", active: true },
+    { id: "e1", code: "3S-1", name: "3S-1", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e2", code: "3S-2", name: "3S-2", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e3", code: "3S-3", name: "3S-3", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e4", code: "3S-4", name: "3S-4", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e5", code: "10S-01", name: "10S-01", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e6", code: "10S-02", name: "10S-02", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e7", code: "10S-03", name: "10S-03", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e8", code: "10S-04", name: "10S-04", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e9", code: "10S-05", name: "10S-05", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e10", code: "10S-06", name: "10S-06", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e11", code: "10S-07", name: "10S-07", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e12", code: "10S-08", name: "10S-08", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e13", code: "10S-09", name: "10S-09", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e14", code: "10S-10", name: "10S-10", equipType: "이온질화", location: "1공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e15", code: "61", name: "61", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e16", code: "62", name: "62", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e17", code: "63", name: "63", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e18", code: "64", name: "64", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e19", code: "65", name: "65", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e20", code: "66", name: "66", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
+    { id: "e21", code: "67", name: "67", equipType: "연질화", location: "2공장", inspectionCycle: "월 1회", note: "", active: true },
   ],
   heatTreatment: [
     { id: "h1", code: "HT-GN", name: "가스질화", description: "가스 질화 열처리", active: true },
@@ -339,14 +408,112 @@ function migrateWorkerMaster(rows = []) {
 }
 
 function migrateLegacyWorkers(rows = []) {
-  return rows.map((row) => ({
-    ...row,
-    email: row.email ?? "",
-    hireDate: row.hireDate ?? "",
-    employmentStatus: row.employmentStatus ?? (row.active === false ? "퇴사" : "재직"),
-    role: row.role ?? "",
-    active: row.employmentStatus ? row.employmentStatus === "재직" : row.active !== false,
-  }));
+  return rows
+    .filter((row) => row.isCompanyContact !== true && row.contactType !== "company")
+    .map((row) => ({
+      ...row,
+      isInternal: row.isInternal !== false,
+      email: row.email ?? "",
+      hireDate: row.hireDate ?? "",
+      employmentStatus: row.employmentStatus ?? (row.active === false ? "퇴사" : "재직"),
+      role: row.role ?? "",
+      active: row.employmentStatus ? row.employmentStatus === "재직" : row.active !== false,
+    }));
+}
+
+function createCompanyContactId(companyId, index = 1) {
+  return `ct-${companyId}-${index}`;
+}
+
+function normalizeCompanyContact(contact, companyId, index = 0) {
+  const fallbackId = createCompanyContactId(companyId, index + 1);
+  return {
+    id: contact?.id ?? fallbackId,
+    name: contact?.name?.trim() ?? "",
+    department: contact?.department?.trim() ?? "",
+    position: contact?.position?.trim() ?? "",
+    mobile: contact?.mobile?.trim() ?? "",
+    email: contact?.email?.trim() ?? "",
+    directPhone: contact?.directPhone?.trim() ?? "",
+  };
+}
+
+function migrateCompanyContacts(row) {
+  if (Array.isArray(row.contacts) && row.contacts.length > 0) {
+    return row.contacts.map((contact, index) => normalizeCompanyContact(contact, row.id, index));
+  }
+
+  const legacyName = row.manager?.trim();
+  if (!legacyName) return [];
+
+  return [
+    normalizeCompanyContact(
+      {
+        id: createCompanyContactId(row.id, 1),
+        name: legacyName,
+        mobile: row.mobile ?? "",
+        email: row.email ?? "",
+        directPhone: row.phone ?? "",
+      },
+      row.id,
+      0
+    ),
+  ];
+}
+
+export function getCompanyPrimaryContactName(company) {
+  if (!company) return "";
+  const contacts = Array.isArray(company.contacts) ? company.contacts : [];
+  const primary = contacts.find((contact) => contact.name?.trim()) ?? contacts[0];
+  return primary?.name?.trim() || company.manager?.trim() || "";
+}
+
+function syncLegacyManagerFields(normalized, contacts) {
+  const primary = contacts.find((contact) => contact.name?.trim()) ?? contacts[0];
+  if (primary) {
+    normalized.manager = primary.name;
+  }
+  return normalized;
+}
+
+function syncCompanyContacts(normalized, rawPayload, existingRow = null) {
+  const existingContacts = Array.isArray(existingRow?.contacts) ? existingRow.contacts : [];
+  let contacts = Array.isArray(rawPayload?.contacts)
+    ? rawPayload.contacts.map((contact, index) => normalizeCompanyContact(contact, existingRow?.id ?? normalized.id ?? "new", index))
+    : [...existingContacts.map((contact, index) => normalizeCompanyContact(contact, existingRow?.id ?? normalized.id ?? "new", index))];
+
+  const manager = rawPayload?.manager?.trim();
+  if (manager) {
+    if (contacts.length === 0) {
+      contacts = [
+        normalizeCompanyContact(
+          {
+            name: manager,
+            mobile: rawPayload?.mobile,
+            email: rawPayload?.email,
+            directPhone: rawPayload?.phone,
+          },
+          existingRow?.id ?? normalized.id ?? "new",
+          0
+        ),
+      ];
+    } else if (!Array.isArray(rawPayload?.contacts)) {
+      contacts[0] = {
+        ...contacts[0],
+        name: manager,
+        mobile: rawPayload?.mobile?.trim() ?? contacts[0].mobile,
+        email: rawPayload?.email?.trim() ?? contacts[0].email,
+        directPhone: rawPayload?.phone?.trim() ?? contacts[0].directPhone,
+      };
+    }
+  }
+
+  normalized.contacts = contacts.filter((contact) =>
+    [contact.name, contact.department, contact.position, contact.mobile, contact.email, contact.directPhone].some(
+      (value) => String(value ?? "").trim()
+    )
+  );
+  return syncLegacyManagerFields(normalized, normalized.contacts);
 }
 
 function migrateCompanyMaster(rows = []) {
@@ -358,17 +525,25 @@ function migrateCompanyMaster(rows = []) {
         ? row.code.trim().toUpperCase()
         : buildCompanyAbbreviation(row.name, others);
 
-    return {
+    const contacts = migrateCompanyContacts(row);
+    const migrated = normalizeCompanyNdkAssignees({
       ...row,
       abbreviation,
       code: row.code?.trim() || abbreviation,
       abbreviationLocked: Boolean(row.abbreviationLocked),
       abbreviationManual: Boolean(row.abbreviationManual),
+      ceoName: row.ceoName?.trim() ?? "",
+      fax: row.fax?.trim() ?? "",
+      homepage: row.homepage?.trim() ?? "",
+      tradeStartDate: row.tradeStartDate?.trim() ?? "",
       defaultRequirements: row.defaultRequirements ?? "",
       inspectionStandard: row.inspectionStandard ?? "",
       certificateForm: row.certificateForm ?? "",
       statementForm: row.statementForm ?? "",
-    };
+      contacts,
+      ndkAssignees: Array.isArray(row.ndkAssignees) ? row.ndkAssignees : [],
+    });
+    return syncLegacyManagerFields(migrated, contacts);
   });
 }
 
@@ -466,11 +641,20 @@ export function searchMasterData(categoryKey, keyword) {
   if (!keyword?.trim()) return rows;
   const q = keyword.trim().toLowerCase();
   return rows.filter((row) =>
-    Object.values(row).some((value) =>
-      String(value ?? "")
+    Object.entries(row).some(([key, value]) => {
+      if ((key === "contacts" || key === "ndkAssignees") && Array.isArray(value)) {
+        return value.some((contact) =>
+          Object.values(contact).some((part) =>
+            String(part ?? "")
+              .toLowerCase()
+              .includes(q)
+          )
+        );
+      }
+      return String(value ?? "")
         .toLowerCase()
-        .includes(q)
-    )
+        .includes(q);
+    })
   );
 }
 
@@ -574,14 +758,16 @@ function normalizePayload(categoryKey, payload) {
   };
 
   if (categoryKey === "companies") {
-    return {
+    const normalized = {
       ...base,
       abbreviation: payload.abbreviation?.trim().toUpperCase() ?? "",
       abbreviationLocked: Boolean(payload.abbreviationLocked),
       abbreviationManual: Boolean(payload.abbreviationManual),
+      ceoName: payload.ceoName?.trim() ?? "",
       bizNo: payload.bizNo?.trim() ?? "",
       manager: payload.manager?.trim() ?? "",
       phone: payload.phone?.trim() ?? "",
+      fax: payload.fax?.trim() ?? "",
       mobile: payload.mobile?.trim() ?? "",
       email: payload.email?.trim() ?? "",
       address: payload.address?.trim() ?? "",
@@ -589,7 +775,10 @@ function normalizePayload(categoryKey, payload) {
       inspectionStandard: payload.inspectionStandard?.trim() ?? "",
       certificateForm: payload.certificateForm?.trim() ?? "",
       statementForm: payload.statementForm?.trim() ?? "",
+      contacts: [],
+      ndkAssignees: Array.isArray(payload.ndkAssignees) ? payload.ndkAssignees : [],
     };
+    return normalizeCompanyNdkAssignees(syncCompanyContacts(normalized, payload));
   }
   if (categoryKey === "products" || categoryKey === "items") {
     const unitPriceRaw = payload.unitPrice;
@@ -644,6 +833,7 @@ function normalizePayload(categoryKey, payload) {
       hireDate: payload.hireDate?.trim() ?? "",
       employmentStatus,
       role: payload.role?.trim() ?? "",
+      isInternal: true,
       active: employmentStatus === "재직",
     };
   }
@@ -672,6 +862,11 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
 
   if (resolvedKey === "companies") {
     normalized = enrichCompanyRecord(normalized, row, mode, existingId);
+    const existingRow =
+      existingId != null
+        ? getMasterDataByCategory("companies").find((item) => item.id === existingId)
+        : null;
+    normalized = syncCompanyContacts(normalized, row, existingRow);
   }
 
   if (resolvedKey !== "companies" && !normalized.code) {
@@ -824,9 +1019,20 @@ export function formatMasterRowForDisplay(row) {
   const employmentStatus =
     row.employmentStatus ?? (row.active === false ? "퇴사" : row.department ? "재직" : undefined);
   const abbreviation = getCompanyAbbreviation(row);
+  const primaryContactName = getCompanyPrimaryContactName(row);
+  const ceoName = row.ceoName?.trim() || "—";
+  const ndkAssigneeLabel = getCompanyNdkAssigneeLabel(row);
+  const phoneLabel = row.phone?.trim() || "—";
+  const emailLabel = row.email?.trim() || "—";
   return {
     ...row,
     abbreviation: row.abbreviation ?? abbreviation,
+    ceoName,
+    ndkAssigneeLabel,
+    phoneLabel,
+    emailLabel,
+    primaryContactName,
+    manager: primaryContactName || row.manager || "",
     activeLabel: row.active === false ? "미사용" : "사용",
     abbreviationLockedLabel: row.abbreviationLocked ? "고정 (관리자 수정)" : "자동 생성",
     employmentStatusLabel: employmentStatus ?? "—",

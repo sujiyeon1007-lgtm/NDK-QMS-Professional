@@ -14,7 +14,11 @@ import { resolveQualityDocumentType } from "../config/qualityDocumentManagement"
 import { getMasterDataByCategory } from "./masterData";
 import { getQualityDocumentRegistryRows } from "./qualityDocumentRegistry";
 import { getProductInspectionByProductId } from "./productInspectionSession";
-import { getProductDrawingRecord } from "./productDrawingSession";
+import {
+  getDrawingRevisionHistory,
+  getProductDrawingRecord,
+  getProductHistory,
+} from "./productDrawingSession";
 
 function normalizeCompany(value) {
   return String(value ?? "").trim();
@@ -280,8 +284,24 @@ export function buildProductDocumentListRows() {
     .map((product) => ({
       ...product,
       ...summarizeProductDocumentListSummary(product),
+      ...mapDocumentRowToV13(product),
     }))
     .sort((a, b) => String(a.partNo).localeCompare(String(b.partNo), "ko"));
+}
+
+/** V1.3 product list row fields for document management */
+export function mapDocumentRowToV13(product) {
+  const summary = summarizeProductDocumentListSummary(product);
+  return {
+    incomingDate: summary.lastModified !== "—" ? summary.lastModified : "—",
+    productionDate: "—",
+    lotNo: "—",
+    partName: product.name ?? "—",
+    inboundQtyLabel: "—",
+    workQtyLabel: "—",
+    currentProcess: summary.documentStatusLabel ?? "—",
+    remark: product.description?.trim() || "—",
+  };
 }
 
 export function matchesDocumentManagementSearch(search, row) {
@@ -300,4 +320,75 @@ export function matchesDocumentManagementSearch(search, row) {
   const label = String(row.documentStatusLabel ?? "").toLowerCase();
   const id = String(row.documentStatusId ?? "").toLowerCase();
   return label.includes(q) || id.includes(q) || statusQuery === row.documentStatusId;
+}
+
+const DEMO_DOCUMENT_HISTORY = [
+  { date: "2026-07-01", label: "도면 등록" },
+  { date: "2026-07-05", label: "성적서 등록" },
+  { date: "2026-07-10", label: "작업표준서 수정" },
+];
+
+const DEMO_REVISION_HISTORY = [
+  { revision: "Rev.00", note: "최초 등록" },
+  { revision: "Rev.01", note: "도면 변경" },
+  { revision: "Rev.02", note: "열처리 조건 수정" },
+];
+
+function formatRevisionLabel(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "—";
+  return /^rev/i.test(text) ? text : `Rev.${text.replace(/^Rev\.?/i, "")}`;
+}
+
+/** 문서 이력 — Session + 등록 문서 요약 · 없으면 Demo */
+export function buildProductDocumentHistoryRows(product) {
+  if (!product?.id) return [];
+
+  const history = getProductHistory(product.id);
+  if (history.length) {
+    return history
+      .map((entry) => ({
+        date: formatDate(entry.updatedDate || entry.registeredDate || entry.date),
+        label: entry.summary?.trim() || entry.action?.trim() || "—",
+      }))
+      .filter((row) => row.date !== "—");
+  }
+
+  const statusRows = buildProductDocumentStatusRows(product);
+  const fromStatus = statusRows
+    .filter((row) => row.statusId !== "unregistered" && row.registeredDate !== "—")
+    .map((row) => ({
+      date: row.registeredDate,
+      label: `${row.label} 등록`,
+    }));
+
+  if (fromStatus.length) {
+    return [...fromStatus].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
+
+  return DEMO_DOCUMENT_HISTORY;
+}
+
+/** Revision 이력 — 도면 개정 Session · 없으면 Demo */
+export function buildProductRevisionHistoryRows(product) {
+  if (!product?.id) return [];
+
+  const revisions = getDrawingRevisionHistory(product.id);
+  if (revisions.length) {
+    return [...revisions]
+      .sort((a, b) => String(a.revision).localeCompare(String(b.revision)))
+      .map((row) => ({
+        revision: formatRevisionLabel(row.revision),
+        note: row.note?.trim() || (row.isCurrent ? "현행" : "—"),
+      }));
+  }
+
+  const drawingStatus = buildProductDocumentStatusRows(product).find(
+    (row) => row.documentType === "drawing"
+  );
+  if (drawingStatus?.revision && drawingStatus.revision !== "—") {
+    return [{ revision: drawingStatus.revision, note: "현행" }];
+  }
+
+  return DEMO_REVISION_HISTORY;
 }

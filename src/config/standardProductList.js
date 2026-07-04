@@ -1,24 +1,88 @@
 import { titanColumn } from "./tableColumnPresets";
 
-/** 입고관리 — 발주번호 · 업체 LOT 포함 */
-export function buildInboundListColumns({ renderStatus, renderProcess }) {
-  return [
-    titanColumn("managementId"),
-    titanColumn("purchaseOrderNo"),
+/**
+ * Project TITAN V1.3 — 제품 리스트 공통 컬럼 (고정 순서)
+ * 입고일 · 생산일 · LOT.NO · 업체명 · 품명 · 품번 · 입고수량 · 작업수량 · 현재공정 · 비고 · 작업
+ */
+export const V13_PRODUCT_LIST_COLUMN_ORDER = [
+  "incomingDate",
+  "productionDate",
+  "lotNo",
+  "company",
+  "partName",
+  "partNo",
+  "inboundQty",
+  "workQty",
+  "currentProcess",
+  "note",
+  "tableActions",
+];
+
+/**
+ * V1.3 공통 제품 리스트 컬럼 빌더
+ * @param {{ renderCurrentProcess?: Function, renderActions?: Function }} options
+ */
+export function buildV13ProductListColumns({ renderCurrentProcess, renderActions } = {}) {
+  const columns = [
+    titanColumn("incomingDate", { key: "incomingDate", label: "입고일" }),
+    titanColumn("productionDate", { key: "productionDate", label: "생산일" }),
     titanColumn("lotNo"),
-    titanColumn("customerLotNo"),
     titanColumn("company"),
-    titanColumn("manager", { key: "managerName" }),
     titanColumn("partName"),
     titanColumn("partNo"),
-    titanColumn("material"),
-    titanColumn("qty"),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("incomingDate", { key: "registeredDate", label: "입고일" }),
-    titanColumn("dueDate"),
-    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+    titanColumn("inboundQty", { key: "inboundQtyLabel", label: "입고수량" }),
+    titanColumn("workQty", { key: "workQtyLabel", label: "작업수량" }),
+    titanColumn("currentProcess", {
+      key: "currentProcess",
+      label: "현재공정",
+      render: renderCurrentProcess,
+    }),
+    titanColumn("note", { key: "remark", label: "비고" }),
   ];
+  if (renderActions) {
+    columns.push(titanColumn("tableActions", { key: "actions", render: renderActions }));
+  }
+  return columns;
 }
+
+/** @deprecated use buildV13ProductListColumns — V1.3 alias */
+export function buildStandardProductListColumns({ renderStatus, renderProcess, renderActions }) {
+  return buildV13ProductListColumns({
+    renderCurrentProcess: renderProcess,
+    renderActions,
+  });
+}
+
+/** 입고관리 — V1.3 공통 컬럼 */
+export function buildInboundListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 출고관리 — V1.3 공통 컬럼 */
+export function buildOutboundListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 검사일지 — V1.3 공통 컬럼 */
+export function buildInspectionLogListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 성적서관리 — V1.3 공통 컬럼 */
+export function buildCertificateListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 문서관리 — V1.3 공통 컬럼 */
+export function buildDocumentProductListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 재고관리 LOT별 — V1.3 공통 컬럼 */
+export function buildInventoryLotProductListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
 
 /** 업무일지 — 사람 중심 업무 기록 */
 export function buildWorkJournalListColumns({ renderSource }) {
@@ -35,9 +99,10 @@ export function buildWorkJournalListColumns({ renderSource }) {
   ];
 }
 
-/** 재고현황 — 입고·작업·출고 기반 자동 집계 (조회 전용) */
+/** 재고관리 — 품목별 (업체+품번) */
 export function buildInventoryStatusListColumns({ renderStatus }) {
   return [
+    titanColumn("company"),
     titanColumn("partName"),
     titanColumn("partNo"),
     titanColumn("material"),
@@ -51,11 +116,8 @@ export function buildInventoryStatusListColumns({ renderStatus }) {
   ];
 }
 
-/**
- * Project TITAN V1.0 — 제품 리스트 공통 컬럼 (생산일보 기준)
- * @param {{ renderStatus: Function, renderProcess: Function }} renderers
- */
-export function buildStandardProductListColumns({ renderStatus, renderProcess }) {
+/** 재고관리 — LOT별 (관리번호) */
+export function buildInventoryByLotListColumns({ renderStatus }) {
   return [
     titanColumn("managementId"),
     titanColumn("lotNo"),
@@ -63,51 +125,30 @@ export function buildStandardProductListColumns({ renderStatus, renderProcess })
     titanColumn("partName"),
     titanColumn("partNo"),
     titanColumn("material"),
-    titanColumn("qty"),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("workDate"),
+    titanColumn("currentStock", { key: "currentStockLabel" }),
+    titanColumn("inboundQty", { key: "inboundQtyLabel" }),
+    titanColumn("shippedQty", { key: "shippedQtyLabel" }),
+    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
-    titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
   ];
 }
 
-/** 출고관리 — 공통 리스트 + 거래명세서 상태 */
-export function buildOutboundListColumns({ renderStatus, renderProcess, renderStatementStatus }) {
+/** 재고관리 — 거래처별 */
+export function buildInventoryByCompanyListColumns({ renderStatus }) {
   return [
-    titanColumn("managementId"),
-    titanColumn("purchaseOrderNo"),
-    titanColumn("lotNo"),
-    titanColumn("customerLotNo"),
     titanColumn("company"),
-    titanColumn("partName"),
-    titanColumn("partNo"),
-    titanColumn("material"),
-    titanColumn("qty", { key: "stockQtyLabel", label: "실재고" }),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("workDate", { key: "shipDateLabel", label: "출고일" }),
-    titanColumn("status", {
-      key: "statementStatusLabel",
-      label: "거래명세서",
-      render: renderStatementStatus,
-    }),
-    titanColumn("status", { key: "statusLabel", label: "현재상태", render: renderStatus }),
-    titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
+    titanColumn("qty", { key: "skuCountLabel", label: "품목수" }),
+    titanColumn("qty", { key: "lotCountLabel", label: "LOT수" }),
+    titanColumn("inboundQty", { key: "inboundQtyLabel" }),
+    titanColumn("shippedQty", { key: "shippedQtyLabel" }),
+    titanColumn("currentStock", { key: "currentStockLabel" }),
+    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
+    titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }
-
-/** 생산실적관리 — 관리번호 · 설비 미표시 */
-export function buildProductionResultsListColumns({ renderProcess, renderLotNo }) {
-  return [
-    titanColumn("lotNo", { render: renderLotNo }),
-    titanColumn("company"),
-    titanColumn("partName"),
-    titanColumn("partNo"),
-    titanColumn("material"),
-    titanColumn("qty"),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("worker"),
-    titanColumn("workDate"),
-  ];
+/** 생산실적관리 — V1.3 공통 컬럼 (분석 화면) */
+export function buildProductionResultsListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
 }
 
 /** 불량이력관리 */
@@ -127,22 +168,38 @@ export function buildDefectHistoryListColumns({ renderProcess, renderHandlingSta
   ];
 }
 
-/** 검사일지 */
-export function buildInspectionLogListColumns({ renderStatus, renderProcess }) {
+/** 양산검사 — V1.3 공통 컬럼 */
+export function buildMassInspectionListColumns({ renderProcess, renderActions }) {
+  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 개발검사 */
+export function buildDevelopmentInspectionListColumns({ renderStatus, renderActions }) {
   return [
-    titanColumn("managementId"),
-    titanColumn("purchaseOrderNo"),
-    titanColumn("lotNo"),
-    titanColumn("customerLotNo"),
+    titanColumn("devNo"),
     titanColumn("company"),
     titanColumn("partName"),
-    titanColumn("partNo"),
+    titanColumn("testName"),
     titanColumn("material"),
-    titanColumn("qty"),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("inspectionDate"),
-    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+    titanColumn("requester"),
     titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
+    titanColumn("status", { render: renderStatus }),
+    titanColumn("tableActions", { key: "actions", label: "검사등록", render: renderActions }),
+  ];
+}
+
+/** 기타검사 */
+export function buildOtherInspectionListColumns({ renderStatus, renderActions }) {
+  return [
+    titanColumn("managementId"),
+    titanColumn("category"),
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("content"),
+    titanColumn("assignee"),
+    titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
+    titanColumn("status", { render: renderStatus }),
+    titanColumn("tableActions", { key: "actions", label: "검사등록", render: renderActions }),
   ];
 }
 
@@ -244,26 +301,6 @@ export function buildDepartmentWorkListColumns({ renderStatus, renderPriority })
     titanColumn("requestDate"),
     titanColumn("dueDate"),
     titanColumn("priority", { render: renderPriority }),
-    titanColumn("status", { key: "statusLabel", render: renderStatus }),
-  ];
-}
-
-/** 성적서관리 — 파일 등록 현황 */
-export function buildCertificateListColumns({ renderStatus, renderProcess, renderExcel, renderPdf }) {
-  return [
-    titanColumn("managementId"),
-    titanColumn("purchaseOrderNo"),
-    titanColumn("lotNo"),
-    titanColumn("customerLotNo"),
-    titanColumn("company"),
-    titanColumn("partName"),
-    titanColumn("partNo"),
-    titanColumn("material"),
-    titanColumn("qty"),
-    titanColumn("process", { key: "processName", render: renderProcess }),
-    titanColumn("excelFile", { render: renderExcel }),
-    titanColumn("pdfFile", { render: renderPdf }),
-    titanColumn("incomingDate", { key: "registeredDate", label: "등록일" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }

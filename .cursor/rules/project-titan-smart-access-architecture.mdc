@@ -1,0 +1,91 @@
+---
+description: Project TITAN Smart Access — Paper · QR · Mobile · NFC Hybrid · Route Registry
+alwaysApply: false
+globs:
+  - src/config/smartAccessArchitecture.js
+  - src/config/titanOfficialArchitecture.js
+  - src/utils/equipmentQr.js
+  - src/utils/smartProducibleWorkList.js
+  - docs/SMART_ACCESS_ARCHITECTURE.md
+  - docs/TITAN_OFFICIAL_ARCHITECTURE.md
+---
+
+# Project TITAN — Smart Access Architecture
+
+> **Primary:** `.cursor/rules/project-titan-official-architecture.mdc` · `docs/TITAN_OFFICIAL_ARCHITECTURE.md`
+
+## Hybrid System
+
+Paper · QR · Mobile · NFC(Future) — **동시 지원 · 상호 대체 ❌**
+
+## Core Philosophy
+
+```text
+One Time Input → One Scan → One Workflow
+```
+
+- 데이터 1회 입력 · Master/Session 재사용
+- QR/NFC 1회 → 업무 화면 직행 (메뉴 탐색 ❌)
+- Paper/Smart/NFC 모두 **동일 Workflow 상태머신** (`titanWorkflowStatus.js`)
+
+## Access Modes
+
+| Mode | Status | Rule |
+|------|--------|------|
+| **Paper** | active | HTL · OUT · INV · DPR 출력 **삭제 금지** |
+| **Smart (QR)** | active (설비) / planned (기타) | Smart Access ID → 기존 화면 deep link |
+| **Future (NFC)** | planned | **QR와 동일 Smart Access ID** — Handler 공유 |
+
+## Smart Access SSoT
+
+- **Official Architecture:** `src/config/titanOfficialArchitecture.js`
+  - `SMART_ACCESS_ID_REGISTRY` — canonical `NDK://` + legacy alias
+  - `parseSmartAccessId()` · `buildCanonicalSmartAccessId()`
+- **Route Registry:** `src/config/smartAccessArchitecture.js`
+  - `SMART_ACCESS_TARGETS` — targetId · pathTemplate · registryId
+  - `buildSmartAccessPath()` · `resolveSmartAccessPathFromId()`
+  - `QR_PRINT_CENTER` — 향후 QR 관리 메뉴 설계
+- **Workflow:** `src/config/titanV11Workflow.js`
+- **Active impl:** `equipmentQr.js` — `NDK://EQ/{code}` + `NDK|EQ|{code}`
+
+## Smart Access ID Registry
+
+| Canonical | Legacy | targetId | Status |
+|-----------|--------|----------|--------|
+| `NDK://INCOMING` | `NDK\|IN\|REG` | `inboundRegister` | planned |
+| `NDK://EQ/{code}` | `NDK\|EQ\|{code}` | `equipment` | **active** |
+| `NDK://INSPECTION` | `NDK\|QC\|ROOM\|{code}` | `inspectionRegister` | planned |
+| `NDK://CERTIFICATE` | `NDK\|QC\|CERT\|{code}` | `certificate` | planned |
+| `NDK://OUTGOING` | `NDK\|OUT\|DOCK\|{code}` | `outboundRegister` | planned |
+| `NDK://EQ/{code}` | `NDK\|EQ\|INFO\|{code}` | `equipmentMaster` | planned |
+
+## Equipment QR Rules
+
+- ONE QR per equipment (ION-01 · ION-02 · GAS-01 · SOFT-01)
+- NOT per product · NOT per LOT · multi-copy OK
+
+## Implementation Rules (Mandatory)
+
+1. **New Smart target** — register in `SMART_ACCESS_ID_REGISTRY` + `SMART_ACCESS_TARGETS` first
+2. **URL/ID parsing** — `parseSmartAccessId()` → `getSmartAccessTargetId()` → `buildSmartAccessPath()`
+3. **NFC** — same Smart Access ID · 별도 NFC Handler ❌
+4. **UI** — 승인된 화면 유지 · Smart = query/deep link + 기존 Modal/Panel만
+5. **Workflow** — 상태 변경은 `titanWorkflowStatus.js`만
+
+## QR Print Center (Future)
+
+- Menu: 환경설정 → QR 관리 (`QR_PRINT_CENTER.plannedMenuPath`)
+- PDF · 재출력 · 미리보기 · 인쇄
+
+## Do Not
+
+- Remove Paper print flows
+- Create per-feature URL schemes outside official config
+- Build separate mobile app shell before PM approval
+- Change approved list layouts for Smart Access
+
+## Docs
+
+- `docs/TITAN_OFFICIAL_ARCHITECTURE.md` — Official Architecture (Primary)
+- `docs/SMART_ACCESS_ARCHITECTURE.md` — Smart Access detail
+- `docs/TITAN_V11_WORKFLOW.md` — V1.1 workflow detail

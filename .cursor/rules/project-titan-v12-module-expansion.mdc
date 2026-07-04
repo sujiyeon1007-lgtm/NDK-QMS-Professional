@@ -1,0 +1,68 @@
+---
+description: Project TITAN V1.2 Module Expansion — optional ON/OFF modules · 경리 · 회계
+globs:
+  - src/config/titanV12ModuleExpansion.js
+  - src/config/titanV12MenuArchitecture.js
+  - src/config/environmentSettings.js
+  - src/utils/environmentSettingsSession.js
+  - docs/TITAN_V12_MODULE_EXPANSION.md
+---
+
+# Project TITAN V1.2 — Module Expansion
+
+**Architecture Lock — UI implementation planned**
+
+## Philosophy
+
+- **Optional modules** — use or not via 환경설정 ON/OFF
+- **Never delete features** — OFF = hide sidebar · HOME · permissions only
+- **Data retained** — re-ON restores full access to existing data
+- **MES/ERP** — TITAN does NOT replace MES or ERP · modules survive MES build
+
+## Module Management
+
+Path: **관리자 → 환경설정 → 모듈 관리** (`/environment/modules`)
+
+SSoT: `src/config/titanV12ModuleExpansion.js`
+- `TITAN_MODULE_REGISTRY` — all modules · defaults · toggleable
+- `ACCOUNTING_CLERK_MODULE` · `ACCOUNTING_MODULE` — function lists
+- `createDefaultModuleFlags()` · `isModuleEnabled()` · `getEnabledMenuIds()`
+
+## Toggleable Modules
+
+경리관리 · 회계관리 · 문서관리 · 설비관리 · 통계관리 · NFC 시스템
+
+## OFF Behavior
+
+Hide: Sidebar menu · HOME widgets · permission keys  
+Keep: DB/Session data · no delete
+
+## New Business Modules
+
+### 경리관리 (production-ready scope)
+
+거래명세서 · 마감 · 미수금 · 매출 · 세금계산서 **발행현황** (홈택스 발행 — TITAN status only)
+
+### 회계관리 (ERP support level)
+
+전표 · 승인 · 계정과목 · 월별/원가/부가세 현황 — **ERP 대체 ❌**
+
+## MES Aftermath
+
+TITAN retains: quality · certificate · documents · accountingClerk · accounting · statistics  
+MES provides: inbound · outbound · production · inventory
+
+## Implementation Rules
+
+1. Register new module in `TITAN_MODULE_REGISTRY` first
+2. Wire menuIds · permissionKeys · homeWidgetIds
+3. Use `isModuleEnabled()` before showing menu/widget/route
+4. Do NOT delete data when module OFF
+5. Do NOT implement module UI without PM approval — architecture config first
+
+## Do Not
+
+- Remove modules from codebase when OFF
+- Force 경리/회계 ON for all factories
+- Implement tax invoice issuance in TITAN (홈택스 only)
+- Replace ERP with TITAN accounting module

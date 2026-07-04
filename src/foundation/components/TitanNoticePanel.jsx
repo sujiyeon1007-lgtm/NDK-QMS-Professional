@@ -24,20 +24,25 @@ export default function TitanNoticePanel({
   className = "",
   headClassName = "",
   listClassName = "",
+  headActions = null,
+  hideHead = false,
+  hideFooterToggle = false,
+  expanded: expandedProp,
   onExpandedChange,
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expandedInternal, setExpandedInternal] = useState(false);
+  const expanded = expandedProp ?? expandedInternal;
 
   const sortedNotices = useMemo(() => [...notices], [notices]);
   const visibleNotices = expanded ? sortedNotices : sortedNotices.slice(0, previewLimit);
   const hasMore = sortedNotices.length > previewLimit;
 
   const toggleExpanded = () => {
-    setExpanded((prev) => {
-      const next = !prev;
-      onExpandedChange?.(next);
-      return next;
-    });
+    const next = !expanded;
+    if (expandedProp === undefined) {
+      setExpandedInternal(next);
+    }
+    onExpandedChange?.(next);
   };
 
   return (
@@ -45,9 +50,12 @@ export default function TitanNoticePanel({
       className={`titan-notice-panel${expanded ? " titan-notice-panel--expanded" : ""} ${className}`.trim()}
       aria-label={title}
     >
-      <div className={`titan-notice-panel__head ${headClassName}`.trim()}>
-        <h3>{title}</h3>
-      </div>
+      {hideHead && !headActions ? null : (
+        <div className={`titan-notice-panel__head ${headClassName}`.trim()}>
+          {hideHead ? null : <h3>{title}</h3>}
+          {headActions}
+        </div>
+      )}
 
       <ul
         className={`titan-notice-list${expanded ? " titan-notice-list--expanded" : ""} ${listClassName}`.trim()}
@@ -59,7 +67,12 @@ export default function TitanNoticePanel({
           >
             <div className="titan-notice-list__meta">
               <span className="titan-notice-list__type">[{notice.typeLabel}]</span>
-              {notice.date ? <span className="titan-notice-list__date">{notice.date}</span> : null}
+              {notice.author ? (
+                <span className="titan-notice-list__author">{notice.author}</span>
+              ) : null}
+              {notice.dateLabel || notice.date ? (
+                <span className="titan-notice-list__date">{notice.dateLabel ?? notice.date}</span>
+              ) : null}
             </div>
             <strong className="titan-notice-list__title">{notice.title}</strong>
             {expanded && notice.body ? (
@@ -69,14 +82,14 @@ export default function TitanNoticePanel({
         ))}
       </ul>
 
-      {hasMore ? (
+      {hasMore && !hideFooterToggle ? (
         <button
           type="button"
           className="titan-notice-panel__toggle"
           onClick={toggleExpanded}
           aria-expanded={expanded}
         >
-          {expanded ? "▲ 접기" : "+ 더보기"}
+          {expanded ? "▲ 접기" : "▼ 더보기"}
         </button>
       ) : null}
     </section>

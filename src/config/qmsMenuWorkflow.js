@@ -2,9 +2,14 @@
  * Project TITAN — PQMS Menu & Workflow
  * STEP 0 — 메뉴 1차 최종 (2026-07-03)
  * STEP 1 — 입고현황 Workflow 최종 (2026-07-03)
+ * Official Architecture — Smart Access · Workflow · MES Ready (2026-07-04)
  *
+ * @see docs/TITAN_OFFICIAL_ARCHITECTURE.md — Official Architecture (Primary SSoT)
+ * @see src/config/titanOfficialArchitecture.js
  * @see src/config/inboundStatusWorkflow.js — STEP 1 입고현황
  * @see src/config/masterFirstArchitecture.js — Master First Architecture
+ * @see src/config/smartAccessArchitecture.js — Smart Access Route Registry
+ * @see docs/SMART_ACCESS_ARCHITECTURE.md
  */
 
 import {
@@ -49,8 +54,22 @@ export const QMS_IN_SYSTEM_WORK_PRINCIPLES = [
   "모든 품질 업무는 TITAN 내부에서 시작 → 종료",
 ];
 
-/** Workflow First · Menu Freeze V1.0 이후 */
+/**
+ * Official development priority — aligned with titanOfficialArchitecture.js
+ * Workflow → UI → Database → 개발 → 테스트 → 현장 피드백 → 개선
+ */
 export const QMS_WORKFLOW_FIRST_PIPELINE = [
+  "Workflow",
+  "UI",
+  "Database",
+  "개발",
+  "테스트",
+  "현장 피드백",
+  "개선",
+];
+
+/** @deprecated legacy pipeline — use QMS_WORKFLOW_FIRST_PIPELINE */
+export const QMS_LEGACY_APPROVAL_PIPELINE = [
   "Workflow",
   "UI",
   "기능",
@@ -311,11 +330,12 @@ export const CERTIFICATE_LEGACY_MENU = "성적서관리";
 export const QMS_WORKFLOW_DEVELOPMENT_PRINCIPLES = [
   ...QMS_IN_SYSTEM_WORK_PRINCIPLES,
   "Master First Architecture — One Source of Truth",
-  "Workflow First — UI보다 업무 흐름 먼저 확정",
-  "Workflow 승인 → 기능 정의 → 승인 → UI 설계 → 승인 → 구현 → 테스트 → 다음 메뉴",
+  "Official dev priority: Workflow → UI → Database → 개발 → 테스트 → 현장 피드백 → 개선",
+  "Paper + Smart 병행 · 기존 기능 삭제 ❌ · Smart Access ID NDK:// (canonical)",
   "STEP 1 입고현황 Workflow 최종 승인 · UI 설계 대기",
-  "MES ≠ TITAN · 입고·출고 등록 = MES (Presentation = 수동 등록)",
+  "MES ≠ TITAN · MES Ready — Repository 교체 · UI 불변",
   "Version 3 NDK PQMS (Presentation Version · NDK 1공장) = 현재 유일 구현 대상",
+  "Official Architecture: docs/TITAN_OFFICIAL_ARCHITECTURE.md",
 ];
 
 /** Legacy aliases */

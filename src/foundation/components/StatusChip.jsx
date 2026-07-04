@@ -8,9 +8,16 @@ const STATUS_VARIANTS = {
   production: "titan-status-chip--production",
   certificate: "titan-status-chip--certificate",
   "prod-wait": "titan-status-chip--prod-wait",
+  "prod-done": "titan-status-chip--prod-done",
   inspect: "titan-status-chip--inspect",
+  "inspect-wait": "titan-status-chip--inspect-wait",
+  "inspect-done": "titan-status-chip--inspect-done",
+  "cert-wait": "titan-status-chip--cert-wait",
+  "cert-done": "titan-status-chip--cert-done",
   "ship-wait": "titan-status-chip--ship-wait",
-  "ship-done": "titan-status-chip--complete",
+  "ship-ready": "titan-status-chip--ship-ready",
+  "ship-done": "titan-status-chip--ship-done",
+  info: "titan-status-chip--info",
 };
 
 const HT_PROCESS_VARIANTS = {

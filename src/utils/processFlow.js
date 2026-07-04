@@ -71,11 +71,7 @@ function resolveCurrentStepIndex(record, statusLabel) {
     return 8;
   }
 
-  if (
-    record.completionStatus === "생산완료" ||
-    statusLabel === "생산 완료" ||
-    (record.registered && record.lotNo?.trim() && record.workDate)
-  ) {
+  if (record.completionStatus === "생산완료" || statusLabel === "생산 완료" || statusLabel === "검사대기") {
     return 6;
   }
 
@@ -126,6 +122,45 @@ export function formatStandardWorkDate(record) {
 /** @param {object} record */
 export function formatStandardRegisteredDate(record) {
   return record.incomingDate || "—";
+}
+
+/** @param {object} record */
+export function formatProductionDate(record) {
+  return (
+    record.workDate ||
+    record.productionCompleteDate ||
+    (record.lotCreatedAt ? String(record.lotCreatedAt).slice(0, 10) : "") ||
+    "—"
+  );
+}
+
+/** @param {object} record */
+export function formatInboundQtyLabel(record) {
+  return formatStandardQty(record);
+}
+
+/** @param {object} record @param {{ workQty?: number }} [options] */
+export function formatWorkQtyLabel(record, options = {}) {
+  const qty =
+    options.workQty ??
+    record.workQty ??
+    record.completedQty ??
+    (record.registered || record.lotNo?.trim() ? record.qty : 0);
+  return `${qty ?? 0} ${record.unit || "EA"}`;
+}
+
+/** @param {object} record @param {{ label: string, variant: string }} status */
+export function mapV13ProductListRow(record, status, options = {}) {
+  const base = mapStandardProductListRow(record, status);
+  return {
+    ...base,
+    incomingDate: formatStandardRegisteredDate(record),
+    productionDate: formatProductionDate(record),
+    inboundQtyLabel: formatInboundQtyLabel(record),
+    workQtyLabel: formatWorkQtyLabel(record, options),
+    currentProcess: base.processName,
+    remark: record.note?.trim() || "—",
+  };
 }
 
 /** @param {object} record @param {{ label: string, variant: string }} status */

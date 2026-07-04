@@ -6,29 +6,36 @@ import Card from "../../foundation/components/Card";
 import StatusChip from "../../foundation/components/StatusChip";
 import StatusSummaryCard from "../../foundation/components/StatusSummaryCard";
 import TitanStandardList from "../../foundation/components/TitanStandardList";
-import TitanCollapsibleSearchPanel from "../../foundation/components/TitanCollapsibleSearchPanel";
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   DateRangeField,
-  LotNoField,
-  ManagementIdField,
   ManagerField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
+import { STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { HOME_INTEGRATED_SEARCH_CONFIG } from "../../config/homeIntegratedSearch";
 import {
+  HOME_ADMIN_SHORTCUTS,
   HOME_NOTICES_PREVIEW_LIMIT,
+  HOME_QUICK_MENUS,
   HOME_RECENT_LIST_TITLE,
   HOME_RECENT_TABS,
+  HOME_TODAY_TASKS_LIMIT,
+  HOME_TODAY_WORK_CARDS,
   HOME_TOP_KPI_CARDS,
   HOME_WORK_SCHEDULE_PREVIEW_LIMIT,
   HOME_WORKFLOW_FULL_VIEW_PATH,
   HOME_WORKFLOW_PREVIEW_LIMIT,
 } from "../../config/homeDashboard";
+import { isHomeWidgetVisible } from "../../utils/titanModuleRuntime";
+import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
+import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import {
   buildHomeTopKpiCounts,
   buildProductWorkflowPreview,
-  buildRecentListByTab,
+  buildRecentWorkList,
+  buildTodayActionItems,
   buildTodayWorkSummary,
 } from "../../utils/homeDashboardData";
 import {
@@ -37,21 +44,33 @@ import {
   getUserTodayTasks,
   toggleHomeTaskCompleted,
 } from "../../utils/homeTasksSession";
-import TitanNoticePanel from "../../foundation/components/TitanNoticePanel";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanWorkflowStepTrack from "../../foundation/components/TitanWorkflowStepTrack";
-import { getHomeNotices } from "../../utils/homeNoticesSession";
+import TitanProductTraceabilityPanel from "../../foundation/components/TitanProductTraceabilityPanel";
+import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { getHomeNotices, mapHomeNoticeToPanelItem } from "../../utils/homeNoticesSession";
 import { buildHomeProductProgressTableColumns } from "../../config/productWorkflowList";
 import HomeWorkflowProgressRate from "./HomeWorkflowProgressRate";
 import HomeTaskModal from "./HomeTaskModal";
+import HomeNoticeRegisterModal from "./HomeNoticeRegisterModal";
 
 export function HomeKpiPanel({ records }) {
+  const { flags } = useTitanModuleFlags();
   const counts = useMemo(() => buildHomeTopKpiCounts(records), [records]);
+  const visibleCards = useMemo(
+    () => HOME_TOP_KPI_CARDS.filter((card) => isHomeWidgetVisible(card.id, flags)),
+    [flags]
+  );
+
+  if (visibleCards.length === 0) return null;
 
   return (
     <section className="home-panel home-panel--kpi titan-card" aria-label="KPI Dashboard">
+      <div className="home-panel__head home-panel__head--inline">
+        <h3>KPI Dashboard</h3>
+      </div>
       <div className="home-kpi-row home-kpi-row--compact">
-        {HOME_TOP_KPI_CARDS.map((card) => (
+        {visibleCards.map((card) => (
           <StatusSummaryCard
             key={card.id}
             {...card}
@@ -74,7 +93,7 @@ export function HomeIntegratedSearchPanel({
   companies,
   searchRecords,
 }) {
-  const { collapse, showStatusField, statusOptions, panelClassName, ariaLabel } =
+  const { showStatusField, statusOptions, panelClassName, ariaLabel } =
     HOME_INTEGRATED_SEARCH_CONFIG;
 
   const processCodes = useMemo(
@@ -92,14 +111,15 @@ export function HomeIntegratedSearchPanel({
   });
 
   return (
-    <TitanCollapsibleSearchPanel
-      className="home-panel home-panel--search home-search-collapse"
-      closedLabel={collapse.closedLabel}
-      openLabel={collapse.openLabel}
-      defaultOpen={collapse.defaultOpen}
-      ariaLabel={ariaLabel}
+    <section
+      className="home-panel home-panel--search home-search-panel titan-card is-open"
+      aria-label={ariaLabel}
     >
+      <div className="home-panel__head home-panel__head--compact">
+        <h3>통합검색</h3>
+      </div>
       <TitanSearchPanel
+        bare
         draft={draft}
         onDraftChange={onDraftChange}
         onSearch={onSearch}
@@ -108,14 +128,13 @@ export function HomeIntegratedSearchPanel({
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
         showStatusField={showStatusField}
         extraSuggestions={{ status: statusOptions, manager: managers }}
         className={panelClassName}
         enableEnterSearch
         advancedContent={
-          <div className="titan-advanced-search__grid">
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
+          <TitanAdvancedSearchGrid>
             <DateRangeField
               label="납기일"
               fromKey="dueDateFrom"
@@ -124,10 +143,102 @@ export function HomeIntegratedSearchPanel({
               onDraftChange={onDraftChange}
             />
             <ManagerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-          </div>
+          </TitanAdvancedSearchGrid>
         }
       />
-    </TitanCollapsibleSearchPanel>
+    </section>
+  );
+}
+
+/** 금일 해야 할 일 — Workflow 추천 + 사용자 등록 */
+export function HomeTodayTasksPanel({ records, refreshKey, onRefresh }) {
+  const { flags } = useTitanModuleFlags();
+  const [modalOpen, setModalOpen] = useState(false);
+  const visible = isHomeWidgetVisible("todayTasks", flags);
+
+  const userTasks = useMemo(
+    () =>
+      getUserTodayTasks()
+        .filter((task) => task.status !== HOME_TASK_STATUS.DONE)
+        .slice(0, HOME_TODAY_TASKS_LIMIT),
+    [refreshKey]
+  );
+
+  const systemItems = useMemo(
+    () =>
+      buildTodayActionItems(records)
+        .filter((item) => isHomeWidgetVisible(item.widgetKey, flags))
+        .slice(0, HOME_TODAY_TASKS_LIMIT),
+    [records, flags]
+  );
+
+  if (!visible) return null;
+
+  const handleSave = (payload) => {
+    addUserHomeTask(payload);
+    setModalOpen(false);
+    onRefresh?.();
+  };
+
+  const handleToggleUserTask = (task) => {
+    toggleHomeTaskCompleted(task.id, task.status !== HOME_TASK_STATUS.DONE);
+    onRefresh?.();
+  };
+
+  const isEmpty = userTasks.length === 0 && systemItems.length === 0;
+
+  return (
+    <>
+      <Card className="home-panel home-panel--today-tasks home-panel--left-clamp">
+        <div className="home-panel__head">
+          <h3>금일 해야 할 일</h3>
+          <SecondaryButton type="button" onClick={() => setModalOpen(true)}>
+            <Plus size={14} aria-hidden="true" />
+            할 일 추가
+          </SecondaryButton>
+        </div>
+        <ul className="home-today-tasks">
+          {isEmpty ? (
+            <li className="home-empty">금일 처리할 업무가 없습니다.</li>
+          ) : null}
+          {userTasks.map((task) => (
+            <li key={task.id}>
+              <label className="home-today-tasks__item home-today-tasks__item--user">
+                <input
+                  type="checkbox"
+                  checked={task.status === HOME_TASK_STATUS.DONE}
+                  onChange={() => handleToggleUserTask(task)}
+                />
+                <span className="home-today-tasks__body">
+                  <strong>{task.title}</strong>
+                  <span>{task.assignee || "—"}</span>
+                </span>
+              </label>
+            </li>
+          ))}
+          {systemItems.map((item) => (
+            <li key={item.id}>
+              <Link
+                to={item.to}
+                className={`home-today-tasks__item home-today-tasks__item--system titan-process--${item.phaseKey}`}
+              >
+                <span className="home-today-tasks__check" aria-hidden="true" />
+                <span className="home-today-tasks__body">
+                  <strong>{item.title}</strong>
+                </span>
+                <span className="home-today-tasks__count">
+                  {item.count.toLocaleString("ko-KR")}건
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      {modalOpen ? (
+        <HomeTaskModal mode="add" onSave={handleSave} onClose={() => setModalOpen(false)} />
+      ) : null}
+    </>
   );
 }
 
@@ -142,26 +253,41 @@ export function HomeKpiSearchPanel(props) {
 }
 
 export function HomeTodaySummary({ records }) {
-  const items = useMemo(() => buildTodayWorkSummary(records), [records]);
+  const { flags } = useTitanModuleFlags();
+  if (!isHomeWidgetVisible("todayWork", flags)) return null;
+
+  const summaryMap = useMemo(
+    () => Object.fromEntries(buildTodayWorkSummary(records).map((item) => [item.id, item.value])),
+    [records]
+  );
+
+  const cards = useMemo(
+    () =>
+      HOME_TODAY_WORK_CARDS.filter((card) => isHomeWidgetVisible(card.summaryId, flags)),
+    [flags]
+  );
+
+  if (cards.length === 0) return null;
 
   return (
-    <section className="home-panel home-panel--today home-panel--status-bar titan-card" aria-label="금일 업무현황">
-      <div className="home-today-bar">
-        <span className="home-today-bar__label">금일 업무현황</span>
-        <div className="home-today-chips">
-          {items.map((item) => (
-            <span
-              key={item.id}
-              className={`home-status-chip titan-process--${item.phaseKey}`}
-            >
-              <span className="home-status-chip__dot" aria-hidden="true" />
-              <span className="home-status-chip__label">{item.label}</span>
-              <strong className="home-status-chip__value">
-                {item.value.toLocaleString("ko-KR")}건
-              </strong>
-            </span>
-          ))}
-        </div>
+    <section className="home-panel home-panel--today-summary titan-card" aria-label="현재 진행현황">
+      <div className="home-panel__head home-panel__head--compact">
+        <h3>현재 진행현황</h3>
+        <p className="home-panel__subtitle">입고부터 출고까지 현재 진행 중인 업무 현황</p>
+      </div>
+      <div className="home-kpi-row home-kpi-row--today">
+        {cards.map((card) => (
+          <StatusSummaryCard
+            key={card.summaryId}
+            label={card.label}
+            subLabel={card.subLabel}
+            icon={card.icon}
+            to={card.to}
+            tone={card.tone}
+            count={summaryMap[card.summaryId] ?? 0}
+            countSuffix="건"
+          />
+        ))}
       </div>
     </section>
   );
@@ -169,6 +295,11 @@ export function HomeTodaySummary({ records }) {
 
 /** 제품 진행 Row Expand 상세 — 진행률 · 공정 Step · 메타 정보 (REV.6) */
 export function HomeWorkflowRowDetail({ item }) {
+  const traceRecord = useMemo(
+    () => getSessionProductionRecords().find((record) => record.id === item.managementId) ?? null,
+    [item.managementId]
+  );
+
   return (
     <div className="home-workflow-expand">
       <HomeWorkflowProgressRate percent={item.progressPercent} />
@@ -200,6 +331,18 @@ export function HomeWorkflowRowDetail({ item }) {
           <dd>{item.noteLabel}</dd>
         </div>
       </dl>
+
+      {traceRecord ? (
+        <>
+          <div className="home-workflow-expand__divider" aria-hidden="true" />
+          <TitanProductTraceabilityPanel
+            record={traceRecord}
+            onSelectCoLotProduct={(id) => {
+              window.location.assign(`/production/daily?managementId=${encodeURIComponent(id)}`);
+            }}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -251,12 +394,17 @@ export function HomeProductProgressTable({ records, search }) {
   );
 }
 
-/** 진행현황 Panel — Overview + Product Table (REV.1 + 기능 복구) */
+/** 제품 흐름 현황 Panel — Overview + Product Table */
 export function HomeProgressPanel({ records, search, activeChipId, onChipClick }) {
   return (
-    <Card className="home-panel home-panel--progress">
+    <Card className="home-panel home-panel--progress" aria-label="제품 흐름 현황">
       <div className="home-panel__head">
-        <h3>진행현황</h3>
+        <div className="home-panel__head-text">
+          <h3>제품 흐름 현황</h3>
+          <p className="home-panel__subtitle">
+            입고부터 출고까지 제품의 현재 진행 상태를 확인합니다.
+          </p>
+        </div>
         <Link to={HOME_WORKFLOW_FULL_VIEW_PATH} className="home-panel__link-btn">
           전체 보기
         </Link>
@@ -339,70 +487,96 @@ export function HomeTodoPanel(props) {
   return <HomeWorkSchedulePanel {...props} />;
 }
 
-export function HomeNoticePanel({ refreshKey }) {
-  const [expanded, setExpanded] = useState(false);
-  const notices = useMemo(() => getHomeNotices(), [refreshKey]);
+export function HomeNoticePanel({ refreshKey, onRefresh }) {
+  const [listExpanded, setListExpanded] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const notices = useMemo(
+    () => getHomeNotices().map(mapHomeNoticeToPanelItem),
+    [refreshKey]
+  );
+  const hasMore = notices.length > HOME_NOTICES_PREVIEW_LIMIT;
+  const visibleNotices = listExpanded ? notices : notices.slice(0, HOME_NOTICES_PREVIEW_LIMIT);
 
   return (
-    <Card
-      className={`home-panel home-panel--notice${expanded ? " is-expanded" : ""}`.trim()}
-    >
-      <TitanNoticePanel
-        title="공지사항"
-        notices={notices}
-        previewLimit={HOME_NOTICES_PREVIEW_LIMIT}
-        headClassName="home-panel__head"
-        onExpandedChange={setExpanded}
-      />
-    </Card>
+    <>
+      <Card
+        className={`home-panel home-panel--notice titan-card${listExpanded ? " is-list-expanded" : ""}`.trim()}
+      >
+        <div className="home-panel__head home-panel__head--notice">
+          <h3>공지사항</h3>
+          <SecondaryButton type="button" onClick={() => setRegisterOpen(true)}>
+            <Plus size={14} aria-hidden="true" />
+            공지 등록
+          </SecondaryButton>
+        </div>
+        {visibleNotices.length === 0 ? (
+          <p className="home-empty">등록된 공지가 없습니다.</p>
+        ) : (
+          <>
+            <ul className="home-notice-cards" aria-label="공지사항">
+              {visibleNotices.map((notice) => (
+                <li key={notice.id} className={`home-notice-card home-notice-card--${notice.type}`}>
+                  <div className="home-notice-card__row">
+                    <span className="home-notice-card__badge">{notice.typeLabel}</span>
+                    <strong className="home-notice-card__title">{notice.title}</strong>
+                    <span className="home-notice-card__date">
+                      {notice.dateLabel ?? notice.date ?? "—"}
+                    </span>
+                  </div>
+                  {listExpanded && notice.body ? (
+                    <p className="home-notice-card__body">{notice.body}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            {hasMore ? (
+              <button
+                type="button"
+                className="home-notice-more-btn"
+                onClick={() => setListExpanded((value) => !value)}
+                aria-expanded={listExpanded}
+              >
+                {listExpanded ? "▲ 접기" : "▼ 더보기"}
+              </button>
+            ) : null}
+          </>
+        )}
+      </Card>
+
+      {registerOpen ? (
+        <HomeNoticeRegisterModal
+          onSave={() => onRefresh?.()}
+          onClose={() => setRegisterOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }
 
 export function HomeRecentWorkPanel({ records }) {
-  const [activeTab, setActiveTab] = useState(HOME_RECENT_TABS[0]?.id ?? "incoming");
-  const items = useMemo(
-    () => buildRecentListByTab(records, activeTab).slice(0, 5),
-    [records, activeTab]
-  );
+  const items = useMemo(() => buildRecentWorkList(records).slice(0, 5), [records]);
 
   return (
-    <Card className="home-panel home-panel--recent">
+    <Card className="home-panel home-panel--recent home-panel--left-clamp">
       <div className="home-panel__head">
         <h3>{HOME_RECENT_LIST_TITLE}</h3>
       </div>
-      <div className="home-recent-tabs" role="tablist" aria-label={HOME_RECENT_LIST_TITLE}>
-        {HOME_RECENT_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`home-recent-tabs__btn${activeTab === tab.id ? " is-active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <ul className="home-recent-list">
-        {items.length === 0 ? (
-          <li className="home-empty">표시할 이력이 없습니다.</li>
-        ) : (
-          items.map((item) => (
-            <li key={`${activeTab}-${item.managementId}`} className="home-recent-list__item">
-              <div className="home-recent-list__main">
-                <strong>{item.managementId}</strong>
-                <span>{item.company}</span>
+      {items.length === 0 ? (
+        <p className="home-empty">표시할 이력이 없습니다.</p>
+      ) : (
+        <ul className="home-recent-timeline">
+          {items.map((item, index) => (
+            <li key={`recent-${item.managementId}-${index}`} className="home-recent-timeline__item">
+              <div className="home-recent-timeline__main">
+                <strong>{item.company}</strong>
                 <span>{item.partName}</span>
+                <span className="home-recent-timeline__action">{item.statusLabel}</span>
               </div>
-              <div className="home-recent-list__meta">
-                <StatusChip variant={item.statusVariant}>{item.statusLabel}</StatusChip>
-                <span>{item.registeredAt}</span>
-              </div>
+              <span className="home-recent-timeline__meta">{item.registeredAt}</span>
             </li>
-          ))
-        )}
-      </ul>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
@@ -448,17 +622,44 @@ export function HomeStatusSummaryPanel({ records }) {
 }
 
 export function HomeQuickMenu() {
+  const { flags } = useTitanModuleFlags();
+  const items = HOME_QUICK_MENUS.filter((item) => isHomeWidgetVisible(item.id, flags));
+  if (items.length === 0) return null;
+
   return (
     <Card className="home-panel home-panel--quick home-panel--left-clamp">
       <div className="home-panel__head">
         <h3>빠른 메뉴</h3>
       </div>
       <div className="home-quick-menu">
-          {HOME_QUICK_MENUS.map((item) => (
-            <Link key={item.id} to={item.to} className="home-quick-menu__btn">
-              {item.label}
-            </Link>
-          ))}
+        {items.map((item) => (
+          <Link key={item.id} to={item.to} className="home-quick-menu__btn">
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/** 관리자 전용 HOME 위젯 */
+export function HomeAdminWidgetsPanel() {
+  const isAdmin = isTitanAdminUser();
+
+  if (!isAdmin) return null;
+
+  return (
+    <Card className="home-panel home-panel--admin home-panel--left-clamp">
+      <div className="home-panel__head">
+        <h3>관리자</h3>
+        <span className="home-panel__badge">Admin</span>
+      </div>
+      <div className="home-admin-shortcuts">
+        {HOME_ADMIN_SHORTCUTS.map((item) => (
+          <Link key={item.id} to={item.to} className="home-admin-shortcuts__btn">
+            {item.label}
+          </Link>
+        ))}
       </div>
     </Card>
   );

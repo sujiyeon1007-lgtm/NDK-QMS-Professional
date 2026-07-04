@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { PrimaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import { DrawingNoField } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -108,9 +109,9 @@ export default function ProductManagement() {
         companies={companies}
         records={searchRecords}
         advancedContent={
-          <div className="titan-advanced-search__grid">
+          <TitanAdvancedSearchGrid>
             <DrawingNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-          </div>
+          </TitanAdvancedSearchGrid>
         }
       />
 

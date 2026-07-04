@@ -217,6 +217,279 @@
   gap: 10px;
 }
 
+.company-detail-section__trade-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.company-detail-section__trade-date {
+  font-size: 15px;
+}
+
+.company-detail-section__contacts-table {
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  padding: 8px;
+  overflow: auto;
+}
+
+.company-detail-section__contacts-table-inner {
+  min-width: 720px;
+}
+
+.company-detail-section__empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+  text-align: center;
+}
+
+.company-management-page__table-wrap--compact .titan-table__cell {
+  padding: 7px 10px;
+}
+
+.company-management-page__table-wrap--compact .titan-table__cell--head {
+  padding: 8px 10px;
+}
+
+/* Project TITAN 기준정보 Grid Typography V1.0 */
+.master-data-grid .titan-table__cell--head {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.master-data-grid .titan-table__cell:not(.titan-table__cell--head):not(.titan-table__empty) {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.master-data-actions .titan-btn,
+.master-data-actions button {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.company-management-page__table--compact .titan-table__cell--name {
+  font-weight: 700;
+}
+
+.company-management-page__table--product .titan-table__cell--company {
+  font-weight: 700;
+}
+
+.company-management-page__table--compact .titan-table__cell--code,
+.company-management-page__table--compact .titan-table__cell--ceoName,
+.company-management-page__table--compact .titan-table__cell--activeLabel,
+.company-management-page__table--product .titan-table__cell--partNo,
+.company-management-page__table--equipment .titan-table__cell--code {
+  white-space: nowrap;
+}
+
+
+.company-detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+}
+
+.company-detail-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+}
+
+.company-detail-tabs__btn:hover {
+  background: #eef4fd;
+  color: #1d4ed8;
+}
+
+.company-detail-tabs__btn.is-active {
+  border-color: #93c5fd;
+  background: #edf4fd;
+  color: #1d4ed8;
+}
+
+.company-detail-tabs__btn.is-future {
+  opacity: 0.85;
+}
+
+.company-detail-tabs__future {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.company-detail-section__grid--profile {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.company-detail-section__grid--trade {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.company-detail-section__grid-span-2 {
+  grid-column: 1 / -1;
+}
+
+.company-detail-section__empty--future {
+  text-align: left;
+  line-height: 1.6;
+}
+
+.company-ndk-assignees-editor__index {
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+/* ── 제품 상세 Popup — Compact ERP/MES ── */
+.product-detail-modal {
+  gap: 10px;
+  padding: 0 2px 4px;
+}
+
+.product-detail-modal .company-detail-section {
+  gap: 6px;
+}
+
+.product-detail-modal .company-detail-section__title {
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+
+.product-detail-modal__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: 640px;
+  gap: 3px 14px;
+}
+
+.product-detail-modal__grid > div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 2px 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.product-detail-modal__grid dt {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #64748b);
+  line-height: 1.25;
+}
+
+.product-detail-modal__grid dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-primary, #0f172a);
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.product-detail-modal__grid--extra > div:nth-child(4),
+.product-detail-modal__grid--extra > div:nth-child(5) {
+  grid-column: 1 / -1;
+  grid-template-columns: 58px minmax(0, 1fr);
+}
+
+.company-contacts-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--titan-table-border, #dde6f0);
+}
+
+.company-contacts-editor__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.company-contacts-editor__head strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.company-contacts-editor__head span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.company-contacts-editor__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.company-contacts-editor__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.company-contacts-editor__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.company-contacts-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.company-contacts-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.company-contacts-editor__field input {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .company-contacts-editor__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .company-detail-section__trade-card {
   padding: 12px;
   border: 1px solid var(--titan-table-border, #dde6f0);
@@ -240,7 +513,8 @@
 
 @media (max-width: 720px) {
   .company-detail-section__grid,
-  .company-detail-section__trade-grid {
+  .company-detail-section__trade-grid,
+  .company-detail-section__trade-grid--four {
     grid-template-columns: 1fr;
   }
 }

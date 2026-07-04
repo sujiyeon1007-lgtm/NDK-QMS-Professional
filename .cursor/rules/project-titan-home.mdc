@@ -1,0 +1,29 @@
+# Project TITAN — HOME Dashboard V1.3 (Mockup 기준)
+
+**Source:** `src/pages/Home/` · `src/config/homeDashboard.js`
+
+## 레이아웃 (승인 Mockup · 변경 금지)
+
+```text
+HOME (PageTopBar · compact)
+금일 업무현황 (5 KPI 카드)
+──────── 2열 (3 : 9) ────────
+좌: 공지사항 · 오늘 해야 할 일 · 최근 작업
+우: 통합검색 (항상 표시) → 진행현황 (메인)
+```
+
+## Widget
+
+| 영역 | 구성 |
+|---|---|
+| 금일 업무현황 | 입고완료 · 생산중 · 검사대기 · 성적서대기 · 출고예정 (KPI 카드) |
+| 좌측 | 공지사항(+등록) · 오늘 해야 할 일(+추가) · 최근 작업 |
+| 우측 | 통합검색 · 진행현황 (11컬럼 + Expand Timeline) |
+
+**삭제:** 빠른 메뉴 · HOME QR 바로가기
+
+## V1.3 Refinement
+
+- KPI: `.home-kpi-row--today` — 높이·아이콘·숫자 약 15~20% 축소 (진행현황 세로 공간 확보)
+- 통합검색: 단일 `section` + `TitanSearchPanel bare` (이중 Card 제거)
+- PageTopBar compact 유지 · 레이아웃/Widget 위치 변경 금지

@@ -9,11 +9,12 @@
 export const DOCUMENT_MANAGEMENT_WORKFLOW_REVISION = "1-final";
 export const DOCUMENT_MANAGEMENT_WORKFLOW_DATE = "2026-07-03";
 
-/** 검색 → 제품 리스트 → 선택 → Popup 문서현황 */
+/** 검색 → 제품 리스트 → Row 선택 → 하단 Master-Detail · Popup 문서현황 */
 export const DOCUMENT_MANAGEMENT_WORKFLOW = [
   "검색",
   "제품 리스트 조회",
-  "제품 선택",
+  "Row 선택",
+  "하단 상세정보",
   "문서관리 Popup",
 ];
 

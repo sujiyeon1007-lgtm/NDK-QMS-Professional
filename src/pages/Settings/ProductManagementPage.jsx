@@ -213,19 +213,19 @@ export default function ProductManagementPage() {
             type="search"
             value={searchKeyword}
             onChange={(event) => setSearchKeyword(event.target.value)}
-            placeholder="품번 · 품명 · 업체 · 재질 검색"
+            placeholder="업체 · 품명 · 품번 · 재질 검색"
             aria-label="제품 검색"
           />
         </div>
 
-        <div className="company-management-page__table-wrap">
+        <div className="company-management-page__table-wrap company-management-page__table-wrap--compact">
           <TitanDataTable
-            className="inbound-page__table"
+            className="inbound-page__table company-management-page__table--compact company-management-page__table--product"
             columns={tableColumns}
             rows={pagedProducts}
             activeRowId={selectedProductId}
-            onRowClick={openDetail}
-            onRowDoubleClick={(row) => openRegister("edit", row)}
+            onRowClick={(row) => setSelectedProductId(row.id)}
+            onRowDoubleClick={(row) => openDetail(row)}
             emptyMessage="등록된 제품이 없습니다."
           />
 

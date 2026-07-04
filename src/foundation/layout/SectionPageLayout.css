@@ -7,24 +7,30 @@
 
 .titan-section-page__header {
   flex: 0 0 auto;
-  padding: 12px 14px;
-  background: var(--titan-surface);
-  border: 1px solid var(--titan-border);
+  padding: var(--titan-page-top-bar-padding-block) 14px var(--titan-page-top-bar-padding-block)
+    calc(14px + var(--titan-title-accent-gap));
+  background: var(--titan-page-header-bg);
+  border: 1px solid var(--titan-page-header-border);
+  border-left: var(--titan-page-header-accent-width) solid var(--titan-page-header-accent-color);
   border-radius: var(--titan-radius);
   box-shadow: var(--titan-shadow);
 }
 
 .titan-section-page__title {
   margin: 0;
-  font-size: var(--titan-font-xl);
+  font-size: var(--titan-font-section-title);
+  font-weight: var(--titan-weight-semibold);
   white-space: nowrap;
+  padding-left: 0;
+  border-left: none;
+  color: var(--titan-page-header-title-color);
 }
 
 .titan-section-page__desc {
   margin: 4px 0 0;
   padding-left: calc(var(--titan-title-accent-gap) + var(--titan-title-accent-width));
   font-size: var(--titan-font-sm);
-  color: var(--titan-text-muted);
+  color: var(--titan-page-header-text-muted);
 }
 
 .titan-section-tabs {

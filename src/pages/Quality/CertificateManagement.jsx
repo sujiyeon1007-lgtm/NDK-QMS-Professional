@@ -2,27 +2,21 @@ import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
-import {
-  AssigneeField,
-  CustomerLotNoField,
-  DateRangeField,
-  LotNoField,
-  ManagementIdField,
-  ProcessField,
-  PurchaseOrderNoField,
-  StatusSelectField,
-} from "../../foundation/components/TitanSearchAdvancedFields";
+import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
-import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
+import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
+import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import CertificateRowActions from "./CertificateRowActions";
+import { titanColumn } from "../../config/tableColumnPresets";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
 import {
   CERTIFICATE_FILE_STATUS_OPTIONS,
 } from "../../config/qualityDashboard";
-import { createEmptyCertificateSearch } from "../../config/listSearchStandard";
+import { createEmptyCertificateSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildCertificateListColumns } from "../../config/standardProductList";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
 import {
@@ -59,6 +53,7 @@ export default function CertificateManagement() {
     useTitanListSearch(createEmptyCertificateSearch, { storageKey: "certificate" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [detailPopupRow, setDetailPopupRow] = useState(null);
   const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -112,20 +107,31 @@ export default function CertificateManagement() {
     }
   };
 
+  const renderProcessChip = (row) =>
+    row.currentProcess && row.currentProcess !== "—" ? (
+      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
+    ) : (
+      "—"
+    );
+
   const columns = useMemo(
     () =>
       buildCertificateListColumns({
-        renderStatus: (row) => (
-          <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
+        renderProcess: renderProcessChip,
+        renderActions: (row) => (
+          <CertificateRowActions
+            onDetail={() => {
+              setActiveId(row.id);
+              setDetailPopupRow(row);
+            }}
+            onIssue={() => openRegister(buildRegisterInitialFromRow(row))}
+            onEdit={() => openRegister(buildRegisterInitialFromRow(row))}
+            onCancel={() => {
+              setActiveId(row.id);
+              openRegister(buildRegisterInitialFromRow(row));
+            }}
+          />
         ),
-        renderProcess: (row) =>
-          row.processName && row.processName !== "—" ? (
-            <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
-          ) : (
-            "—"
-          ),
-        renderExcel: (row) => <FileMark registered={row.excelRegistered} />,
-        renderPdf: (row) => <FileMark registered={row.pdfRegistered} />,
       }),
     []
   );
@@ -194,8 +200,84 @@ export default function CertificateManagement() {
     openRegister(buildRegisterInitialFromRow(activeRow));
   };
 
+  const buildCertificateDetailContent = (row) =>
+    row ? (
+      <dl className="inbound-detail">
+        <div>
+          <dt>관리번호</dt>
+          <dd>{row.managementId}</dd>
+        </div>
+        <div>
+          <dt>발주번호</dt>
+          <dd>{row.purchaseOrderNo}</dd>
+        </div>
+        <div>
+          <dt>LOT.NO</dt>
+          <dd>{row.lotNo}</dd>
+        </div>
+        <div>
+          <dt>업체 LOT</dt>
+          <dd>{row.customerLotNo}</dd>
+        </div>
+        <div>
+          <dt>업체명</dt>
+          <dd>{row.company}</dd>
+        </div>
+        <div>
+          <dt>품명</dt>
+          <dd>{row.partName}</dd>
+        </div>
+        <div>
+          <dt>품번</dt>
+          <dd>{row.partNo}</dd>
+        </div>
+        <div>
+          <dt>재질</dt>
+          <dd>{row.material}</dd>
+        </div>
+        <div>
+          <dt>공정</dt>
+          <dd>
+            {row.processName && row.processName !== "—" ? (
+              <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
+            ) : (
+              "—"
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>엑셀</dt>
+          <dd>
+            <FileMark registered={row.excelRegistered} />
+            {row.entry.excelFile?.name ? ` ${row.entry.excelFile.name}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>PDF</dt>
+          <dd>
+            <FileMark registered={row.pdfRegistered} />
+            {row.entry.pdfFile?.name ? ` ${row.entry.pdfFile.name}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>등록일</dt>
+          <dd>{row.registeredDate}</dd>
+        </div>
+        <div>
+          <dt>현재상태</dt>
+          <dd>
+            <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
+          </dd>
+        </div>
+      </dl>
+    ) : null;
+
+  const openDetailPopup = (row) => {
+    openRowDetailPopup(row, { setActiveId, setDetailPopupRow });
+  };
+
   const handleRowDoubleClick = (row) => {
-    openRegister(buildRegisterInitialFromRow(row));
+    openDetailPopup(row);
   };
 
   return (
@@ -229,137 +311,41 @@ export default function CertificateManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
+        showStatusField
+        statusFieldLabel="현재상태"
         advancedContent={
-          <div className="titan-advanced-search__grid">
-            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <DateRangeField
-              label="등록일"
-              fromKey="registeredDateFrom"
-              toKey="registeredDateTo"
-              draft={draft}
-              onDraftChange={onDraftChange}
-            />
-            <AssigneeField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <StatusSelectField
-              label="현재상태"
-              value={draft.status}
-              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
-              options={CERTIFICATE_FILE_STATUS_OPTIONS}
-            />
-          </div>
+          <TitanStandardProductAdvancedSearch
+            draft={draft}
+            onDraftChange={onDraftChange}
+            getSuggestions={getSuggestions}
+          />
         }
       />
 
-      <div className="inbound-page__workspace">
-        <div className="inbound-page__list">
-          <TitanDataTable
-            className="inbound-page__table"
-            columns={columns}
-            rows={pagedRows}
-            selectable
-            selectedRowIds={selectedIds}
-            onToggleRow={toggleRow}
-            onToggleAll={toggleAll}
-            activeRowId={activeRow?.id}
-            onRowClick={(row) => setActiveId(row.id)}
-            onRowDoubleClick={handleRowDoubleClick}
-            emptyMessage="등록된 성적서 파일이 없습니다."
-          />
+      <div className="inbound-page__list quality-page__list">
+        <TitanDataTable
+          className="inbound-page__table"
+          columns={columns}
+          rows={pagedRows}
+          selectable
+          selectedRowIds={selectedIds}
+          onToggleRow={toggleRow}
+          onToggleAll={toggleAll}
+          activeRowId={activeRow?.id}
+          onRowClick={(row) => setActiveId(row.id)}
+          onRowDoubleClick={handleRowDoubleClick}
+          emptyMessage="등록된 성적서 파일이 없습니다."
+        />
 
-          <TitanTableFooter
-            totalCount={totalCount}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </div>
-
-        {activeRow ? (
-          <TitanDetailPanel
-            actionLabel={CERTIFICATE_FILE_REGISTER_LABEL}
-            actionIcon={Plus}
-            onAction={handleDetailRegister}
-            processFlowSteps={processFlowSteps}
-            detailContent={
-              <dl className="inbound-detail">
-                <div>
-                  <dt>관리번호</dt>
-                  <dd>{activeRow.managementId}</dd>
-                </div>
-                <div>
-                  <dt>발주번호</dt>
-                  <dd>{activeRow.purchaseOrderNo}</dd>
-                </div>
-                <div>
-                  <dt>LOT.NO</dt>
-                  <dd>{activeRow.lotNo}</dd>
-                </div>
-                <div>
-                  <dt>업체 LOT</dt>
-                  <dd>{activeRow.customerLotNo}</dd>
-                </div>
-                <div>
-                  <dt>업체명</dt>
-                  <dd>{activeRow.company}</dd>
-                </div>
-                <div>
-                  <dt>품명</dt>
-                  <dd>{activeRow.partName}</dd>
-                </div>
-                <div>
-                  <dt>품번</dt>
-                  <dd>{activeRow.partNo}</dd>
-                </div>
-                <div>
-                  <dt>재질</dt>
-                  <dd>{activeRow.material}</dd>
-                </div>
-                <div>
-                  <dt>공정</dt>
-                  <dd>
-                    {activeRow.processName && activeRow.processName !== "—" ? (
-                      <StatusChip variant={getProcessChipVariant(activeRow.processName)}>
-                        {activeRow.processName}
-                      </StatusChip>
-                    ) : (
-                      "—"
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>엑셀</dt>
-                  <dd>
-                    <FileMark registered={activeRow.excelRegistered} />
-                    {activeRow.entry.excelFile?.name ? ` ${activeRow.entry.excelFile.name}` : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt>PDF</dt>
-                  <dd>
-                    <FileMark registered={activeRow.pdfRegistered} />
-                    {activeRow.entry.pdfFile?.name ? ` ${activeRow.entry.pdfFile.name}` : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt>등록일</dt>
-                  <dd>{activeRow.registeredDate}</dd>
-                </div>
-                <div>
-                  <dt>현재상태</dt>
-                  <dd>
-                    <StatusChip variant={activeRow.statusVariant}>{activeRow.statusLabel}</StatusChip>
-                  </dd>
-                </div>
-              </dl>
-            }
-          />
-        ) : null}
+        <TitanTableFooter
+          totalCount={totalCount}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <CertificateRegisterModal
@@ -367,6 +353,29 @@ export default function CertificateManagement() {
         onClose={() => setRegisterOpen(false)}
         onRegister={handleRegister}
         initialData={registerInitial}
+      />
+
+      <TitanScreenDetailPopup
+        screenKey="certificate"
+        open={Boolean(detailPopupRow)}
+        onClose={() => setDetailPopupRow(null)}
+        record={detailPopupRow}
+        context={{
+          detailContent: buildCertificateDetailContent(detailPopupRow),
+          traceRecord: detailPopupRow
+            ? getSessionProductionRecords().find((record) => record.id === detailPopupRow.managementId)
+            : null,
+          processFlowSteps: detailPopupRow
+            ? getProcessFlowSteps(
+                getSessionProductionRecords().find((record) => record.id === detailPopupRow.managementId)
+              )
+            : [],
+          eventLists: {
+            certificatePdf: detailPopupRow?.entry?.pdfFile?.name ? (
+              <p>{detailPopupRow.entry.pdfFile.name}</p>
+            ) : null,
+          },
+        }}
       />
     </div>
   );

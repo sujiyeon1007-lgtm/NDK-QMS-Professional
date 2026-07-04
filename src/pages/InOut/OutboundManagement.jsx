@@ -1,31 +1,25 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
-import {
-  DateRangeField,
-  LotNoField,
-  ManagementIdField,
-  ManagerField,
-  NoteField,
-  ProcessField,
-  PurchaseOrderNoField,
-  CustomerLotNoField,
-  StatusSelectField,
-} from "../../foundation/components/TitanSearchAdvancedFields";
+import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
-import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
+import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import OutboundRowActions from "./OutboundRowActions";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import TransactionStatementPrintDocument from "../../components/print/TransactionStatementPrintDocument";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
-import { createEmptyOutboundSearch, matchesBasicSearch } from "../../config/listSearchStandard";
+import {
+  createEmptyOutboundSearch,
+  matchesBasicSearch,
+  STANDARD_PRODUCT_BASIC_SEARCH_FIELDS,
+} from "../../config/listSearchStandard";
 import { buildOutboundListColumns } from "../../config/standardProductList";
 import {
   getProcessChipVariant,
@@ -50,7 +44,7 @@ import {
   getStatementPrintStatus,
 } from "../../utils/outboundManagementStatus";
 import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
-import { getProcessFlowSteps, mapStandardProductListRow } from "../../utils/processFlow";
+import { getProcessFlowSteps, mapV13ProductListRow } from "../../utils/processFlow";
 import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import {
   OUTBOUND_REGISTER_LABEL,
@@ -70,6 +64,7 @@ import {
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import OutboundRegisterModal from "./OutboundRegisterModal";
 import OutboundStatementPromptDialog from "./OutboundStatementPromptDialog";
+import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import "./InboundManagement.css";
 import "./OutboundManagement.css";
 import "./OutboundStatementPromptDialog.css";
@@ -90,9 +85,7 @@ function mapOutboundListRow(record) {
 
   if (record.shipmentStatus === SHIPMENT_STATUS.DONE && stock <= 0) {
     return {
-      ...mapStandardProductListRow(record, { label: "출고완료", variant: "complete" }),
-      stockQtyLabel: "0 EA",
-      shipDateLabel: getOutboundShipDate(record),
+      ...mapV13ProductListRow(record, { label: "출고완료", variant: "complete" }, { workQty: getOutboundTotalShippedQty(record) }),
       statementStatusLabel: statementStatus.label,
       statementStatusVariant: statementStatus.variant,
       manager: getOutboundManager(record),
@@ -105,9 +98,7 @@ function mapOutboundListRow(record) {
   };
 
   return {
-    ...mapStandardProductListRow(record, status),
-    stockQtyLabel: getOutboundShipQty(record),
-    shipDateLabel: getOutboundShipDate(record),
+    ...mapV13ProductListRow(record, status, { workQty: stock }),
     statementStatusLabel: statementStatus.label,
     statementStatusVariant: statementStatus.variant,
     manager: getOutboundManager(record),
@@ -137,8 +128,12 @@ function matchesOutboundSearch(record, row, search) {
   }
   if (search.note && !String(record.note ?? "").includes(search.note)) return false;
   const shipDate = getOutboundShipDate(record);
-  if (search.shipDateFrom && shipDate < search.shipDateFrom) return false;
-  if (search.shipDateTo && shipDate > search.shipDateTo) return false;
+  if (search.shipDateFrom && shipDate !== "—" && shipDate < search.shipDateFrom) return false;
+  if (search.shipDateTo && shipDate !== "—" && shipDate > search.shipDateTo) return false;
+  if (search.productionDateFrom && shipDate !== "—" && shipDate < search.productionDateFrom) return false;
+  if (search.productionDateTo && shipDate !== "—" && shipDate > search.productionDateTo) return false;
+  if (search.incomingDateFrom && record.incomingDate < search.incomingDateFrom) return false;
+  if (search.incomingDateTo && record.incomingDate > search.incomingDateTo) return false;
   return true;
 }
 
@@ -150,6 +145,7 @@ export default function OutboundManagement() {
     useTitanListSearch(createEmptyOutboundSearch, { storageKey: "outbound" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [outboundListPrintOpen, setOutboundListPrintOpen] = useState(false);
   const [outboundListPrintProps, setOutboundListPrintProps] = useState(null);
   const [statementPrintOpen, setStatementPrintOpen] = useState(false);
@@ -204,6 +200,101 @@ export default function OutboundManagement() {
   const processFlowSteps = activeRow
     ? getProcessFlowSteps(activeRow.record, activeRow.statusLabel)
     : [];
+
+  const detailPopupProcessSteps = detailPopupRow
+    ? getProcessFlowSteps(detailPopupRow.record, detailPopupRow.statusLabel)
+    : [];
+
+  const buildOutboundDetailContent = (row, companyLabel) => {
+    const record = row?.record ?? null;
+    if (!row || !record) return null;
+    return (
+      <dl className="inbound-detail">
+        <div>
+          <dt>관리번호</dt>
+          <dd>{row.managementId}</dd>
+        </div>
+        <div>
+          <dt>발주번호</dt>
+          <dd>{row.purchaseOrderNo}</dd>
+        </div>
+        <div>
+          <dt>LOT.NO</dt>
+          <dd>{row.lotNo}</dd>
+        </div>
+        <div>
+          <dt>업체 LOT</dt>
+          <dd>{row.customerLotNo}</dd>
+        </div>
+        <div>
+          <dt>업체명</dt>
+          <dd>{companyLabel}</dd>
+        </div>
+        <div>
+          <dt>품명</dt>
+          <dd>{row.partName}</dd>
+        </div>
+        <div>
+          <dt>품번</dt>
+          <dd>{row.partNo}</dd>
+        </div>
+        <div>
+          <dt>재질</dt>
+          <dd>{row.material}</dd>
+        </div>
+        <div>
+          <dt>공정</dt>
+          <dd>
+            {row.processName && row.processName !== "—" ? (
+              <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
+            ) : (
+              "—"
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>입고수량</dt>
+          <dd>{getIncomingQty(record)} EA</dd>
+        </div>
+        <div>
+          <dt>총 출고수량</dt>
+          <dd>{getOutboundTotalShippedQty(record)}</dd>
+        </div>
+        <div>
+          <dt>잔량</dt>
+          <dd>{getStockQty(record)} EA</dd>
+        </div>
+        <div>
+          <dt>출고횟수</dt>
+          <dd>{getOutboundShipmentCount(record)}회</dd>
+        </div>
+        <div>
+          <dt>실재고</dt>
+          <dd>{row.stockQtyLabel}</dd>
+        </div>
+        <div>
+          <dt>출고일</dt>
+          <dd>{row.shipDateLabel}</dd>
+        </div>
+        <div>
+          <dt>현재상태</dt>
+          <dd>
+            <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
+          </dd>
+        </div>
+        <div>
+          <dt>거래명세서</dt>
+          <dd>
+            <StatusChip variant={row.statementStatusVariant}>{row.statementStatusLabel}</StatusChip>
+          </dd>
+        </div>
+        <div>
+          <dt>담당자</dt>
+          <dd>{row.manager}</dd>
+        </div>
+      </dl>
+    );
+  };
 
   const printTargetRows = useMemo(() => {
     if (selectedRows.length > 0) return selectedRows;
@@ -286,42 +377,18 @@ export default function OutboundManagement() {
     }
   };
 
-  const columns = useMemo(
-    () =>
-      buildOutboundListColumns({
-        renderStatus: (row) => (
-          <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
-        ),
-        renderStatementStatus: (row) => (
-          <StatusChip variant={row.statementStatusVariant}>{row.statementStatusLabel}</StatusChip>
-        ),
-        renderProcess: (row) =>
-          row.processName && row.processName !== "—" ? (
-            <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
-          ) : (
-            "—"
-          ),
-      }),
-    []
-  );
-
   const openRegisterModal = (managementId = "") => {
     const resolvedId = managementId || resolveRegisterTargetId(selectedRows, activeRow);
     setRegisterInitialId(resolvedId);
     setRegisterOpen(true);
   };
 
+  const openDetailPopup = (row) => {
+    openRowDetailPopup(row, { setActiveId, setDetailPopupRow });
+  };
+
   const handleRowDoubleClick = (row) => {
-    const managementId = row.managementId ?? row.id;
-    if (!managementId) return;
-    if (getStockQty(row.record) <= 0) {
-      openStatementPrintPreview({
-        record: row.record,
-        shipQty: getLastOutboundShipQty(row.record),
-      });
-      return;
-    }
-    openRegisterModal(managementId);
+    openDetailPopup(row);
   };
 
   const openOutboundListPrintPreview = () => {
@@ -381,9 +448,10 @@ export default function OutboundManagement() {
     setPendingRegisterResult(null);
   };
 
-  const handleOutboundCancel = () => {
-    if (!activeRecord) return;
-    const cancelResult = cancelLastOutboundShipment(activeRecord.id);
+  const handleOutboundCancel = (row = activeRow) => {
+    const record = row?.record ?? row;
+    if (!record) return;
+    const cancelResult = cancelLastOutboundShipment(record.id);
     if (!cancelResult.ok) {
       window.alert(cancelResult.message);
       return;
@@ -391,6 +459,53 @@ export default function OutboundManagement() {
     window.alert(`출고 ${cancelResult.revertedQty} EA가 취소되었습니다.\n잔여 재고: ${cancelResult.stockAfter} EA`);
     setRefreshKey((key) => key + 1);
   };
+
+  const handleRowShip = (row) => {
+    const record = row?.record ?? row;
+    if (!record) return;
+    if (getStockQty(record) > 0) {
+      openRegisterModal(row.managementId ?? row.id);
+      return;
+    }
+    openStatementPrintPreview({
+      record,
+      shipQty: getLastOutboundShipQty(record),
+    });
+  };
+
+  const renderProcessChip = (row) =>
+    row.currentProcess && row.currentProcess !== "—" ? (
+      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
+    ) : (
+      "—"
+    );
+
+  const columns = useMemo(
+    () =>
+      buildOutboundListColumns({
+        renderProcess: renderProcessChip,
+        renderActions: (row) => {
+          const record = row.record ?? row;
+          const canShip = getStockQty(record) > 0;
+          return (
+            <OutboundRowActions
+              onDetail={() => {
+                setActiveId(row.id);
+                setDetailPopupRow(row);
+              }}
+              canShip={canShip || (record?.shippedQty ?? 0) > 0}
+              shipLabel={canShip ? "출고" : "명세서"}
+              onShip={() => handleRowShip(row)}
+              canEdit={canShip}
+              onEdit={() => handleRowShip(row)}
+              canCancel={isTitanAdminUser() && (record?.shippedQty ?? 0) > 0}
+              onCancel={() => handleOutboundCancel(row)}
+            />
+          );
+        },
+      }),
+    [refreshKey]
+  );
 
   return (
     <div className="inbound-page">
@@ -427,187 +542,59 @@ export default function OutboundManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
+        showStatusField
+        statusFieldLabel="현재상태"
         advancedContent={
-          <div className="titan-advanced-search__grid">
-            <PurchaseOrderNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <ManagementIdField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <LotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <DateRangeField
-              label="출고일"
-              fromKey="shipDateFrom"
-              toKey="shipDateTo"
-              draft={draft}
-              onDraftChange={onDraftChange}
-            />
-            <ProcessField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">수량</span>
-              <Input
-                value={draft.qty}
-                onChange={(e) => onDraftChange({ ...draft, qty: e.target.value })}
-                placeholder="수량"
-              />
-            </label>
-            <ManagerField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-            <StatusSelectField
-              label="상태"
-              value={draft.status}
-              onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
-              options={OUTBOUND_STATUS_OPTIONS}
-            />
-            <NoteField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-          </div>
+          <TitanStandardProductAdvancedSearch
+            draft={draft}
+            onDraftChange={onDraftChange}
+            getSuggestions={getSuggestions}
+            productionDateFromKey="shipDateFrom"
+            productionDateToKey="shipDateTo"
+          />
         }
       />
 
-      <div className="inbound-page__workspace">
-        <div className="inbound-page__list">
-          {selectedIds.length > 0 ? (
-            <div className="inbound-page__selection-bar">
-              <span>
-                선택된 품목: <strong>{selectedIds.length}건</strong>
-              </span>
-              <div>
-                <SecondaryButton type="button" onClick={openOutboundListPrintPreview}>
-                  {OUTBOUND_LIST_LABEL}
-                </SecondaryButton>
-                <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
-                  선택 해제
-                </SecondaryButton>
-              </div>
+      <div className="inbound-page__list quality-page__list">
+        {selectedIds.length > 0 ? (
+          <div className="inbound-page__selection-bar">
+            <span>
+              선택된 품목: <strong>{selectedIds.length}건</strong>
+            </span>
+            <div>
+              <SecondaryButton type="button" onClick={openOutboundListPrintPreview}>
+                {OUTBOUND_LIST_LABEL}
+              </SecondaryButton>
+              <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
+                선택 해제
+              </SecondaryButton>
             </div>
-          ) : null}
-
-          <TitanDataTable
-            className="inbound-page__table"
-            columns={columns}
-            rows={pagedRows}
-            selectable
-            selectedRowIds={selectedIds}
-            onToggleRow={toggleRow}
-            onToggleAll={toggleAll}
-            activeRowId={activeRow?.id}
-            onRowClick={(row) => setActiveId(row.id)}
-            onRowDoubleClick={handleRowDoubleClick}
-            emptyMessage="출고 가능한 제품이 없습니다."
-          />
-
-          <TitanTableFooter
-            totalCount={totalCount}
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </div>
-
-        {activeRow ? (
-          <TitanDetailPanel
-            actionLabel={detailActionLabel}
-            actionIcon={DetailActionIcon}
-            onAction={handleDetailAction}
-            processFlowSteps={processFlowSteps}
-            detailContent={
-              <dl className="inbound-detail">
-                <div>
-                  <dt>관리번호</dt>
-                  <dd>{activeRow.managementId}</dd>
-                </div>
-                <div>
-                  <dt>발주번호</dt>
-                  <dd>{activeRow.purchaseOrderNo}</dd>
-                </div>
-                <div>
-                  <dt>LOT.NO</dt>
-                  <dd>{activeRow.lotNo}</dd>
-                </div>
-                <div>
-                  <dt>업체 LOT</dt>
-                  <dd>{activeRow.customerLotNo}</dd>
-                </div>
-                <div>
-                  <dt>업체명</dt>
-                  <dd>{companySummary}</dd>
-                </div>
-                <div>
-                  <dt>품명</dt>
-                  <dd>{activeRow.partName}</dd>
-                </div>
-                <div>
-                  <dt>품번</dt>
-                  <dd>{activeRow.partNo}</dd>
-                </div>
-                <div>
-                  <dt>재질</dt>
-                  <dd>{activeRow.material}</dd>
-                </div>
-                <div>
-                  <dt>공정</dt>
-                  <dd>
-                    {activeRow.processName && activeRow.processName !== "—" ? (
-                      <StatusChip variant={getProcessChipVariant(activeRow.processName)}>
-                        {activeRow.processName}
-                      </StatusChip>
-                    ) : (
-                      "—"
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>입고수량</dt>
-                  <dd>{getIncomingQty(activeRecord)} EA</dd>
-                </div>
-                <div>
-                  <dt>총 출고수량</dt>
-                  <dd>{getOutboundTotalShippedQty(activeRecord)}</dd>
-                </div>
-                <div>
-                  <dt>잔량</dt>
-                  <dd>{getStockQty(activeRecord)} EA</dd>
-                </div>
-                <div>
-                  <dt>출고횟수</dt>
-                  <dd>{getOutboundShipmentCount(activeRecord)}회</dd>
-                </div>
-                <div>
-                  <dt>실재고</dt>
-                  <dd>{activeRow.stockQtyLabel}</dd>
-                </div>
-                <div>
-                  <dt>출고일</dt>
-                  <dd>{activeRow.shipDateLabel}</dd>
-                </div>
-                <div>
-                  <dt>현재상태</dt>
-                  <dd>
-                    <StatusChip variant={activeRow.statusVariant}>{activeRow.statusLabel}</StatusChip>
-                  </dd>
-                </div>
-                <div>
-                  <dt>거래명세서</dt>
-                  <dd>
-                    <StatusChip variant={activeRow.statementStatusVariant}>
-                      {activeRow.statementStatusLabel}
-                    </StatusChip>
-                  </dd>
-                </div>
-                <div>
-                  <dt>담당자</dt>
-                  <dd>{activeRow.manager}</dd>
-                </div>
-                {isTitanAdminUser() && (activeRecord?.shippedQty ?? 0) > 0 ? (
-                  <div className="inbound-detail__actions">
-                    <SecondaryButton type="button" onClick={handleOutboundCancel}>
-                      출고취소 (관리자)
-                    </SecondaryButton>
-                  </div>
-                ) : null}
-              </dl>
-            }
-          />
+          </div>
         ) : null}
+
+        <TitanDataTable
+          className="inbound-page__table"
+          columns={columns}
+          rows={pagedRows}
+          selectable
+          selectedRowIds={selectedIds}
+          onToggleRow={toggleRow}
+          onToggleAll={toggleAll}
+          activeRowId={activeRow?.id}
+          onRowClick={(row) => setActiveId(row.id)}
+          onRowDoubleClick={handleRowDoubleClick}
+          emptyMessage="출고 가능한 제품이 없습니다."
+        />
+
+        <TitanTableFooter
+          totalCount={totalCount}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <OutboundRegisterModal
@@ -644,6 +631,23 @@ export default function OutboundManagement() {
       >
         {statementPrintProps ? <TransactionStatementPrintDocument {...statementPrintProps} /> : null}
       </TitanPrintPreviewModal>
+
+      <TitanScreenDetailPopup
+        screenKey="outbound"
+        open={Boolean(detailPopupRow)}
+        onClose={() => setDetailPopupRow(null)}
+        record={detailPopupRow}
+        context={{
+          detailContent: buildOutboundDetailContent(
+            detailPopupRow,
+            detailPopupRow ? formatMultiSelectCompany([detailPopupRow]) : ""
+          ),
+          traceRecord: detailPopupRow?.record,
+          processFlowSteps: detailPopupProcessSteps,
+          statusLabel: detailPopupRow?.statusLabel,
+          statusVariant: detailPopupRow?.statusVariant,
+        }}
+      />
     </div>
   );
 }

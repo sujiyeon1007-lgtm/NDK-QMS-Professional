@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { buildCompanyAbbreviation } from "../../utils/companyAbbreviation";
 import { getActiveMasterNames, getMasterDataByCategory, validateMasterRow } from "../../utils/masterData";
+import CompanyContactsEditor from "./CompanyContactsEditor";
+import CompanyNdkAssigneesEditor from "./CompanyNdkAssigneesEditor";
 
 const DEFAULT_FORM = { code: "", name: "", note: "", active: true };
 
@@ -15,6 +17,10 @@ function buildInitialForm(screen, initialRow, defaultValues = null) {
     });
     form.abbreviationManual = false;
     form.abbreviationLocked = false;
+    if (screen?.categoryKey === "companies") {
+      form.contacts = [];
+      form.ndkAssignees = [];
+    }
     if (defaultValues && typeof defaultValues === "object") {
       Object.entries(defaultValues).forEach(([key, value]) => {
         if (value != null && value !== "") form[key] = value;
@@ -35,6 +41,10 @@ function buildInitialForm(screen, initialRow, defaultValues = null) {
   });
   form.abbreviationManual = Boolean(initialRow.abbreviationManual);
   form.abbreviationLocked = Boolean(initialRow.abbreviationLocked);
+  if (screen?.categoryKey === "companies") {
+    form.contacts = Array.isArray(initialRow.contacts) ? initialRow.contacts : [];
+    form.ndkAssignees = Array.isArray(initialRow.ndkAssignees) ? initialRow.ndkAssignees : [];
+  }
   return form;
 }
 
@@ -252,6 +262,18 @@ export default function MasterDataRegisterModal({
           );
         })}
       </div>
+      {isCompanyScreen ? (
+        <>
+          <CompanyContactsEditor
+            contacts={form.contacts ?? []}
+            onChange={(contacts) => setForm((prev) => ({ ...prev, contacts }))}
+          />
+          <CompanyNdkAssigneesEditor
+            assignees={form.ndkAssignees ?? []}
+            onChange={(ndkAssignees) => setForm((prev) => ({ ...prev, ndkAssignees }))}
+          />
+        </>
+      ) : null}
     </TitanRegisterModal>
   );
 }

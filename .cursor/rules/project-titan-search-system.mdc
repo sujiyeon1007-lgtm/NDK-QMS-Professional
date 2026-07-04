@@ -10,12 +10,31 @@ Project TITAN **모든 리스트 페이지**는 동일한 검색 시스템을 �
 **적용 대상:** HOME · 입고 · 출고 · 생산 · 검사일지 · 성적서 · 불량이력 · 부서별 업무 · 기준정보(제품) · (향후) 통계 · 환경설정
 
 **Source of truth (code):**
-- `src/foundation/components/TitanSearchPanel.jsx` — 공통 검색 패널
+- `src/foundation/components/TitanSearchPanel.jsx` — 공통 검색 패널 (1행 기본 + 접기/펼치기 상세)
+- `src/foundation/components/TitanStandardProductAdvancedSearch.jsx` — 입출고 등 표준 상세검색 2·3행
+- `src/foundation/components/TitanAdvancedSearchGrid.jsx` — 상세검색 행 · 반응형 줄바꿈 (가로 스크롤 ❌)
+- `src/foundation/components/TitanDateInput.jsx` — 공통 DatePicker (Input 동일 높이)
 - `src/foundation/components/TitanSearchAutocomplete.jsx` — 자동완성 · 최근 · 즐겨찾기
-- `src/foundation/components/TitanSearchAdvancedFields.jsx` — 상세 검색 공통 필드
+- `src/foundation/components/TitanSearchAdvancedFields.jsx` — 상세 검색 공통 필드 (`DateRangeField` 등)
+- `src/config/listSearchStandard.js` — `STANDARD_PRODUCT_BASIC_SEARCH_FIELDS` (관리번호·업체·품명·품번·LOT)
 - `src/foundation/hooks/useTitanListSearch.js` — Live Search (0.25s)
 - `src/utils/titanSearchHistory.js` — 최근 10건 · 즐겨찾기
 - `src/utils/titanSearchSuggestions.js` — 자동완성 인덱스
+
+---
+
+## 레이아웃 (V1.3 · 최대 3줄 · 가로 스크롤 없음)
+
+| 행 | 표시 | 내용 |
+|---|---|---|
+| **1행** | 항상 | 관리번호 · 업체명 · 품명 · 품번 · LOT번호 · (선택) 현재상태 + **조회·초기화·상세검색 (우측 고정)** |
+| **2행** | 상세검색 | 납기일(기간) · 담당자 · **업체 LOT** · 재질 · 열처리 공정 |
+| **3행** | 상세검색 | 수량 · 비고 |
+
+- **가로 스크롤 사용 안 함** · 화면 폭에 맞게 `flex-wrap`
+- **발주번호 검색 제거** — 업체 LOT(`customerLotNo`)로 통합 (발주번호 데이터는 필터 시 함께 매칭)
+- 입출고: `TitanStandardProductAdvancedSearch` (+ 입고일 등 `leadRow` 옵션)
+- **DatePicker** — `DateRangeField` + `TitanDateInput`
 
 ---
 
@@ -38,17 +57,20 @@ Project TITAN **모든 리스트 페이지**는 동일한 검색 시스템을 �
 ## 페이지 연동 패턴
 
 ```jsx
-const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
-  useTitanListSearch(createEmptyInboundSearch, { storageKey: "inbound" });
-
-const searchRecords = useMemo(() => getDataSource(), [refreshKey]);
-const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
-  process: processCodes.map((item) => item.name),
-});
-
-<TitanSearchPanel draft={draft} onDraftChange={onDraftChange} onSearch={onSearch}
-  onReset={onReset} advancedOpen={advancedOpen} onAdvancedToggle={onAdvancedToggle}
-  companies={companies} records={searchRecords} advancedContent={...} />
+<TitanSearchPanel
+  draft={draft} onDraftChange={onDraftChange} onSearch={onSearch} onReset={onReset}
+  advancedOpen={advancedOpen} onAdvancedToggle={onAdvancedToggle}
+  companies={companies} records={searchRecords}
+  basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
+  showStatusField
+  advancedContent={
+    <TitanAdvancedSearchGrid>
+      <DateRangeField label="입고일" fromKey="incomingDateFrom" toKey="incomingDateTo"
+        draft={draft} onDraftChange={onDraftChange} />
+      {/* 기타 상세 필드 */}
+    </TitanAdvancedSearchGrid>
+  }
+/>
 ```
 
 리스트 필터는 **`search`** 기준 (Live Search가 draft→search 자동 동기화).

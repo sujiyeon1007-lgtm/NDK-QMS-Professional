@@ -3,8 +3,9 @@
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
-import { matchesInboundDataSearch } from "./inboundDataFields";
 import { getProductionProcessName } from "../config/productionProcessCodes";
+import { matchesInboundDataSearch } from "./inboundDataFields";
+import { mapV13ProductListRow } from "./processFlow";
 import { formatQtyWithUnit } from "./productUnits";
 import { getSessionProductionRecords } from "./productionRecords";
 
@@ -31,21 +32,34 @@ export function mapInspectionLogToListRow(log) {
   const record = getSessionProductionRecords().find((item) => item.id === log.managementId);
   const purchaseOrderNo = log.purchaseOrderNo || record?.purchaseOrderNo || "";
   const customerLotNo = log.customerLotNo || record?.customerLotNo || "";
+  const v13 = record
+    ? mapV13ProductListRow(record, status)
+    : {
+        id: log.id,
+        incomingDate: log.createdAt?.slice(0, 10) || "—",
+        productionDate: log.inspectionDate || "—",
+        lotNo: log.lotNo?.trim() || "—",
+        company: log.company || "—",
+        partName: log.partName || "—",
+        partNo: log.partNo || "—",
+        inboundQtyLabel: formatQtyWithUnit(log.qty, log.unit),
+        workQtyLabel: formatQtyWithUnit(log.qty, log.unit),
+        currentProcess: resolveProcessName(log),
+        remark: log.note?.trim() || "—",
+        statusLabel: status.label,
+        statusVariant: status.variant,
+        record: record ?? log,
+      };
   return {
+    ...v13,
     id: log.id,
     managementId: log.managementId || "—",
-    lotNo: log.lotNo?.trim() || record?.lotNo?.trim() || "—",
     purchaseOrderNo: purchaseOrderNo || "—",
     customerLotNo: customerLotNo || "—",
-    company: log.company || "—",
-    partName: log.partName || "—",
-    partNo: log.partNo || "—",
-    material: log.material || "—",
+    material: log.material || record?.material || "—",
     qty: formatQtyWithUnit(log.qty, log.unit),
     processName: resolveProcessName(log),
     inspectionDate: log.inspectionDate || "—",
-    statusLabel: status.label,
-    statusVariant: status.variant,
     registeredDate: log.createdAt?.slice(0, 10) || "—",
     assignee: log.assignee || "—",
     log,
@@ -65,6 +79,12 @@ export function matchesInspectionLogSearch(row, search) {
   if (!matchesBasicSearch(search, merged)) return false;
   if (!matchesInboundDataSearch(search, merged)) return false;
   if (search.process && row.processName !== search.process) return false;
+  if (search.productionDateFrom && log.inspectionDate < search.productionDateFrom) return false;
+  if (search.productionDateTo && log.inspectionDate > search.productionDateTo) return false;
+  if (search.incomingDateFrom && row.incomingDate < search.incomingDateFrom) return false;
+  if (search.incomingDateTo && row.incomingDate > search.incomingDateTo) return false;
+  if (search.qty && !String(log.qty ?? "").includes(search.qty)) return false;
+  if (search.note && !String(log.note ?? "").includes(search.note)) return false;
   if (search.inspectionDateFrom && log.inspectionDate < search.inspectionDateFrom) return false;
   if (search.inspectionDateTo && log.inspectionDate > search.inspectionDateTo) return false;
   if (search.assignee && !String(log.assignee ?? "").includes(search.assignee)) return false;

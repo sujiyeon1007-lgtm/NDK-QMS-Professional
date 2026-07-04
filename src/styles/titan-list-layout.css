@@ -16,10 +16,10 @@
   --titan-collapse-duration: 250ms;
 }
 
-/* ── List workspace grid ── */
+/* ── List workspace grid (좌측 Widget 고정 + 우측 리스트 확장) ── */
 .titan-list-workspace {
   display: grid;
-  grid-template-columns: var(--titan-list-columns);
+  grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr);
   gap: var(--titan-page-gap);
   align-items: stretch;
   flex: 1 1 auto;
@@ -29,9 +29,8 @@
   transition: grid-template-columns var(--titan-collapse-duration) ease;
 }
 
-/* Detail collapsed → list column widens further */
-.titan-list-workspace:has(.titan-collapsible-panel--detail.is-collapsed) {
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 200px);
+.titan-list-workspace.is-left-collapsed {
+  grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr);
 }
 
 .titan-list-primary {
@@ -511,9 +510,13 @@
 }
 
 @media (max-width: 1200px) {
-  /* Desktop ERP — keep side-by-side layout, no stacking */
+  /* Desktop ERP — 좌측 Widget + 리스트 비율 유지 */
   .titan-list-workspace {
-    grid-template-columns: minmax(0, 1fr) var(--titan-side-max, 240px);
+    grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr);
+  }
+
+  .titan-list-workspace.is-left-collapsed {
+    grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr);
   }
 
   .titan-list-workspace .titan-queue-list {

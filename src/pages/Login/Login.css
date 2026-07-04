@@ -1,0 +1,371 @@
+/* Project TITAN — Official Login Screen V1.1 (PM 승인 · 2분할 레이아웃 유지) */
+
+.titan-login-page {
+  min-height: 100vh;
+  min-width: var(--titan-app-min-width, 1600px);
+  display: flex;
+  flex-direction: column;
+  background: var(--titan-bg, #f5f7fa);
+}
+
+.titan-login-shell {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) minmax(480px, 1fr);
+  min-height: calc(100vh - 56px);
+}
+
+.titan-login-brand-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 72px 80px 52px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 48%, #eef4fd 100%);
+  border-right: 1px solid var(--titan-border, #d8e2f1);
+  overflow: hidden;
+}
+
+.titan-login-brand-panel__wave {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(37, 99, 235, 0.08), transparent 44%),
+    radial-gradient(circle at 82% 68%, rgba(37, 99, 235, 0.06), transparent 40%),
+    radial-gradient(circle at 50% 88%, rgba(147, 197, 253, 0.12), transparent 36%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%232563eb' fill-opacity='0.04' d='M0,192L80,186.7C160,181,320,171,480,181.3C640,192,800,224,960,218.7C1120,213,1280,171,1360,149.3L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z'/%3E%3C/svg%3E")
+      center bottom / cover no-repeat;
+}
+
+.titan-login-brand-panel__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 28px;
+  width: 100%;
+  max-width: 520px;
+  padding: 24px 0;
+}
+
+.titan-login-brand-panel__subtitle {
+  margin: -8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.titan-login-brand-panel__modules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 18px;
+}
+
+.titan-login-brand-panel__modules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #334155;
+}
+
+.titan-login-brand-panel__modules li svg {
+  flex-shrink: 0;
+  color: #2563eb;
+}
+
+.titan-login-brand-panel__slogan {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.titan-login-brand-panel__slogan span {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #1d4ed8;
+}
+
+.titan-login-brand-panel__tagline {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--titan-text-muted, #94a3b8);
+}
+
+.titan-login-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 64px;
+  background: var(--titan-surface, #ffffff);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+.titan-login-form-panel__inner {
+  width: min(400px, 100%);
+}
+
+.titan-login-form-panel__title {
+  margin: 0 0 6px !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--titan-text, #1f2937) !important;
+}
+
+.titan-login-form-panel__product {
+  display: block !important;
+  margin: 0 0 28px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: #64748b !important;
+}
+
+.titan-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.titan-login-error {
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--titan-danger, #dc2626) !important;
+}
+
+.titan-login-footer {
+  flex: 0 0 56px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 0 32px;
+  border-top: 1px solid var(--titan-border, #d8e2f1);
+  background: var(--titan-surface, #ffffff);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #6b7280);
+}
+
+.titan-login-footer__left {
+  justify-self: start;
+}
+
+.titan-login-footer__center {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 20px;
+}
+
+.titan-login-footer__trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.titan-login-footer__trust svg {
+  color: #2563eb;
+}
+
+.titan-login-footer__right {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  text-align: right;
+  line-height: 1.35;
+}
+
+.titan-login-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.titan-login-modal__panel {
+  width: min(420px, 100%);
+  padding: 24px;
+  border: 1px solid var(--titan-border, #d8e2f1);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface, #ffffff);
+  box-shadow: var(--titan-shadow, 0 4px 16px rgba(15, 23, 42, 0.04));
+}
+
+.titan-login-modal__panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--titan-text, #1f2937);
+}
+
+.titan-login-modal__panel p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #6b7280);
+}
+
+.titan-login-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.titan-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titan-login-field span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--titan-text-muted, #6b7280);
+}
+
+.titan-login-field input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-border, #d8e2f1);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--titan-text, #1f2937);
+}
+
+/* Login → HOME Loading screen */
+.titan-login-loading {
+  min-height: 100vh;
+  min-width: var(--titan-app-min-width, 1600px);
+  display: grid;
+  place-items: center;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 48%, #eef4fd 100%);
+}
+
+.titan-login-loading__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 64px;
+  border: 1px solid var(--titan-border, #d8e2f1);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface, #ffffff);
+  box-shadow: var(--titan-shadow, 0 4px 16px rgba(15, 23, 42, 0.04));
+}
+
+.titan-login-loading__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--titan-text, #1f2937);
+}
+
+.titan-login-loading__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: titan-login-spin 0.85s linear infinite;
+}
+
+.titan-login-loading__message {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #6b7280);
+}
+
+@keyframes titan-login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1280px) {
+  .titan-login-shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .titan-login-brand-panel {
+    min-height: 360px;
+    border-right: none;
+    border-bottom: 1px solid var(--titan-border, #d8e2f1);
+    padding: 48px 40px 40px;
+  }
+
+  .titan-login-form-panel {
+    min-height: 420px;
+  }
+
+  .titan-login-footer {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 12px 24px 16px;
+    gap: 10px;
+  }
+
+  .titan-login-footer__left,
+  .titan-login-footer__right {
+    justify-self: center;
+    text-align: center;
+    align-items: center;
+  }
+}
+
+@media (min-width: 1920px) {
+  .titan-login-brand-panel {
+    padding: 88px 96px 64px;
+  }
+
+  .titan-login-form-panel {
+    padding: 64px 96px;
+  }
+
+  .titan-login-form-panel__inner {
+    width: 420px;
+  }
+}

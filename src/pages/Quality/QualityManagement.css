@@ -98,3 +98,24 @@
 .quality-register-auto-judgment strong {
   color: #15803d;
 }
+
+.quality-table-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.quality-table-actions .titan-btn--table-action {
+  min-height: 26px;
+  padding: 2px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.quality-page__list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}

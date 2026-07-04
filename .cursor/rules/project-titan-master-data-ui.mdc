@@ -1,0 +1,51 @@
+---
+description: Project TITAN 기준정보관리 UI 표준 V1.0 — List + Popup Master Data
+alwaysApply: true
+---
+
+# Project TITAN 기준정보관리 UI (Master Data V1.0)
+
+**역할:** 목록 = 빠른 조회 · Popup = 상세 관리
+
+**Source:** `companyDetailSections.js` · `CompanyManagementPage` · `CompanyDetailModal` · `master-data-grid` CSS
+
+## 공통 구조 (거래처 · 제품 · 설비 · 직원)
+
+```text
+목록(List) — 핵심 정보 충분히 표시 → Row 클릭 → Popup(탭형 상세)
+```
+
+- Grid: `TitanDataTable` + `layout="compact"` + `master-data-grid` class
+- Table Card 100% · 컬럼 Compact 왼쪽 · Row Hover/선택 전체 (see `project-titan-ui-design-standard.mdc`)
+
+## 거래처 목록 컬럼 (고정)
+
+`업체명 | 코드 | 대표자 | 우리회사 담당자 | 대표번호 | 이메일 | 상태`
+
+표시 필드: `COMPANY_LIST_COLUMNS` · `formatMasterRowForDisplay()` (`ndkAssigneeLabel`, `phoneLabel`, `emailLabel`)
+
+## 거래처 Popup 탭
+
+| 탭 | 내용 |
+|----|------|
+| 기본정보 | `COMPANY_PROFILE_FIELDS` |
+| 거래처 담당자 | contacts 테이블 |
+| 우리회사 담당자 | `ndkAssignees` 테이블 |
+| 거래이력 | `getCompanyTradeSummary()` |
+| 품목정보 | 향후 |
+
+## Typography (기준정보 Grid)
+
+| 요소 | 스타일 |
+|------|--------|
+| Header | 15px SemiBold (600) |
+| Data | 15px Regular (400) |
+| Button | 14px Medium (500) |
+
+Class: `.master-data-grid` · `.master-data-actions`
+
+## Do Not
+
+- 목록 4컬럼만 두고 상세를 Popup에만 몰아넣기
+- 기준정보별 별도 Table CSS 신규 작성
+- Popup 없이 목록에서 CRUD 전용 화면 (등록/수정은 Modal 유지)

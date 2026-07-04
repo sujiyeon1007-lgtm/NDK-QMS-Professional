@@ -1,0 +1,84 @@
+.titan-detail-popup__paper {
+  display: flex;
+  flex-direction: column;
+}
+
+.titan-detail-popup__title {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 24px 12px;
+  flex-shrink: 0;
+}
+
+.titan-detail-popup__tabs-wrap {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--titan-border, #dde6f0);
+  padding: 0 16px;
+}
+
+.titan-detail-popup__tabs .MuiTab-root {
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 44px;
+  text-transform: none;
+}
+
+.titan-detail-popup__content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 24px !important;
+}
+
+.titan-detail-popup__tab-panel {
+  min-height: 200px;
+}
+
+.titan-detail-popup__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  border-top: 1px solid var(--titan-border, #dde6f0);
+  flex-shrink: 0;
+}
+
+.titan-detail-popup__section {
+  margin-bottom: 16px;
+}
+
+.titan-detail-popup__section-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.titan-detail-popup__empty {
+  margin: 0;
+  color: var(--titan-text-muted, #64748b);
+  font-size: 14px;
+}
+
+.titan-detail-popup__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.titan-detail-popup__table th,
+.titan-detail-popup__table td {
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.titan-detail-popup__table th {
+  background: var(--titan-table-header, #e3e9f0);
+  font-weight: 600;
+}
+
+.titan-table-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  align-items: center;
+}

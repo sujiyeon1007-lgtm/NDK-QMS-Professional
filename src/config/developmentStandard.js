@@ -48,6 +48,20 @@ export const COMPLETION_CHECKLIST = [
 export const UI_LAYOUT_STANDARD_V1 =
   "ERP/MES: 레이아웃 고정 · 축소/반응형 ❌ · 스크롤 처리 · 공통 Component 먼저 수정";
 
+/** V1.3 UI Freeze · Reference Screen — @see src/config/screenUiStatus.js */
+export {
+  SCREEN_UI_STATUS,
+  SCREEN_UI_STATUS_BY_KEY,
+  SCREEN_UI_STATUS_TABLE,
+  HOME_REFERENCE_DESIGN_LANGUAGE,
+  getScreenUiStatus,
+  isUiFrozen,
+} from "./screenUiStatus.js";
+
+/** HOME = 디자인 기준 화면 (Reference Screen) · V1.3 UI Freeze */
+export const HOME_REFERENCE_SCREEN_POLICY =
+  "HOME Dashboard V1.3 UI Freeze — 레이아웃·Widget·색상 변경 금지, 기능 추가만. 나머지 화면은 HOME 디자인 언어로 통일.";
+
 /** @deprecated use UI_LAYOUT_STANDARD_V1 */
 export const UI_STANDARD_POLICY = UI_LAYOUT_STANDARD_V1;
 
@@ -66,7 +80,70 @@ export const DEVELOPMENT_PROCESS = [
   "다음 화면",
 ];
 
-/** 고정 Workflow (Version 3 QMS · Presentation Build · SessionStorage Demo) */
+/** 오류 수정 · 긴급 복구 프로세스 (V1.3) — 분석 없이 수정 금지 */
+export const INCIDENT_FIX_PROCESS = [
+  "원인 분석 (Console · Router · 최근 변경 · 무한 렌더 · Mock 예외)",
+  "영향 범위 분석",
+  "수정 계획 보고",
+  "최소 범위 수정",
+  "Regression Test",
+  "npm run build",
+  "최종 보고 (수정 파일 · 원인 · 테스트 · Build · 영향 페이지)",
+];
+
+/** @deprecated INCIDENT_FIX_PROCESS — 동일 절차 */
+export const BUG_FIX_PROCESS = INCIDENT_FIX_PROCESS;
+
+/**
+ * Project TITAN 공식 개발 프로세스 (V1.3 최종)
+ * 분석 → 보고 → 승인 → 최소 수정 → Build → 실행 테스트 → Regression → Commit → 다음 작업
+ */
+export const OFFICIAL_DEVELOPMENT_PROCESS = [
+  "분석",
+  "원인·영향 보고",
+  "PM 승인",
+  "최소 범위 수정",
+  "npm run build",
+  "실행 테스트 (해당 화면)",
+  "Regression Test",
+  "Git Commit",
+  "다음 작업",
+];
+
+/**
+ * 화면·기능 단위 작업 순서 — 한 번에 여러 페이지 수정 금지
+ * @example 검사관리 수정 → Build → 실행 테스트 → Commit → 다음 화면
+ */
+export const SINGLE_SCREEN_WORKFLOW = [
+  "단일 화면/기능 수정",
+  "npm run build",
+  "실행 테스트 (해당 화면)",
+  "Regression Test",
+  "Git Commit",
+  "다음 화면",
+];
+
+/** 매 작업 후 필수 Regression Test */
+export const REGRESSION_TEST_CHECKLIST = [
+  "HOME 정상",
+  "로그인 정상",
+  "Sidebar 정상",
+  "Router 정상",
+  "모든 메뉴 진입 가능",
+  "White Screen 없음",
+  "Console Error = 0",
+];
+
+/**
+ * 공통 컴포넌트 수정 시 — 영향받는 모든 페이지 테스트 후에만 완료
+ * (TitanDataTable · TitanSearchPanel · TitanScreenDetailPopup · TitanTableRowActions 등)
+ */
+export const SHARED_COMPONENT_CHANGE_POLICY = {
+  rule: "공통 컴포넌트 수정 = 전체 영향 — 사용 페이지 전수 테스트 + 결과 보고 필수",
+  reportFields: ["수정 컴포넌트", "영향 페이지 목록", "페이지별 테스트 결과", "Build 결과"],
+  completionBlockedUntil: "영향 페이지 Regression Test 완료",
+};
+
 export const WORKFLOW_PHASES = [
   "HOME",
   "입고현황",

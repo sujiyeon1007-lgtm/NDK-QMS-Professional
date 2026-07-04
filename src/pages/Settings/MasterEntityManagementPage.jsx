@@ -159,6 +159,17 @@ export default function MasterEntityManagementPage({ tabId }) {
 
   if (!screen) return null;
 
+  const tableVariantClass =
+    tabId === "equipment"
+      ? "company-management-page__table--equipment"
+      : tabId === "workers"
+        ? "company-management-page__table--worker"
+        : tabId === "materials"
+          ? "company-management-page__table--material"
+          : tabId === "processes"
+            ? "company-management-page__table--process"
+            : "";
+
   return (
     <>
       <div className="company-management-page">
@@ -184,14 +195,14 @@ export default function MasterEntityManagementPage({ tabId }) {
           />
         </div>
 
-        <div className="company-management-page__table-wrap">
+        <div className="company-management-page__table-wrap company-management-page__table-wrap--compact">
           <TitanDataTable
-            className="inbound-page__table"
+            className={`inbound-page__table company-management-page__table--compact${tableVariantClass ? ` ${tableVariantClass}` : ""}`}
             columns={tableColumns}
             rows={pagedRows}
             activeRowId={selectedRowId}
-            onRowClick={openDetail}
-            onRowDoubleClick={(row) => openRegister("edit", row)}
+            onRowClick={(row) => setSelectedRowId(row.id)}
+            onRowDoubleClick={(row) => openDetail(row)}
             emptyMessage={`등록된 ${pageTitle.replace("관리", "")}가 없습니다.`}
           />
 

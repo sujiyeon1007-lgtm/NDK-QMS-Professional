@@ -4,6 +4,7 @@
 
 import { getTitanErrorLogs } from "./titanErrorLogSession";
 import { getCurrentTitanUser } from "./titanHistorySession";
+import { resetUserPasswordToDefault } from "./titanAuthDataSession";
 
 const STORAGE_KEY = "project-titan-environment-settings-v1";
 const BACKUP_PREFIX = "project-titan-";
@@ -195,8 +196,9 @@ export function updateUser(userId, patch) {
 }
 
 export function resetUserPassword(userId) {
+  const result = resetUserPasswordToDefault(userId);
   appendAuditLog({ type: "update", action: "비밀번호 초기화", target: userId });
-  return { ok: true, message: "비밀번호가 초기화되었습니다. (V1.0 세션)" };
+  return result;
 }
 
 export function savePermissions(permissions) {

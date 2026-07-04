@@ -1,0 +1,95 @@
+---
+description: Project TITAN V1.3 — UI Freeze · Reference Screen · 화면별 UI 상태 관리
+alwaysApply: true
+---
+
+# Project TITAN V1.3 — UI Status & Reference Screen
+
+**SSoT (code):** `src/config/screenUiStatus.js`
+
+---
+
+## UI Status Legend
+
+| 상태 | 의미 | Cursor 규칙 |
+|------|------|-------------|
+| 🟢 **UI Freeze** | 디자인 확정 | **레이아웃·색상·Widget 배치·여백 변경 금지** · 기능 추가만 허용 |
+| 🟡 **In Progress** | UI/UX 수정 중 | HOME 디자인 언어에 맞춰 개선 · PM 승인 패턴 유지 |
+| 🔵 **Planning** | 설계 단계 | Rule/Config 정리 가능 · UI 구현은 PM 승인 후 |
+
+---
+
+## 🔒 HOME Dashboard — UI Freeze (V1.3)
+
+HOME은 **현재 디자인과 구성으로 최종 승인**되었다.
+
+### 확정 항목 (변경 금지)
+
+- KPI 카드 구성
+- 공지사항 Widget
+- 해야 할 일 Widget
+- 제품 흐름 현황
+- 전체 레이아웃 · Widget 배치
+- 컬러 · ERP/MES 스타일
+
+### 허용
+
+- 기능 추가 (데이터 연동 · 버튼 동작 · Demo 데이터)
+- 버그 수정 (동작 오류 · 접근성 · Console Error)
+
+### 금지
+
+- 레이아웃 재구성 · Widget 순서/비율 변경
+- 새 KPI 카드 타입 · 색상 토큰 임의 추가
+- HOME 전용 디자인 실험
+
+---
+
+## Reference Screen — HOME
+
+**모든 관리 페이지**는 HOME의 디자인 언어를 기준으로 통일한다.
+
+| 영역 | HOME 기준 |
+|------|-----------|
+| 검색창 | TitanSearchPanel · Live Search |
+| KPI | TitanKpiBarSlot · StatusChipBar |
+| 버튼 | PrimaryButton · SecondaryButton · Toolbar |
+| Widget | TitanCollapsibleWidget · Card |
+| 여백 · 폰트 · 색 | `tokens.css` · `titan-ui-standard.css` |
+| 테이블 | TitanDataTable · `.titan-table*` |
+
+🟡 In Progress 화면 개선 시 **HOME에서 이미 확정된 컴ponent/CSS를 재사용**한다. 페이지별 신규 디자인 ❌
+
+---
+
+## 화면별 현재 상태 (V1.3)
+
+| 화면 | 상태 |
+|------|------|
+| HOME Dashboard | 🟢 UI Freeze |
+| 로그인 | 🟢 UI Freeze |
+| 기준정보관리 | 🟡 In Progress |
+| 입고관리 | 🟡 In Progress |
+| 생산일보 | 🟡 In Progress |
+| 검사관리 | 🟡 In Progress |
+| 성적서관리 | 🟡 In Progress |
+| 출고관리 | 🟡 In Progress |
+| 재고관리 | 🟡 In Progress |
+| 문서관리 | 🟡 In Progress |
+| QR관리 | 🔵 Planning |
+| 관리자 | 🟡 In Progress |
+
+---
+
+## Cursor Do Not
+
+- 🟢 UI Freeze 화면 레이아웃 임의 변경
+- 🟡 화면에 HOME과 다른 검색/KPI/테이블 패턴 신규 작성
+- 상태 테이블 없이 "완료" 처리
+- Regression: Freeze 화면 수정 시 다른 Freeze 화면 영향 검증 필수
+
+## Cursor Do
+
+- 작업 전 `screenUiStatus.js`에서 해당 화면 상태 확인
+- 🟡 화면: HOME Reference 패턴 우선 적용
+- Freeze 화면: 기능 diff만 · CSS/layout diff 최소화

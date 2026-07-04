@@ -9,7 +9,27 @@ function formatTodayLabel(date = new Date()) {
   return `${y}-${m}-${d} ${weekdays[date.getDay()]}`;
 }
 
-export default function PageTopBar({ title, kicker, description, onRefresh }) {
+export default function PageTopBar({ title, kicker, description, onRefresh, compact = false }) {
+  if (compact) {
+    return (
+      <header className="titan-page-top-bar titan-page-top-bar--compact">
+        <div className="titan-page-top-bar__main">
+          <div className="titan-page-top-bar__title-row">
+            <h1 className="titan-page-top-bar__title">{title}</h1>
+            <span className="titan-page-top-bar__date">{formatTodayLabel()}</span>
+          </div>
+          {kicker ? <p className="titan-page-top-bar__kicker">{kicker}</p> : null}
+        </div>
+        {onRefresh ? (
+          <button type="button" className="titan-page-top-bar__refresh" onClick={onRefresh}>
+            <RefreshCw size={14} aria-hidden="true" />
+            새로고침
+          </button>
+        ) : null}
+      </header>
+    );
+  }
+
   return (
     <header className="titan-page-top-bar">
       <div className="titan-page-top-bar__main">

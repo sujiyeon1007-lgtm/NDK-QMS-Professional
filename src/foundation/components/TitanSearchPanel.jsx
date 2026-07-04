@@ -32,6 +32,7 @@ export default function TitanSearchPanel({
   basicFields = null,
   basicFieldsClassName = "",
   className = "",
+  bare = false,
   enableEnterSearch = true,
 }) {
   const update = (key, value) => onDraftChange({ ...draft, [key]: value });
@@ -59,49 +60,53 @@ export default function TitanSearchPanel({
   const resolvedBasicFields = basicFields ?? defaultBasicFields;
 
   return (
-    <div className={`titan-search-panel titan-card ${className}`.trim()}>
+    <div
+      className={`titan-search-panel${bare ? "" : " titan-card"} ${className}`.trim()}
+    >
       <div className="titan-search-panel__basic">
-        <div
-          className={`titan-search-panel__fields${basicFieldsClassName ? ` ${basicFieldsClassName}` : ""}`.trim()}
-        >
-          {resolvedBasicFields.map((field) => (
-            <TitanSearchField
-              key={field.key}
-              label={field.label}
-              fieldKey={field.key}
-              value={draft[field.key] ?? ""}
-              onChange={(value) => update(field.key, value)}
-              suggestions={getSuggestions(field.key)}
-              placeholder={field.placeholder ?? field.label}
-              allowEmpty={field.allowEmpty}
-              emptyLabel={field.emptyLabel}
-              onEnterSearch={handleEnterSearch}
-            />
-          ))}
-          {showStatusField ? (
-            <TitanSearchField
-              label={statusFieldLabel}
-              fieldKey="status"
-              value={draft.status ?? ""}
-              onChange={(value) => update("status", value)}
-              suggestions={getSuggestions("status")}
-              placeholder="현재상태"
-              onEnterSearch={handleEnterSearch}
-            />
-          ) : null}
-        </div>
-        <div className="titan-search-panel__actions">
-          <PrimaryButton type="button" onClick={onSearch}>
-            <Search size={14} aria-hidden="true" />
-            {SEARCH_SUBMIT_LABEL}
-          </PrimaryButton>
-          <SecondaryButton type="button" onClick={onReset}>
-            <RotateCcw size={14} aria-hidden="true" />
-            {SEARCH_RESET_LABEL}
-          </SecondaryButton>
-          <SecondaryButton type="button" onClick={onAdvancedToggle}>
-            {advancedOpen ? SEARCH_ADVANCED_CLOSE_LABEL : SEARCH_ADVANCED_OPEN_LABEL}
-          </SecondaryButton>
+        <div className="titan-search-panel__row titan-search-panel__row--primary">
+          <div
+            className={`titan-search-panel__fields${basicFieldsClassName ? ` ${basicFieldsClassName}` : ""}`.trim()}
+          >
+            {resolvedBasicFields.map((field) => (
+              <TitanSearchField
+                key={field.key}
+                label={field.label}
+                fieldKey={field.key}
+                value={draft[field.key] ?? ""}
+                onChange={(value) => update(field.key, value)}
+                suggestions={getSuggestions(field.key)}
+                placeholder={field.placeholder ?? field.label}
+                allowEmpty={field.allowEmpty}
+                emptyLabel={field.emptyLabel}
+                onEnterSearch={handleEnterSearch}
+              />
+            ))}
+            {showStatusField ? (
+              <TitanSearchField
+                label={statusFieldLabel}
+                fieldKey="status"
+                value={draft.status ?? ""}
+                onChange={(value) => update("status", value)}
+                suggestions={getSuggestions("status")}
+                placeholder="현재상태"
+                onEnterSearch={handleEnterSearch}
+              />
+            ) : null}
+          </div>
+          <div className="titan-search-panel__actions">
+            <PrimaryButton type="button" onClick={onSearch}>
+              <Search size={14} aria-hidden="true" />
+              {SEARCH_SUBMIT_LABEL}
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={onReset}>
+              <RotateCcw size={14} aria-hidden="true" />
+              {SEARCH_RESET_LABEL}
+            </SecondaryButton>
+            <SecondaryButton type="button" onClick={onAdvancedToggle}>
+              {advancedOpen ? SEARCH_ADVANCED_CLOSE_LABEL : SEARCH_ADVANCED_OPEN_LABEL}
+            </SecondaryButton>
+          </div>
         </div>
       </div>
 

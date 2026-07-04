@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, {
   TitanAdvancedSearchField,
   useSearchSuggestionHelpers,
 } from "../../foundation/components/TitanSearchPanel";
+import { DateRangeField } from "../../foundation/components/TitanSearchAdvancedFields";
+import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
@@ -179,8 +180,10 @@ export default function DepartmentWorkManagement() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
+        showStatusField
+        statusFieldLabel="진행상태"
         advancedContent={
-          <div className="titan-advanced-search__grid">
+          <TitanAdvancedSearchGrid>
             <TitanAdvancedSearchField
               label="업무명"
               fieldKey="title"
@@ -198,21 +201,6 @@ export default function DepartmentWorkManagement() {
               placeholder="담당자"
             />
             <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">진행상태</span>
-              <select
-                className="titan-search-panel__select"
-                value={draft.status}
-                onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}
-              >
-                <option value="">전체</option>
-                {DEPARTMENT_WORK_STATUS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-advanced-search__field">
               <span className="titan-advanced-search__label">우선순위</span>
               <select
                 className="titan-search-panel__select"
@@ -227,39 +215,21 @@ export default function DepartmentWorkManagement() {
                 ))}
               </select>
             </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">요청일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.requestDateFrom}
-                  onChange={(e) => onDraftChange({ ...draft, requestDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.requestDateTo}
-                  onChange={(e) => onDraftChange({ ...draft, requestDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-            <label className="titan-advanced-search__field">
-              <span className="titan-advanced-search__label">완료 예정일</span>
-              <div className="titan-advanced-search__date-range">
-                <Input
-                  type="date"
-                  value={draft.dueDateFrom}
-                  onChange={(e) => onDraftChange({ ...draft, dueDateFrom: e.target.value })}
-                />
-                <span>~</span>
-                <Input
-                  type="date"
-                  value={draft.dueDateTo}
-                  onChange={(e) => onDraftChange({ ...draft, dueDateTo: e.target.value })}
-                />
-              </div>
-            </label>
-          </div>
+            <DateRangeField
+              label="요청일"
+              fromKey="requestDateFrom"
+              toKey="requestDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+            <DateRangeField
+              label="완료 예정일"
+              fromKey="dueDateFrom"
+              toKey="dueDateTo"
+              draft={draft}
+              onDraftChange={onDraftChange}
+            />
+          </TitanAdvancedSearchGrid>
         }
       />
 

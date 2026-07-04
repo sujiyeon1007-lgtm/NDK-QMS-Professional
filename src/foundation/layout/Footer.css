@@ -8,7 +8,7 @@
   padding: 0 14px;
   background: var(--titan-surface);
   border-top: 1px solid var(--titan-border);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--titan-font-footer);
+  font-weight: var(--titan-weight-regular);
   color: var(--titan-text-muted);
 }

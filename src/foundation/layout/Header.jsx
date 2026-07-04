@@ -1,20 +1,12 @@
 import { useEffect, useState } from "react";
-import { isDemoAdminModeActive } from "../../utils/titanAdminAccess";
-import { getCurrentTitanUser } from "../../utils/titanHistorySession";
-import { getTitanEditionDisplayLabel } from "../../utils/titanEditionSession";
+import { useNavigate } from "react-router-dom";
+import { LogOut, UserRound } from "lucide-react";
 
-function parseCurrentUser(raw = "") {
-  const text = String(raw ?? "").trim();
-  if (!text) return { name: "사용자", department: "—" };
-  if (text.includes("/")) {
-    const [department, rest] = text.split("/").map((part) => part.trim());
-    return {
-      department: department || "—",
-      name: rest?.replace(/\s*사원\s*$/, "") || text,
-    };
-  }
-  return { name: text, department: "—" };
-}
+import { SecondaryButton } from "../components/Button";
+import { getAuthDisplayUser, clearAuthSession } from "../../utils/titanAuthSession";
+import { TITAN_LOGIN_STORAGE } from "../../config/titanLoginSystem";
+import { getTitanEditionDisplayLabel } from "../../utils/titanEditionSession";
+import { isDemoAdminModeActive } from "../../utils/titanAdminAccess";
 
 function formatClock(date) {
   const pad = (value) => String(value).padStart(2, "0");
@@ -27,13 +19,25 @@ function formatDate(date) {
 }
 
 export default function Header() {
+  const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
-  const user = parseCurrentUser(getCurrentTitanUser());
+  const [user, setUser] = useState(() => getAuthDisplayUser());
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const sync = () => setUser(getAuthDisplayUser());
+    window.addEventListener(TITAN_LOGIN_STORAGE.authChanged, sync);
+    return () => window.removeEventListener(TITAN_LOGIN_STORAGE.authChanged, sync);
+  }, []);
+
+  const handleLogout = () => {
+    clearAuthSession();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className="titan-header">
@@ -56,10 +60,20 @@ export default function Header() {
         </div>
       ) : null}
       <div className="titan-header__user" aria-label="사용자 정보">
-        <strong>{user.name}님</strong>
-        <span>{user.department}</span>
+        <UserRound size={16} aria-hidden="true" />
+        {user.isProgramAdministrator ? (
+          <strong>{user.name}</strong>
+        ) : (
+          <strong>
+            {[user.name, user.department, user.rank || "사원"].filter(Boolean).join(" / ")}
+          </strong>
+        )}
         <span>{formatDate(now)}</span>
         <span className="titan-header__clock">{formatClock(now)}</span>
+        <SecondaryButton type="button" className="titan-header__logout" onClick={handleLogout}>
+          <LogOut size={14} aria-hidden="true" />
+          로그아웃
+        </SecondaryButton>
       </div>
     </header>
   );

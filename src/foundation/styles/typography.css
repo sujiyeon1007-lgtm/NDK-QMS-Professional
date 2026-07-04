@@ -1,0 +1,124 @@
+/**
+ * Project TITAN Typography System V1.0
+ * Pretendard Variable · Weight · Size 공통 적용
+ */
+
+html {
+  font-family: var(--titan-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--titan-font-family);
+  font-size: var(--titan-font-body);
+  font-weight: var(--titan-weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: var(--titan-font-input);
+  font-weight: var(--titan-weight-regular);
+}
+
+/* ── 페이지 제목 (26~28px · SemiBold) ── */
+.titan-page-top-bar__title,
+.titan-section-page__title,
+.titan-page .page-title-block h2 {
+  font-size: var(--titan-font-page-title);
+  font-weight: var(--titan-weight-semibold);
+  letter-spacing: -0.02em;
+}
+
+.titan-page-top-bar--compact .titan-page-top-bar__title {
+  font-size: 26px;
+}
+
+/* ── 섹션 제목 (18~20px · SemiBold) ── */
+.titan-kpi-panel__title,
+.titan-modal__header h2,
+.titan-workspace-modal__header h2,
+.home-panel__head h3,
+.titan-collapse__head,
+.inbound-page__title {
+  font-size: var(--titan-font-section-title);
+  font-weight: var(--titan-weight-semibold);
+}
+
+/* ── Sidebar 메뉴 (15~16px · Medium) ── */
+.titan-sidebar__link {
+  font-size: var(--titan-font-menu);
+  font-weight: var(--titan-weight-medium);
+}
+
+.titan-sidebar__brand strong {
+  font-weight: var(--titan-weight-semibold);
+}
+
+/* ── 버튼 (14px · Medium) ── */
+.titan-btn,
+.primary-button,
+.secondary-button {
+  font-size: var(--titan-font-button);
+  font-weight: var(--titan-weight-medium);
+}
+
+/* ── 테이블 (14px · Regular) ── */
+.titan-table__cell,
+.titan-table__cell--head {
+  font-size: var(--titan-font-table);
+  font-weight: var(--titan-weight-regular);
+}
+
+/* ── KPI 숫자 (32~36px · Bold) ── */
+.titan-kpi-card__count,
+.production-metric-card__value {
+  font-size: var(--titan-font-kpi);
+  font-weight: var(--titan-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.titan-kpi-card__count small {
+  font-size: var(--titan-font-body);
+  font-weight: var(--titan-weight-medium);
+}
+
+/* ── Footer (12~13px) ── */
+.titan-footer {
+  font-size: var(--titan-font-footer);
+  font-weight: var(--titan-weight-regular);
+}
+
+/* ── 검색 · 입력 라벨 ── */
+.titan-search-panel__field > span,
+.titan-search-panel label,
+.titan-advanced-search__field > span {
+  font-size: var(--titan-font-footer);
+  font-weight: var(--titan-weight-medium);
+}
+
+.titan-search-ac__input,
+.titan-search-panel__select,
+.titan-input {
+  font-size: var(--titan-font-input);
+  font-weight: var(--titan-weight-regular);
+}
+
+/* ── App Header (최상단 바 — 일반 텍스트) ── */
+.titan-header__title {
+  font-weight: var(--titan-weight-semibold);
+}
+
+.titan-header__user strong {
+  font-weight: var(--titan-weight-semibold);
+}
+
+.titan-header__clock {
+  font-weight: var(--titan-weight-bold);
+  font-variant-numeric: tabular-nums;
+}

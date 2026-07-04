@@ -2,8 +2,8 @@
  * Project TITAN V1.0 — 공통 상세 검색 필드 (자동완성)
  */
 import Input from "./Input";
+import TitanDateInput from "./TitanDateInput";
 import { TitanAdvancedSearchField } from "./TitanSearchPanel";
-
 export function ManagementIdField({ draft, onDraftChange, getSuggestions }) {
   return (
     <TitanAdvancedSearchField
@@ -43,15 +43,22 @@ export function CustomerLotNoField({ draft, onDraftChange, getSuggestions }) {
   );
 }
 
+/** @deprecated V1.3 — 업체 LOT(customerLotNo)로 통합. 하위 호환용 래퍼 */
 export function PurchaseOrderNoField({ draft, onDraftChange, getSuggestions }) {
   return (
-    <TitanAdvancedSearchField
-      label="발주번호"
-      fieldKey="purchaseOrderNo"
-      value={draft.purchaseOrderNo ?? ""}
-      onChange={(value) => onDraftChange({ ...draft, purchaseOrderNo: value })}
-      suggestions={getSuggestions("purchaseOrderNo", draft.purchaseOrderNo)}
-      placeholder="발주번호"
+    <CustomerLotNoField
+      draft={{
+        ...draft,
+        customerLotNo: draft.customerLotNo || draft.purchaseOrderNo || "",
+      }}
+      onDraftChange={(next) =>
+        onDraftChange({
+          ...next,
+          customerLotNo: next.customerLotNo,
+          purchaseOrderNo: "",
+        })
+      }
+      getSuggestions={getSuggestions}
     />
   );
 }
@@ -164,21 +171,37 @@ export function NoteField({ draft, onDraftChange, getSuggestions }) {
 
 export function DateRangeField({ label, fromKey, toKey, draft, onDraftChange }) {
   return (
-    <label className="titan-advanced-search__field">
+    <div className="titan-advanced-search__field titan-advanced-search__field--date-range">
       <span className="titan-advanced-search__label">{label}</span>
       <div className="titan-advanced-search__date-range">
-        <Input
-          type="date"
+        <TitanDateInput
           value={draft[fromKey] ?? ""}
           onChange={(e) => onDraftChange({ ...draft, [fromKey]: e.target.value })}
+          aria-label={`${label} 시작`}
         />
-        <span>~</span>
-        <Input
-          type="date"
+        <span className="titan-advanced-search__date-separator" aria-hidden="true">
+          ~
+        </span>
+        <TitanDateInput
           value={draft[toKey] ?? ""}
           onChange={(e) => onDraftChange({ ...draft, [toKey]: e.target.value })}
+          aria-label={`${label} 종료`}
         />
       </div>
+    </div>
+  );
+}
+
+export function QtyField({ draft, onDraftChange, fieldKey = "qty", label = "수량" }) {
+  return (
+    <label className="titan-advanced-search__field">
+      <span className="titan-advanced-search__label">{label}</span>
+      <Input
+        className="titan-advanced-search__text-input"
+        value={draft[fieldKey] ?? ""}
+        onChange={(e) => onDraftChange({ ...draft, [fieldKey]: e.target.value })}
+        placeholder={label}
+      />
     </label>
   );
 }

@@ -14,6 +14,7 @@
 @import "../../styles/workflow-process-colors.css";
 @import "../../styles/titan-desktop-layout.css";
 @import "./titan-ui-standard.css";
+@import "./typography.css";
 
 *,
 *::before,
@@ -34,8 +35,9 @@ html {
 }
 
 body {
-  font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", Arial, sans-serif;
-  font-size: var(--titan-font-base);
+  font-family: var(--titan-font-family);
+  font-size: var(--titan-font-body);
+  font-weight: var(--titan-weight-regular);
   background: var(--titan-bg);
   color: var(--titan-text);
 }
@@ -116,6 +118,12 @@ select {
   font-size: 14px;
   color: var(--titan-text-muted);
   line-height: 1.5;
+}
+
+.titan-page-placeholder__subtitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--titan-neutral);
 }
 
 .titan-page-placeholder small {

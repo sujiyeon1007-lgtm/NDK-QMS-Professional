@@ -66,31 +66,39 @@ body,
   text-overflow: clip;
 }
 
-/* ── Search: desktop baseline field widths ── */
+/* ── Search: V1.3 responsive wrap (no horizontal scroll) ── */
 .titan-search-panel__basic {
-  /* baseline — titan-ui-standard.css Grid Layout 적용 */
-  align-items: end;
+  align-items: stretch;
   min-height: auto;
 }
 
 .titan-search-panel__fields {
-  min-width: var(--titan-search-fields-min-w, 640px);
+  min-width: 0;
 }
 
 .titan-search-panel__field {
-  min-width: var(--titan-search-field-w, 150px);
+  min-width: var(--titan-search-field-min-w, 120px);
 }
 
 .titan-advanced-search__grid {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 10px;
+  overflow: visible;
 }
 
 .titan-advanced-search__field {
-  flex: 0 1 150px;
-  min-width: 150px;
-  max-width: none;
+  flex: 1 1 var(--titan-search-field-w, 140px);
+  min-width: var(--titan-search-field-min-w, 120px);
+  max-width: var(--titan-search-field-max-w, 180px);
+  width: auto;
+}
+
+.titan-advanced-search__field--date-range {
+  flex: 2 1 var(--titan-search-date-range-w, 280px);
+  min-width: 260px;
+  max-width: 360px;
 }
 
 /* ── Table: fixed columns, no text breaking ── */
@@ -104,6 +112,13 @@ body,
   table-layout: fixed;
   min-width: var(--titan-table-min-width);
   width: 100%;
+}
+
+.titan-table--compact,
+.titan-table--auto-fit {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
 }
 
 .titan-table--ratio .titan-table__cell,
@@ -121,18 +136,24 @@ body,
   overflow-wrap: normal;
 }
 
-/* ── List workspace: side panel NEVER stacks below list ── */
+/* ── List workspace: left widget + main list (never stack) ── */
 .inbound-page__workspace,
 .titan-list-workspace,
 .titan-split-workspace {
-  grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr) !important;
   container-type: normal;
+}
+
+.titan-list-workspace.is-left-collapsed,
+.inbound-page__workspace.is-left-collapsed {
+  grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr) !important;
 }
 
 .inbound-page__detail,
 .titan-detail-panel {
-  min-width: var(--titan-side-max);
-  max-width: var(--titan-side-max);
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   flex-shrink: 0;
 }
 
@@ -177,16 +198,22 @@ body,
 }
 
 @media (max-width: 1200px) {
-  .titan-split-workspace,
-  .titan-list-workspace {
-    grid-template-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+  /* 좌측 Widget + 우측 리스트 비율 유지 (열 순서 변경 금지) */
+  .titan-list-workspace,
+  .inbound-page__workspace {
+    grid-template-columns: var(--titan-left-widget-width) minmax(0, 1fr) !important;
     height: auto;
+  }
+
+  .titan-list-workspace.is-left-collapsed,
+  .inbound-page__workspace.is-left-collapsed {
+    grid-template-columns: var(--titan-left-widget-collapsed-width) minmax(0, 1fr) !important;
   }
 
   .incoming-page .incoming-main,
   .certificate-page .cert-main,
   .production-plan-page .production-main {
-    --titan-list-columns: minmax(0, 1fr) var(--titan-side-max) !important;
+    --titan-list-columns: var(--titan-left-widget-width) minmax(0, 1fr) !important;
   }
 
   .shipment-page .ship-split-workspace,
