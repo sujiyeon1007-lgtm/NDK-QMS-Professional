@@ -36,7 +36,8 @@ Every screen follows this sequence. **No coding before design is complete.**
 
 ```text
 분석 → 원인·영향 보고 → PM 승인 → 최소 범위 수정
-→ npm run build → 실행 테스트 → Regression Test → Git Commit → 다음 작업
+→ npm run build → 실행 테스트 → Regression Test → Git Commit
+→ Git Push (presentation) → beta-demo 동기화 · Push → Beta 배포 확인 → 다음 작업
 ```
 
 **한 번에 여러 페이지 수정 금지.** Commit 단위 = 하나의 화면/기능.

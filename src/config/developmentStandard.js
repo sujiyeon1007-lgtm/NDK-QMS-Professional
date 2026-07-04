@@ -134,6 +134,37 @@ export const REGRESSION_TEST_CHECKLIST = [
   "Console Error = 0",
 ];
 
+/** Beta 사이트 배포 후 필수 확인 (Vercel · ndk-qms-beta.vercel.app) */
+export const BETA_SITE_VERIFICATION_CHECKLIST = [
+  "로그인 정상",
+  "HOME 정상",
+  "입고관리 정상",
+  "생산관리 정상",
+  "검사관리 정상",
+  "성적서관리 정상",
+  "출고관리 정상",
+  "문서관리 정상",
+  "QR관리 정상",
+  "White Screen 없음",
+  "Console Error = 0",
+];
+
+/**
+ * 공식 개발 → Beta 배포 Flow (V1.3)
+ * Build 성공 · Regression 통과 후에만 beta-demo push
+ */
+export const OFFICIAL_RELEASE_FLOW = [
+  "개발 (단일 화면/기능)",
+  "npm run build",
+  "Regression Test (localhost/preview)",
+  "Git Commit",
+  "Git Push (presentation)",
+  "beta-demo 브랜치 동기화 · Push",
+  "Vercel Beta 자동 배포",
+  "Beta 사이트 동작 확인",
+  "작업 완료",
+];
+
 /**
  * 공통 컴포넌트 수정 시 — 영향받는 모든 페이지 테스트 후에만 완료
  * (TitanDataTable · TitanSearchPanel · TitanScreenDetailPopup · TitanTableRowActions 등)

@@ -31,17 +31,21 @@ alwaysApply: true
 
 ---
 
-## 배포 Flow
+## 배포 Flow (V1.3 — GitHub = Beta 동기화)
+
+**Beta URL:** `https://ndk-qms-beta.vercel.app` · **Vercel branch:** `beta-demo`
 
 ```text
-localhost Version 3 QMS 개발 → 테스트 → PM 승인
-  ↓
-git commit → git push (beta-demo)
-  ↓
-Vercel 자동 배포 (Beta Release)
-  ↓
-회의 · Demo · 피드백
+개발 → npm run build → Regression Test → Commit
+→ Push (presentation) → merge/push (beta-demo)
+→ Vercel 자동 배포 → Beta 사이트 확인 → 작업 완료
 ```
+
+**Beta 배포 후 확인:** 로그인 · HOME · 입고 · 생산 · 검사 · 성적서 · 출고 · 문서 · QR · White Screen 없음 · Console Error = 0
+
+**원칙:** Build 성공 + Regression 통과한 버전만 `beta-demo`에 반영. 오류 상태 Beta 업데이트 금지.
+
+**Code:** `OFFICIAL_RELEASE_FLOW` · `BETA_SITE_VERIFICATION_CHECKLIST` in `developmentStandard.js`
 
 ---
 
