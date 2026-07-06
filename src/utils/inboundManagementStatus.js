@@ -3,6 +3,7 @@
  * 입고 등록 ~ 출고대기만 관리 · 출고완료는 이력조회/영업실적
  */
 
+import { HT_TERM } from "../config/titanHeatTreatmentTerminology";
 import {
   CERTIFICATE_STATUS,
   SHIPMENT_STATUS,
@@ -17,8 +18,9 @@ import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 export const INBOUND_STATUS_LABELS = {
   INCOMING_DONE: "입고 등록",
-  PROD_WAIT: "생산대기",
-  PROD_PROGRESS: "생산진행",
+  PRODUCT_SHIP_WAIT: "제품 출고대기",
+  PROD_WAIT: "열처리대기",
+  PROD_PROGRESS: "열처리진행",
   INSPECT_PROGRESS: "검사진행",
   CERT_WAIT: "성적서대기",
   SHIP_WAIT: "출고대기",
@@ -54,14 +56,19 @@ export function getInboundManagementStatus(record) {
   }
 
   if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) {
-    return { label: "생산완료", variant: "production" };
+    return { label: HT_TERM.DONE, variant: "production" };
   }
 
   if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) {
-    return { label: "생산중", variant: "production" };
+    return { label: HT_TERM.PROGRESS, variant: "production" };
   }
 
   if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
+    const printedWithoutLot =
+      (record.htlNo || record.workSheetGenerated) && !Boolean(record.registered && record.lotNo?.trim());
+    if (printedWithoutLot) {
+      return { label: INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT, variant: "ship-wait" };
+    }
     return { label: "작업대기", variant: "prod-wait" };
   }
 
@@ -85,7 +92,7 @@ export function getInboundManagementStatus(record) {
   }
 
   if (record.htlNo || record.workSheetGenerated) {
-    return { label: INBOUND_STATUS_LABELS.PROD_WAIT, variant: "prod-wait" };
+    return { label: INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT, variant: "ship-wait" };
   }
 
   return { label: INBOUND_STATUS_LABELS.INCOMING_DONE, variant: "incoming" };

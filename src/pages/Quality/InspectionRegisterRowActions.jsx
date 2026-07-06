@@ -1,11 +1,8 @@
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 검사관리 공통 — 리스트 마지막 컬럼 [상세] [등록] [수정] [삭제]
- */
+/** 검사관리 공통 — [등록] [수정] [삭제] (상세는 더블클릭) */
 export default function InspectionRegisterRowActions({
-  onDetail,
   onRegister,
   onEdit,
   onDelete,
@@ -14,14 +11,19 @@ export default function InspectionRegisterRowActions({
   canDelete = true,
 }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <SecondaryButton
         type="button"
         className="titan-btn--table-action"
-        disabled={!canRegister}
+        aria-disabled={!canRegister}
+        title={canRegister ? "검사등록" : "검사대기 상태에서만 등록할 수 있습니다"}
         onClick={(event) => {
           event.stopPropagation();
-          if (canRegister) onRegister?.();
+          if (!canRegister) {
+            window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
+            return;
+          }
+          onRegister?.();
         }}
       >
         등록

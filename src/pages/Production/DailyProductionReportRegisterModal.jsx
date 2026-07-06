@@ -31,14 +31,14 @@ import {
   onDailyReportStarted,
 } from "../../utils/titanWorkflowStatus";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
+import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 import "./ProductionManagement.css";
 
 function buildInitialForm(mode, initialManagementId = "", editLotNo = "", pendingRequests = []) {
-  const workers = getActiveWorkers();
   const baseForm = {
     ...createEmptyProductionDailyReportRegister(),
     workDate: getPrintOutputDate(),
-    worker: workers[0]?.name ?? "관리자",
+    worker: resolveDefaultAssigneeFromAuth(),
   };
 
   if (mode === "edit" && editLotNo) {
@@ -261,7 +261,7 @@ export default function DailyProductionReportRegisterModal({
         if (conflict) {
           return {
             ok: false,
-            message: `LOT ${equipmentCheck.lotNo}는 이미 다른 생산일보에 사용 중입니다.`,
+            message: `LOT ${equipmentCheck.lotNo}는 이미 다른 열처리일보에 사용 중입니다.`,
           };
         }
       }
@@ -302,7 +302,7 @@ export default function DailyProductionReportRegisterModal({
         return;
       }
       if (!existing.htlNo?.trim()) {
-        window.alert("열처리 작업 요청 리스트 출력 후 생산일보를 등록할 수 있습니다.");
+        window.alert("열처리 작업 요청 리스트 출력 후 열처리일보를 등록할 수 있습니다.");
         return;
       }
     }
@@ -323,7 +323,7 @@ export default function DailyProductionReportRegisterModal({
       open={open}
       onClose={onClose}
       onSubmit={handleSubmit}
-      kicker="생산관리"
+      kicker="열처리관리"
       title={isEditMode ? PRODUCTION_DAILY_EDIT_MODAL_TITLE : PRODUCTION_DAILY_REGISTER_LABEL}
       submitLabel={isEditMode ? "수정" : undefined}
       titleId="daily-report-modal-title"

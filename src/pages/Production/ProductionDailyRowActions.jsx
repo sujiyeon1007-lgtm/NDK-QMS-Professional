@@ -1,18 +1,42 @@
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 생산일보 — 리스트 마지막 컬럼 [상세] [완료] [취소]
- */
+/** 생산일보 — [수정] [완료] [취소] (상세는 더블클릭) */
 export default function ProductionDailyRowActions({
-  onDetail,
+  onEdit,
   onComplete,
   onCancelComplete,
+  onCancelLot,
+  canEdit = false,
   canComplete = false,
   canCancelComplete = false,
+  canCancelLot = false,
 }) {
+  const canCancel = canCancelComplete || canCancelLot;
+
+  const handleCancel = () => {
+    if (canCancelComplete) {
+      onCancelComplete?.();
+      return;
+    }
+    if (canCancelLot) {
+      onCancelLot?.();
+    }
+  };
+
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
+      <SecondaryButton
+        type="button"
+        className="titan-btn--table-action"
+        disabled={!canEdit}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (canEdit) onEdit?.();
+        }}
+      >
+        수정
+      </SecondaryButton>
       <PrimaryButton
         type="button"
         className="titan-btn--table-action"
@@ -27,10 +51,10 @@ export default function ProductionDailyRowActions({
       <SecondaryButton
         type="button"
         className="titan-btn--table-action"
-        disabled={!canCancelComplete}
+        disabled={!canCancel}
         onClick={(event) => {
           event.stopPropagation();
-          if (canCancelComplete) onCancelComplete?.();
+          if (canCancel) handleCancel();
         }}
       >
         취소

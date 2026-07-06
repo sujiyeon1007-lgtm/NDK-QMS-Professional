@@ -1,11 +1,8 @@
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 성적서관리 — [상세] [발행] [수정] [취소]
- */
+/** 성적서관리 — [발행] [수정] [취소] (상세는 더블클릭) */
 export default function CertificateRowActions({
-  onDetail,
   onIssue,
   onEdit,
   onCancel,
@@ -14,7 +11,7 @@ export default function CertificateRowActions({
   canCancel = true,
 }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <PrimaryButton
         type="button"
         className="titan-btn--table-action"

@@ -1,0 +1,57 @@
+# Project TITAN V1.3 — Work Journal & Assignee Policy (PM Approved)
+
+**Lock:** 2026-07-06 · **Source:** `src/config/titanAssigneePolicy.js` · `src/utils/titanAssigneeResolver.js` · `src/utils/workJournalSession.js`
+
+---
+
+## Person-Centric Work Journal
+
+- Each user sees **only their own entries by default**
+- **Admin** (`isTitanAdminUser()`) may view all entries or filter by assignee
+- Manual entries + append-only auto workflow events
+
+## Default Assignee (All Registration Screens)
+
+- Assignee defaults to **current logged-in user** mapped to workers Master dropdown value
+- Resolver: `resolveDefaultAssigneeFromAuth()` in `titanAssigneeResolver.js`
+- User may change via combobox/select from `getActiveWorkers()`
+
+## Stored Fields
+
+All registration data and journal entries store:
+
+| Field | Purpose |
+|---|---|
+| `assignee` | Worker display name |
+| `assigneeUserId` | Auth session userId |
+| `workerCode` | Workers Master code |
+| `department` | Worker department |
+
+## Auto-Record Workflow Actions
+
+On successful register/ship/issue, append to work journal via `appendWorkJournalAutoEntry()`:
+
+| actionType | Screen |
+|---|---|
+| `inboundRegister` | 입고 |
+| `productionDailyRegister` | 생산일보 |
+| `inspectionRegister` | 검사 |
+| `certificateIssue` | 성적서 |
+| `outboundRegister` | 출고 |
+| `inventoryAdjust` | 재고 (if applicable) |
+| `qrRegister` | QR (future) |
+
+## Module Field Names
+
+See `ASSIGNEE_FIELD_BY_MODULE` in `titanAssigneePolicy.js`.
+
+## UI Freeze
+
+- **생산일보 UI Freeze** — assignee defaults + journal hooks only
+- **입고 Popup** — no structural layout change
+
+## Do Not
+
+- Remove legacy `buildAutoJournalEntries` without migration path
+- Hardcode assignee to `workers[0]`
+- Show all users' journals to non-admin users

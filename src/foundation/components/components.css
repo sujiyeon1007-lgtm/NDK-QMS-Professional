@@ -325,22 +325,26 @@ button.titan-status-chip {
   flex-shrink: 0;
 }
 
-.titan-kpi-card__icon--blue {
+.titan-kpi-card__icon--blue,
+.titan-kpi-card__icon--incoming {
   background: #eff6ff;
   color: var(--titan-primary);
 }
 
-.titan-kpi-card__icon--orange {
+.titan-kpi-card__icon--orange,
+.titan-kpi-card__icon--production {
   background: #fff7ed;
   color: #ea580c;
 }
 
-.titan-kpi-card__icon--green {
-  background: #ecfdf5;
-  color: #059669;
+.titan-kpi-card__icon--green,
+.titan-kpi-card__icon--inspection {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
-.titan-kpi-card__icon--purple {
+.titan-kpi-card__icon--purple,
+.titan-kpi-card__icon--certificate {
   background: #f5f3ff;
   color: #7c3aed;
 }
@@ -348,6 +352,16 @@ button.titan-status-chip {
 .titan-kpi-card__icon--amber {
   background: #fffbeb;
   color: #d97706;
+}
+
+.titan-kpi-card__icon--shipment {
+  background: #ccfbf1;
+  color: #0d9488;
+}
+
+.titan-kpi-card__icon--inventory {
+  background: #f8fafc;
+  color: #64748b;
 }
 
 .titan-kpi-card__count {
@@ -600,7 +614,11 @@ button.titan-status-chip {
   border-bottom: none;
 }
 
-.titan-table__body tr.titan-table__row:hover .titan-table__cell {
+.titan-table__body tr.titan-table__row--clickable {
+  cursor: pointer;
+}
+
+.titan-table__body tr.titan-table__row--clickable:hover .titan-table__cell {
   background: var(--titan-table-row-hover);
 }
 
@@ -617,10 +635,6 @@ button.titan-status-chip {
 .titan-table__body tr.titan-table__row--selected:hover .titan-table__cell,
 .titan-table__body tr.titan-table__row--active:hover .titan-table__cell {
   background: var(--titan-table-row-selected);
-}
-
-.titan-table__row--clickable {
-  cursor: pointer;
 }
 
 .titan-table__checkbox {
@@ -1797,6 +1811,17 @@ body.titan-modal-open {
   justify-content: center;
   padding: 0;
   overflow: hidden;
+  animation: titan-modal-overlay-in 180ms ease-out;
+}
+
+@keyframes titan-modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .titan-modal-overlay--workspace {
@@ -1813,6 +1838,19 @@ body.titan-modal-open {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: titan-modal-panel-in 180ms ease-out;
+}
+
+@keyframes titan-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .titan-modal--wide {
@@ -1824,6 +1862,55 @@ body.titan-modal-open {
   height: min(var(--titan-popup-height, 90vh), var(--titan-popup-max-height, 95vh));
   max-width: var(--titan-popup-max-width, 1800px);
   max-height: var(--titan-popup-max-height, 95vh);
+}
+
+/* Standard Detail Popup — 880×660 (입고 · 열처리 · 기준정보 등 통일) */
+.titan-modal--standard {
+  width: var(--titan-standard-popup-width, 880px);
+  min-width: var(--titan-standard-popup-width, 880px);
+  max-width: var(--titan-standard-popup-width, 880px);
+  height: var(--titan-standard-popup-height, 660px);
+  min-height: var(--titan-standard-popup-height, 660px);
+  max-height: var(--titan-standard-popup-height, 660px);
+}
+
+.titan-list-interaction-hint {
+  margin: 0 0 var(--titan-space-2, 8px);
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--titan-text-muted, #64748b);
+  word-break: keep-all;
+}
+
+.titan-modal--standard.titan-workspace-modal .titan-workspace-modal__main {
+  padding: 12px var(--titan-panel-padding, 16px);
+}
+
+.titan-modal--standard.titan-workspace-modal .titan-workspace-modal__table-inner {
+  min-width: 0;
+  overflow: auto;
+}
+
+/* 문서관리 Popup — 1120×720 (일반 상세 Popup 880×660 예외) */
+.titan-modal--document {
+  width: var(--titan-document-popup-width, 1120px);
+  min-width: var(--titan-document-popup-width, 1120px);
+  max-width: var(--titan-document-popup-width, 1120px);
+  height: var(--titan-document-popup-height, 720px);
+  min-height: var(--titan-document-popup-height, 720px);
+  max-height: var(--titan-document-popup-height, 720px);
+}
+
+.titan-modal--document.titan-workspace-modal .titan-workspace-modal__table {
+  overflow: hidden;
+}
+
+.titan-modal--document.titan-workspace-modal .titan-workspace-modal__table-inner {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .titan-workspace-modal {

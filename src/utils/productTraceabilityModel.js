@@ -4,7 +4,7 @@
 
 import { getQrTraceabilityEvents } from "./qrTraceabilitySession";
 import { getSessionProductionRecords, normalizeLotNo } from "./productionRecords";
-import { resolveHomeWorkflowCurrentPhase } from "./homeDashboardData";
+import { resolveRecordCurrentProcess } from "./workflowProcessStatus";
 import { getProductionProcessName } from "../config/productionProcessCodes";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { isIncomingRegistered } from "./productionRecords";
@@ -171,7 +171,7 @@ function buildProcessDurations(events) {
   return [
     {
       key: "production",
-      label: "생산",
+      label: "열처리",
       minutes: productionMinutes,
       durationLabel: formatTraceabilityDuration(productionMinutes),
     },
@@ -233,7 +233,7 @@ function buildTimelineSteps(events) {
     const endLabel = productionEnd ? formatTraceabilityDateTime(productionEnd.at).slice(11) : "—";
     steps.push({
       id: "production",
-      label: "생산",
+      label: "열처리",
       timeLabel: `${startLabel}~${endLabel}`,
       detail: pickEvent(events, "productionStart")?.worker
         ? `담당 ${productionStart.worker}`
@@ -288,7 +288,7 @@ export function buildProductTraceability(record) {
   }
 
   const events = mergeEvents(record);
-  const current = resolveHomeWorkflowCurrentPhase(record);
+  const current = resolveRecordCurrentProcess(record);
 
   return {
     managementId: record.id,

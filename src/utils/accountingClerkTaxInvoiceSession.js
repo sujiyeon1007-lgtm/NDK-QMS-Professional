@@ -50,9 +50,9 @@ function buildSeedFromStatements() {
 const FALLBACK_SEED = [
   {
     id: "TI-TS-20260629-001",
-    statementId: "TS-20260629-001",
+    statementId: "TS-DEMO-003",
     company: "서암기계공업",
-    managementId: "SE_20260703_0005",
+    managementId: "SE_20260703_0020",
     partName: "#2 PINION GEAR",
     partNo: "CWFYH11251",
     material: "SACM645",

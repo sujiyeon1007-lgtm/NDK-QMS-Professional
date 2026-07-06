@@ -1,18 +1,15 @@
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 입고관리 — [상세] [수정] [삭제]
- */
+/** 입고관리 — [수정] [삭제] (상세는 더블클릭) */
 export default function InboundRowActions({
-  onDetail,
   onEdit,
   onDelete,
   canEdit = true,
   canDelete = true,
 }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <SecondaryButton
         type="button"
         className="titan-btn--table-action"

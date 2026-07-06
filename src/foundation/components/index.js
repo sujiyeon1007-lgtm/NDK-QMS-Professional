@@ -34,9 +34,20 @@ export { default as TitanListWorkspace } from "./TitanListWorkspace";
 export { default as TitanListWorkspaceEmpty } from "./TitanListWorkspaceEmpty";
 export { default as TitanMasterDetailShell } from "./TitanMasterDetailShell";
 export { default as TitanDetailPopup } from "./TitanDetailPopup";
+export { default as TitanStandardDetailPopup } from "./detailPopup/TitanStandardDetailPopup";
+export {
+  StandardDetailBasicInfoPanel,
+  StandardDetailProcessHistoryPanel,
+  StandardDetailQrWorkHistoryPanel,
+  StandardDetailCoLotProductsPanel,
+  StandardDetailAttachmentsPanel,
+  StandardDetailMemoPanel,
+} from "./detailPopup/StandardDetailPopupPanels";
+export { renderStandardDetailPopupTabContent } from "./detailPopup/renderStandardDetailPopupContent";
 export { default as TitanScreenDetailPopup } from "./TitanScreenDetailPopup";
 export { default as TitanStandardProductAdvancedSearch } from "./TitanStandardProductAdvancedSearch";
 export { default as TitanTableRowActions } from "./TitanTableRowActions";
+export { default as TitanListInteractionHint } from "./TitanListInteractionHint";
 export { default as TitanManagementRowSummary } from "./TitanManagementRowSummary";
 export { default as TitanProductRowSummary } from "./TitanProductRowSummary";
 export { TitanRowSummary, TitanRowSummaryCard } from "./TitanRowSummary";

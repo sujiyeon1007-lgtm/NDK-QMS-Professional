@@ -1,122 +1,130 @@
 /**
- * Project TITAN V1.3 FINAL — Detail Popup (Dialog) Layout Policy
- * supersedes Row Summary Cards · HOME UI Freeze 예외
+ * Project TITAN — Detail Popup Layout Policy (UI Freeze)
  *
- * @see .cursor/rules/project-titan-master-detail-v1.3.mdc
+ * Standard popup: TitanStandardDetailPopup (880×660, 6 tabs)
+ * Legacy popup: TitanDetailPopup (documents · QR · masterData 등)
+ *
+ * @see src/foundation/components/detailPopup/TitanStandardDetailPopup.jsx
  * @see src/config/masterDetailLayoutPolicy.js
  */
 
+import {
+  TITAN_STANDARD_DETAIL_POPUP_TABS,
+  pickStandardDetailPopupTabs,
+} from "../foundation/components/detailPopup/standardDetailPopupTabs";
+
 export const DETAIL_POPUP_LAYOUT_POLICY = {
-  version: "V1.3-detail-popup",
-  homeException: true,
+  version: "standard-detail-popup-v1.4",
+  homeException: false,
   leftWidgetAllowed: false,
   collapsePanelAllowed: false,
   rowSummaryAllowed: false,
-  structure: ["검색", "리스트(Table)", "작업 컬럼 [상세] + page actions", "[상세] → Modal/Dialog Tabs"],
+  structure: ["검색", "안내문(TitanListInteractionHint)", "리스트(Table)", "작업 컬럼(업무 버튼만)", "더블클릭 → Standard Detail Popup"],
   dialog: {
-    widthPercent: "80%",
-    heightPercent: "85%",
-    maxWidth: "xl",
+    widthPx: 880,
+    heightPx: 660,
     footerActions: ["닫기"],
+    animation: "fade-scale-180ms",
   },
+  documentDialog: {
+    widthPx: 1120,
+    heightPx: 720,
+  },
+  sizeExceptions: ["documents", "environmentWizard", "login"],
+  listHintMessage: "💡 리스트를 더블클릭하면 상세정보를 확인할 수 있습니다.",
   rowInteraction: {
     singleClick: "select",
     doubleClick: "detailPopup",
     editVia: "rowActionButton",
     registerVia: "toolbarOrRowAction",
+    workJournalDoubleClick: "editModal",
   },
 };
 
 /** @deprecated use DETAIL_POPUP_LAYOUT_POLICY */
 export const ROW_SUMMARY_LAYOUT_POLICY = DETAIL_POPUP_LAYOUT_POLICY;
 
-/** V1.3 공통 Detail Popup 탭 (제품 관리 화면) */
-export const V13_COMMON_DETAIL_POPUP_TABS = [
-  { id: "basicInfo", label: "기본정보" },
-  { id: "workInfo", label: "작업정보" },
-  { id: "qrHistory", label: "QR 작업이력" },
-  { id: "timeline", label: "공정 Timeline" },
-  { id: "attachments", label: "첨부파일" },
-  { id: "remarks", label: "비고" },
+/** @deprecated use TITAN_STANDARD_DETAIL_POPUP_TABS */
+export const V13_COMMON_DETAIL_POPUP_TABS = TITAN_STANDARD_DETAIL_POPUP_TABS;
+
+/** 표준 Detail Popup 적용 화면 (문서관리 제외) */
+export const STANDARD_DETAIL_POPUP_SCREENS = [
+  "inbound",
+  "outbound",
+  "dailyProductionReport",
+  "inspection",
+  "inspectionLog",
+  "certificate",
+  "inventory",
+];
+
+/** Legacy TitanDetailPopup 유지 화면 (문서관리 · QR · 기준정보) */
+export const LEGACY_DETAIL_POPUP_SCREENS = [
+  "documents",
+  "qr",
+  "qrInout",
+  "qrEquipment",
+  "masterData",
 ];
 
 /** Screen keys → popup title + tab definitions */
 export const DETAIL_POPUP_SCREENS = {
   inbound: {
     title: "입고관리 상세정보",
-    tabs: V13_COMMON_DETAIL_POPUP_TABS,
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   dailyProductionReport: {
-    title: "생산관리 상세정보",
-    tabs: [
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(0, 2),
-      { id: "chargeList", label: "장입리스트" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(2),
-    ],
+    title: "열처리관리 상세정보",
+    useStandardPopup: true,
+    tabs: pickStandardDetailPopupTabs([
+      "basicInfo",
+      "processHistory",
+      "qrHistory",
+      "coLot",
+      "attachments",
+      "memo",
+    ]),
   },
   inspection: {
     title: "검사관리 상세정보",
-    tabs: [
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(0, 2),
-      { id: "inspectionInfo", label: "검사정보" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(2, 4),
-      { id: "inspectionTimeline", label: "검사 Timeline" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
-    ],
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   inspectionLog: {
     title: "검사일지 상세정보",
-    tabs: [
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(0, 2),
-      { id: "inspectionInfo", label: "검사정보" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(2, 4),
-      { id: "inspectionTimeline", label: "검사 Timeline" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
-    ],
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   certificate: {
     title: "성적서관리 상세정보",
-    tabs: [
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(0, 2),
-      { id: "inspectionResult", label: "검사결과" },
-      { id: "certificatePdf", label: "성적서 PDF" },
-      { id: "revision", label: "Revision" },
-      { id: "issueHistory", label: "발행이력" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
-    ],
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   outbound: {
     title: "출고관리 상세정보",
-    tabs: [
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(0, 2),
-      { id: "outboundInfo", label: "출고정보" },
-      { id: "statement", label: "거래명세서" },
-      { id: "outboundHistory", label: "출고이력" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(2, 4),
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
-    ],
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   documents: {
     title: "문서관리 상세정보",
+    useStandardPopup: false,
     tabs: [
       { id: "basicInfo", label: "기본정보" },
       { id: "documentHistory", label: "문서이력" },
       { id: "revision", label: "Revision" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
+      { id: "attachments", label: "첨부파일" },
+      { id: "memo", label: "메모" },
     ],
   },
   inventory: {
     title: "재고관리 상세정보",
-    tabs: [
-      { id: "basicInfo", label: "기본정보" },
-      { id: "inventoryInfo", label: "재고정보" },
-      { id: "inOutHistory", label: "입출고이력" },
-      { id: "lotHistory", label: "LOT이력" },
-      ...V13_COMMON_DETAIL_POPUP_TABS.slice(4),
-    ],
+    useStandardPopup: true,
+    tabs: TITAN_STANDARD_DETAIL_POPUP_TABS,
   },
   qr: {
     title: "QR관리 상세정보",
+    useStandardPopup: false,
     tabs: [
       { id: "qrInfo", label: "QR정보" },
       { id: "qrPreview", label: "QR 미리보기" },
@@ -124,6 +132,7 @@ export const DETAIL_POPUP_SCREENS = {
   },
   qrInout: {
     title: "입출고 QR 상세정보",
+    useStandardPopup: false,
     tabs: [
       { id: "qrInfo", label: "QR정보" },
       { id: "qrPreview", label: "QR 미리보기" },
@@ -131,6 +140,7 @@ export const DETAIL_POPUP_SCREENS = {
   },
   qrEquipment: {
     title: "설비 QR 상세정보",
+    useStandardPopup: false,
     tabs: [
       { id: "equipmentQrInfo", label: "QR정보" },
       { id: "equipmentQrPreview", label: "QR 미리보기" },
@@ -138,25 +148,17 @@ export const DETAIL_POPUP_SCREENS = {
   },
   masterData: {
     title: "기준정보 상세조회",
+    useStandardPopup: false,
     tabs: [{ id: "detail", label: "상세정보" }],
   },
 };
 
-export const DETAIL_POPUP_MIGRATED_SCREENS = [
-  "inbound",
-  "outbound",
-  "dailyProductionReport",
-  "inspection",
-  "inspectionLog",
-  "certificate",
-  "documents",
-  "inventory",
-  "qr",
-  "qrInout",
-  "qrEquipment",
-  "masterData",
-];
+export const DETAIL_POPUP_MIGRATED_SCREENS = Object.keys(DETAIL_POPUP_SCREENS);
 
 export function getDetailPopupConfig(screenKey) {
   return DETAIL_POPUP_SCREENS[screenKey] ?? null;
+}
+
+export function usesStandardDetailPopup(screenKey) {
+  return Boolean(getDetailPopupConfig(screenKey)?.useStandardPopup);
 }

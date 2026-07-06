@@ -1,20 +1,21 @@
 import { useCallback, useMemo, useState } from "react";
-import { Package, Boxes, ArrowDownToLine, ArrowUpFromLine, Printer } from "lucide-react";
+import { Package, Boxes, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Printer } from "lucide-react";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
+import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import { SecondaryButton } from "../../foundation/components/Button";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
-import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import InventoryListPrint from "../../components/print/InventoryListPrint";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
-import { INVENTORY_PRINT, INVENTORY_VIEW_MODES } from "../../config/inventoryManagementPolicy";
+import { INVENTORY_PRINT, INVENTORY_VIEW_MODES, INVENTORY_KPI_CONFIG } from "../../config/inventoryManagementPolicy";
 import { getMasterDataByCategory } from "../../utils/masterData";
+import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import {
   buildInventoryRowsByViewMode,
   createEmptyInventoryStatusSearch,
@@ -30,8 +31,8 @@ import {
 import InventoryRowActions from "./InventoryRowActions";
 import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { getProcessChipVariant } from "../../config/productionProcessCodes";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
@@ -62,12 +63,71 @@ export default function InventoryStatusPage() {
     [viewMode, sessionRecords]
   );
 
-  const summary = useMemo(() => summarizeInventoryStatus(allRows), [allRows]);
-
-  const rows = useMemo(
+  const filteredRows = useMemo(
     () => allRows.filter((row) => matchesInventoryStatusSearch(row, search)),
     [allRows, search]
   );
+
+  const summary = useMemo(() => summarizeInventoryStatus(filteredRows), [filteredRows]);
+
+  const itemLevelSummary = useMemo(
+    () =>
+      summarizeInventoryStatus(
+        buildInventoryRowsByViewMode("byItem", sessionRecords).filter((row) =>
+          matchesInventoryStatusSearch(row, search)
+        )
+      ),
+    [sessionRecords, search]
+  );
+
+  const inventoryKpiItems = useMemo(() => {
+    const skuLabel = viewMode === "byCompany" ? "거래처" : "품목(SKU)";
+    const cards = [
+      {
+        id: "skuCount",
+        label: skuLabel,
+        value: summary.skuCount,
+        unit: "건",
+        tone: "incoming",
+        icon: Package,
+      },
+      {
+        id: "inStockSkuCount",
+        label: "재고 보유 품목",
+        value: summary.inStockSkuCount,
+        unit: "건",
+        tone: "complete",
+        icon: Boxes,
+      },
+      {
+        id: "totalInboundQty",
+        label: "총 입고 수량",
+        value: summary.totalInboundQty,
+        unit: "",
+        tone: "production",
+        icon: ArrowDownToLine,
+      },
+      {
+        id: "totalCurrentStock",
+        label: "현재 재고",
+        value: summary.totalCurrentStock,
+        unit: "",
+        tone: "certificate",
+        icon: ArrowUpFromLine,
+      },
+      {
+        id: "shortageSkuCount",
+        label: "재고 부족",
+        value: itemLevelSummary.shortageSkuCount,
+        unit: "건",
+        tone: itemLevelSummary.shortageSkuCount > 0 ? "rework" : "hold",
+        icon: AlertTriangle,
+      },
+    ];
+    return buildMetricChipItems(cards);
+  }, [summary, itemLevelSummary, viewMode]);
+
+  const rows = filteredRows;
 
   const viewLabel = INVENTORY_VIEW_MODES.find((mode) => mode.id === viewMode)?.label ?? "품목별";
 
@@ -119,15 +179,7 @@ export default function InventoryStatusPage() {
     process: processCodes.map((item) => item.name),
   });
 
-  const renderProcessChip = useCallback(
-    (row) =>
-      row.currentProcess && row.currentProcess !== "—" ? (
-        <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
-      ) : (
-        "—"
-      ),
-    []
-  );
+  const renderProcessChip = useCallback((row) => renderWorkflowProcessChip(row), []);
 
   const columns = useMemo(() => {
     if (viewMode === "byLot") {
@@ -135,10 +187,6 @@ export default function InventoryStatusPage() {
         renderProcess: renderProcessChip,
         renderActions: (row) => (
           <InventoryRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onEdit={() => {
               setActiveId(row.id);
               setDetailPopupRow(row);
@@ -151,22 +199,7 @@ export default function InventoryStatusPage() {
       viewMode === "byCompany"
         ? buildInventoryByCompanyListColumns({ renderStatus })
         : buildInventoryStatusListColumns({ renderStatus });
-    return [
-      ...base,
-      {
-        key: "actions",
-        label: "작업",
-        widthHint: "medium",
-        render: (row) => (
-          <TitanTableRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
-          />
-        ),
-      },
-    ];
+    return base;
   }, [viewMode, renderStatus, renderProcessChip]);
 
   const printProps = useMemo(
@@ -210,30 +243,12 @@ export default function InventoryStatusPage() {
   };
 
   return (
-    <div className="inventory-status-page">
-      <TitanKpiBarSlot ariaLabel="재고관리 KPI" className="inventory-status-page__kpi">
-        <div className="inventory-status-page__kpi-grid">
-          <div className="inventory-status-page__kpi-card">
-            <Package size={22} aria-hidden="true" />
-            <span>{viewMode === "byCompany" ? "거래처" : "품목(SKU)"}</span>
-            <strong>{summary.skuCount.toLocaleString("ko-KR")}</strong>
-          </div>
-          <div className="inventory-status-page__kpi-card">
-            <Boxes size={22} aria-hidden="true" />
-            <span>재고 보유 품목</span>
-            <strong>{summary.inStockSkuCount.toLocaleString("ko-KR")}</strong>
-          </div>
-          <div className="inventory-status-page__kpi-card">
-            <ArrowDownToLine size={22} aria-hidden="true" />
-            <span>총 입고 수량</span>
-            <strong>{summary.totalInboundQty.toLocaleString("ko-KR")}</strong>
-          </div>
-          <div className="inventory-status-page__kpi-card">
-            <ArrowUpFromLine size={22} aria-hidden="true" />
-            <span>현재 재고</span>
-            <strong>{summary.totalCurrentStock.toLocaleString("ko-KR")}</strong>
-          </div>
-        </div>
+    <div className="inventory-status-page inbound-page">
+      <TitanKpiBarSlot ariaLabel={INVENTORY_KPI_CONFIG.ariaLabel} className="inbound-page__kpi">
+        <TitanWorkflowStatusChipBar
+          items={inventoryKpiItems}
+          ariaLabel={INVENTORY_KPI_CONFIG.ariaLabel}
+        />
       </TitanKpiBarSlot>
 
       <p className="inventory-status-page__notice">
@@ -326,47 +341,6 @@ export default function InventoryStatusPage() {
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
-        context={{
-          detailContent: detailPopupRow ? (
-            <dl className="titan-row-summary__meta inbound-detail">
-              <div>
-                <dt>조회 기준</dt>
-                <dd>{viewLabel}</dd>
-              </div>
-              <div>
-                <dt>{skuLabel}</dt>
-                <dd>{detailPopupRow.company ?? detailPopupRow.partName ?? "—"}</dd>
-              </div>
-              {detailPopupRow.partNo ? (
-                <div>
-                  <dt>품번</dt>
-                  <dd>{detailPopupRow.partNo}</dd>
-                </div>
-              ) : null}
-              {detailPopupRow.currentStock != null ? (
-                <div>
-                  <dt>선택 재고</dt>
-                  <dd>{detailPopupRow.currentStock}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>현재상태</dt>
-                <dd>
-                  <StatusChip variant={detailPopupRow.statusVariant}>{detailPopupRow.statusLabel}</StatusChip>
-                </dd>
-              </div>
-            </dl>
-          ) : null,
-          traceRecord: detailPopupRow
-            ? sessionRecords.find(
-                (record) =>
-                  record.id === detailPopupRow.managementId ||
-                  (detailPopupRow.partNo &&
-                    record.partNo === detailPopupRow.partNo &&
-                    String(record.company ?? "").trim() === String(detailPopupRow.company ?? "").trim())
-              ) ?? null
-            : null,
-        }}
       />
     </div>
   );

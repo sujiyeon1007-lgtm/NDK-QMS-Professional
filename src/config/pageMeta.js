@@ -14,8 +14,8 @@ PAGE_META.settings = TITAN_MENU_CATALOG.masterData.pageMeta;
 
 /** @deprecated Presentation 이전 화면 — 라우트 리다이렉트 유지 */
 PAGE_META.productionPlan = {
-  kicker: "생산관리",
-  title: "생산작업계획",
+  kicker: "열처리관리",
+  title: "열처리작업계획",
   description: "입고 제품을 선택하여 작업 리스트·LOT를 생성하고 출력합니다.",
 };
 PAGE_META.certificate = {
@@ -25,8 +25,8 @@ PAGE_META.certificate = {
 };
 PAGE_META.productionResults = {
   kicker: "경영분석",
-  title: "생산실적관리",
-  description: "생산일보 등록 데이터 기준 실적을 조회합니다.",
+  title: "열처리실적관리",
+  description: "열처리일보 등록 데이터 기준 실적을 조회합니다.",
 };
 PAGE_META.statistics = {
   kicker: "경영분석",

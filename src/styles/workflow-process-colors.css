@@ -28,30 +28,39 @@
 
 .titan-process--inspection,
 .titan-process--inspect {
-  --titan-process-dot: #d97706;
-  --titan-process-icon: #d97706;
-  --titan-process-text: #b45309;
-  --titan-process-bar: #fcd34d;
-  --titan-process-bar-active: #d97706;
-  --titan-process-chip-hover: #fffbeb;
-}
-
-.titan-process--certificate {
-  --titan-process-dot: #9333ea;
-  --titan-process-icon: #9333ea;
-  --titan-process-text: #7e22ce;
-  --titan-process-bar: #d8b4fe;
-  --titan-process-bar-active: #9333ea;
-  --titan-process-chip-hover: #faf5ff;
-}
-
-.titan-process--shipment {
   --titan-process-dot: #16a34a;
   --titan-process-icon: #16a34a;
   --titan-process-text: #15803d;
   --titan-process-bar: #86efac;
   --titan-process-bar-active: #16a34a;
-  --titan-process-chip-hover: #ecfdf5;
+  --titan-process-chip-hover: #dcfce7;
+}
+
+.titan-process--certificate {
+  --titan-process-dot: #a855f7;
+  --titan-process-icon: #a855f7;
+  --titan-process-text: #7e22ce;
+  --titan-process-bar: #e9d5ff;
+  --titan-process-bar-active: #a855f7;
+  --titan-process-chip-hover: #faf5ff;
+}
+
+.titan-process--shipment {
+  --titan-process-dot: #0d9488;
+  --titan-process-icon: #0d9488;
+  --titan-process-text: #0f766e;
+  --titan-process-bar: #99f6e4;
+  --titan-process-bar-active: #0d9488;
+  --titan-process-chip-hover: #ccfbf1;
+}
+
+.titan-process--inventory {
+  --titan-process-dot: #64748b;
+  --titan-process-icon: #64748b;
+  --titan-process-text: #475569;
+  --titan-process-bar: #cbd5e1;
+  --titan-process-bar-active: #64748b;
+  --titan-process-chip-hover: #f8fafc;
 }
 
 .titan-process--rework {

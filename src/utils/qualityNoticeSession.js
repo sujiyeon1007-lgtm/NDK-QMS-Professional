@@ -77,6 +77,7 @@ function getSeedQualityNotices() {
       author: "품질관리부",
       createdDate: "2026-06-30",
       effectiveDate: "2026-06-30",
+      relatedPartNo: "H2E19655",
       status: "active",
     },
     {
@@ -86,6 +87,7 @@ function getSeedQualityNotices() {
       author: "품질관리부",
       createdDate: "2026-06-28",
       effectiveDate: "2026-07-01",
+      relatedPartNo: "CQ91BUL504",
       status: "active",
     },
     {
@@ -95,6 +97,7 @@ function getSeedQualityNotices() {
       author: "품질관리부",
       createdDate: "2026-06-30",
       effectiveDate: "2026-06-30",
+      relatedPartNo: "CV105510",
       status: "closed",
     },
   ].map(normalizeQualityNotice);

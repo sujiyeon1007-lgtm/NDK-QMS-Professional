@@ -3,7 +3,7 @@
  */
 
 import { getProductionProcessName } from "../config/productionProcessCodes";
-import { getProductionDailyReportStatus } from "./productionDailyReportStatus";
+import { HT_TERM } from "../config/titanHeatTreatmentTerminology";
 import { isIncomingRegistered } from "./productionRecords";
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import {
@@ -12,6 +12,7 @@ import {
 } from "./ndkWorkflow";
 import { getStockQty } from "./inventory";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
+import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 const REFERENCE_DATE = new Date("2026-06-30T12:00:00");
 
@@ -99,11 +100,11 @@ export function getRecordWorker(record) {
   return record.registrar ?? record.worker ?? "관리자";
 }
 
-/** 생산실적관리 — 현재상태 검색 옵션 (생산 ~ 출고완료) */
+/** 열처리실적관리 — 현재상태 검색 옵션 (열처리 ~ 출고완료) */
 export const PRODUCTION_RESULTS_STATUS_OPTIONS = [
-  "생산대기",
-  "생산진행",
-  "생산완료",
+  "열처리대기",
+  "열처리진행",
+  "열처리완료",
   "검사진행",
   "성적서대기",
   "출고대기",
@@ -142,15 +143,15 @@ export function getProductionResultsDisplayStatus(record) {
       return { label: "성적서대기", variant: "certificate" };
     }
     if (record.workDate || record.completionStatus === "생산완료") {
-      return { label: "생산완료", variant: "complete" };
+      return { label: HT_TERM.DONE, variant: "complete" };
     }
   }
 
   if (record.htlNo || record.workSheetGenerated || record.lotNo?.trim()) {
-    return { label: "생산진행", variant: "production" };
+    return { label: "열처리진행", variant: "production" };
   }
 
-  return { label: "생산대기", variant: "prod-wait" };
+  return { label: HT_TERM.WAIT, variant: "prod-wait" };
 }
 
 export function getProductionResultsRecords(records = []) {
@@ -414,16 +415,23 @@ export function narrowRecordsForSelectedRow(records, selectedRow) {
 }
 
 export function buildProductionDailyStatusCounts(records = []) {
-  const waiting = records.filter(
-    (record) => isIncomingRegistered(record) && !record.registered && !record.lotNo?.trim()
-  ).length;
-  const progress = records.filter(
+  const progress = records.filter((record) => {
+    if (!isIncomingRegistered(record)) return false;
+    const hasEntry =
+      record.htlNo?.trim() ||
+      record.workSheetGenerated ||
+      (record.registered && record.lotNo?.trim());
+    if (!hasEntry) return false;
+    return !(
+      record.completionStatus === "생산완료" ||
+      record.completionStatus === WORKFLOW_STATUS.PROD_DONE
+    );
+  }).length;
+  const done = records.filter(
     (record) =>
-      isIncomingRegistered(record) &&
-      (record.htlNo || record.workSheetGenerated || record.lotNo?.trim()) &&
-      !(record.registered && record.lotNo?.trim() && record.workDate)
+      record.completionStatus === "생산완료" ||
+      record.completionStatus === WORKFLOW_STATUS.PROD_DONE
   ).length;
-  const done = records.filter((record) => record.registered && record.lotNo?.trim()).length;
 
-  return { prodWaiting: waiting, prodProgress: progress, prodDone: done };
+  return { prodProgress: progress, prodDone: done };
 }

@@ -2,15 +2,18 @@
  * Project TITAN — 검사일지 세션 (SessionStorage)
  */
 
-import { getCurrentTitanUser } from "./titanHistorySession";
+import { resolveDefaultAssigneeFromAuth, normalizeAssigneeValue } from "./titanAssigneeResolver";
+import { appendWorkJournalAutoEntry } from "./workJournalAutoRecord";
+import { WORK_JOURNAL_ACTION_TYPES } from "../config/titanAssigneePolicy";
 import { getJournalReferenceDate } from "./workJournalData";
 import { onInspectionCancelled, onInspectionComplete } from "./titanWorkflowStatus";
 import { applyProductDefaultsToForm, getProductByPartNo } from "./productRegistrationSession";
 import { cloneSpecification } from "./productSpecificationModel";
 import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
 import { migrateHardeningDepthRows, normalizeHardeningDepthRows } from "./hardeningDepthModel";
+import { getTitanDemoInspectionLogSeeds } from "../data/titanDemoSampleData";
 
-const STORAGE_KEY = "project-titan-inspection-log-v2";
+const STORAGE_KEY = "project-titan-inspection-log-v3";
 
 export const INSPECTION_CATEGORIES = [
   { value: "개발", label: "개발" },
@@ -35,41 +38,7 @@ function safeRead() {
 }
 
 function getSeedInspectionLogs() {
-  return [
-    normalizeLog({
-      id: "INS-SEED-001",
-      inspectionDate: "2026-07-01",
-      category: "양산",
-      managementId: "SE_20260703_0002",
-      company: "서암기계공업",
-      partName: "BULL GEAR",
-      partNo: "CQ91BUL504",
-      drawingNo: "",
-      material: "SNCM439",
-      lotNo: "LOT260701-01",
-      qty: 24,
-      unit: "EA",
-      assignee: "품질관리부 / 정반이 사원",
-      inspectionItem: "표면경도",
-      inspectionStandard: "550~700 HV",
-      measuredValue: "HV 612",
-      judgment: "합격",
-      inspectionEquipment: "경도시험기",
-      inspectionLocation: "품질검사실",
-      note: "",
-      process: "이온질화",
-      appliedSpecification: null,
-      hardnessMeasurements: [],
-      dimensionMeasurements: [],
-      appearanceMeasurements: [],
-      hasMicrostructurePhoto: false,
-      microstructureJudgment: "이상없음",
-      hardeningDepthHv: [...DEFAULT_HARDENING_HV],
-      deleted: false,
-      createdAt: "2026-07-01T09:00:00.000Z",
-      updatedAt: "2026-07-01T09:00:00.000Z",
-    }),
-  ];
+  return getTitanDemoInspectionLogSeeds().map((log) => normalizeLog(log));
 }
 
 function safeWrite(logs) {
@@ -100,7 +69,7 @@ function normalizeLog(log) {
     customerLotNo: log.customerLotNo?.trim() || "",
     qty: Number.isFinite(Number(log.qty)) ? Number(log.qty) : 0,
     unit: log.unit?.trim() || "EA",
-    assignee: log.assignee?.trim() || getCurrentTitanUser(),
+    assignee: normalizeAssigneeValue(log.assignee),
     inspectionItem: log.inspectionItem?.trim() || "",
     inspectionStandard: log.inspectionStandard?.trim() || "",
     measuredValue: log.measuredValue?.trim() || "",
@@ -175,6 +144,16 @@ export function addInspectionLog(payload) {
   if (log.managementId) {
     onInspectionComplete(log.managementId);
   }
+  appendWorkJournalAutoEntry({
+    actionType: WORK_JOURNAL_ACTION_TYPES.INSPECTION_REGISTER,
+    assignee: log.assignee,
+    managementId: log.managementId,
+    company: log.company,
+    lotNo: log.lotNo,
+    date: log.inspectionDate,
+    title: `검사 등록 — ${log.company} ${log.lotNo || log.managementId}`,
+    note: log.inspectionItem,
+  });
   return log;
 }
 

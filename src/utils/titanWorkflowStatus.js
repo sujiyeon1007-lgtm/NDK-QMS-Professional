@@ -137,8 +137,15 @@ export function inferWorkflowStatus(record) {
     return WORKFLOW_STATUS.PROD_PROGRESS;
   }
 
-  if (record.workflowStatus === WORKFLOW_STATUS.WORK_WAIT || record.htlNo || record.workSheetGenerated) {
+  if (record.workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
+    if (record.htlNo?.trim() || record.workSheetGenerated) {
+      return WORKFLOW_STATUS.PROD_PROGRESS;
+    }
     return WORKFLOW_STATUS.WORK_WAIT;
+  }
+
+  if (record.htlNo || record.workSheetGenerated) {
+    return WORKFLOW_STATUS.PROD_PROGRESS;
   }
 
   return null;
@@ -154,6 +161,22 @@ export function getWorkflowStatus(record) {
     return stored;
   }
   return inferWorkflowStatus(record);
+}
+
+/** @param {WorkflowStatusLabel | null | undefined} status */
+export function getWorkflowStatusRankValue(status) {
+  if (!status) return 0;
+  return STATUS_RANK[status] ?? 0;
+}
+
+/**
+ * @param {object | null | undefined} record
+ * @param {WorkflowStatusLabel} targetStatus
+ */
+export function hasReachedWorkflowStatus(record, targetStatus) {
+  const current = getWorkflowStatusRankValue(getWorkflowStatus(record));
+  const target = getWorkflowStatusRankValue(targetStatus);
+  return current >= target && target > 0;
 }
 
 function canAdvance(fromStatus, toStatus) {
@@ -210,7 +233,7 @@ export function applyHtlWorkListPrinted(managementIds = [], htlNo = "", options 
     history.push(historyEntry);
 
     updateSessionProductionRecord(id, {
-      ...patchWorkflowStatus(record, WORKFLOW_STATUS.WORK_WAIT, {
+      ...patchWorkflowStatus(record, WORKFLOW_STATUS.PROD_PROGRESS, {
         htlNo: trimmedHtl,
         workSheetGenerated: true,
         htlPrintedAt: now,

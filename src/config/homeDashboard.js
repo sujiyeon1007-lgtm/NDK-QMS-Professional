@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Factory,
   ShieldCheck,
-  Clock3,
   CircleCheck,
   ClipboardCheck,
 } from "lucide-react";
@@ -55,22 +54,14 @@ export const HOME_STATUS_GROUPS = [
   },
   {
     id: "production",
-    title: "생산 현황",
+    title: "열처리 현황",
     titleIcon: Factory,
-    footerLabel: "작업일보 바로가기",
+    footerLabel: "열처리일보 바로가기",
     footerTo: "/production/daily-report",
     cards: [
       {
-        id: "prodWaiting",
-        label: "생산 대기",
-        subLabel: "생산 예정 건",
-        icon: Clock3,
-        to: "/production/daily-report",
-        tone: "blue",
-      },
-      {
         id: "prodProgress",
-        label: "생산 진행",
+        label: "열처리 진행",
         subLabel: "작업 진행 중",
         icon: Cog,
         to: "/production/daily-report",
@@ -78,8 +69,8 @@ export const HOME_STATUS_GROUPS = [
       },
       {
         id: "prodDone",
-        label: "생산 완료",
-        subLabel: "생산 완료 건",
+        label: "열처리 완료",
+        subLabel: "열처리 완료 건",
         icon: CircleCheck,
         to: "/production/daily-report",
         tone: "purple",
@@ -127,47 +118,55 @@ export const HOME_PAGE_META = {
   description: "KPI · 진행현황 · 금일 업무 · 통합 검색을 한 화면에서 확인합니다.",
 };
 
-/** HOME 금일 업무현황 — 5종 KPI 카드 (승인 Mockup) */
+/** HOME 금일 업무현황 — V1.4 Workflow KPI (6 waiting stages) */
 export const HOME_TODAY_WORK_CARDS = [
   {
-    summaryId: "incoming",
-    label: "입고완료",
-    subLabel: "입고 완료",
+    summaryId: "RECEIVED",
+    label: "입고등록",
+    subLabel: "입고 등록",
     icon: Package,
     to: "/inout/incoming",
-    tone: "blue",
+    tone: "incoming",
   },
   {
-    summaryId: "production",
-    label: "생산중",
-    subLabel: "작업 진행",
+    summaryId: "HT_WAIT",
+    label: "열처리 대기",
+    subLabel: "열처리 대기",
     icon: Cog,
     to: "/production/daily-report",
-    tone: "orange",
+    tone: "production",
   },
   {
-    summaryId: "inspect",
-    label: "검사대기",
+    summaryId: "HT_RUNNING",
+    label: "열처리 중",
+    subLabel: "열처리 진행",
+    icon: Cog,
+    to: "/production/daily-report",
+    tone: "production",
+  },
+  {
+    summaryId: "INSPECTION_WAIT",
+    label: "검사 대기",
     subLabel: "검사 대기",
     icon: Search,
     to: "/quality/inspection",
-    tone: "amber",
+    tone: "inspection",
   },
   {
-    summaryId: "cert",
-    label: "성적서대기",
+    summaryId: "CERT_WAIT",
+    label: "성적서 대기",
     subLabel: "성적서 대기",
     icon: ClipboardCheck,
     to: "/quality/certificate",
-    tone: "purple",
+    tone: "certificate",
   },
   {
-    summaryId: "ship",
-    label: "출고예정",
-    subLabel: "출고 예정",
+    summaryId: "SHIP_WAIT",
+    label: "출고 대기",
+    subLabel: "출고 대기",
     icon: Truck,
     to: "/inout/shipment",
-    tone: "green",
+    tone: "shipment",
   },
 ];
 
@@ -220,13 +219,17 @@ export const HOME_TOP_KPI_CARDS = [
   },
 ];
 
-/** HOME 제품 진행 Workflow 단계 (입고 → 출고완료) */
+/** HOME 제품 진행 Workflow 단계 (V1.4 · 9-stage · 영문 Key) */
 export const HOME_WORKFLOW_PHASES = [
-  { key: "incoming", label: "입고" },
-  { key: "production", label: "작업중" },
-  { key: "inspection", label: "검사" },
-  { key: "certificate", label: "성적서" },
-  { key: "shipment", label: "출고" },
+  { key: "RECEIVED", label: "입고등록" },
+  { key: "HT_WAIT", label: "열처리 대기" },
+  { key: "HT_RUNNING", label: "열처리 중" },
+  { key: "INSPECTION_WAIT", label: "검사 대기" },
+  { key: "INSPECTION_DONE", label: "검사 완료" },
+  { key: "CERT_WAIT", label: "성적서 대기" },
+  { key: "CERT_DONE", label: "성적서 발행 완료" },
+  { key: "SHIP_WAIT", label: "출고 대기" },
+  { key: "SHIPPED", label: "출고 완료" },
 ];
 
 export const HOME_WORKFLOW_PREVIEW_LIMIT = 12;
@@ -249,7 +252,7 @@ export const HOME_TODO_PREVIEW_LIMIT = HOME_WORK_SCHEDULE_PREVIEW_LIMIT;
 
 /** HOME 좌측 현황 요약 Tab — 2×2 그리드 순서 (1행: 생산·입출고 / 2행: 검사·성적서) */
 export const HOME_STATUS_SUMMARY_TABS = [
-  { id: "production", label: "생산현황" },
+  { id: "production", label: "열처리현황" },
   { id: "inout", label: "입출고현황" },
   { id: "inspection", label: "검사현황" },
   { id: "certificate", label: "성적서현황" },
@@ -258,8 +261,8 @@ export const HOME_STATUS_SUMMARY_TABS = [
 export const HOME_WORKFLOW_STATUS_OPTIONS = [
   "입고대기",
   "입고완료",
-  "생산중",
-  "생산완료",
+  "열처리중",
+  "열처리완료",
   "검사대기",
   "검사완료",
   "성적서 대기",
@@ -283,7 +286,7 @@ export const HOME_PRODUCTION_PERIODS = [
 
 export const HOME_QUICK_MENUS = [
   { id: "incoming", label: "입고등록", to: "/inout/incoming" },
-  { id: "daily", label: "작업일보", to: "/production/daily-report" },
+  { id: "daily", label: "열처리일보", to: "/production/daily-report" },
   { id: "inspection", label: "검사등록", to: "/quality/inspection/register" },
   { id: "certificate", label: "성적서관리", to: "/quality/certificate" },
   { id: "shipment", label: "출고등록", to: "/inout/shipment" },

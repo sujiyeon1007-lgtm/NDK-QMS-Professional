@@ -6,6 +6,11 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 import { SecondaryButton } from "./Button";
+import { titanDialogTransitionProps } from "./titanPopupTransition";
+import {
+  TITAN_STANDARD_DETAIL_POPUP_HEIGHT,
+  TITAN_STANDARD_DETAIL_POPUP_WIDTH,
+} from "./detailPopup/standardDetailPopupLayout";
 import "./detailPopup/detailPopup.css";
 
 function TabPanel({ children, value, index }) {
@@ -23,7 +28,8 @@ function TabPanel({ children, value, index }) {
 }
 
 /**
- * Project TITAN V1.3 — Management Detail Popup (MUI Dialog · Tabs)
+ * Project TITAN V1.4 — Management Detail Popup (MUI Dialog · Tabs)
+ * size="standard" → 880×660 (운영 화면 Standard Popup 통일)
  */
 export default function TitanDetailPopup({
   open,
@@ -32,8 +38,10 @@ export default function TitanDetailPopup({
   tabs = [],
   renderTabContent,
   initialTabId,
+  size = "standard",
 }) {
   const [activeTab, setActiveTab] = useState(0);
+  const isStandard = size === "standard";
 
   useEffect(() => {
     if (!open) return;
@@ -49,22 +57,55 @@ export default function TitanDetailPopup({
     onClose?.();
   };
 
+  const paperSx = isStandard
+    ? {
+        width: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+        minWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+        maxWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+        height: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+        minHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+        maxHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+        overflow: "hidden",
+        boxSizing: "border-box",
+        margin: 0,
+        borderRadius: "12px",
+      }
+    : {
+        width: "80%",
+        maxWidth: "1800px",
+        height: "85%",
+        maxHeight: "95vh",
+      };
+
   return (
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="xl"
-      fullWidth
-      className="titan-detail-popup"
+      maxWidth={isStandard ? false : "xl"}
+      fullWidth={!isStandard}
+      className={`titan-detail-popup${isStandard ? " titan-detail-popup--standard" : ""}`}
       aria-labelledby="titan-detail-popup-title"
+      {...titanDialogTransitionProps}
+      slotProps={
+        isStandard
+          ? {
+              container: {
+                sx: {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100vw",
+                  height: "100dvh",
+                  margin: 0,
+                  padding: 0,
+                },
+              },
+            }
+          : undefined
+      }
       PaperProps={{
         className: "titan-detail-popup__paper",
-        sx: {
-          width: "80%",
-          maxWidth: "1800px",
-          height: "85%",
-          maxHeight: "95vh",
-        },
+        sx: paperSx,
       }}
     >
       <DialogTitle id="titan-detail-popup-title" className="titan-detail-popup__title">

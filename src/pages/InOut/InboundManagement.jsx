@@ -11,8 +11,8 @@ import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
-import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import InboundRowActions from "./InboundRowActions";
+import InboundDetailPopup from "./InboundDetailPopup";
 import { INBOUND_KPI_CONFIG } from "../../config/inboundDashboard";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
@@ -20,7 +20,7 @@ import { createEmptyInboundSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS, matches
 import { buildInboundListColumns } from "../../config/standardProductList";
 import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
-import { getHeatTreatmentProcessTone } from "../../config/heatTreatmentProcessColors";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
@@ -36,7 +36,8 @@ import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { isIncomingRegistered } from "../../utils/productionRecords";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
-import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
+import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
+import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
 import {
   INBOUND_STATUS_LABELS,
@@ -44,11 +45,19 @@ import {
   getInboundManagementStatus,
   isInboundShipOutComplete,
 } from "../../utils/inboundManagementStatus";
-import { getProcessFlowSteps, mapV13ProductListRow } from "../../utils/processFlow";
-import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
-import { isHtlFirstPrintTarget, resolveHtlPrintRows } from "../../utils/htlPrintEligibility";
+import { mapV13ProductListRow } from "../../utils/processFlow";
+import { isHtlFirstPrintTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import {
+  applyInboundListPrinted,
+  confirmInboundListReprint,
+  hasInboundCheckboxSelection,
+  INBOUND_PRINT_NO_SELECTION_MESSAGE,
+  resolveInboundCheckboxPrintRows,
+  resolveInboundPrintMode,
+  selectedInboundRowsHaveLotNumber,
+} from "./inboundListPrintActions";
 import "./InboundManagement.css";
 
 const INBOUND_STATUS_OPTIONS = Object.values(INBOUND_STATUS_LABELS);
@@ -57,7 +66,7 @@ function mapInboundListRow(record) {
   const status = isInboundShipOutComplete(record)
     ? { label: "출고완료", variant: "complete" }
     : getInboundManagementStatus(record);
-  const base = mapV13ProductListRow(record, status);
+  const base = mapV13ProductListRow(record, status, { screenKey: "inbound" });
   return {
     ...base,
     managerName: record.registrar ?? record.manager ?? "—",
@@ -119,7 +128,7 @@ function matchesInboundSearch(record, row, search) {
   if (search.__chipProductHtlNotPrinted && !isHtlFirstPrintTarget(record)) {
     return false;
   }
-  if (search.__chipProductShipWait && row.statusLabel !== INBOUND_STATUS_LABELS.SHIP_WAIT) {
+  if (search.__chipProductShipWait && row.statusLabel !== INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT) {
     return false;
   }
   if (search.__chipProductShipDone && row.statusLabel !== "출고완료") {
@@ -185,54 +194,47 @@ export default function InboundManagement() {
     setPageSize,
   } = useListPagination(rows);
 
-  const activeRow = pagedRows.find((row) => row.id === activeId) ?? pagedRows[0] ?? null;
+  const activeRow = pagedRows.find((row) => row.id === activeId) ?? null;
+
+  const hasCheckboxSelection = selectedIds.length > 0;
 
   const selectedRows = useMemo(
-    () => selectedIds.map((id) => rows.find((row) => row.id === id)).filter(Boolean),
+    () => resolveInboundCheckboxPrintRows(selectedIds, rows),
     [selectedIds, rows]
   );
   const selectedQty = selectedRows.reduce((sum, row) => sum + (Number(row.record.qty) || 0), 0);
 
-  const printTargetRows = useMemo(() => {
-    if (selectedRows.length > 0) return selectedRows;
-    if (activeRow) return [activeRow];
-    const incomingRows = rows.filter((row) => isIncomingRegistered(row.record ?? row));
-    if (incomingRows.length > 0) return incomingRows;
-    return [];
-  }, [selectedRows, activeRow, rows]);
+  const firstSelectedRow = selectedRows[0] ?? null;
 
-  const resolvedPrintRows = useMemo(() => {
-    const htl = resolveHtlPrintRows(printTargetRows);
-    if (htl.rows.length > 0) return htl;
-    const registered = printTargetRows.filter((row) => isIncomingRegistered(row.record ?? row));
-    if (registered.length > 0) return { rows: registered, mode: "presentation" };
-    return { rows: [], mode: "none" };
-  }, [printTargetRows]);
-
-  const handleInOutPrinted = useCallback(
-    (printProps) => {
-      if (!printProps?.listNo || !printProps?.rows?.length) return;
-      const managementIds = printProps.rows.map((row) => row.managementId ?? row.id);
-      applyHtlWorkListPrinted(managementIds, printProps.listNo, {
-        isReprint: printProps.printMode === "reprint",
-      });
-      setRefreshKey((key) => key + 1);
-    },
-    []
-  );
+  const handleInOutPrinted = useCallback((printProps) => {
+    if (!printProps?.listNo || !printProps?.rows?.length) return;
+    applyInboundListPrinted(printProps.rows, printProps.listNo);
+    setRefreshKey((key) => key + 1);
+  }, []);
 
   const openInOutPrintPreview = () => {
-    if (resolvedPrintRows.rows.length === 0) {
+    if (!hasInboundCheckboxSelection(selectedIds)) {
+      window.alert(INBOUND_PRINT_NO_SELECTION_MESSAGE);
+      return;
+    }
+
+    const printRows = resolveInboundCheckboxPrintRows(selectedIds, rows);
+    if (printRows.length === 0) {
       window.alert("출력할 입고 등록 제품이 없습니다.");
       return;
     }
+
+    if (selectedInboundRowsHaveLotNumber(printRows) && !confirmInboundListReprint()) {
+      return;
+    }
+
     setInOutPrintSession({
       open: true,
-      props: buildInOutListPrintProps(resolvedPrintRows.rows, {
+      props: buildInOutListPrintProps(printRows, {
         listNoPrefix: "HTL",
         outputDate: getPrintOutputDate(),
         records: getSessionProductionRecords(),
-        printMode: resolvedPrintRows.mode,
+        printMode: resolveInboundPrintMode(printRows),
       }),
     });
   };
@@ -265,14 +267,7 @@ export default function InboundManagement() {
     setRefreshKey((k) => k + 1);
   };
 
-  const renderProcessChip = (row) =>
-    row.currentProcess && row.currentProcess !== "—" ? (
-      <StatusChip kind="process" variant={getHeatTreatmentProcessTone(row.currentProcess)}>
-        {row.currentProcess}
-      </StatusChip>
-    ) : (
-      "—"
-    );
+  const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
@@ -280,10 +275,6 @@ export default function InboundManagement() {
         renderProcess: renderProcessChip,
         renderActions: (row) => (
           <InboundRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onEdit={() => openEditModal(row)}
             onDelete={() => handleInboundDelete(row)}
           />
@@ -291,88 +282,6 @@ export default function InboundManagement() {
       }),
     []
   );
-
-  const detailRows = selectedRows.length > 0 ? selectedRows : activeRow ? [activeRow] : [];
-  const companySummary = formatMultiSelectCompany(detailRows);
-  const processFlowSteps = activeRow
-    ? getProcessFlowSteps(activeRow.record, activeRow.statusLabel)
-    : [];
-
-  const detailPopupProcessSteps = detailPopupRow
-    ? getProcessFlowSteps(detailPopupRow.record, detailPopupRow.statusLabel)
-    : [];
-
-  const buildInboundDetailContent = (row, companyLabel) =>
-    row ? (
-      <dl className="inbound-detail">
-        <div>
-          <dt>발주번호</dt>
-          <dd>{row.purchaseOrderNo}</dd>
-        </div>
-        <div>
-          <dt>관리번호</dt>
-          <dd>{row.managementId}</dd>
-        </div>
-        <div>
-          <dt>LOT.NO</dt>
-          <dd>{row.lotNo}</dd>
-        </div>
-        <div>
-          <dt>업체 LOT</dt>
-          <dd>{row.customerLotNo}</dd>
-        </div>
-        <div>
-          <dt>업체명</dt>
-          <dd>{companyLabel}</dd>
-        </div>
-        <div>
-          <dt>담당자</dt>
-          <dd>{row.managerName}</dd>
-        </div>
-        <div>
-          <dt>품명</dt>
-          <dd>{row.partName}</dd>
-        </div>
-        <div>
-          <dt>품번</dt>
-          <dd>{row.partNo}</dd>
-        </div>
-        <div>
-          <dt>재질</dt>
-          <dd>{row.material}</dd>
-        </div>
-        <div>
-          <dt>공정</dt>
-          <dd>
-            {row.processName && row.processName !== "—" ? (
-              <StatusChip kind="process" variant={getHeatTreatmentProcessTone(row.processName)}>
-                {row.processName}
-              </StatusChip>
-            ) : (
-              "—"
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>입고수량</dt>
-          <dd>{row.qty}</dd>
-        </div>
-        <div>
-          <dt>입고일</dt>
-          <dd>{row.record.incomingDate || "—"}</dd>
-        </div>
-        <div>
-          <dt>납기</dt>
-          <dd>{row.record.dueDate || "—"}</dd>
-        </div>
-        <div>
-          <dt>현재상태</dt>
-          <dd>
-            <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
-          </dd>
-        </div>
-      </dl>
-    ) : null;
 
   const openRegisterModal = () => {
     setRegisterMode("create");
@@ -442,6 +351,16 @@ export default function InboundManagement() {
       shippedQty: 0,
     });
 
+    appendWorkJournalAutoEntry({
+      actionType: WORK_JOURNAL_ACTION_TYPES.INBOUND_REGISTER,
+      assignee: form.manager,
+      managementId,
+      company: form.company,
+      lotNo: form.lotNo,
+      date: form.incomingDate || getPrintOutputDate(),
+      title: `입고 등록 — ${form.company} (${managementId})`,
+    });
+
     setActiveId(managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
@@ -460,14 +379,14 @@ export default function InboundManagement() {
           <Plus size={14} aria-hidden="true" />
           {INBOUND_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={() => openEditModal(activeRow)} disabled={!activeRow}>
+        <SecondaryButton type="button" onClick={() => openEditModal(firstSelectedRow)} disabled={!hasCheckboxSelection}>
           {INBOUND_EDIT_LABEL}
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={resolvedPrintRows.rows.length === 0}>
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!hasCheckboxSelection}>
           <Printer size={14} aria-hidden="true" />
           {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
         </SecondaryButton>
-        <SecondaryButton type="button">
+        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!hasCheckboxSelection}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>
@@ -515,7 +434,7 @@ export default function InboundManagement() {
               <strong>{selectedQty} EA</strong>
             </span>
             <div>
-              <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={resolvedPrintRows.rows.length === 0}>
+              <SecondaryButton type="button" onClick={openInOutPrintPreview}>
                 {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
               </SecondaryButton>
               <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
@@ -574,27 +493,16 @@ export default function InboundManagement() {
         onAfterPrint={handleInOutPrinted}
       />
 
-      <TitanScreenDetailPopup
-        screenKey="inbound"
+      <InboundDetailPopup
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
-        record={detailPopupRow}
-        context={{
-          detailContent: buildInboundDetailContent(
-            detailPopupRow,
-            detailPopupRow ? formatMultiSelectCompany([detailPopupRow]) : ""
-          ),
-          traceRecord: detailPopupRow?.record ?? detailPopupRow,
-          processFlowSteps: detailPopupProcessSteps,
-          statusLabel: detailPopupRow?.statusLabel,
-          statusVariant: detailPopupRow?.statusVariant,
-          onSelectCoLotProduct: (id) => {
-            const target = rows.find((row) => row.id === id || row.managementId === id);
-            if (target) {
-              setActiveId(target.id);
-              setDetailPopupRow(target);
-            }
-          },
+        listRow={detailPopupRow}
+        onSelectCoLotProduct={(id) => {
+          const target = rows.find((row) => row.id === id || row.managementId === id);
+          if (target) {
+            setActiveId(target.id);
+            setDetailPopupRow(target);
+          }
         }}
       />
     </div>

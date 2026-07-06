@@ -1,33 +1,26 @@
-import { getDetailPopupConfig } from "../../config/detailPopupPolicy";
+import { useMemo } from "react";
+
+import { getDetailPopupConfig, usesStandardDetailPopup } from "../../config/detailPopupPolicy";
 import TitanDetailPopup from "./TitanDetailPopup";
+import TitanStandardDetailPopup from "./detailPopup/TitanStandardDetailPopup";
 import {
-  ChargeListPanel,
-  CoLotPanel,
   EventListPanel,
   PlaceholderPanel,
-  ProcessFlowPanel,
-  ProductInfoPanel,
-  QrHistoryPanel,
   QrInfoPanel,
   QrPreviewPanel,
   EquipmentQrInfoPanel,
   EquipmentQrPreviewPanel,
   QrWorkHistoryPanel,
-  TraceabilityTimelinePanel,
-  WorkflowTrackPanel,
 } from "./detailPopup/DetailPopupPanels";
+import {
+  buildStandardDetailPopupContext,
+  renderStandardDetailPopupTabContent,
+} from "./detailPopup/renderStandardDetailPopupContent";
 
 /**
  * screenKey + context 로 탭 콘텐츠를 조합하는 공통 Detail Popup
- *
- * context:
- * - detailContent: ReactNode (상세정보/제품정보 탭)
- * - traceRecord: production session record (QR · Timeline · coLot)
- * - processFlowSteps: 공정흐름
- * - chargeProducts: 장입리스트
- * - statusLabel, statusVariant
- * - onSelectCoLotProduct
- * - eventLists: { inspectionInfo, inspectionResult, certificatePdf, revision, issueHistory, outboundInfo, statement, outboundHistory, inOutHistory, lotHistory, documentHistory, attachments }
+ * 표준 화면: 입고관리 UI Freeze 팝업 (TitanStandardDetailPopup + StandardDetailPopupPanels)
+ * 문서관리 · QR 전용: Legacy TitanDetailPopup
  */
 export default function TitanScreenDetailPopup({
   screenKey,
@@ -40,109 +33,27 @@ export default function TitanScreenDetailPopup({
   const config = getDetailPopupConfig(screenKey);
   if (!config) return null;
 
-  const {
-    detailContent,
-    traceRecord,
-    processFlowSteps = [],
-    chargeProducts = [],
-    statusLabel,
-    statusVariant,
-    onSelectCoLotProduct,
-    eventLists = {},
-  } = context;
+  const { onSelectCoLotProduct, eventLists = {} } = context;
+  const listRow = record ?? context.listRow ?? null;
 
-  const rawTrace = traceRecord ?? record?.record ?? record;
+  const standardContext = useMemo(
+    () => buildStandardDetailPopupContext(listRow, { onSelectCoLotProduct }),
+    [listRow, onSelectCoLotProduct]
+  );
 
-  const renderTabContent = (tabId) => {
+  const renderLegacyTabContent = (tabId) => {
+    const { detailContent, traceRecord, qrRow } = context;
+    const rawTrace = traceRecord ?? record?.record ?? record;
+
     switch (tabId) {
+      case "basicInfo":
       case "detail":
-      case "productInfo":
-      case "inventoryInfo":
-        return detailContent ?? (
-          rawTrace ? (
-            <ProductInfoPanel record={rawTrace} statusLabel={statusLabel} statusVariant={statusVariant} />
-          ) : (
-            <PlaceholderPanel message="상세 정보가 없습니다." />
-          )
-        );
+        return detailContent ?? <PlaceholderPanel message="상세 정보가 없습니다." />;
 
-      case "chargeList":
-        return <ChargeListPanel chargeProducts={chargeProducts} />;
-
-      case "processFlow":
-        return <ProcessFlowPanel steps={processFlowSteps} />;
-
-      case "qrHistory":
+      case "documentHistory":
         return (
-          eventLists.qrHistory ??
-          (rawTrace ? (
-            <QrHistoryPanel record={rawTrace} />
-          ) : (
-            <PlaceholderPanel message="QR 작업 이력이 없습니다." />
-          ))
-        );
-
-      case "qrInfo":
-        return eventLists.qrInfo ?? <QrInfoPanel row={context.qrRow ?? record} />;
-
-      case "equipmentQrInfo":
-        return eventLists.equipmentQrInfo ?? <EquipmentQrInfoPanel row={context.qrRow ?? record} />;
-
-      case "equipmentQrPreview":
-        return eventLists.equipmentQrPreview ?? (
-          <EquipmentQrPreviewPanel row={context.qrRow ?? record} />
-        );
-
-      case "qrPreview":
-        return eventLists.qrPreview ?? <QrPreviewPanel row={context.qrRow ?? record} />;
-
-      case "workHistory":
-        return (
-          eventLists.workHistory ?? (
-            <QrWorkHistoryPanel managementId={context.qrRow?.managementId ?? rawTrace?.id} />
-          )
-        );
-
-      case "timeline":
-        return (
-          eventLists.timeline ??
-          (rawTrace ? (
-            <TraceabilityTimelinePanel record={rawTrace} />
-          ) : (
-            <PlaceholderPanel message="Timeline 정보가 없습니다." />
-          ))
-        );
-
-      case "coLot":
-        return (
-          eventLists.coLot ??
-          (rawTrace ? (
-            <CoLotPanel record={rawTrace} onSelectCoLotProduct={onSelectCoLotProduct} />
-          ) : (
-            <PlaceholderPanel message="동일 LOT 제품이 없습니다." />
-          ))
-        );
-
-      case "inspectionInfo":
-        return eventLists.inspectionInfo ?? (
-          rawTrace ? (
-            <WorkflowTrackPanel record={rawTrace} />
-          ) : (
-            <PlaceholderPanel message="검사 정보가 없습니다." />
-          )
-        );
-
-      case "inspectionResult":
-        return (
-          eventLists.inspectionResult ?? (
-            <PlaceholderPanel message="검사 결과는 검사일지·성적서 연동 후 표시됩니다." />
-          )
-        );
-
-      case "certificatePdf":
-        return (
-          eventLists.certificatePdf ?? (
-            <PlaceholderPanel message="등록된 성적서 PDF가 없습니다." />
+          eventLists.documentHistory ?? (
+            <EventListPanel items={[]} emptyMessage="문서 이력이 없습니다." />
           )
         );
 
@@ -153,41 +64,6 @@ export default function TitanScreenDetailPopup({
           )
         );
 
-      case "issueHistory":
-        return (
-          eventLists.issueHistory ?? (
-            <PlaceholderPanel message="발행 이력이 없습니다." />
-          )
-        );
-
-      case "outboundInfo":
-        return (
-          eventLists.outboundInfo ?? detailContent ?? (
-            <PlaceholderPanel message="출고 정보가 없습니다." />
-          )
-        );
-
-      case "statement":
-        return (
-          eventLists.statement ?? (
-            <PlaceholderPanel message="거래명세서 정보가 없습니다." />
-          )
-        );
-
-      case "outboundHistory":
-        return (
-          eventLists.outboundHistory ?? (
-            <EventListPanel items={[]} emptyMessage="출고 이력이 없습니다." />
-          )
-        );
-
-      case "documentHistory":
-        return (
-          eventLists.documentHistory ?? (
-            <EventListPanel items={[]} emptyMessage="문서 이력이 없습니다." />
-          )
-        );
-
       case "attachments":
         return (
           eventLists.attachments ?? (
@@ -195,21 +71,33 @@ export default function TitanScreenDetailPopup({
           )
         );
 
-      case "inOutHistory":
+      case "memo":
+      case "remarks":
         return (
-          eventLists.inOutHistory ?? (
-            <PlaceholderPanel message="입출고 이력은 입고·출고 연동 후 표시됩니다." />
+          eventLists.memo ??
+          eventLists.remarks ?? (
+            <PlaceholderPanel message="메모가 없습니다." />
           )
         );
 
-      case "lotHistory":
+      case "qrInfo":
+        return eventLists.qrInfo ?? <QrInfoPanel row={qrRow ?? record} />;
+
+      case "equipmentQrInfo":
+        return eventLists.equipmentQrInfo ?? <EquipmentQrInfoPanel row={qrRow ?? record} />;
+
+      case "equipmentQrPreview":
+        return eventLists.equipmentQrPreview ?? (
+          <EquipmentQrPreviewPanel row={qrRow ?? record} />
+        );
+
+      case "qrPreview":
+        return eventLists.qrPreview ?? <QrPreviewPanel row={qrRow ?? record} />;
+
+      case "workHistory":
         return (
-          eventLists.lotHistory ?? (
-            rawTrace ? (
-              <CoLotPanel record={rawTrace} onSelectCoLotProduct={onSelectCoLotProduct} />
-            ) : (
-              <PlaceholderPanel message="LOT 이력이 없습니다." />
-            )
+          eventLists.workHistory ?? (
+            <QrWorkHistoryPanel managementId={qrRow?.managementId ?? rawTrace?.id} />
           )
         );
 
@@ -218,7 +106,31 @@ export default function TitanScreenDetailPopup({
     }
   };
 
+  const renderStandardTabContent = (tabId) => {
+    const override = eventLists[tabId];
+    if (override) return override;
+
+    return renderStandardDetailPopupTabContent(tabId, {
+      listRow,
+      onSelectCoLotProduct,
+    });
+  };
+
   if (!open) return null;
+
+  if (usesStandardDetailPopup(screenKey)) {
+    return (
+      <TitanStandardDetailPopup
+        open={open}
+        onClose={onClose}
+        tabs={config.tabs}
+        summary={standardContext.summary}
+        renderTabContent={renderStandardTabContent}
+        initialTabId={initialTabId}
+        ariaLabel={config.title}
+      />
+    );
+  }
 
   return (
     <TitanDetailPopup
@@ -226,8 +138,9 @@ export default function TitanScreenDetailPopup({
       onClose={onClose}
       title={config.title}
       tabs={config.tabs}
-      renderTabContent={renderTabContent}
+      renderTabContent={renderLegacyTabContent}
       initialTabId={initialTabId}
+      size="standard"
     />
   );
 }

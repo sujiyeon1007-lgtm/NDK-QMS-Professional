@@ -1,0 +1,108 @@
+---
+description: Project TITAN V1.4 — Detail Popup · Double-Click Interaction (PM 승인)
+alwaysApply: true
+---
+
+# Project TITAN V1.4 — Detail Popup & List Interaction (FINAL)
+
+**SSoT (code):** `src/config/detailPopupPolicy.js` · `src/foundation/components/detailPopup/` · `TitanListInteractionHint` · `openRowDetailPopup.js`
+
+**Supersedes:** V1.3 `[상세]` 버튼 패턴 · Row Summary Cards · Left Widget
+
+---
+
+## 표준 UX (전체 채택)
+
+```text
+리스트
+  ↓ 더블클릭
+상세 Popup (880×660)
+```
+
+| 동작 | 기능 |
+|------|------|
+| **단일 클릭** | Row 선택 · Highlight |
+| **더블클릭** | 상세 Popup (`openRowDetailPopup` / `TitanStandardDetailPopup`) |
+| **작업 버튼** | 등록 · 수정 · 삭제 · 출력 · 완료 · 발행 등 **실제 업무**만 |
+| **[상세] 버튼** | **사용 금지** — 더블클릭으로 통일 |
+
+**예외 — 더블클릭 → 수정 (상세 Popup ❌):** 업무일지 (입력 중심 화면)
+
+---
+
+## Popup 크기 (Standard)
+
+| 항목 | 값 |
+|------|-----|
+| Width | **880px** |
+| Height | **660px** |
+| Component | `TitanStandardDetailPopup` · `TitanDetailPopup size="standard"` · `TitanWorkspaceModal size="standard"` |
+
+**크기 예외 (880×660 미적용):**
+
+- 문서관리 (업체/문서 Workspace)
+- 환경설정 Wizard
+- 로그인
+
+---
+
+## 리스트 안내 · Hover · Cursor
+
+- **안내 문구:** `TitanListInteractionHint` — 검색/리스트 상단  
+  `💡 리스트를 더블클릭하면 상세정보를 확인할 수 있습니다.`
+- **Cursor:** `titan-table__row--clickable` → `cursor: pointer`
+- **Hover:** 클릭 가능 Row — 연한 배경 (`--titan-table-row-hover`) · 선택 Row — `--titan-table-row-selected`
+
+---
+
+## Popup 애니메이션
+
+- MUI Dialog: **Grow** (Fade + Scale · 180ms)
+- `TitanWorkspaceModal`: overlay fade + panel scale (180ms)
+- 과한 애니메이션 금지
+
+**Code:** `src/foundation/components/titanPopupTransition.js`
+
+---
+
+## Cursor Do
+
+- `TitanTableRowActions` — 업무 버튼만 (상세 ❌)
+- `TitanScreenDetailPopup` / `TitanStandardDetailPopup` — 운영·기준정보·HOME·이력
+- Footer: **[닫기]** only
+- Helper: `src/foundation/utils/openRowDetailPopup.js`
+
+## Cursor Do Not
+
+- 관리 페이지에 `[상세]` Row 버튼 복원
+- HOME 제외 관리 페이지에 `TitanListWorkspace` · 좌측 Widget
+- `TitanMasterDetailShell` · 리스트 하단 Row Summary Card
+- Toolbar에 Row별 액션 (toolbar = 등록 · 출력/일괄만)
+- **더블클릭으로 수정(Edit) 진입** (업무일지 예외만 허용)
+
+---
+
+## Row actions (작업 column · V1.4)
+
+| Screen | Actions |
+|--------|---------|
+| 생산일보 | [수정][완료][취소] |
+| 검사 | [등록][수정][삭제] |
+| 성적서 | [발행][수정][취소] |
+| 출고 | [출고][수정][취소] |
+| 문서 | [등록][수정][삭제] |
+| 입고 | [수정][삭제] |
+| 재고 (LOT) | [수정] |
+| QR | [생성][출력][삭제] 등 |
+
+상세 조회 = **더블클릭**만.
+
+---
+
+## Deprecated
+
+- `TitanRowSummary` / `TitanManagementRowSummary` as list-bottom detail
+- `TitanMasterDetailShell` · `TitanManagementMasterDetail`
+- V1.3 `[상세]` first row action pattern
+
+Companion (archived): `.cursor/rules/project-titan-master-detail-v1.3.mdc`

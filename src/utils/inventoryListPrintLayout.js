@@ -42,7 +42,15 @@ function buildPrintColumns(viewMode = "byItem") {
   if (viewMode === "byCompany") {
     return [
       baseNo,
-      { id: "company", header: "업체명", baseRatio: 18, wrap: true, getValue: (r) => r.company ?? "" },
+      {
+        id: "incomingDate",
+        header: "입고일",
+        baseRatio: 9,
+        singleLine: true,
+        align: "center",
+        getValue: (r) => r.incomingDateLabel ?? r.lastIncomingDateLabel ?? "",
+      },
+      { id: "company", header: "업체명", baseRatio: 16, wrap: true, getValue: (r) => r.company ?? "" },
       { id: "sku", header: "품목수", baseRatio: 8, singleLine: true, align: "center", getValue: (r) => r.skuCountLabel ?? "" },
       { id: "lots", header: "LOT수", baseRatio: 8, singleLine: true, align: "center", getValue: (r) => r.lotCountLabel ?? "" },
       {
@@ -67,7 +75,15 @@ function buildPrintColumns(viewMode = "byItem") {
 
   return [
     baseNo,
-    { id: "company", header: "업체명", baseRatio: 12, wrap: true, getValue: (r) => r.company ?? "" },
+    {
+      id: "incomingDate",
+      header: "입고일",
+      baseRatio: 9,
+      singleLine: true,
+      align: "center",
+      getValue: (r) => r.incomingDateLabel ?? r.lastIncomingDateLabel ?? "",
+    },
+    { id: "company", header: "업체명", baseRatio: 11, wrap: true, getValue: (r) => r.company ?? "" },
     { id: "partName", header: "품명", baseRatio: 16, wrap: true, getValue: (r) => r.partName ?? "" },
     { id: "partNo", header: "품번", baseRatio: 12, wrap: true, getValue: (r) => r.partNo ?? "" },
     { id: "material", header: "재질", baseRatio: 8, wrap: true, align: "center", getValue: (r) => r.material ?? "" },

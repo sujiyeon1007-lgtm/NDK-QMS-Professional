@@ -1,17 +1,16 @@
 /**
- * Project TITAN V1.0 — Workflow (유연 · 비순차)
+ * Project TITAN V1.3 — Workflow UI helpers (QR · 이력 · Readiness)
  *
- * 입고등록 완료 후 필요한 메뉴를 자유롭게 사용.
- * 모든 제품이 동일한 Workflow를 거치지 않음.
- *
- *   managementId → (선택) 생산계획 → (선택) 생산일보 → (선택) 성적서
- *   → 거래명세서 출력 · 출고관리 (입고등록만으로 가능)
+ * **Workflow SSOT:** `titanWorkflowStatus.js` — 입고 → 열처리 → 검사 → 성적서 → 출고
+ * This module provides QR payloads, history timeline, and gate helpers only.
+ * Do not define alternate workflow rank logic here.
  */
 
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { formatQtyWithUnit } from "./productUnits";
 import { getStockQty, isIncomingRegistered } from "./productionRecords";
-import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { HT_TERM } from "../config/titanHeatTreatmentTerminology";
+import { getWorkflowStatus, WORKFLOW_STATUS, hasReachedWorkflowStatus } from "./titanWorkflowStatus";
 import { getShipmentEvents } from "./titanHistorySession";
 
 /**
@@ -42,10 +41,31 @@ export function parseLotFromQrPayload(raw) {
 }
 
 /**
- * 검사일지 작성 가능 여부 (생산일보 LOT 등록 완료 · 선택 Workflow)
+ * 검사일지 작성 가능 — 열처리 완료(생산완료) 이후 (공식 Workflow)
  */
 export function isInspectionReady(record) {
-  return Boolean(record?.registered && record?.lotNo?.trim());
+  return hasReachedWorkflowStatus(record, WORKFLOW_STATUS.PROD_DONE);
+}
+
+/**
+ * 성적서 등록 가능 — 검사 완료 이후 (공식 Workflow)
+ */
+export function isCertificateReady(record) {
+  return (
+    hasReachedWorkflowStatus(record, WORKFLOW_STATUS.INSPECT_DONE) ||
+    hasInspectionLogForManagementId(record?.id)
+  );
+}
+
+/**
+ * 출고 가능 — 성적서 완료 + 재고 있음 (공식 Workflow · SSOT: titanWorkflowStatus)
+ */
+export function isShipmentReady(record) {
+  return (
+    isIncomingRegistered(record) &&
+    getStockQty(record) > 0 &&
+    hasReachedWorkflowStatus(record, WORKFLOW_STATUS.CERT_DONE)
+  );
 }
 
 /**
@@ -95,55 +115,33 @@ export const SHIPMENT_STATUS = {
 };
 
 /**
- * 진행 상태 요약 (정보 표시용 · 순차 강제 없음)
+ * 진행 상태 요약 (SSOT: titanWorkflowStatus → 표시 라벨)
  */
 export function getRecordWorkflowState(record) {
   const workflowStatus = getWorkflowStatus(record);
   if (workflowStatus === WORKFLOW_STATUS.SHIP_DONE) return "출고완료";
   if (workflowStatus === WORKFLOW_STATUS.CERT_DONE) return "성적서완료";
   if (workflowStatus === WORKFLOW_STATUS.INSPECT_DONE) return "검사완료";
-  if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) return "생산완료";
-  if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) return "생산중";
+  if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) return HT_TERM.DONE;
+  if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) return HT_TERM.PROGRESS;
   if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) return "작업대기";
-
   if (!isIncomingRegistered(record)) return "입고대기";
-  if (record?.shipmentStatus === SHIPMENT_STATUS.DONE && getStockQty(record) <= 0) {
-    return "출고완료";
-  }
-  if (getStockQty(record) > 0 && (record?.shippedQty ?? 0) > 0) return "부분출고";
-  if (record?.certificateStatus === CERTIFICATE_STATUS.ISSUED) return "성적서 발행완료";
-  if (record?.registered && record?.lotNo?.trim()) return "생산완료";
-  if (record?.htlNo) return "생산계획";
   return "입고완료";
 }
 
 /**
- * 성적서 대상 여부 (생산일보 LOT 등록 완료 · 선택 Workflow)
- */
-export function isCertificateReady(record) {
-  return Boolean(record?.registered && record?.lotNo?.trim());
-}
-
-/**
- * 출고 가능 여부 — 입고등록 완료 + 재고 있음 (성적서 무관)
- */
-export function isShipmentReady(record) {
-  return isIncomingRegistered(record) && getStockQty(record) > 0;
-}
-
-/**
- * 거래명세서 출력 가능 — 입고등록 정보만으로 출력 (성적서 무관)
+ * 거래명세서 출력 가능 — 입고등록 정보만으로 출력
  */
 export function isTransactionStatementReady(record) {
   return isIncomingRegistered(record);
 }
 
-/** 이력조회 타임라인 단계 (선택 Workflow · 완료 여부만 표시) */
+/** 이력조회 타임라인 단계 (공식 Workflow · 미진행 단계는 optional 표시) */
 export const HISTORY_TIMELINE_STEPS = [
   { key: "incoming", label: "입고 등록" },
-  { key: "plan", label: "생산작업계획 등록" },
+  { key: "plan", label: "열처리작업계획 등록" },
   { key: "htl", label: "열처리 작업 리스트 포함" },
-  { key: "dailyLot", label: "생산일보 LOT 등록" },
+  { key: "dailyLot", label: "열처리일보 LOT 등록" },
   { key: "worksheet", label: "작업관리표 출력" },
   { key: "inspection", label: "검사일지 등록" },
   { key: "certificate", label: "엑셀 / PDF 등록" },
@@ -211,8 +209,7 @@ function getHistoryStepDetail(record, stepKey) {
 }
 
 /**
- * 관리번호 기준 전체 이력 타임라인 (선택 Workflow · 순차 강제 없음)
- * 부분출고 이력 → 출고완료 순서로 표시
+ * 관리번호 기준 전체 이력 타임라인 (공식 Workflow 순서 · SSOT: titanWorkflowStatus)
  */
 export function buildProductHistoryTimeline(record) {
   const preShipmentKeys = [
@@ -300,7 +297,7 @@ export function getHistoryStatusChips(record) {
   return [
     { label: "입고완료", done: isIncomingRegistered(record) },
     {
-      label: "생산완료",
+      label: HT_TERM.DONE,
       done: Boolean(record?.registered && record?.lotNo?.trim()),
     },
     {

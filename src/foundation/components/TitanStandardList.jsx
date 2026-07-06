@@ -15,6 +15,7 @@ export default function TitanStandardList({
   getRowId = (row) => row.id,
   activeRowId,
   onRowClick,
+  onRowDoubleClick,
   expandedRowId,
   onExpandedRowChange,
   renderExpandedRow,
@@ -71,6 +72,7 @@ export default function TitanStandardList({
       activeRowId={activeRowId}
       selectedRowIds={selectedRowIds}
       onRowClick={onRowClick}
+      onRowDoubleClick={onRowDoubleClick}
       expandedRowId={expandedRowId}
       onExpandedRowChange={onExpandedRowChange}
       renderExpandedRow={renderExpandedRow}

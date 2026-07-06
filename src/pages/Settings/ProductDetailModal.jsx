@@ -37,6 +37,7 @@ export default function ProductDetailModal({ open, product, onClose }) {
     <TitanWorkspaceModal
       open={open}
       onClose={onClose}
+      size="standard"
       title={title}
       kicker={kicker}
       footer={

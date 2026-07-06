@@ -39,3 +39,8 @@ export const INVENTORY_PRINT = {
   title: "재고 현황 리스트",
   filenamePrefix: "inventory-status",
 };
+
+/** KPI — TitanWorkflowStatusChipBar (HOME · 입고 · 생산과 동일 Shell) */
+export const INVENTORY_KPI_CONFIG = {
+  ariaLabel: "재고관리 KPI",
+};

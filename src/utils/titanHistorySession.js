@@ -3,44 +3,16 @@
  */
 
 import { getAuthUserLabelForAudit } from "./titanAuthSession";
+import {
+  getTitanDemoShipmentEvents,
+  getTitanDemoTransactionStatements,
+} from "../data/titanDemoSampleData";
 
 const FALLBACK_USER = "품질관리부 / 정반이 사원";
 
-let transactionStatements = [
-  {
-    id: "TS-20260629-001",
-    printedAt: "2026-06-29",
-    printedBy: FALLBACK_USER,
-    managementId: "SE_20260703_0005",
-    company: "서암기계공업",
-    partName: "#2 PINION GEAR",
-    partNo: "CWFYH11251",
-    drawingNo: "",
-    material: "SACM645",
-    shipQty: 8,
-    unit: "EA",
-    unitPrice: 64141,
-    supplyAmount: 513128,
-    vat: 51313,
-    totalAmount: 564441,
-  },
-];
+let transactionStatements = getTitanDemoTransactionStatements();
 
-let shipmentEvents = [
-  {
-    id: "SH-20260629-001",
-    shippedAt: "2026-06-29",
-    shippedBy: FALLBACK_USER,
-    managementId: "SE_20260703_0005",
-    company: "서암기계공업",
-    partName: "#2 PINION GEAR",
-    partNo: "CWFYH11251",
-    shipQty: 8,
-    unit: "EA",
-    unitPrice: 64141,
-    stockAfter: 0,
-  },
-];
+let shipmentEvents = getTitanDemoShipmentEvents();
 
 let defectRecords = [];
 

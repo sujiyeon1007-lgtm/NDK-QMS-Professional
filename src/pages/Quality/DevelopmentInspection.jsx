@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PrimaryButton } from "../../foundation/components/Button";
 import StatusChip from "../../foundation/components/StatusChip";
@@ -24,9 +25,7 @@ import {
   mapDevelopmentInspectionToListRow,
   matchesDevelopmentInspectionSearch,
   softDeleteDevelopmentInspection,
-  upsertDevelopmentInspection,
 } from "../../utils/developmentInspectionSession";
-import DevelopmentInspectionRegisterModal from "./DevelopmentInspectionRegisterModal";
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
@@ -42,10 +41,8 @@ function resolveInspectionStatusVariant(status) {
 }
 
 export default function DevelopmentInspection() {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [editRecord, setEditRecord] = useState(null);
-  const [modalMode, setModalMode] = useState("create");
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyInspectionManagementSearch, { storageKey: "inspection-dev" });
   const [selectedIds, setSelectedIds] = useState([]);
@@ -92,31 +89,20 @@ export default function DevelopmentInspection() {
     }
   };
 
-  const openCreateModal = () => {
-    setEditRecord(null);
-    setModalMode("create");
-    setRegisterOpen(true);
+  const openCreateRegister = () => {
+    navigate("/quality/inspection/register?category=개발");
   };
 
-  const openInspectModal = (row) => {
-    setEditRecord(row.record);
-    setModalMode("inspect");
-    setRegisterOpen(true);
+  const openInspectRegister = (row) => {
+    navigate(`/quality/inspection/register?category=개발&devId=${encodeURIComponent(row.id)}`);
   };
 
-  const openEditModal = (row) => {
-    setEditRecord(row.record);
-    setModalMode("edit");
-    setRegisterOpen(true);
-  };
-
-  const handleRegister = (payload) => {
-    const next =
-      modalMode === "inspect"
-        ? { ...payload, status: payload.status === "완료" ? payload.status : "완료" }
-        : payload;
-    upsertDevelopmentInspection(next);
-    setRefreshKey((value) => value + 1);
+  const openEditRegister = (row) => {
+    if (row.record?.inspectionLogId) {
+      navigate(`/quality/inspection/${row.record.inspectionLogId}/report`);
+      return;
+    }
+    openInspectRegister(row);
   };
 
   const handleDelete = (row) => {
@@ -140,15 +126,11 @@ export default function DevelopmentInspection() {
           const isComplete = row.status === "완료";
           return (
             <InspectionRegisterRowActions
-              onDetail={() => {
-                setActiveId(row.id);
-                setDetailPopupRow(row);
-              }}
               canRegister={!isComplete}
               canEdit
               canDelete
-              onRegister={() => openInspectModal(row)}
-              onEdit={() => openEditModal(row)}
+              onRegister={() => openInspectRegister(row)}
+              onEdit={() => openEditRegister(row)}
               onDelete={() => handleDelete(row)}
             />
           );
@@ -160,7 +142,7 @@ export default function DevelopmentInspection() {
   return (
     <div className="inbound-page quality-page">
       <SectionPageActions>
-        <PrimaryButton type="button" onClick={openCreateModal}>
+        <PrimaryButton type="button" onClick={openCreateRegister}>
           <Plus size={14} aria-hidden="true" />
           검사등록
         </PrimaryButton>
@@ -239,45 +221,11 @@ export default function DevelopmentInspection() {
         />
       </div>
 
-      <DevelopmentInspectionRegisterModal
-        open={registerOpen}
-        mode={modalMode}
-        onClose={() => {
-          setRegisterOpen(false);
-          setEditRecord(null);
-          setModalMode("create");
-        }}
-        onRegister={handleRegister}
-        initialRecord={editRecord}
-      />
-
       <TitanScreenDetailPopup
         screenKey="inspection"
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
-        context={{
-          detailContent: detailPopupRow ? (
-            <dl className="inbound-detail">
-              <div>
-                <dt>품번</dt>
-                <dd>{detailPopupRow.partNo}</dd>
-              </div>
-              <div>
-                <dt>품명</dt>
-                <dd>{detailPopupRow.partName}</dd>
-              </div>
-              <div>
-                <dt>업체명</dt>
-                <dd>{detailPopupRow.company}</dd>
-              </div>
-              <div>
-                <dt>상태</dt>
-                <dd>{detailPopupRow.status}</dd>
-              </div>
-            </dl>
-          ) : null,
-        }}
       />
     </div>
   );

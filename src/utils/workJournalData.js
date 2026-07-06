@@ -2,6 +2,9 @@
  * 업무일지 — Workflow 기반 자동 기록 생성 (Mock / Session)
  */
 
+import { WORK_JOURNAL_ACTION_LABELS } from "../config/titanAssigneePolicy";
+import { resolveAssigneeMeta } from "./titanAssigneeResolver";
+import { getPrintOutputDate } from "./titanPrintDates";
 import { CERTIFICATE_STATUS, SHIPMENT_STATUS } from "./ndkWorkflow";
 
 export const AUTO_JOURNAL_CATEGORIES = [
@@ -56,7 +59,12 @@ function nextTime(index) {
 }
 
 export function getJournalReferenceDate() {
-  return "2026-06-28";
+  return getPrintOutputDate();
+}
+
+function enrichLegacyEntry(entry, assigneeValue) {
+  const meta = resolveAssigneeMeta(assigneeValue);
+  return { ...entry, ...meta, sourceType: "auto" };
 }
 
 export function buildAutoJournalEntries(records) {
@@ -71,19 +79,26 @@ export function buildAutoJournalEntries(records) {
       lotNo: record.lotNo?.trim() ?? "",
       note: record.note?.trim() ?? "",
       source: "auto",
+      sourceType: "auto",
       recordId: record.id,
     };
 
     if (record.id) {
-      entries.push({
-        ...base,
-        id: `auto-${record.id}-incoming`,
-        autoStep: "incoming",
-        date,
-        time: nextTime(timeIndex++),
-        category: "입고 등록",
-        title: `입고 등록 — ${record.company} (${record.id})`,
-      });
+      entries.push(
+        enrichLegacyEntry(
+          {
+            ...base,
+            id: `auto-${record.id}-incoming`,
+            autoStep: "incoming",
+            actionType: "inboundRegister",
+            date,
+            time: nextTime(timeIndex++),
+            category: WORK_JOURNAL_ACTION_LABELS.inboundRegister,
+            title: `입고 등록 — ${record.company} (${record.id})`,
+          },
+          record.registrar
+        )
+      );
     }
 
     if (record.htlNo) {
@@ -100,16 +115,22 @@ export function buildAutoJournalEntries(records) {
     }
 
     if (record.registered && record.lotNo?.trim()) {
-      entries.push({
-        ...base,
-        id: `auto-${record.id}-lot`,
-        autoStep: "lot",
-        date,
-        time: nextTime(timeIndex++),
-        category: "LOT 등록",
-        title: `LOT 등록 — ${record.lotNo}`,
-        lotNo: record.lotNo.trim(),
-      });
+      entries.push(
+        enrichLegacyEntry(
+          {
+            ...base,
+            id: `auto-${record.id}-lot`,
+            autoStep: "lot",
+            actionType: "productionDailyRegister",
+            date,
+            time: nextTime(timeIndex++),
+            category: WORK_JOURNAL_ACTION_LABELS.productionDailyRegister,
+            title: `LOT 등록 — ${record.lotNo}`,
+            lotNo: record.lotNo.trim(),
+          },
+          record.registrar
+        )
+      );
     }
 
     if (record.workSheetGenerated && record.lotNo?.trim()) {
@@ -126,27 +147,39 @@ export function buildAutoJournalEntries(records) {
     }
 
     if (record.certificateStatus === CERTIFICATE_STATUS.ISSUED) {
-      entries.push({
-        ...base,
-        id: `auto-${record.id}-certificate`,
-        autoStep: "certificate",
-        date,
-        time: nextTime(timeIndex++),
-        category: "성적서 발행",
-        title: `성적서 발행 — ${record.company} ${record.lotNo || record.id}`,
-      });
+      entries.push(
+        enrichLegacyEntry(
+          {
+            ...base,
+            id: `auto-${record.id}-certificate`,
+            autoStep: "certificate",
+            actionType: "certificateIssue",
+            date,
+            time: nextTime(timeIndex++),
+            category: WORK_JOURNAL_ACTION_LABELS.certificateIssue,
+            title: `성적서 발행 — ${record.company} ${record.lotNo || record.id}`,
+          },
+          record.registrar
+        )
+      );
     }
 
     if (record.shipmentStatus === SHIPMENT_STATUS.DONE) {
-      entries.push({
-        ...base,
-        id: `auto-${record.id}-shipment`,
-        autoStep: "shipment",
-        date,
-        time: nextTime(timeIndex++),
-        category: "출고 완료",
-        title: `출고 완료 — ${record.company} ${record.partNo}`,
-      });
+      entries.push(
+        enrichLegacyEntry(
+          {
+            ...base,
+            id: `auto-${record.id}-shipment`,
+            autoStep: "shipment",
+            actionType: "outboundRegister",
+            date,
+            time: nextTime(timeIndex++),
+            category: WORK_JOURNAL_ACTION_LABELS.outboundRegister,
+            title: `출고 완료 — ${record.company} ${record.partNo}`,
+          },
+          record.outboundManager
+        )
+      );
     }
   }
 
@@ -165,6 +198,34 @@ export function getCategorySummary(entries) {
   return [...map.entries()]
     .map(([category, count]) => ({ category, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+/** Daily summary by actionType per assignee per date */
+export function getDailyActionSummary(entries, date, assignee = "") {
+  const filtered = entries.filter((entry) => {
+    if (entry.date !== date) return false;
+    if (assignee?.trim() && entry.assignee !== assignee.trim()) return false;
+    return true;
+  });
+
+  const byAction = new Map();
+  const byCategory = new Map();
+
+  for (const entry of filtered) {
+    const actionKey = entry.actionType || entry.category || "other";
+    byAction.set(actionKey, (byAction.get(actionKey) ?? 0) + 1);
+    if (entry.category) {
+      byCategory.set(entry.category, (byCategory.get(entry.category) ?? 0) + 1);
+    }
+  }
+
+  return {
+    date,
+    assignee: assignee?.trim() || "",
+    total: filtered.length,
+    byAction: [...byAction.entries()].map(([actionType, count]) => ({ actionType, count })),
+    byCategory: [...byCategory.entries()].map(([category, count]) => ({ category, count })),
+  };
 }
 
 export function filterEntriesByDateRange(entries, startDate, endDate) {
@@ -214,6 +275,8 @@ export function filterEntriesBySearch(entries, query) {
       entry.managementId,
       entry.lotNo,
       entry.note,
+      entry.assignee,
+      entry.department,
     ].some((field) => field?.toLowerCase().includes(q))
   );
 }

@@ -34,7 +34,7 @@ export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   inventoryStatus: "/inventory",
   history: "/history",
   documents: "/documents",
-  statisticsInquiry: "/statistics/inquiry",
+  statisticsInquiry: "/statistics/production",
   accountingClerk: "/accounting-clerk",
   accounting: "/accounting",
   qrManagement: "/qr-management",

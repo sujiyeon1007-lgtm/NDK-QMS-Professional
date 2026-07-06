@@ -1,0 +1,57 @@
+---
+description: Project TITAN V1.4 — Current Process · Task Status · Menu=Workflow (PM Final)
+alwaysApply: true
+---
+
+# Project TITAN V1.4 — Workflow (PM Final)
+
+**Source of truth (code):** `src/config/titanWorkflowV14.js` · `src/utils/workflowProcessStatus.js`
+
+## Current Process (9 stages — global SSoT)
+
+```text
+입고등록 → 열처리 대기 → 열처리 중 → 검사 대기 → 검사 완료
+→ 성적서 대기 → 성적서 발행 완료 → 출고 대기 → 출고 완료
+```
+
+### Internal keys (DB · API)
+
+| 화면 | Key |
+|------|-----|
+| 입고등록 | `RECEIVED` |
+| 열처리 대기 | `HT_WAIT` |
+| 열처리 중 | `HT_RUNNING` |
+| 검사 대기 | `INSPECTION_WAIT` |
+| 검사 완료 | `INSPECTION_DONE` |
+| 성적서 대기 | `CERT_WAIT` |
+| 성적서 발행 완료 | `CERT_DONE` |
+| 출고 대기 | `SHIP_WAIT` |
+| 출고 완료 | `SHIPPED` |
+
+**Resolver:** `resolveRecordCurrentProcess(record)` — 모든 화면 단일 진입점
+
+## Four concepts — never mix
+
+| Concept | Meaning |
+|---------|---------|
+| **Current Process** | 9-stage business workflow |
+| **Heat Treatment Process** | 이온질화 · 가스질화 … (별도 필드) |
+| **Task Status** | 메뉴별 업무상태 (진행중 · 미검사 …) |
+| **Inspection Result** | 합격 · 불합격 (현재공정 ❌) |
+
+## KPI (6 waiting stages)
+
+`RECEIVED` · `HT_WAIT` · `HT_RUNNING` · `INSPECTION_WAIT` · `CERT_WAIT` · `SHIP_WAIT`
+
+- `CERT_WAIT` KPI = `INSPECTION_DONE` + `CERT_WAIT` (검사 완료 + 성적서 미발행)
+- 검사 완료 · 성적서 발행 완료 · 출고 완료 = 이력 — KPI 제외
+
+## 재고
+
+Workflow는 `SHIPPED`에서 종료. 재고 = 별도 Inventory Module.
+
+## Do Not
+
+- 화면별 Workflow 재계산
+- 처리공정을 현재공정으로 표시
+- 재고를 Current Process에 포함

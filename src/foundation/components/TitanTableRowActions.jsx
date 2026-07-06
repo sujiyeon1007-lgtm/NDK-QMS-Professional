@@ -1,23 +1,8 @@
-import { SecondaryButton } from "./Button";
-
 /**
- * 리스트 마지막 컬럼 [작업] — [상세] + 페이지별 추가 버튼
+ * 리스트 마지막 컬럼 [작업] — 등록 · 수정 · 삭제 등 (상세는 더블클릭)
  */
-export default function TitanTableRowActions({ onDetail, children, detailDisabled = false }) {
-  return (
-    <div className="titan-table-row-actions">
-      <SecondaryButton
-        type="button"
-        className="titan-btn--table-action"
-        disabled={detailDisabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (!detailDisabled) onDetail?.();
-        }}
-      >
-        상세
-      </SecondaryButton>
-      {children}
-    </div>
-  );
+export default function TitanTableRowActions({ children }) {
+  if (!children) return null;
+
+  return <div className="titan-table-row-actions">{children}</div>;
 }

@@ -2,6 +2,7 @@
  * HOME Dashboard — PM V1.0 승인 (현황 카드 · 최근 작업 리스트)
  */
 
+import { HT_TERM } from "../config/titanHeatTreatmentTerminology";
 import {
   CERTIFICATE_STATUS,
   SHIPMENT_STATUS,
@@ -13,10 +14,18 @@ import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { HOME_WORKFLOW_PHASES, HOME_STATUS_GROUPS } from "../config/homeDashboard";
 import { matchesExtendedSearch } from "../config/listSearchStandard";
 import {
+  CURRENT_PROCESS_KEYS,
+  resolveRecordCurrentProcess,
+  matchesCurrentProcessKpiBucket,
+  CURRENT_PROCESS_KPI_BUCKETS,
+} from "./workflowProcessStatus";
+import {
   TODAY_SUMMARY_PHASE_KEYS,
   getStatusLabelProcessKey,
 } from "../config/workflowProcessColors";
 import { mapStandardProductListRow } from "./processFlow";
+import { getExpiringDocuments } from "./companyDocumentManagement";
+import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 const REGISTRAR_FALLBACK = "관리자";
 
@@ -43,19 +52,22 @@ function countHomeStatusCards(records = []) {
         r.shipmentStatus !== SHIPMENT_STATUS.DONE
     ).length,
     shipDone: records.filter((r) => getRecordWorkflowState(r) === "출고완료").length,
-    prodWaiting: records.filter(
-      (r) => isIncomingRegistered(r) && !r.registered && !r.lotNo?.trim()
+    prodProgress: records.filter((r) => {
+      if (!isIncomingRegistered(r)) return false;
+      const hasHeatTreatmentEntry =
+        r.htlNo?.trim() ||
+        r.workSheetGenerated ||
+        (r.registered && r.lotNo?.trim());
+      if (!hasHeatTreatmentEntry) return false;
+      if (r.completionStatus === "생산완료" || r.completionStatus === WORKFLOW_STATUS.PROD_DONE) {
+        return false;
+      }
+      if (hasInspectionLogForManagementId(r.id)) return false;
+      return true;
+    }).length,
+    prodDone: records.filter(
+      (r) => r.completionStatus === "생산완료" || r.completionStatus === WORKFLOW_STATUS.PROD_DONE
     ).length,
-    prodProgress: records.filter(
-      (r) =>
-        isIncomingRegistered(r) &&
-        ((r.htlNo && (!r.registered || !r.lotNo?.trim())) ||
-          (r.registered &&
-            r.lotNo?.trim() &&
-            r.completionStatus !== "생산완료" &&
-            !hasInspectionLogForManagementId(r.id)))
-    ).length,
-    prodDone: records.filter((r) => r.completionStatus === "생산완료").length,
     inspectWaiting: records.filter(
       (r) =>
         r.completionStatus === "생산완료" &&
@@ -88,69 +100,23 @@ export function buildHomeStatusGroups(records = getSessionProductionRecords()) {
 }
 
 export function getHomeDisplayStatus(record) {
-  const state = getRecordWorkflowState(record);
-  const hasLot = Boolean(record?.lotNo?.trim());
-  const hasInspection = hasInspectionLogForManagementId(record?.id);
-  const certIssued = record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
-  const certPending = record?.certificateStatus === CERTIFICATE_STATUS.PENDING;
-  const stockQty = getStockQty(record);
-  const isShipDone =
-    state === "출고완료" ||
-    (record?.shipmentStatus === SHIPMENT_STATUS.DONE && stockQty <= 0);
+  const current = resolveRecordCurrentProcess(record);
+  const variantMap = {
+    RECEIVED: "incoming",
+    HT_WAIT: "production",
+    HT_RUNNING: "production",
+    INSPECTION_WAIT: "inspect-wait",
+    INSPECTION_DONE: "inspect-done",
+    CERT_WAIT: "cert-wait",
+    CERT_DONE: "cert-done",
+    SHIP_WAIT: "ship-ready",
+    SHIPPED: "ship-done",
+  };
 
-  if (isShipDone) {
-    return { label: "출고 완료", variant: "ship-done" };
-  }
-
-  if (
-    (certIssued || state === "성적서 발행완료" || state === "성적서완료") &&
-    stockQty > 0 &&
-    record?.shipmentStatus !== SHIPMENT_STATUS.DONE
-  ) {
-    return { label: "출고 준비", variant: "ship-ready" };
-  }
-
-  if (state === "부분출고") {
-    return { label: "출고 준비", variant: "ship-ready" };
-  }
-
-  if (certIssued) {
-    return { label: "성적서 완료", variant: "cert-done" };
-  }
-
-  if (hasInspection && certPending) {
-    return { label: "성적서 대기", variant: "cert-wait" };
-  }
-
-  if (hasInspection) {
-    return { label: "검사완료", variant: "inspect-done" };
-  }
-
-  if (hasLot) {
-    if (record?.completionStatus === "생산완료") {
-      return { label: "검사대기", variant: "inspect-wait" };
-    }
-    return { label: "생산중", variant: "production" };
-  }
-
-  const productionComplete = record?.completionStatus === "생산완료";
-
-  if (productionComplete) {
-    return { label: "생산완료", variant: "prod-done" };
-  }
-
-  if (
-    isIncomingRegistered(record) &&
-    (record?.htlNo || record?.registered)
-  ) {
-    return { label: "생산중", variant: "production" };
-  }
-
-  if (isIncomingRegistered(record)) {
-    return { label: "입고완료", variant: "incoming" };
-  }
-
-  return { label: "입고대기", variant: "wait" };
+  return {
+    label: current.label,
+    variant: variantMap[current.key] ?? "wait",
+  };
 }
 
 function formatRegisteredAt(record, index) {
@@ -216,62 +182,83 @@ function filterRecordsByPeriod(records, period) {
   return filtered.length > 0 ? filtered : records;
 }
 
+/** KPI chip ids — PM V1.4 영문 Key */
+const HOME_KPI_CHIP_IDS = [
+  "RECEIVED",
+  "HT_WAIT",
+  "HT_RUNNING",
+  "INSPECTION_WAIT",
+  "CERT_WAIT",
+  "SHIP_WAIT",
+];
+
+/**
+ * HOME — KPI · List · Chip shared base records + process counts
+ * @param {object[]} records
+ * @returns {{ baseRecords: object[], counts: Record<string, number> }}
+ */
+export function getHomeScreenData(records = getSessionProductionRecords()) {
+  const baseRecords = records.filter(isActiveWorkflowRecordForHome);
+
+  const countKpiBucket = (kpiId) =>
+    baseRecords.filter((record) => matchesCurrentProcessKpiBucket(record, kpiId)).length;
+
+  return {
+    baseRecords,
+    counts: Object.fromEntries(HOME_KPI_CHIP_IDS.map((id) => [id, countKpiBucket(id)])),
+  };
+}
+
 export function buildTodayWorkSummary(records = getSessionProductionRecords()) {
-  const todayRecords = filterRecordsByPeriod(records, "today");
-  const base = todayRecords.length > 0 ? todayRecords : records;
-  const incoming = base.filter((r) => isIncomingRegistered(r)).length;
-  const production = base.filter((r) => r.registered || r.htlNo).length;
-  const inspectWait = base.filter(
-    (r) => r.registered && r.lotNo?.trim() && !hasInspectionLogForManagementId(r.id)
-  ).length;
-  const shipWait = base.filter(
-    (r) =>
-      isIncomingRegistered(r) &&
-      getStockQty(r) > 0 &&
-      r.shipmentStatus !== SHIPMENT_STATUS.DONE
-  ).length;
-  const certWait = base.filter((r) => r.certificateStatus === CERTIFICATE_STATUS.PENDING).length;
+  const { counts } = getHomeScreenData(records);
 
   return [
     {
-      id: "incoming",
-      label: "입고완료",
-      value: incoming,
-      phaseKey: TODAY_SUMMARY_PHASE_KEYS.incoming,
+      id: "RECEIVED",
+      label: "입고등록",
+      value: counts.RECEIVED,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.RECEIVED,
     },
     {
-      id: "production",
-      label: "생산중",
-      value: production,
-      phaseKey: TODAY_SUMMARY_PHASE_KEYS.production,
+      id: "HT_WAIT",
+      label: "열처리 대기",
+      value: counts.HT_WAIT,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.HT_WAIT,
     },
     {
-      id: "inspect",
-      label: "검사대기",
-      value: inspectWait,
-      phaseKey: TODAY_SUMMARY_PHASE_KEYS.inspect,
+      id: "HT_RUNNING",
+      label: "열처리 중",
+      value: counts.HT_RUNNING,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.HT_RUNNING,
     },
     {
-      id: "cert",
-      label: "성적서대기",
-      value: certWait,
-      phaseKey: TODAY_SUMMARY_PHASE_KEYS.cert,
+      id: "INSPECTION_WAIT",
+      label: "검사 대기",
+      value: counts.INSPECTION_WAIT,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.INSPECTION_WAIT,
     },
     {
-      id: "ship",
-      label: "출고예정",
-      value: shipWait,
-      phaseKey: TODAY_SUMMARY_PHASE_KEYS.ship,
+      id: "CERT_WAIT",
+      label: "성적서 대기",
+      value: counts.CERT_WAIT,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.CERT_WAIT,
+    },
+    {
+      id: "SHIP_WAIT",
+      label: "출고 대기",
+      value: counts.SHIP_WAIT,
+      phaseKey: TODAY_SUMMARY_PHASE_KEYS.SHIP_WAIT,
     },
   ];
 }
 
 const TODAY_ACTION_ROUTES = {
-  incoming: { to: "/inout/incoming", verb: "입고검사 진행", shortTitle: "입고검사 진행" },
-  production: { to: "/production/daily-report", verb: "LOT 스캔(작업)", shortTitle: "LOT 스캔(작업)" },
-  inspect: { to: "/quality/inspection", verb: "검사완료 등록", shortTitle: "검사완료 등록" },
-  cert: { to: "/quality/certificate", verb: "성적서 PDF 등록", shortTitle: "성적서 PDF 등록" },
-  ship: { to: "/inout/shipment", verb: "출고 처리", shortTitle: "출고 처리" },
+  RECEIVED: { to: "/inout/incoming", verb: "입고 확인", shortTitle: "입고등록" },
+  HT_WAIT: { to: "/production/daily-report", verb: "LOT 등록", shortTitle: "열처리 대기" },
+  HT_RUNNING: { to: "/production/daily-report", verb: "열처리 완료", shortTitle: "열처리 중" },
+  INSPECTION_WAIT: { to: "/quality/inspection", verb: "검사 등록", shortTitle: "검사 대기" },
+  CERT_WAIT: { to: "/quality/certificate", verb: "성적서 발행", shortTitle: "성적서 대기" },
+  SHIP_WAIT: { to: "/inout/shipment", verb: "출고 처리", shortTitle: "출고 대기" },
 };
 
 /** HOME — Workflow 기반 오늘 해야 할 일 (시스템 추천 액션) */
@@ -294,7 +281,7 @@ export function buildTodayActionItems(records = getSessionProductionRecords()) {
 
 export function buildHomeTopKpiCounts(records = getSessionProductionRecords()) {
   const today = new Date().toISOString().slice(0, 10);
-  const counts = countHomeStatusCards(records);
+  const { counts } = getHomeScreenData(records);
 
   const todayIncoming = records.filter((record) => {
     if (!isIncomingRegistered(record)) return false;
@@ -314,8 +301,8 @@ export function buildHomeTopKpiCounts(records = getSessionProductionRecords()) {
   return {
     todayIncoming,
     currentStock,
-    workProgress: counts.prodProgress,
-    inspectWait: counts.inspectWaiting,
+    workProgress: counts.HT_RUNNING,
+    inspectWait: counts.INSPECTION_WAIT,
     todayShipment,
   };
 }
@@ -324,9 +311,8 @@ export function buildProductionPeriodStats(records = getSessionProductionRecords
   const scoped = filterRecordsByPeriod(records, period);
   const counts = countHomeStatusCards(scoped);
   return [
-    { label: "생산 예정", value: counts.prodWaiting },
-    { label: "생산 진행", value: counts.prodProgress },
-    { label: "생산 완료", value: counts.prodDone },
+    { label: "열처리 진행", value: counts.prodProgress },
+    { label: HT_TERM.DONE, value: counts.prodDone },
   ];
 }
 
@@ -335,9 +321,8 @@ export function buildHomeStatusSummaryStats(records = getSessionProductionRecord
 
   if (tabId === "production") {
     return [
-      { label: "생산 예정", value: counts.prodWaiting },
-      { label: "생산 진행", value: counts.prodProgress },
-      { label: "생산 완료", value: counts.prodDone },
+      { label: "열처리 진행", value: counts.prodProgress },
+      { label: "열처리완료", value: counts.prodDone },
     ];
   }
 
@@ -393,38 +378,54 @@ export function buildHomeStatusSummaryStats(records = getSessionProductionRecord
 }
 
 function hasActiveHomeSearch(search = {}) {
-  return Object.values(search).some((value) => String(value ?? "").trim());
+  return Object.entries(search).some(([, value]) => String(value ?? "").trim());
+}
+
+function resolveHomeRowProcessKey(row) {
+  return row.currentProcessKey ?? row.processKey ?? "";
+}
+
+function matchesHomeChipSearch(row, search = {}) {
+  const record = row?.record ?? null;
+  const matchBucket = (kpiId) => {
+    if (record) return matchesCurrentProcessKpiBucket(record, kpiId);
+    const key = row?.currentProcessKey ?? "";
+    const bucket = CURRENT_PROCESS_KPI_BUCKETS[kpiId] ?? [];
+    return bucket.includes(key);
+  };
+
+  if (search.__chipRECEIVED && !matchBucket("RECEIVED")) return false;
+  if (search.__chipHT_WAIT && !matchBucket("HT_WAIT")) return false;
+  if (search.__chipHT_RUNNING && !matchBucket("HT_RUNNING")) return false;
+  if (search.__chipINSPECTION_WAIT && !matchBucket("INSPECTION_WAIT")) return false;
+  if (search.__chipCERT_WAIT && !matchBucket("CERT_WAIT")) return false;
+  if (search.__chipSHIP_WAIT && !matchBucket("SHIP_WAIT")) return false;
+  return true;
 }
 
 function isActiveWorkflowRecord(record) {
-  const state = getRecordWorkflowState(record);
-  if (state === "출고완료" && getStockQty(record) <= 0) return false;
+  const current = resolveRecordCurrentProcess(record);
+  if (current.key === CURRENT_PROCESS_KEYS.SHIPPED) return false;
   return isIncomingRegistered(record);
 }
+
+/** HOME list · KPI shared base filter */
+export const isActiveWorkflowRecordForHome = isActiveWorkflowRecord;
 
 export function getProductWorkflowSignal(record, status = getHomeDisplayStatus(record)) {
   return getStatusLabelProcessKey(status.label);
 }
 
 function isHomeWorkflowPhaseDone(record, phaseKey) {
-  switch (phaseKey) {
-    case "incoming":
-      return isIncomingRegistered(record);
-    case "production":
-      return Boolean(record?.registered && record?.lotNo?.trim());
-    case "inspection":
-      return hasInspectionLogForManagementId(record?.id);
-    case "certificate":
-      return record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
-    case "shipment":
-      return record?.shipmentStatus === SHIPMENT_STATUS.DONE;
-    default:
-      return false;
-  }
+  const current = resolveRecordCurrentProcess(record);
+  const phaseOrder = Object.values(CURRENT_PROCESS_KEYS);
+  const currentIndex = phaseOrder.indexOf(current.key);
+  const phaseIndex = phaseOrder.indexOf(phaseKey);
+  if (currentIndex === -1 || phaseIndex === -1) return false;
+  return currentIndex > phaseIndex;
 }
 
 export function buildHomeWorkflowPhases(record) {
-  const hasLot = Boolean(record?.lotNo?.trim());
   const phaseDefs = HOME_WORKFLOW_PHASES.map(({ key, label }) => ({
     key,
     label,
@@ -435,12 +436,8 @@ export function buildHomeWorkflowPhases(record) {
     return phaseDefs.map(({ key, label }) => ({ key, label, state: "done" }));
   }
 
-  let activeIndex = phaseDefs.findIndex((phase) => !phase.done);
-
-  // LOT 없으면 작업중(생산) 단계를 active 로 표시하지 않음
-  if (activeIndex >= 0 && phaseDefs[activeIndex].key === "production" && !hasLot) {
-    activeIndex = -1;
-  }
+  const current = resolveRecordCurrentProcess(record);
+  const activeIndex = phaseDefs.findIndex((phase) => phase.key === current.key);
 
   return phaseDefs.map((phase, index) => {
     if (phase.done) {
@@ -467,21 +464,20 @@ export function getPhaseStateLabel(state) {
 }
 
 const WORKFLOW_PHASE_PROGRESS = {
-  incoming: 20,
-  production: 40,
-  inspection: 60,
-  certificate: 80,
-  shipment: 100,
+  RECEIVED: 11,
+  HT_WAIT: 22,
+  HT_RUNNING: 33,
+  INSPECTION_WAIT: 44,
+  INSPECTION_DONE: 55,
+  CERT_WAIT: 66,
+  CERT_DONE: 77,
+  SHIP_WAIT: 88,
+  SHIPPED: 100,
 };
 
-/** 목록 · 상세 공통 — 현재 공정 (Badge · Progress Bar 기준) */
-export function resolveHomeWorkflowCurrentPhase(record, phases = buildHomeWorkflowPhases(record)) {
-  const status = getHomeDisplayStatus(record);
-  return {
-    key: getStatusLabelProcessKey(status.label),
-    label: status.label,
-    variant: status.variant,
-  };
+/** @deprecated resolveRecordCurrentProcess — HOME progress bar 호환 */
+export function resolveHomeWorkflowCurrentPhase(record) {
+  return resolveRecordCurrentProcess(record);
 }
 
 /** 입고(20%) → 작업(40%) → 검사(60%) → 성적서(80%) → 출고(100%) */
@@ -508,7 +504,7 @@ export function getProductWorkflowProgressPercent(record) {
 /** HOME Row — phases · currentProcess · progressPercent 단일 소스 */
 export function buildHomeRowWorkflow(record) {
   const phases = buildHomeWorkflowPhases(record);
-  const current = resolveHomeWorkflowCurrentPhase(record, phases);
+  const current = resolveRecordCurrentProcess(record);
 
   return {
     phases,
@@ -553,9 +549,9 @@ export function getDueDateDisplay(record) {
 
 export function buildProductWorkflowPreview(records = getSessionProductionRecords(), options = {}) {
   const { limit = 15, search = null } = options;
+  const { baseRecords } = getHomeScreenData(records);
 
-  const rows = records
-    .filter(isActiveWorkflowRecord)
+  const rows = baseRecords
     .sort((a, b) => b.id.localeCompare(a.id))
     .map((record) => {
       const status = getHomeDisplayStatus(record);
@@ -569,6 +565,7 @@ export function buildProductWorkflowPreview(records = getSessionProductionRecord
         ...row,
         managementId: record.id,
         currentProcess: workflow.currentProcessLabel,
+        currentProcessKey: workflow.currentProcessKey,
         currentProcessVariant: workflow.currentProcessVariant,
         processKey: workflow.currentProcessKey,
         statusLabel: workflow.currentProcessLabel,
@@ -584,9 +581,10 @@ export function buildProductWorkflowPreview(records = getSessionProductionRecord
       };
     });
 
-  const filtered = search && hasActiveHomeSearch(search)
-    ? rows.filter((row) => matchesExtendedSearch(search, row))
-    : rows;
+  const filtered =
+    search && hasActiveHomeSearch(search)
+      ? rows.filter((row) => matchesExtendedSearch(search, row) && matchesHomeChipSearch(row, search))
+      : rows;
 
   return filtered.slice(0, limit);
 }
@@ -607,4 +605,25 @@ export function buildRecentListByTab(records = getSessionProductionRecords(), ta
   }
 
   return buildRecentWorkList(scoped, { requireIncoming: tab === "incoming" });
+}
+
+/** HOME — 문서 만료 예정 알림 (문서관리 DMS) */
+export function buildDocumentExpiryAlerts(limit = 5) {
+  const rows = getExpiringDocuments()
+    .sort((a, b) => {
+      const daysA = a.expiryStatus?.daysLeft ?? 9999;
+      const daysB = b.expiryStatus?.daysLeft ?? 9999;
+      return daysA - daysB;
+    })
+    .slice(0, limit);
+
+  return rows.map((row) => ({
+    id: `doc-expiry-${row.id}`,
+    title: `${row.title} — ${row.expiryStatus?.label || "만료 예정"}`,
+    count: 1,
+    subtitle: row.company,
+    to: "/documents",
+    phaseKey: "documents",
+    widgetKey: "documentExpiry",
+  }));
 }

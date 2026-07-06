@@ -5,36 +5,6 @@
   min-height: 0;
 }
 
-.inventory-status-page__kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 1200px) {
-  .inventory-status-page__kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.inventory-status-page__kpi-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--titan-border, #dde6f0);
-  background: var(--titan-surface, #fff);
-  color: var(--titan-text-muted, #64748b);
-  font-size: var(--titan-font-sm, 13px);
-}
-
-.inventory-status-page__kpi-card strong {
-  font-size: 22px;
-  color: var(--titan-text, #0f172a);
-  line-height: 1.2;
-}
-
 .inventory-status-page__notice {
   margin: 0;
   padding: 10px 14px;

@@ -87,6 +87,8 @@ function normalizeDocument(document = {}) {
     type: typeMeta.value,
     typeLabel: typeMeta.label,
     title: document.title?.trim() ?? "",
+    documentNo: document.documentNo?.trim() ?? "",
+    revision: document.revision?.trim() ?? "",
     fileName: document.fileName?.trim() ?? "",
     mimeType: document.mimeType?.trim() ?? "",
     dataUrl: document.dataUrl ?? "",
@@ -143,7 +145,181 @@ function appendHistory(productId, entry) {
 }
 
 function getSeedRecords() {
-  return [];
+  const registrar = "품질관리부";
+  return [
+    {
+      productId: "seoam-1",
+      partNo: "H2E19655",
+      currentRevisionId: "rev-seoam-1-b",
+      revisions: [
+        {
+          id: "rev-seoam-1-a",
+          drawingNo: "DR-H2E19655",
+          revision: "Rev.00",
+          revisionDate: "2025-11-20",
+          fileName: "H2E19655_Rev00.pdf",
+          mimeType: "application/pdf",
+          dataUrl: "",
+          registeredBy: registrar,
+          isCurrent: false,
+        },
+        {
+          id: "rev-seoam-1-b",
+          drawingNo: "DR-H2E19655",
+          revision: "Rev.01",
+          revisionDate: "2026-03-15",
+          fileName: "H2E19655_Rev01.pdf",
+          mimeType: "application/pdf",
+          dataUrl: "",
+          registeredBy: registrar,
+          isCurrent: true,
+        },
+      ],
+      documents: [
+        {
+          id: "doc-seoam-1-ws",
+          type: "work_standard",
+          title: "이온질화 작업표준서",
+          documentNo: "WS-H2E19655-001",
+          revision: "Rev.01",
+          fileName: "WS-H2E19655-001.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-04-01T09:00:00.000Z",
+        },
+        {
+          id: "doc-seoam-1-is",
+          type: "inspection_standard",
+          title: "검사기준서",
+          documentNo: "IS-H2E19655-001",
+          revision: "Rev.02",
+          fileName: "IS-H2E19655-001.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-05-10T09:00:00.000Z",
+        },
+        {
+          id: "doc-seoam-1-cp",
+          type: "control_plan",
+          title: "관리계획서",
+          documentNo: "CP-H2E19655-001",
+          revision: "Rev.01",
+          fileName: "CP-H2E19655-001.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-04-20T09:00:00.000Z",
+        },
+      ],
+      history: [],
+    },
+    {
+      productId: "seoam-2",
+      partNo: "CQ91BUL504",
+      currentRevisionId: "rev-seoam-2-a",
+      revisions: [
+        {
+          id: "rev-seoam-2-a",
+          drawingNo: "DR-CQ91BUL504",
+          revision: "Rev.00",
+          revisionDate: "2026-01-10",
+          fileName: "CQ91BUL504_Rev00.pdf",
+          mimeType: "application/pdf",
+          dataUrl: "",
+          registeredBy: registrar,
+          isCurrent: true,
+        },
+      ],
+      documents: [
+        {
+          id: "doc-seoam-2-fmea",
+          type: "fmea",
+          title: "FMEA",
+          documentNo: "FM-CQ91BUL504-001",
+          revision: "Rev.01",
+          fileName: "FMEA_CQ91BUL504.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-02-15T09:00:00.000Z",
+        },
+        {
+          id: "doc-seoam-2-cr",
+          type: "customer_requirement",
+          title: "고객 요구사항",
+          documentNo: "CR-CQ91BUL504-001",
+          revision: "Rev.01",
+          fileName: "CustomerReq_CQ91BUL504.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-03-01T09:00:00.000Z",
+        },
+      ],
+      history: [],
+    },
+    {
+      productId: "seoam-4",
+      partNo: "CV105510",
+      currentRevisionId: "rev-seoam-4-a",
+      revisions: [
+        {
+          id: "rev-seoam-4-a",
+          drawingNo: "DR-CV105510",
+          revision: "Rev.00",
+          revisionDate: "2026-02-01",
+          fileName: "CV105510_Rev00.pdf",
+          mimeType: "application/pdf",
+          dataUrl: "",
+          registeredBy: registrar,
+          isCurrent: true,
+        },
+      ],
+      documents: [
+        {
+          id: "doc-seoam-4-ncr",
+          type: "ncr",
+          title: "NCR — 경도 미달",
+          documentNo: "NCR-2026-0042",
+          revision: "Rev.01",
+          fileName: "NCR-2026-0042.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-06-12T09:00:00.000Z",
+        },
+      ],
+      history: [],
+    },
+    {
+      productId: "seoam-5",
+      partNo: "CWFYH11251",
+      currentRevisionId: "rev-seoam-5-a",
+      revisions: [
+        {
+          id: "rev-seoam-5-a",
+          drawingNo: "DR-CWFYH11251",
+          revision: "Rev.00",
+          revisionDate: "2026-05-20",
+          fileName: "CWFYH11251_Rev00.pdf",
+          mimeType: "application/pdf",
+          dataUrl: "",
+          registeredBy: registrar,
+          isCurrent: true,
+        },
+      ],
+      documents: [
+        {
+          id: "doc-seoam-5-con",
+          type: "concession",
+          title: "특채 승인서",
+          documentNo: "CON-2026-0018",
+          revision: "Rev.01",
+          fileName: "Concession-2026-0018.pdf",
+          mimeType: "application/pdf",
+          registeredBy: registrar,
+          updatedAt: "2026-06-20T09:00:00.000Z",
+        },
+      ],
+      history: [],
+    },
+  ];
 }
 
 function migrateLegacyInspectionDrawings(records) {
@@ -310,13 +486,34 @@ export function setProductPhoto(productId, photoPayload) {
 }
 
 export function readDrawingFile(file) {
+  return readDocumentFile(file, { restrictToDrawing: true });
+}
+
+const DOCUMENT_ACCEPT = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+];
+
+export function readDocumentFile(file, { restrictToDrawing = false } = {}) {
   return new Promise((resolve, reject) => {
     if (!file) {
       resolve(null);
       return;
     }
-    if (!DRAWING_ACCEPT.includes(file.type)) {
-      reject(new Error("PDF, JPG, PNG 파일만 등록할 수 있습니다."));
+    const allowed = restrictToDrawing ? DRAWING_ACCEPT : DOCUMENT_ACCEPT;
+    if (!allowed.includes(file.type)) {
+      reject(
+        new Error(
+          restrictToDrawing
+            ? "PDF, JPG, PNG 파일만 등록할 수 있습니다."
+            : "PDF · JPG · PNG · DOC · DOCX · XLS · XLSX 파일만 등록할 수 있습니다."
+        )
+      );
       return;
     }
     const reader = new FileReader();
@@ -488,6 +685,29 @@ export function deleteRelatedDocument(productId, documentId) {
       ? { ...row, documents: row.documents.filter((doc) => doc.id !== documentId) }
       : row
   );
+  persistRecords();
+  return { ok: true };
+}
+
+export function deleteDrawingRevision(productId, revisionId) {
+  const record = findRecord(productId);
+  if (!record) {
+    return { ok: false, message: "도면 이력을 찾을 수 없습니다." };
+  }
+  const nextRevisions = record.revisions.filter((row) => row.id !== revisionId);
+  if (nextRevisions.length === record.revisions.length) {
+    return { ok: false, message: "삭제할 Revision을 찾을 수 없습니다." };
+  }
+  let nextCurrentId = record.currentRevisionId;
+  if (nextCurrentId === revisionId) {
+    nextCurrentId = nextRevisions[nextRevisions.length - 1]?.id ?? "";
+  }
+  const nextRecord = normalizeRecord({
+    ...record,
+    currentRevisionId: nextCurrentId,
+    revisions: nextRevisions,
+  });
+  sessionRecords = sessionRecords.map((row) => (row.productId === productId ? nextRecord : row));
   persistRecords();
   return { ok: true };
 }

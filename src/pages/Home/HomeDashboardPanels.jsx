@@ -6,6 +6,8 @@ import Card from "../../foundation/components/Card";
 import StatusChip from "../../foundation/components/StatusChip";
 import StatusSummaryCard from "../../foundation/components/StatusSummaryCard";
 import TitanStandardList from "../../foundation/components/TitanStandardList";
+import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
+import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
@@ -37,6 +39,7 @@ import {
   buildRecentWorkList,
   buildTodayActionItems,
   buildTodayWorkSummary,
+  buildDocumentExpiryAlerts,
 } from "../../utils/homeDashboardData";
 import {
   HOME_TASK_STATUS,
@@ -166,9 +169,12 @@ export function HomeTodayTasksPanel({ records, refreshKey, onRefresh }) {
 
   const systemItems = useMemo(
     () =>
-      buildTodayActionItems(records)
-        .filter((item) => isHomeWidgetVisible(item.widgetKey, flags))
-        .slice(0, HOME_TODAY_TASKS_LIMIT),
+      [
+        ...buildTodayActionItems(records).filter((item) =>
+          isHomeWidgetVisible(item.widgetKey, flags)
+        ),
+        ...buildDocumentExpiryAlerts(HOME_TODAY_TASKS_LIMIT),
+      ].slice(0, HOME_TODAY_TASKS_LIMIT),
     [records, flags]
   );
 
@@ -368,6 +374,7 @@ export function HomeProgressOverviewPanel({ records, activeChipId, onChipClick }
 /** ③ 제품 진행 리스트 — 공정 Chip + 통합검색 Filter 연동 */
 export function HomeProductProgressTable({ records, search }) {
   const [expandedRowId, setExpandedRowId] = useState(null);
+  const [detailPopupRow, setDetailPopupRow] = useState(null);
   const columns = useMemo(() => buildHomeProductProgressTableColumns(), []);
   const items = useMemo(
     () => buildProductWorkflowPreview(records, { limit: HOME_WORKFLOW_PREVIEW_LIMIT, search }),
@@ -380,17 +387,31 @@ export function HomeProductProgressTable({ records, search }) {
     }
   }, [items, expandedRowId]);
 
+  const handleRowDoubleClick = (row) => {
+    setDetailPopupRow(row);
+  };
+
   return (
-    <TitanStandardList
-      columns={columns}
-      rows={items}
-      getRowId={(row) => row.managementId}
-      expandedRowId={expandedRowId}
-      onExpandedRowChange={setExpandedRowId}
-      renderExpandedRow={(row) => <HomeWorkflowRowDetail item={row} />}
-      emptyMessage="진행 중인 제품이 없습니다."
-      ariaLabel="제품 진행 리스트"
-    />
+    <>
+      <TitanListInteractionHint className="home-list-interaction-hint" />
+      <TitanStandardList
+        columns={columns}
+        rows={items}
+        getRowId={(row) => row.managementId}
+        expandedRowId={expandedRowId}
+        onExpandedRowChange={setExpandedRowId}
+        onRowDoubleClick={handleRowDoubleClick}
+        renderExpandedRow={(row) => <HomeWorkflowRowDetail item={row} />}
+        emptyMessage="진행 중인 제품이 없습니다."
+        ariaLabel="제품 진행 리스트"
+      />
+      <TitanScreenDetailPopup
+        screenKey="inbound"
+        open={Boolean(detailPopupRow)}
+        onClose={() => setDetailPopupRow(null)}
+        record={detailPopupRow}
+      />
+    </>
   );
 }
 

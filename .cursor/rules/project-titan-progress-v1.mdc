@@ -67,10 +67,12 @@ HOME → 입고현황 → 작업일보 → 품질관리 → 기준정보관리 �
 
 | Sprint | Scope | Status |
 |--------|-------|--------|
-| **Sprint 1** | HOME Dashboard Polish · **입고현황 Workflow** (STEP 0 승인) | 🔄 **현재 집중** |
-| **Sprint 2** | **품질관리 Workflow** · 성적서관리 · Print · PDF/Preview | ⏳ 예정 |
-| **Sprint 3** | 문서관리 · 출고관리 · 거래명세서 · 출력물 | ⏳ 예정 |
-| **Sprint 4** | 품질이력 · QR 구조 · 통계 · Dashboard Polish | ⏳ 예정 |
+| **Sprint 1** | HOME Dashboard Polish · **입고현황 Workflow** (STEP 0 승인) | 🔄 진행 |
+| **Sprint 1.5** | **생산관리(작업일보) UI Freeze** | ✅ **완료 (PM 2026-07-06)** |
+| **Sprint 2 (다음)** | **업무일지 (Daily Work Log)** — 생산관리 Reference · UI 설계 → PM 승인 → 구현 | ⏳ **다음 집중** |
+| **Sprint 3** | **품질관리 Workflow** · 성적서관리 · Print · PDF/Preview | ⏳ 예정 |
+| **Sprint 4** | 문서관리 · 출고관리 · 거래명세서 · 출력물 | ⏳ 예정 |
+| **Sprint 5** | 품질이력 · QR 구조 · 통계 · Dashboard Polish | ⏳ 예정 |
 | **Version 1 Gate** | 정부/MES 방향 · Oracle PoC → Version 1 MES (long-term roadmap) | ⏳ Architecture only |
 
 ---
@@ -81,7 +83,7 @@ HOME → 입고현황 → 작업일보 → 품질관리 → 기준정보관리 �
 |------|------|
 | **HOME** | 🟢 **UI Freeze (V1.3)** — Reference Screen · 기능 추가만 |
 | **입고현황** | 🟡 In Progress |
-| **작업일보** | 🟡 In Progress |
+| **작업일보** | 🟢 **UI Freeze (V1.3)** — PM 2026-07-06 · Toolbar 4 · 출력 정책 확정 |
 | **품질관리** | 🟡 In Progress |
 | **기준정보관리** | 🟡 In Progress |
 | **문서관리** | 🟡 In Progress |

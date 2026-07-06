@@ -1,13 +1,20 @@
 /**
  * Project TITAN V1.3 — 양산검사 리스트 (생산완료 + 검사일지 병합)
+ * 입고관리 · 생산관리 SessionStorage 데이터를 관리번호 기준으로 그대로 이어받음
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
-import { getProductionProcessName } from "../config/productionProcessCodes";
-import { MASS_INSPECTION_STATUS } from "../config/inspectionManagement";
+import {
+  isInspectionMenuEligible,
+  MENU_TASK_STATUS,
+} from "./menuWorkflowGate";
+import { matchesInboundDataSearch } from "./inboundDataFields";
 import { getInspectionLogs } from "./inspectionLogSession";
-import { isProductionComplete } from "./productionComplete";
-import { formatQtyWithUnit } from "./productUnits";
+import { mapV13ProductListRow } from "./processFlow";
+import {
+  getInspectionResultLabel,
+  getMassInspectionManagementStatus,
+} from "./workflowProcessStatus";
 import { getSessionProductionRecords } from "./productionRecords";
 
 function resolveProductionCompleteDate(record) {
@@ -18,6 +25,10 @@ function resolveProductionCompleteDate(record) {
     record.productionWorkLog?.endAt ||
     "";
   return raw ? String(raw).slice(0, 10) : "—";
+}
+
+function resolveMassInspectionStatus(log) {
+  return getMassInspectionManagementStatus(log);
 }
 
 function buildMassLogIndex(logs = getInspectionLogs()) {
@@ -38,35 +49,37 @@ function buildMassLogIndex(logs = getInspectionLogs()) {
 export function getMassProductionInspectionRows() {
   const logIndex = buildMassLogIndex();
   return getSessionProductionRecords()
-    .filter(isProductionComplete)
+    .filter(isInspectionMenuEligible)
     .map((record) => {
       const log = logIndex.get(record.id) ?? null;
-      const hasLog = Boolean(log);
+      const status = resolveMassInspectionStatus(log);
+      const v13 = mapV13ProductListRow(record, status, { screenKey: "inspection" });
+
       return {
+        ...v13,
         id: log?.id ?? record.id,
         rowKey: log?.id ?? `prod-${record.id}`,
+        screenKey: "inspection",
         managementId: record.id,
-        lotNo: record.lotNo?.trim() || log?.lotNo?.trim() || "—",
         customerLotNo:
           record.customerLotNo?.trim() ||
           record.purchaseOrderNo?.trim() ||
           log?.customerLotNo?.trim() ||
           log?.purchaseOrderNo?.trim() ||
           "—",
-        company: record.company || "—",
-        partName: record.partName || "—",
-        partNo: record.partNo || "—",
         material: record.material || "—",
-        qty: formatQtyWithUnit(record.qty, record.unit),
-        processName: getProductionProcessName(record),
+        qty: v13.inboundQtyLabel,
+        heatTreatmentProcess: v13.heatTreatmentProcess ?? v13.processName,
+        processName: v13.heatTreatmentProcess ?? v13.processName,
         inspectionDate: log?.inspectionDate || "—",
-        statusLabel: hasLog ? MASS_INSPECTION_STATUS.DONE : MASS_INSPECTION_STATUS.WAIT,
-        statusVariant: hasLog ? "complete" : "wait",
+        statusLabel: status.label,
+        statusVariant: status.variant,
+        inspectionResult: getInspectionResultLabel(log),
         registeredDate: log?.createdAt?.slice(0, 10) || resolveProductionCompleteDate(record),
-        inspectionStatus: hasLog ? MASS_INSPECTION_STATUS.DONE : MASS_INSPECTION_STATUS.WAIT,
-        inspectionStatusVariant: hasLog ? "complete" : "wait",
-        assignee: log?.assignee || record.registrar || "—",
-        note: log?.note || "",
+        inspectionStatus: status.label,
+        inspectionStatusVariant: status.variant,
+        assignee: log?.assignee || record.registrar || record.worker || "—",
+        note: log?.note || record.note || "",
         logId: log?.id ?? null,
         record,
         log,
@@ -74,15 +87,63 @@ export function getMassProductionInspectionRows() {
     })
     .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
 }
-
 export function matchesMassProductionInspectionSearch(row, search) {
-  if (!matchesBasicSearch(search, row)) return false;
+  const merged = {
+    ...row.record,
+    ...row,
+    managementId: row.managementId,
+    lotNo: row.lotNo,
+    note: row.note,
+  };
+
+  if (!matchesBasicSearch(search, merged)) return false;
+  if (!matchesInboundDataSearch(search, merged)) return false;
+
   if (search.managementId && !String(row.managementId).includes(search.managementId.trim())) {
     return false;
   }
   if (search.lotNo && !String(row.lotNo).includes(search.lotNo.trim())) return false;
   if (search.status && row.statusLabel !== search.status.trim()) return false;
+  if (
+    search.__chipInspectNotDone &&
+    row.statusLabel !== MENU_TASK_STATUS.INSPECT_NOT_DONE
+  ) {
+    return false;
+  }
+  if (search.__chipInspectDone && row.statusLabel !== MENU_TASK_STATUS.INSPECT_DONE) {
+    return false;
+  }
   if (search.assignee && !String(row.assignee).includes(search.assignee.trim())) return false;
+  if (search.process && row.processName !== search.process.trim()) return false;
+
+  if (
+    search.incomingDateFrom &&
+    row.incomingDate !== "—" &&
+    row.incomingDate < search.incomingDateFrom
+  ) {
+    return false;
+  }
+  if (
+    search.incomingDateTo &&
+    row.incomingDate !== "—" &&
+    row.incomingDate > search.incomingDateTo
+  ) {
+    return false;
+  }
+  if (
+    search.productionDateFrom &&
+    row.productionDate !== "—" &&
+    row.productionDate < search.productionDateFrom
+  ) {
+    return false;
+  }
+  if (
+    search.productionDateTo &&
+    row.productionDate !== "—" &&
+    row.productionDate > search.productionDateTo
+  ) {
+    return false;
+  }
   if (
     search.registeredDateFrom &&
     row.registeredDate !== "—" &&
@@ -100,15 +161,15 @@ export function matchesMassProductionInspectionSearch(row, search) {
   if (search.note && !String(row.note ?? "").includes(search.note.trim())) return false;
   if (search.customerLotNo?.trim()) {
     const query = search.customerLotNo.trim().toLowerCase();
-    const merged = String(row.customerLotNo ?? "").toLowerCase();
+    const mergedLot = String(row.customerLotNo ?? "").toLowerCase();
     const po = String(row.record?.purchaseOrderNo ?? row.log?.purchaseOrderNo ?? "").toLowerCase();
-    if (!merged.includes(query) && !po.includes(query)) return false;
+    if (!mergedLot.includes(query) && !po.includes(query)) return false;
   }
   if (search.purchaseOrderNo?.trim()) {
     const query = search.purchaseOrderNo.trim().toLowerCase();
-    const merged = String(row.customerLotNo ?? "").toLowerCase();
+    const mergedLot = String(row.customerLotNo ?? "").toLowerCase();
     const po = String(row.record?.purchaseOrderNo ?? row.log?.purchaseOrderNo ?? "").toLowerCase();
-    if (!merged.includes(query) && !po.includes(query)) return false;
+    if (!mergedLot.includes(query) && !po.includes(query)) return false;
   }
   return true;
 }

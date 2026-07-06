@@ -180,13 +180,12 @@ function AppRoutes() {
 
               <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
 
-              <Route path="inspection" element={<Navigate to="/quality/inspection/mass" replace />} />
-
-              <Route path="inspection/register" element={<InspectionLogRegisterView />} />
-
-              <Route path="inspection/:logId/report" element={<InspectionReportView />} />
-
-              <Route path="inspection/:inspectionTab" element={<InspectionManagementScreen />} />
+              <Route path="inspection">
+                <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
+                <Route path="register" element={<InspectionLogRegisterView />} />
+                <Route path=":logId/report" element={<InspectionReportView />} />
+                <Route path=":inspectionTab" element={<InspectionManagementScreen />} />
+              </Route>
 
               <Route path="certificate" element={<CertificateManagement />} />
 
@@ -208,7 +207,11 @@ function AppRoutes() {
 
             <Route path="/statistics" element={<StatisticsLayout />}>
 
-              <Route index element={<Navigate to="/statistics/inquiry" replace />} />
+              <Route index element={<Navigate to="/statistics/production" replace />} />
+
+              <Route path="inquiry" element={<Navigate to="/statistics/production" replace />} />
+
+              <Route path="shipment" element={<Navigate to="/statistics/sales" replace />} />
 
               <Route path=":statisticsTab" element={<StatisticsScreen />} />
 

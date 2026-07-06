@@ -26,6 +26,7 @@ function normalizeRecord(record) {
     status: OTHER_INSPECTION_STATUS.includes(record.status) ? record.status : "대기",
     note: record.note?.trim() || "",
     attachments: Array.isArray(record.attachments) ? record.attachments : [],
+    inspectionLogId: record.inspectionLogId?.trim() || "",
     deleted: Boolean(record.deleted),
     createdAt: record.createdAt || new Date().toISOString(),
     updatedAt: record.updatedAt || new Date().toISOString(),

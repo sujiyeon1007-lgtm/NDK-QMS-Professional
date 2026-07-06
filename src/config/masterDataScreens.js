@@ -260,7 +260,7 @@ export const MASTER_DATA_SCREENS = {
         selectOptions: [
           { value: "관리자", label: "관리자" },
           { value: "품질", label: "품질" },
-          { value: "생산", label: "생산" },
+          { value: "생산", label: "열처리" },
           { value: "영업", label: "영업" },
           { value: "조회 전용", label: "조회 전용" },
         ],
@@ -324,7 +324,7 @@ export const MASTER_DATA_SCREENS = {
         selectOptions: [
           { value: "관리자", label: "관리자" },
           { value: "품질", label: "품질" },
-          { value: "생산", label: "생산" },
+          { value: "생산", label: "열처리" },
           { value: "영업", label: "영업" },
           { value: "조회 전용", label: "조회 전용" },
         ],

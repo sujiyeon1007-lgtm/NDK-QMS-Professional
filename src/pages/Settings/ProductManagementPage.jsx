@@ -16,6 +16,7 @@ import {
   stageMasterDelete,
   stageMasterUpdate,
 } from "../../utils/masterData";
+import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import ProductDetailModal from "./ProductDetailModal";
 import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
@@ -187,11 +188,13 @@ export default function ProductManagementPage() {
           <div>
             <h2>제품관리</h2>
             <p className="company-management-page__intro">
-              제품 목록을 관리합니다. 제품을 클릭하면 상세 Popup에서 거래처 · 재질 · 규격 · 단가
+              제품 목록을 관리합니다. 행을 더블클릭하면 상세 Popup에서 거래처 · 재질 · 규격 · 단가
               정보를 확인할 수 있습니다.
             </p>
           </div>
         </div>
+
+        <TitanListInteractionHint />
 
         <div className="company-management-page__search">
           {companyFilter ? (

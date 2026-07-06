@@ -1,12 +1,10 @@
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 재고관리 — [상세] [수정]
- */
-export default function InventoryRowActions({ onDetail, onEdit, canEdit = true }) {
+/** 재고관리 — [수정] (상세는 더블클릭) */
+export default function InventoryRowActions({ onEdit, canEdit = true }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <SecondaryButton
         type="button"
         className="titan-btn--table-action"

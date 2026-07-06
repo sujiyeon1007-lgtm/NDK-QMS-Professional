@@ -12,7 +12,7 @@ function TitanPrintOfficialFooter({
 }) {
   const defaultNotes = [
     "※ 작업수량 / 작업일 / LOT No.는 생산부에서 작성합니다.",
-    "※ 생산일보 등록 시 작성된 내용을 전산 입력합니다.",
+    "※ 열처리일보 등록 시 작성된 내용을 전산 입력합니다.",
   ];
   const lines = notes.length > 0 ? notes : defaultNotes;
 

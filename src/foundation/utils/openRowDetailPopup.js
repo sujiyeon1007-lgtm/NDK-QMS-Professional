@@ -1,6 +1,6 @@
 /**
  * Project TITAN V1.3 — list row interaction
- * single click: select · double-click: detail popup (via [상세] 동일)
+ * single click: select · double-click: detail popup
  */
 export function resolveRowId(row, getRowId) {
   if (getRowId) return getRowId(row);

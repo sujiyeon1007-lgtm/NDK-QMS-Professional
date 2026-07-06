@@ -12,6 +12,7 @@ import {
 } from "../../utils/outboundRegistration";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
+import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 
 const EMPTY_FORM = mapRecordToOutboundRegisterForm(null);
 
@@ -45,11 +46,10 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
     if (!open) return;
 
     const records = getOutboundEligibleRecords();
-    const activeWorkers = getActiveWorkers();
     const baseForm = {
       ...EMPTY_FORM,
       shipDate: getPrintOutputDate(),
-      manager: activeWorkers[0]?.name ?? "관리자",
+      manager: resolveDefaultAssigneeFromAuth(),
     };
 
     const record = resolveRegisterRecord(initialManagementId, records);

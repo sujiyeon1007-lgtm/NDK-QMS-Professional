@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Eye, Save } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
@@ -13,7 +13,9 @@ import {
   updateHeatTreatmentCalculation,
 } from "../../utils/inspectionReportEditor";
 import { addInspectionLog } from "../../utils/inspectionLogSession";
-import { ensureInspectionReportForLog } from "../../utils/inspectionReportSession";
+import { createInspectionReport } from "../../utils/inspectionReportSession";
+import { upsertDevelopmentInspection, getDevelopmentInspectionById } from "../../utils/developmentInspectionSession";
+import { upsertOtherInspection, getOtherInspectionById } from "../../utils/otherInspectionSession";
 import "./InspectionReport.css";
 
 export default function InspectionLogRegisterView() {
@@ -28,6 +30,10 @@ export default function InspectionLogRegisterView() {
   );
 
   const [report, setReport] = useState(initialReport);
+
+  useEffect(() => {
+    setReport(initialReport);
+  }, [initialReport]);
 
   const updateReport = useCallback((patch) => {
     setReport((prev) => syncReportJudgments({ ...prev, ...patch }));
@@ -117,10 +123,31 @@ export default function InspectionLogRegisterView() {
 
     setSaving(true);
     try {
-      const payload = reportToInspectionLogPayload(report);
-      const log = addInspectionLog(payload);
-      ensureInspectionReportForLog(log.id);
-      navigate("/quality/inspection", { replace: true, state: { activeId: log.id } });
+      const synced = syncReportJudgments(report);
+      const category = searchParams.get("category")?.trim() || "양산";
+      const devId = searchParams.get("devId")?.trim();
+      const otherId = searchParams.get("otherId")?.trim();
+      const payload = reportToInspectionLogPayload(synced);
+      const log = addInspectionLog({ ...payload, category });
+      createInspectionReport(log.id, { ...synced, logId: log.id });
+
+      if (devId) {
+        const dev = getDevelopmentInspectionById(devId);
+        if (dev) {
+          upsertDevelopmentInspection({ ...dev, status: "완료", inspectionLogId: log.id });
+        }
+      }
+      if (otherId) {
+        const other = getOtherInspectionById(otherId);
+        if (other) {
+          upsertOtherInspection({ ...other, status: "완료", inspectionLogId: log.id });
+        }
+      }
+
+      navigate("/quality/inspection/mass", {
+        replace: true,
+        state: { inspectionRefresh: true, activeId: log.managementId || log.id },
+      });
     } finally {
       setSaving(false);
     }

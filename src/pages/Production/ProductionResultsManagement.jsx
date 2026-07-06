@@ -123,8 +123,8 @@ export default function ProductionResultsManagement() {
   }, [criteriaFilteredRecords, activeRow]);
 
   const metrics = useMemo(
-    () => computeProductionResultMetrics(criteriaFilteredRecords),
-    [criteriaFilteredRecords]
+    () => computeProductionResultMetrics(periodFilteredRecords),
+    [periodFilteredRecords]
   );
 
   const scopeLabel = useMemo(

@@ -3,12 +3,13 @@ import { BarChart2 } from "lucide-react";
 const CHART_TONES = ["#3b82f6", "#22c55e", "#f97316", "#8b5cf6", "#94a3b8"];
 
 function buildConicGradient(items) {
-  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const safeItems = Array.isArray(items) ? items : [];
+  const total = safeItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
   if (total <= 0) return "conic-gradient(#e2e8f0 0deg 360deg)";
   let cumulative = 0;
-  const segments = items.map((item, index) => {
+  const segments = safeItems.map((item, index) => {
     const start = (cumulative / total) * 100;
-    cumulative += item.value;
+    cumulative += Number(item.value) || 0;
     const end = (cumulative / total) * 100;
     return `${CHART_TONES[index % CHART_TONES.length]} ${start}% ${end}%`;
   });
@@ -16,17 +17,21 @@ function buildConicGradient(items) {
 }
 
 function MiniLineChart({ items, unitLabel }) {
-  const max = Math.max(...items.map((item) => item.value), 1);
+  const safeItems = Array.isArray(items) ? items : [];
+  if (!safeItems.length) {
+    return <p className="production-chart-card__empty">표시할 데이터가 없습니다.</p>;
+  }
+  const max = Math.max(...safeItems.map((item) => Number(item.value) || 0), 1);
   return (
     <div className="stat-trend-chart" role="img">
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <div key={item.label} className="stat-trend-col">
           <span
             className="stat-trend-bar"
             style={{ height: `${Math.max(8, (item.value / max) * 100)}%` }}
             title={`${item.label}: ${item.value}${unitLabel ? ` ${unitLabel}` : ""}`}
           />
-          <span>{item.label.slice(-5)}</span>
+          <span>{String(item.label ?? "").slice(-5)}</span>
         </div>
       ))}
     </div>
@@ -34,10 +39,14 @@ function MiniLineChart({ items, unitLabel }) {
 }
 
 function MiniBarChart({ items, unitLabel }) {
-  const max = Math.max(...items.map((item) => item.value), 1);
+  const safeItems = Array.isArray(items) ? items : [];
+  if (!safeItems.length) {
+    return <p className="production-chart-card__empty">표시할 데이터가 없습니다.</p>;
+  }
+  const max = Math.max(...safeItems.map((item) => Number(item.value) || 0), 1);
   return (
     <div className="stat-bar-chart" role="img">
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <div key={item.label} className="stat-bar-row">
           <span className="stat-bar-label">{item.label}</span>
           <div className="stat-bar-track">
@@ -51,17 +60,18 @@ function MiniBarChart({ items, unitLabel }) {
 }
 
 function MiniPieChart({ items }) {
-  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const safeItems = Array.isArray(items) ? items : [];
+  const total = safeItems.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
   if (total <= 0) return <p className="production-chart-card__empty">표시할 데이터가 없습니다.</p>;
   return (
     <div className="production-donut-chart production-donut-chart--compact">
-      <div className="production-donut-chart__ring" style={{ background: buildConicGradient(items) }} role="img">
+      <div className="production-donut-chart__ring" style={{ background: buildConicGradient(safeItems) }} role="img">
         <div className="production-donut-chart__center">
           <span className="production-donut-chart__center-text">{total.toLocaleString("ko-KR")}</span>
         </div>
       </div>
       <ul className="production-chart-legend production-chart-legend--donut">
-        {items.slice(0, 4).map((item, index) => (
+        {safeItems.slice(0, 4).map((item, index) => (
           <li key={item.label}>
             <span className="production-chart-legend__dot" style={{ background: CHART_TONES[index] }} aria-hidden="true" />
             <span className="production-chart-legend__label">{item.label}</span>

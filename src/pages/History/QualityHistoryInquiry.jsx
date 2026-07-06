@@ -28,6 +28,9 @@ import {
   searchHistoryInquiryRecords,
 } from "../../utils/qualityHistoryInquiry";
 
+import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
+
 import "../InOut/InboundManagement.css";
 import "./QualityHistoryInquiry.css";
 
@@ -94,6 +97,7 @@ function TraceabilityFlow({ timeline }) {
 export default function QualityHistoryInquiry() {
   const [searchParams] = useSearchParams();
   const [activeId, setActiveId] = useState(null);
+  const [detailPopupRow, setDetailPopupRow] = useState(null);
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
 
@@ -263,6 +267,10 @@ export default function QualityHistoryInquiry() {
     <p className="qms-history-detail__empty">검색 후 제품을 선택하면 Traceability 이력을 확인할 수 있습니다.</p>
   );
 
+  const handleRowDoubleClick = (row) => {
+    openRowDetailPopup(row, { setActiveId, setDetailPopupRow, getRowId: (item) => item.id });
+  };
+
   return (
     <div className="inbound-page qms-history-page">
       <TitanKpiBarSlot ariaLabel="이력조회 현황" className="inbound-page__kpi">
@@ -288,6 +296,7 @@ export default function QualityHistoryInquiry() {
             rowKey="id"
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
+            onRowDoubleClick={handleRowDoubleClick}
             emptyMessage="조건에 맞는 이력이 없습니다."
           />
           <TitanTableFooter
@@ -307,6 +316,13 @@ export default function QualityHistoryInquiry() {
           showProcessFlow={false}
         />
       </div>
+
+      <TitanScreenDetailPopup
+        screenKey="inbound"
+        open={Boolean(detailPopupRow)}
+        onClose={() => setDetailPopupRow(null)}
+        record={detailPopupRow}
+      />
     </div>
   );
 }

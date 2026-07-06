@@ -9,7 +9,23 @@ const KPI_CARD_TONE_MAP = {
   red: "defect",
   gray: "hold",
   sky: "incoming",
+  amber: "inspection",
+  teal: "shipment",
 };
+
+const WORKFLOW_PROCESS_TONES = new Set([
+  "incoming",
+  "production",
+  "inspection",
+  "inspect",
+  "certificate",
+  "shipment",
+  "inventory",
+  "rework",
+  "complete",
+  "hold",
+  "defect",
+]);
 
 /** Lucide icon component name → status chip icon key */
 const LUCIDE_ICON_MAP = {
@@ -36,6 +52,14 @@ const LUCIDE_ICON_MAP = {
   Building2: "inventory",
   FileText: "description",
   Package: "inventory",
+  Boxes: "inventory",
+  ArrowDownToLine: "localShipping",
+  ArrowUpFromLine: "inventory",
+  AlertTriangle: "warning",
+  ShieldAlert: "warning",
+  RotateCcw: "factCheck",
+  Flame: "precisionManufacturing",
+  Clock: "today",
 };
 
 function resolveMetricIconKey(icon) {
@@ -45,6 +69,7 @@ function resolveMetricIconKey(icon) {
 }
 
 function mapMetricTone(tone) {
+  if (WORKFLOW_PROCESS_TONES.has(tone)) return tone;
   return KPI_CARD_TONE_MAP[tone] ?? tone ?? "production";
 }
 
@@ -102,6 +127,47 @@ function resolveStatisticsKpiValue(item, kpi) {
   if (item.id === "avgShipmentQty") {
     value = kpi.avgShipmentQty ?? value;
     unit = displayStatisticsUnit(kpi.avgShipmentUnit) || unit;
+  }
+  if (item.id === "monthlyRevenue") {
+    value = typeof kpi.monthlyRevenue === "number" ? kpi.monthlyRevenue.toLocaleString("ko-KR") : kpi.monthlyRevenue ?? "0";
+    unit = item.unit ?? "원";
+  }
+  if (item.id === "inventoryQty") {
+    value = kpi.inventoryQty ?? value;
+    unit = displayStatisticsUnit(kpi.inventoryUnit) || unit || "EA";
+  }
+  if (item.id === "shipmentQty" && kpi.shipmentQty != null && typeof kpi.shipmentQty === "number") {
+    value = kpi.shipmentQty.toLocaleString("ko-KR");
+    unit = displayStatisticsUnit(kpi.shipmentUnit) || unit || "EA";
+  }
+  if (item.id === "outboundCount") {
+    value = kpi.outboundCount ?? value;
+    unit = item.unit ?? "건";
+  }
+  if (item.id === "reinspectCount") {
+    value = kpi.reinspectCount ?? value;
+    unit = item.unit ?? "건";
+  }
+  if (item.id === "claimCount") {
+    value = kpi.claimCount ?? value;
+    unit = item.unit ?? "건";
+  }
+  if (item.id === "waitingCount") {
+    value = kpi.waitingCount ?? value;
+    unit = item.unit ?? "건";
+  }
+  if (item.id === "completedCount" && kpi.completedCount != null) {
+    value = kpi.completedCount;
+    unit = item.unit ?? "건";
+  }
+
+  if (item.id === "inventoryQty") {
+    value = kpi.inventoryQty ?? value;
+    unit = displayStatisticsUnit(kpi.inventoryUnit) || unit;
+  }
+  if (item.id === "monthlyRevenue") {
+    value = kpi.monthlyRevenue ?? value;
+    unit = item.unit ?? "만원";
   }
 
   if (item.quantity && !unit) {

@@ -1,7 +1,7 @@
 /**
  * Project TITAN — 공통 Table Frame (Auto Layout + 마크업)
  */
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 
 import {
   resolveColumnClass,
@@ -80,13 +80,43 @@ export default function TitanTableFrame({
     columnCount: colCount,
     rowCount: rows.length,
   });
+  const rowClickTimerRef = useRef(null);
 
   const handleRowClick = (row) => {
     const rowId = getRowId(row);
-    if (expandable && onExpandedRowChange) {
-      onExpandedRowChange(expandedRowId === rowId ? null : rowId);
+    const runSingleClick = () => {
+      if (expandable && onExpandedRowChange) {
+        onExpandedRowChange(expandedRowId === rowId ? null : rowId);
+      }
+      onRowClick?.(row);
+    };
+
+    if (!onRowClick) {
+      return;
     }
-    onRowClick?.(row);
+
+    if (onRowDoubleClick) {
+      if (rowClickTimerRef.current) {
+        clearTimeout(rowClickTimerRef.current);
+      }
+      rowClickTimerRef.current = setTimeout(() => {
+        rowClickTimerRef.current = null;
+        runSingleClick();
+      }, 220);
+      return;
+    }
+
+    runSingleClick();
+  };
+
+  const handleRowDoubleClick = (event, row) => {
+    if (rowClickTimerRef.current) {
+      clearTimeout(rowClickTimerRef.current);
+      rowClickTimerRef.current = null;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    onRowDoubleClick?.(row);
   };
 
   return (
@@ -146,7 +176,7 @@ export default function TitanTableFrame({
                     })}
                     onClick={clickable ? () => handleRowClick(row) : undefined}
                     onDoubleClick={
-                      onRowDoubleClick ? () => onRowDoubleClick(row) : undefined
+                      onRowDoubleClick ? (event) => handleRowDoubleClick(event, row) : undefined
                     }
                     aria-expanded={expandable ? isExpanded : undefined}
                   >

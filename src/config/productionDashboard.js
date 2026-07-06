@@ -2,23 +2,15 @@
  * Project TITAN V1.0 — 생산관리 KPI · 조회 기준 구성
  */
 
-import { CircleCheck, Clock3, Cog, Factory, AlertTriangle, TrendingUp } from "lucide-react";
+import { CircleCheck, Cog, Factory, AlertTriangle, TrendingUp } from "lucide-react";
 
 /** @typedef {'blue' | 'orange' | 'green' | 'purple'} ProductionKpiTone */
 
 /** @type {{ id: string, label: string, subLabel: string, icon: import("react").ComponentType, tone: ProductionKpiTone, to?: string }} */
 export const PRODUCTION_DAILY_STATUS_CARDS = [
   {
-    id: "prodWaiting",
-    label: "생산 대기",
-    subLabel: "생산 예정 건",
-    icon: Clock3,
-    tone: "blue",
-    to: "/production/daily-report",
-  },
-  {
     id: "prodProgress",
-    label: "생산 진행",
+    label: "열처리 진행",
     subLabel: "작업 진행 중",
     icon: Cog,
     tone: "green",
@@ -26,8 +18,8 @@ export const PRODUCTION_DAILY_STATUS_CARDS = [
   },
   {
     id: "prodDone",
-    label: "생산 완료",
-    subLabel: "생산 완료 건",
+    label: "열처리 완료",
+    subLabel: "열처리 완료 건",
     icon: CircleCheck,
     tone: "purple",
     to: "/production/daily-report",

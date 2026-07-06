@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_TABLE_PAGE_SIZE } from "../../config/listSearchStandard";
 
 export function useListPagination(items = [], initialPageSize = DEFAULT_TABLE_PAGE_SIZE) {
@@ -20,14 +20,17 @@ export function useListPagination(items = [], initialPageSize = DEFAULT_TABLE_PA
     [items, safePage, pageSize]
   );
 
-  const handlePageChange = (nextPage) => {
-    setPage(Math.min(Math.max(1, nextPage), totalPages));
-  };
+  const handlePageChange = useCallback((nextPage) => {
+    setPage(() => {
+      const pages = Math.max(1, Math.ceil(items.length / pageSize));
+      return Math.min(Math.max(1, nextPage), pages);
+    });
+  }, [items.length, pageSize]);
 
-  const handlePageSizeChange = (nextSize) => {
+  const handlePageSizeChange = useCallback((nextSize) => {
     setPageSize(nextSize);
     setPage(1);
-  };
+  }, []);
 
   return {
     page: safePage,

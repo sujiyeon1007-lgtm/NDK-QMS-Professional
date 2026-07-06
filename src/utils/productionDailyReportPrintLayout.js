@@ -2,9 +2,9 @@ import {
   buildListPrintPaginationOptions,
   TITAN_LIST_PRINT_ORIENTATION,
 } from "../config/titanListPrintStandard";
-import { computePrintColumnWidths, paginateRowsByLayout } from "./titanPrintLayout";
+import { computePrintColumnWidths, paginateRowsSimple } from "./titanPrintLayout";
 
-export const PRODUCTION_DAILY_PRINT_TITLE = "생산일보";
+export const PRODUCTION_DAILY_PRINT_TITLE = "열처리일보";
 
 export function buildProductionDailyChargeColumns() {
   return [
@@ -80,14 +80,13 @@ export function buildProductionDailyChargeLayout(chargeProducts = [], options = 
   const columns = buildProductionDailyChargeColumns();
   const columnWidths = computePrintColumnWidths(columns, chargeProducts);
   const orientation = TITAN_LIST_PRINT_ORIENTATION;
-  const pages = paginateRowsByLayout(
+  const pages = paginateRowsSimple(
     chargeProducts,
     columns,
     columnWidths,
     orientation,
     buildListPrintPaginationOptions({
       reportMemo: options.note,
-      getGroupKey: () => "lot-charge",
     })
   );
 
@@ -102,4 +101,10 @@ export function buildProductionDailyChargeLayout(chargeProducts = [], options = 
 /** @deprecated use buildProductionDailyChargeLayout */
 export function buildProductionDailyPrintLayout(rows, options = {}) {
   return buildProductionDailyChargeLayout(rows, options);
+}
+
+/** 인쇄 테이블에 실제 렌더되는 행 수 (페이지 분할 후 합계) */
+export function countProductionDailyPrintOutputRows(chargeProducts = [], options = {}) {
+  const { pages } = buildProductionDailyChargeLayout(chargeProducts, options);
+  return pages.reduce((sum, page) => sum + page.length, 0);
 }

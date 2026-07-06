@@ -78,6 +78,7 @@ export function createEmptyWorkJournalSearch() {
     title: "",
     managementId: "",
     lotNo: "",
+    assignee: "",
     dateFrom: "",
     dateTo: "",
     source: "",
@@ -196,8 +197,15 @@ export function createEmptyInspectionManagementSearch() {
     lotNo: "",
     status: "",
     assignee: "",
+    incomingDateFrom: "",
+    incomingDateTo: "",
+    productionDateFrom: "",
+    productionDateTo: "",
     registeredDateFrom: "",
     registeredDateTo: "",
+    process: "",
+    customerLotNo: "",
+    purchaseOrderNo: "",
     note: "",
     category: "",
   };
@@ -263,6 +271,7 @@ export function createEmptyCertificateRegister() {
     process: "",
     qty: "",
     unit: "EA",
+    registeredBy: "",
     excelFile: null,
     pdfFile: null,
   };
@@ -298,22 +307,15 @@ export function createEmptyDepartmentWorkSearch() {
   };
 }
 
-/** Document Management — 제품 문서현황 리스트 검색 */
+/** Document Management — 업체 중심 리스트 검색 */
 export function createEmptyDocumentManagementSearch() {
   return {
-    ...EMPTY_BASIC_SEARCH,
-    managementId: "",
-    lotNo: "",
-    status: "",
-    incomingDateFrom: "",
-    incomingDateTo: "",
-    productionDateFrom: "",
-    productionDateTo: "",
+    company: "",
+    partName: "",
+    partNo: "",
+    material: "",
     manager: "",
-    customerLotNo: "",
-    process: "",
-    qty: "",
-    note: "",
+    status: "",
   };
 }
 

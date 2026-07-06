@@ -1,0 +1,610 @@
+.titan-standard-detail-popup.titan-standard-detail-popup .titan-detail-popup__title {
+  display: none;
+}
+
+/* Popup — PM 고정 규격 (공정이력 8행 기준 880×660, 탭별 재계산 없음) */
+.titan-standard-detail-popup.titan-standard-detail-popup {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+.titan-standard-detail-popup.titan-standard-detail-popup .MuiDialog-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  min-width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+.titan-standard-detail-popup.titan-standard-detail-popup .MuiDialog-paper {
+  margin: 0 !important;
+}
+
+.titan-standard-detail-popup__paper {
+  --titan-standard-popup-width: 880px;
+  --titan-standard-popup-height: 660px;
+  --titan-standard-popup-content-height: 420px;
+  width: var(--titan-standard-popup-width) !important;
+  min-width: var(--titan-standard-popup-width) !important;
+  max-width: var(--titan-standard-popup-width) !important;
+  height: var(--titan-standard-popup-height) !important;
+  min-height: var(--titan-standard-popup-height) !important;
+  max-height: var(--titan-standard-popup-height) !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  display: block !important;
+}
+
+/* Dialog 내부 — 탭 내용과 무관하게 Header/Tabs/Content/Footer 고정 레이아웃 */
+.titan-standard-detail-popup__shell {
+  --titan-standard-popup-width: 880px;
+  --titan-standard-popup-height: 660px;
+  --titan-standard-popup-content-height: 420px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  height: var(--titan-standard-popup-height);
+  min-height: var(--titan-standard-popup-height);
+  max-height: var(--titan-standard-popup-height);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.titan-standard-detail-popup__header-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16px;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--titan-border);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.titan-standard-detail-popup__header-block {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.titan-standard-detail-popup__header-block--meta {
+  gap: 6px;
+}
+
+.titan-standard-detail-popup__product-identity {
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--titan-text);
+  word-break: keep-all;
+}
+
+.titan-standard-detail-popup__product-part-no {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--titan-text);
+  word-break: keep-all;
+}
+
+.titan-standard-detail-popup__header-process,
+.titan-standard-detail-popup__header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.titan-standard-detail-popup__product-lot {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__header-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__header-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.titan-standard-detail-popup__tabs-wrap {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
+}
+
+.titan-standard-detail-popup.titan-standard-detail-popup .titan-detail-popup__content,
+.titan-standard-detail-popup__content {
+  flex: none !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: none !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  padding: 10px 16px 12px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.titan-standard-detail-popup__content.MuiDialogContent-root {
+  overflow: hidden !important;
+}
+
+.titan-standard-detail-popup__content.MuiDialogContent-dividers {
+  border-top: 1px solid var(--titan-border);
+  border-bottom: 1px solid var(--titan-border);
+}
+
+/* Content stage — 모든 탭 동일 고정 영역 (공정이력 기준) */
+.titan-standard-detail-popup__tab-stage {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.titan-standard-detail-popup.titan-standard-detail-popup .titan-detail-popup__tab-panel,
+.titan-standard-detail-popup__tab-panel {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  min-height: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: none;
+}
+
+.titan-standard-detail-popup__tab-panel.is-active {
+  display: block;
+  z-index: 1;
+}
+
+.titan-standard-detail-popup__tab-panel-inner {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.titan-standard-detail-popup__footer {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.titan-standard-detail-popup__basic-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 76px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: baseline;
+}
+
+.titan-standard-detail-popup__basic-grid dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.titan-standard-detail-popup__basic-grid dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text);
+  line-height: 1.5;
+  word-break: keep-all;
+  min-width: 0;
+}
+
+.titan-standard-detail-popup__basic-grid dd:nth-of-type(4n + 2):not(.titan-standard-detail-popup__basic-note-value) {
+  padding-right: 20px;
+}
+
+.titan-standard-detail-popup__basic-note-label {
+  align-self: start;
+}
+
+.titan-standard-detail-popup__basic-note-value {
+  grid-column: 2 / -1;
+}
+
+/* Compact history list — 공정이력 · QR 작업이력 */
+.titan-standard-detail-popup__compact-history {
+  width: 100%;
+  max-width: 100%;
+}
+
+.titan-standard-detail-popup__compact-history-head,
+.titan-standard-detail-popup__compact-history-body > li {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 64px 52px;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+}
+
+.titan-standard-detail-popup__compact-history--qr .titan-standard-detail-popup__compact-history-head,
+.titan-standard-detail-popup__compact-history--qr .titan-standard-detail-popup__compact-history-body > li {
+  grid-template-columns: 92px minmax(0, 1fr) 64px;
+}
+
+.titan-standard-detail-popup__compact-history-head {
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--titan-border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__compact-history-body {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.titan-standard-detail-popup__compact-history-body > li {
+  padding: 5px 0;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--titan-text);
+}
+
+.titan-standard-detail-popup__compact-history-body > li.is-pending {
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__compact-history-label {
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.titan-standard-detail-popup__compact-history-datetime,
+.titan-standard-detail-popup__compact-history-assignee,
+.titan-standard-detail-popup__compact-history-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titan-standard-detail-popup__compact-history-status {
+  font-weight: 700;
+}
+
+/* 공정이력 — 타임라인 (입고관리 Detail Popup 전용) */
+.titan-standard-detail-popup__process-timeline {
+  width: 100%;
+  max-width: 100%;
+}
+
+.titan-standard-detail-popup__process-timeline-head,
+.titan-standard-detail-popup__process-timeline-body > li {
+  display: grid;
+  grid-template-columns: minmax(148px, 1.45fr) minmax(0, 1fr) 64px 52px;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+}
+
+.titan-standard-detail-popup__process-timeline-head {
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--titan-border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__process-timeline-body {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.titan-standard-detail-popup__process-timeline-body > li {
+  min-height: 40px;
+  padding: 4px 0;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--titan-text);
+}
+
+.titan-standard-detail-popup__process-timeline-body > li.is-pending {
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__process-timeline-process {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.titan-standard-detail-popup__process-timeline-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.titan-standard-detail-popup__process-timeline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--blue {
+  background: #3b82f6;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--indigo {
+  background: #2563eb;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--green {
+  background: #22c55e;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--orange {
+  background: #f97316;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--purple {
+  background: #8b5cf6;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--teal {
+  background: #0d9488;
+}
+
+.titan-standard-detail-popup__process-timeline-icon--grey {
+  background: #94a3b8;
+}
+
+.titan-standard-detail-popup__process-timeline-arrow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6px;
+  padding: 1px 0 2px;
+  font-size: 11px;
+  line-height: 1;
+  color: #94a3b8;
+}
+
+.titan-standard-detail-popup__process-timeline-label {
+  padding-top: 5px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.titan-standard-detail-popup__process-timeline-datetime,
+.titan-standard-detail-popup__process-timeline-assignee {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titan-standard-detail-popup__process-timeline-status-done {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.titan-standard-detail-popup__process-timeline-status-pending {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+/* Compact tables — 동일 LOT · 첨부파일 (popup 내부만) */
+.titan-standard-detail-popup__table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.titan-standard-detail-popup__compact-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+}
+
+.titan-standard-detail-popup__compact-table th,
+.titan-standard-detail-popup__compact-table td {
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: middle;
+  word-break: keep-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titan-standard-detail-popup__compact-table th {
+  background: var(--titan-table-header, #e3e9f0);
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(1),
+.titan-standard-detail-popup__colot-table td:nth-child(1) {
+  width: 18%;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(2),
+.titan-standard-detail-popup__colot-table td:nth-child(2) {
+  width: 16%;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(3),
+.titan-standard-detail-popup__colot-table td:nth-child(3) {
+  width: 16%;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(4),
+.titan-standard-detail-popup__colot-table td:nth-child(4) {
+  width: 12%;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(5),
+.titan-standard-detail-popup__colot-table td:nth-child(5) {
+  width: 16%;
+}
+
+.titan-standard-detail-popup__colot-table th:nth-child(6),
+.titan-standard-detail-popup__colot-table td:nth-child(6) {
+  width: 22%;
+}
+
+.titan-standard-detail-popup__attachments-table th:nth-child(1),
+.titan-standard-detail-popup__attachments-table td:nth-child(1) {
+  width: 22%;
+}
+
+.titan-standard-detail-popup__attachments-table th:nth-child(2),
+.titan-standard-detail-popup__attachments-table td:nth-child(2) {
+  width: 46%;
+}
+
+.titan-standard-detail-popup__attachments-table th:nth-child(3),
+.titan-standard-detail-popup__attachments-table td:nth-child(3) {
+  width: 32%;
+}
+
+.titan-standard-detail-popup__attachments-empty {
+  margin: 0;
+  padding: 0;
+}
+
+.titan-standard-detail-popup__colot-header {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--titan-border);
+  font-size: 13px;
+  color: var(--titan-primary);
+}
+
+.titan-standard-detail-popup__colot-table tbody tr.is-current {
+  background: #eff6ff;
+}
+
+.titan-standard-detail-popup__colot-table tbody tr.is-clickable {
+  cursor: pointer;
+}
+
+.titan-standard-detail-popup__colot-table tbody tr.is-clickable:hover {
+  background: #f3f7fc;
+}
+
+.titan-standard-detail-popup__memo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.titan-standard-detail-popup__memo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titan-standard-detail-popup__memo-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-muted);
+}
+
+.titan-standard-detail-popup__memo-text {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  line-height: 1.5;
+  color: var(--titan-text);
+}
+
+@media (max-width: 960px) {
+  .titan-standard-detail-popup__paper {
+    --titan-standard-popup-width: 92vw;
+  }
+}
+
+@media (max-height: 720px) {
+  .titan-standard-detail-popup__paper {
+    --titan-standard-popup-height: 90vh;
+    --titan-standard-popup-content-height: calc(90vh - 240px);
+  }
+}
+
+@media (max-width: 860px) {
+  .titan-standard-detail-popup__basic-grid {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .titan-standard-detail-popup__basic-note-value {
+    grid-column: 2;
+  }
+
+  .titan-standard-detail-popup__header-card {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

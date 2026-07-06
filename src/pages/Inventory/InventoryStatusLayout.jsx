@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { getSectionByPathname } from "../../config/menuStructure";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
@@ -5,10 +6,14 @@ import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 export default function InventoryStatusLayout() {
   const location = useLocation();
   const section = getSectionByPathname(location.pathname);
-  if (!section) return null;
+  const layoutSection = useMemo(
+    () => (section ? { ...section, tabs: [] } : null),
+    [section]
+  );
+  if (!layoutSection) return null;
 
   return (
-    <SectionPageLayout section={section} description={null}>
+    <SectionPageLayout section={layoutSection} description={null}>
       <Outlet />
     </SectionPageLayout>
   );

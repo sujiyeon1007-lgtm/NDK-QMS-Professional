@@ -1,22 +1,49 @@
 /**
- * Project TITAN V1.0 — 성적서 파일 리스트 · 검색
+ * Project TITAN V1.3 — 성적서 리스트 · 검색 (검사완료 제품 자동 표시)
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import { matchesInboundDataSearch } from "./inboundDataFields";
-import { getSessionProductionRecords } from "./productionRecords";
-import { getCertificateFileStatus } from "./certificateSession";
-import { formatQtyWithUnit } from "./productUnits";
-
+import {
+  buildCertificateEntryFromRecord,
+  getCertificateEntryByManagementId,
+} from "./certificateSession";
+import { isCertificateMenuEligible, MENU_TASK_STATUS } from "./menuWorkflowGate";
 import { mapV13ProductListRow } from "./processFlow";
+import { getSessionProductionRecords } from "./productionRecords";
+import { formatQtyWithUnit } from "./productUnits";
+import {
+  CERTIFICATE_MANAGEMENT_STATUS,
+  getCertificateManagementStatus,
+} from "./workflowProcessStatus";
+
+function resolveCertificateMenuEntry(record) {
+  const existing = getCertificateEntryByManagementId(record.id);
+  if (existing) return existing;
+  return buildCertificateEntryFromRecord(record);
+}
+
+/** 검사완료 제품 — 성적서관리 자동 표시 대상 */
+export function getCertificateMenuListRows() {
+  return getSessionProductionRecords()
+    .filter(isCertificateMenuEligible)
+    .map((record) => {
+      const entry = resolveCertificateMenuEntry(record);
+      return mapCertificateEntryToListRow({
+        ...entry,
+        id: entry.id || `pending-cert-${record.id}`,
+      });
+    });
+}
 
 export function mapCertificateEntryToListRow(entry) {
-  const status = getCertificateFileStatus(entry);
+  const status = getCertificateManagementStatus(entry);
   const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
   const purchaseOrderNo = entry.purchaseOrderNo || record?.purchaseOrderNo || "";
   const customerLotNo = entry.customerLotNo || record?.customerLotNo || "";
+  const heatTreatmentProcess = entry.process?.trim() || record?.process || "—";
   const v13 = record
-    ? mapV13ProductListRow(record, status)
+    ? mapV13ProductListRow(record, status, { screenKey: "certificate" })
     : {
         id: entry.id,
         incomingDate: entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",
@@ -27,7 +54,9 @@ export function mapCertificateEntryToListRow(entry) {
         partNo: entry.partNo || "—",
         inboundQtyLabel: formatQtyWithUnit(entry.qty, entry.unit),
         workQtyLabel: formatQtyWithUnit(entry.qty, entry.unit),
-        currentProcess: entry.process || "—",
+        currentProcess: "성적서",
+        workflowProcess: "성적서",
+        workflowStatus: status.label,
         remark: entry.note?.trim() || "—",
         statusLabel: status.label,
         statusVariant: status.variant,
@@ -36,12 +65,14 @@ export function mapCertificateEntryToListRow(entry) {
   return {
     ...v13,
     id: entry.id,
+    screenKey: "certificate",
     managementId: entry.managementId || "—",
     purchaseOrderNo: purchaseOrderNo || "—",
     customerLotNo: customerLotNo || "—",
     material: entry.material || "—",
     qty: formatQtyWithUnit(entry.qty, entry.unit),
-    processName: entry.process || "—",
+    heatTreatmentProcess,
+    processName: heatTreatmentProcess,
     excelRegistered: Boolean(entry.excelFile?.name),
     pdfRegistered: Boolean(entry.pdfFile?.name),
     registeredDate: entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",
@@ -73,5 +104,20 @@ export function matchesCertificateSearch(row, search) {
   if (search.registeredDateTo && row.registeredDate > search.registeredDateTo) return false;
   if (search.assignee && !String(entry.registeredBy ?? "").includes(search.assignee)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
+  if (
+    search.__chipCertNotIssued &&
+    row.statusLabel !== MENU_TASK_STATUS.CERT_NOT_ISSUED
+  ) {
+    return false;
+  }
+  if (search.__chipCertIssued && row.statusLabel !== MENU_TASK_STATUS.CERT_ISSUED) {
+    return false;
+  }
+  if (search.__chipCertWait && row.statusLabel !== CERTIFICATE_MANAGEMENT_STATUS.WAIT) {
+    return false;
+  }
+  if (search.__chipCertDone && row.statusLabel !== CERTIFICATE_MANAGEMENT_STATUS.DONE) {
+    return false;
+  }
   return true;
 }

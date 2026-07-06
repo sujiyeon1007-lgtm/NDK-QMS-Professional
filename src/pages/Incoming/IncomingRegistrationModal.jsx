@@ -12,6 +12,10 @@ import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getProductUnitOptions, parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import {
+  resolveAssigneeWorkerOptions,
+  resolveDefaultAssigneeFromAuth,
+} from "../../utils/titanAssigneeResolver";
+import {
   INBOUND_EDIT_LABEL,
   INBOUND_REGISTER_LABEL,
 } from "../../config/registerModalStandard";
@@ -98,7 +102,7 @@ function IncomingRegistrationModal({
     [companyCodeMapProp]
   );
   const companyOptions = useMemo(() => getActiveMasterNames("companies"), []);
-  const managerOptions = useMemo(() => getActiveMasterNames("workers"), []);
+  const managerOptions = useMemo(() => resolveAssigneeWorkerOptions(), []);
   const unitOptions = useMemo(() => getProductUnitOptions(), []);
 
   const [autoId, setAutoId] = useState(() => !isEdit);
@@ -106,7 +110,7 @@ function IncomingRegistrationModal({
   const [form, setForm] = useState(() =>
     initialForm
       ? { ...emptyForm, incomingDate: getJournalReferenceDate(), ...initialForm }
-      : { ...emptyForm, incomingDate: getJournalReferenceDate() }
+      : { ...emptyForm, incomingDate: getJournalReferenceDate(), manager: resolveDefaultAssigneeFromAuth() }
   );
 
   useEffect(() => {
@@ -323,18 +327,15 @@ function IncomingRegistrationModal({
 
               <label className="form-field">
                 <span>담당자</span>
-                <input
-                  type="text"
-                  list="inbound-manager-suggestions"
-                  placeholder="담당자 입력 또는 선택"
-                  value={form.manager}
-                  onChange={(event) => updateField("manager", event.target.value)}
-                />
-                <datalist id="inbound-manager-suggestions">
-                  {managerOptions.map((name) => (
-                    <option key={name} value={name} />
+                <select value={form.manager} onChange={(event) => updateField("manager", event.target.value)}>
+                  <option value="">담당자 선택</option>
+                  {managerOptions.map((worker) => (
+                    <option key={worker.id} value={worker.name}>
+                      {worker.name}
+                      {worker.department ? ` · ${worker.department}` : ""}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </label>
 
               <label className="form-field">

@@ -235,6 +235,19 @@ export default function InspectionReportDocument({
               <td colSpan={3}>{report.customerLotNo || "—"}</td>
             </tr>
             <tr>
+              <th>입고일</th>
+              <td>{report.incomingDate || "—"}</td>
+              <th>생산일</th>
+              <td>{report.productionDate || "—"}</td>
+              <th>입고수량</th>
+              <td>{report.inboundQtyLabel || formatQtyWithUnit(report.qty, report.unit)}</td>
+            </tr>
+            <tr>
+              <th>작업수량</th>
+              <td>{report.workQtyLabel || formatQtyWithUnit(report.qty, report.unit)}</td>
+              <td colSpan={4} />
+            </tr>
+            <tr>
               <th>재질</th>
               <td>
                 <BasicCell

@@ -9,6 +9,7 @@ import {
   SEARCH_RESET_LABEL,
   SEARCH_SUBMIT_LABEL,
 } from "../../config/listSearchStandard";
+import TitanListInteractionHint from "./TitanListInteractionHint";
 import {
   buildSearchSuggestionIndex,
   filterSearchSuggestions,
@@ -34,6 +35,7 @@ export default function TitanSearchPanel({
   className = "",
   bare = false,
   enableEnterSearch = true,
+  showListHint = true,
 }) {
   const update = (key, value) => onDraftChange({ ...draft, [key]: value });
   const handleEnterSearch = enableEnterSearch ? onSearch : undefined;
@@ -60,9 +62,11 @@ export default function TitanSearchPanel({
   const resolvedBasicFields = basicFields ?? defaultBasicFields;
 
   return (
-    <div
-      className={`titan-search-panel${bare ? "" : " titan-card"} ${className}`.trim()}
-    >
+    <>
+      {showListHint ? <TitanListInteractionHint /> : null}
+      <div
+        className={`titan-search-panel${bare ? "" : " titan-card"} ${className}`.trim()}
+      >
       <div className="titan-search-panel__basic">
         <div className="titan-search-panel__row titan-search-panel__row--primary">
           <div
@@ -111,7 +115,8 @@ export default function TitanSearchPanel({
       </div>
 
       <TitanAdvancedSearch open={advancedOpen}>{advancedContent}</TitanAdvancedSearch>
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -11,11 +11,13 @@ export const INSPECTION_MANAGEMENT_TABS = [
 export const INSPECTION_TAB_IDS = INSPECTION_MANAGEMENT_TABS.map((tab) => tab.id);
 
 export const MASS_INSPECTION_STATUS = {
-  WAIT: "검사대기",
+  NOT_DONE: "미검사",
   DONE: "검사완료",
+  /** @deprecated */
+  WAIT: "미검사",
 };
 
-export const MASS_INSPECTION_STATUS_OPTIONS = Object.values(MASS_INSPECTION_STATUS);
+export const MASS_INSPECTION_STATUS_OPTIONS = ["미검사", "검사완료"];
 
 export const DEVELOPMENT_INSPECTION_STATUS = ["대기", "진행중", "완료", "보류"];
 
@@ -30,7 +32,10 @@ export const OTHER_INSPECTION_CATEGORIES = [
   { value: "기타", label: "기타" },
 ];
 
+export const RESERVED_INSPECTION_ROUTE_PARAMS = ["register"];
+
 export function resolveInspectionTab(tabParam) {
+  if (RESERVED_INSPECTION_ROUTE_PARAMS.includes(tabParam)) return null;
   if (INSPECTION_TAB_IDS.includes(tabParam)) return tabParam;
   return "mass";
 }

@@ -7,6 +7,12 @@ import { getSessionProductionRecords, isIncomingRegistered } from "./productionR
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
+import {
+  formatOutboundTimeLabel,
+  getOutboundManager,
+  getOutboundShipDate,
+  hasOutboundShipment,
+} from "./outboundManagementStatus";
 
 /** 이력조회 Traceability 단계 — 입고 → 작업일보 → 품질 → 출고 */
 export const QUALITY_TRACEABILITY_STEPS = [
@@ -79,12 +85,15 @@ function buildQualityStep(record) {
 }
 
 function buildOutboundStep(record) {
-  const shipped = (record.shippedQty ?? 0) > 0;
+  const shipped = hasOutboundShipment(record);
+  const outboundDate = getOutboundShipDate(record);
+  const manager = getOutboundManager(record);
+  const outboundTime = formatOutboundTimeLabel(record);
   return {
     ...QUALITY_TRACEABILITY_STEPS[3],
     status: shipped ? "done" : "pending",
     detail: shipped
-      ? `출고 ${record.shippedQty ?? 0}${record.unit ? ` ${record.unit}` : ""} · ${record.shipDate ?? record.lastShipDate ?? "—"}`
+      ? `출고 ${record.shippedQty ?? 0}${record.unit ? ` ${record.unit}` : ""} · ${outboundDate} · ${manager} · ${outboundTime}`
       : "출고 이력 없음",
   };
 }

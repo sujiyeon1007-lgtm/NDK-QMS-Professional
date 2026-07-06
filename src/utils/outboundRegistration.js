@@ -22,6 +22,9 @@ import {
 import { onOutboundComplete, WORKFLOW_STATUS, getWorkflowStatus } from "./titanWorkflowStatus";
 import { isShipmentReady } from "./ndkWorkflow";
 import { getPrintOutputDate } from "./titanPrintDates";
+import { resolveDefaultAssigneeFromAuth } from "./titanAssigneeResolver";
+import { appendWorkJournalAutoEntry } from "./workJournalAutoRecord";
+import { WORK_JOURNAL_ACTION_TYPES } from "../config/titanAssigneePolicy";
 import { getStatementPrintStatus } from "./outboundStatementStatus";
 
 export { isTitanAdminUser } from "./titanAdminAccess";
@@ -60,7 +63,7 @@ export function mapRecordToOutboundRegisterForm(record, prev = {}) {
     stockQty: String(getStockQty(record)),
     shipQty: prev.shipQty ?? "",
     shipDate: prev.shipDate || getPrintOutputDate(),
-    manager: prev.manager || "관리자",
+    manager: prev.manager || resolveDefaultAssigneeFromAuth(),
     note: prev.note ?? "",
   };
 }
@@ -109,12 +112,14 @@ export function applyOutboundRegister(form) {
   const stockBefore = stock;
   const shipDate = form.shipDate || getPrintOutputDate();
   const shippedBy = form.manager || getCurrentTitanUser();
+  const outboundTime = new Date().toISOString();
   const statementStatus = getStatementPrintStatus(record).label;
 
   const result = processShipment(managementId, shipQty, {
     outboundRegistered: true,
     outboundDate: shipDate,
     outboundManager: shippedBy,
+    outboundTime,
     note: form.note?.trim() || undefined,
   });
 
@@ -158,9 +163,21 @@ export function applyOutboundRegister(form) {
       outboundRegistered: true,
       outboundDate: shipDate,
       outboundManager: shippedBy,
+      outboundTime,
       partialShipHistory,
     });
   }
+
+  appendWorkJournalAutoEntry({
+    actionType: WORK_JOURNAL_ACTION_TYPES.OUTBOUND_REGISTER,
+    assignee: shippedBy,
+    managementId,
+    company: updated.company,
+    lotNo: updated.lotNo,
+    date: shipDate,
+    title: `출고 완료 — ${updated.company} ${updated.partNo}`,
+    note: form.note?.trim() || "",
+  });
 
   return {
     ok: true,

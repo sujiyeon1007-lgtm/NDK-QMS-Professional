@@ -2,12 +2,11 @@
  * Project TITAN V1.3 — QR관리 모델 (생성 · 출력 · 상세조회)
  */
 
-import { getProductionProcessName } from "../config/productionProcessCodes";
 import { mapV13ProductListRow } from "./processFlow";
 import { formatTraceabilityDateTime } from "./productTraceabilityModel";
 import { getQrTraceabilityEvents } from "./qrTraceabilitySession";
 import { getSessionProductionRecords } from "./productionRecords";
-import { resolveHomeWorkflowCurrentPhase } from "./homeDashboardData";
+import { resolveRecordCurrentProcess } from "./workflowProcessStatus";
 
 /** QR 상세 — 작업이력 Demo 라벨 (V1.3) */
 export const QR_WORK_HISTORY_LABELS = {
@@ -80,11 +79,7 @@ export function resolveQrStatusDisplay(qrRecord) {
 
 export function resolveQrCurrentProcess(record) {
   if (!record) return "—";
-  const processName = getProductionProcessName(record);
-  if (processName && processName !== "—") return processName;
-  const phase = resolveHomeWorkflowCurrentPhase(record);
-  if (phase?.label) return phase.label;
-  return record.heatTreatment?.trim() || "—";
+  return resolveRecordCurrentProcess(record).label;
 }
 
 export function buildQrWorkHistoryRows(managementId) {
@@ -118,7 +113,8 @@ export function mapQrInoutListRow(productionRecord, qrRecord = null) {
         partNo: "—",
         inboundQtyLabel: "—",
         workQtyLabel: "—",
-        currentProcess: status.label,
+        currentProcess: "—",
+        workflowProcess: "—",
         remark: "—",
       };
 

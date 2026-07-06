@@ -105,20 +105,20 @@ export const TITAN_MENU_CATALOG = {
   },
   workDaily: {
     id: "workDaily",
-    label: "생산관리",
+    label: "열처리관리",
     path: "/production/daily-report",
     icon: NotebookPen,
     section: {
       pathPrefix: "/production/daily-report",
       defaultTab: "daily-report",
-      tabs: [{ id: "daily-report", label: "작업일보", path: "/production/daily-report" }],
+      tabs: [{ id: "daily-report", label: "열처리일보", path: "/production/daily-report" }],
     },
     pageMeta: {
       kicker: "품질 Workflow",
-      title: "생산관리",
+      title: "열처리관리",
       description: "LOT 생성 · Traceability 기준 — 작업일·작업자·설비·처리조건·작업수량·작업 완료",
     },
-    breadcrumb: ["생산관리"],
+    breadcrumb: ["열처리관리"],
   },
   workJournal: {
     id: "workJournal",
@@ -251,24 +251,22 @@ export const TITAN_MENU_CATALOG = {
   statisticsInquiry: {
     id: "statisticsInquiry",
     label: "통계관리",
-    path: "/statistics/inquiry",
+    path: "/statistics/production",
     icon: BarChart3,
     section: {
       pathPrefix: "/statistics",
-      defaultTab: "inquiry",
+      defaultTab: "production",
       tabs: [
-        { id: "inquiry", label: "통계조회", path: "/statistics/inquiry" },
-        { id: "production", label: "생산통계", path: "/statistics/production" },
+        { id: "production", label: "전체 생산통계", path: "/statistics/production" },
         { id: "quality", label: "품질통계", path: "/statistics/quality" },
-        { id: "shipment", label: "출고통계", path: "/statistics/shipment" },
-        { id: "sales", label: "영업실적", path: "/statistics/sales" },
+        { id: "sales", label: "영업통계", path: "/statistics/sales" },
       ],
     },
     pageMeta: {
       kicker: "PQMS Analytics",
       title: "통계관리",
       description:
-        "Dashboard · 생산 · 검사 · 출고 · 거래처 · 월별 통계 — 업무 데이터 자동 집계 (조회 전용)",
+        "Executive Dashboard · 전체 생산 · 품질 · 영업 통계 — 업무 데이터 자동 집계 (조회 전용)",
     },
     breadcrumb: ["통계관리"],
   },

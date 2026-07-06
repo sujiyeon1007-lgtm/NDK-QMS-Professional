@@ -169,10 +169,6 @@ export default function QrEquipmentScreen() {
         label: "QR관리",
         render: (row) => (
           <QrManagementRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onCreate={() => handleRowCreate(row)}
             onPrint={() => handlePrintRows([row])}
             onDelete={() => handleDelete(row)}

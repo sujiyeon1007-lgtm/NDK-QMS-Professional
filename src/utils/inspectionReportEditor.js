@@ -6,10 +6,9 @@ import { getProductionProcessName } from "../config/productionProcessCodes";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getProductByCompanyAndPartNo } from "./productRegistrationSession";
-import { resolveInspectionSpecification } from "./productInspectionSession";
-import { mergeInspectionSpecification } from "./inspectionCriteriaModel";
+import { getProductMasterBundle, resolveInspectionSpecification } from "./productInspectionSession";
+import { mergeInspectionSpecification, normalizeInspectionCriteriaSpec } from "./inspectionCriteriaModel";
 import { findProductByPartNo } from "./masterData";
-import { getProductMasterBundle } from "./productInspectionSession";
 import { cloneSpecification, createDefaultSpecification } from "./productSpecificationModel";
 import {
   buildScopedResultSummary,
@@ -30,6 +29,9 @@ import {
 } from "./heatTreatmentCalculationEngine";
 import { evaluateMeasurement, summarizeJudgments } from "./specJudgment";
 import { getSessionProductionRecords } from "./productionRecords";
+import { mapV13ProductListRow } from "./processFlow";
+import { getDevelopmentInspectionById } from "./developmentInspectionSession";
+import { getOtherInspectionById } from "./otherInspectionSession";
 import { getInspectionLogById, getInspectionLogs } from "./inspectionLogSession";
 
 const APPEARANCE_STANDARDS = {
@@ -134,24 +136,119 @@ function buildSpecificationsFromSpec(spec) {
   return rows;
 }
 
-export function buildInitialRegisterReport({ record = null, product = null } = {}) {
-  const appliedSpecification = product
+function resolveRegisterAppliedSpecification(record, product) {
+  let spec = product?.specification
     ? cloneSpecification(product.specification)
     : createDefaultSpecification();
+
+  const partNo = record?.partNo || product?.partNo || "";
+  const company = record?.company || product?.company || "";
+
+  if (partNo) {
+    const masterSpec = resolveInspectionSpecification(partNo);
+    if (masterSpec) {
+      spec = mergeInspectionSpecification(spec, masterSpec);
+    }
+  }
+
+  spec = normalizeInspectionCriteriaSpec(spec);
+
+  const hasSurfaceSpec = (spec.hardness?.items ?? []).some(
+    (item) => item.key === "surface" && item.spec && item.spec !== "없음"
+  );
+
+  if (!hasSurfaceSpec) {
+    spec = normalizeInspectionCriteriaSpec({
+      ...spec,
+      hardness: {
+        ...spec.hardness,
+        enabled: true,
+        surfaceEntries: [
+          {
+            id: "register-default-surface",
+            value: "550",
+            valueTo: "700",
+            condition: "범위",
+            unit: "HV",
+          },
+        ],
+      },
+    });
+  }
+
+  const defaultHardnessItemPatches = {
+    caseDepth: { value: "0.30", valueTo: "0.50", condition: "범위", disabled: false, unit: "mm" },
+    effectiveDepth: { value: "0.20", valueTo: "0.40", condition: "범위", disabled: false, unit: "mm" },
+    compoundLayer: { spec: "5~15", disabled: false },
+    core: { value: "250", valueTo: "350", condition: "범위", disabled: false, unit: "HV" },
+  };
+
+  const patchedItems = (spec.hardness?.items ?? []).map((item) => {
+    if (item.spec && item.spec !== "없음") return item;
+    const patch = defaultHardnessItemPatches[item.key];
+    return patch ? { ...item, ...patch } : item;
+  });
+
+  spec = normalizeInspectionCriteriaSpec({
+    ...spec,
+    hardness: {
+      ...spec.hardness,
+      items: patchedItems,
+    },
+  });
+
+  spec = {
+    ...spec,
+    appearance: { ...spec.appearance, enabled: true },
+    hardness: { ...spec.hardness, enabled: true },
+    hardeningDepth: { ...spec.hardeningDepth, enabled: true },
+    microstructure: { ...spec.microstructure, enabled: spec.microstructure?.enabled ?? true },
+    other: { ...spec.other, enabled: spec.other?.enabled ?? true },
+  };
+
+  return normalizeInspectionCriteriaSpec(spec);
+}
+
+export function buildInitialRegisterReport({ record = null, product = null } = {}) {
+  const resolvedProduct =
+    product ??
+    (record ? getProductByCompanyAndPartNo(record.company, record.partNo) : null);
+  const masterProduct = record?.partNo ? findProductByPartNo(record.partNo) : null;
+  const masterBundle = record?.partNo ? getProductMasterBundle(record.partNo, record.company) : null;
+  const appliedSpecification = resolveRegisterAppliedSpecification(record, resolvedProduct);
+  const rebuilt = rebuildRowsFromSpecification(appliedSpecification);
+  const scope = getInspectionScope(appliedSpecification);
+
+  const traceRow = record
+    ? mapV13ProductListRow(record, { label: "검사대기", variant: "wait" }, { screenKey: "inspection", workQty: record.qty })
+    : null;
 
   const base = {
     reportNo: "",
     logId: "",
-    company: record?.company || product?.company || "",
-    partName: record?.partName || product?.partName || "",
-    partNo: record?.partNo || product?.partNo || "",
-    drawingNo: record?.drawingNo || product?.drawingNo || "",
+    company: record?.company || resolvedProduct?.company || masterProduct?.company || "",
+    partName: record?.partName || resolvedProduct?.partName || masterProduct?.name || "",
+    partNo: record?.partNo || resolvedProduct?.partNo || masterProduct?.partNo || "",
+    drawingNo:
+      masterBundle?.drawing?.drawingNo ||
+      record?.drawingNo ||
+      resolvedProduct?.drawingNo ||
+      masterProduct?.drawingNo ||
+      "",
     lotNo: record?.lotNo || "",
     purchaseOrderNo: record?.purchaseOrderNo || "",
     customerLotNo: record?.customerLotNo || "",
     managementId: record?.id || "",
-    material: record?.material || product?.material || "",
-    process: record ? getProductionProcessName(record) : product?.process || "",
+    material: record?.material || resolvedProduct?.material || masterProduct?.material || "",
+    process:
+      (record ? getProductionProcessName(record) : "") ||
+      resolvedProduct?.process ||
+      masterProduct?.process ||
+      "",
+    incomingDate: traceRow?.incomingDate || record?.incomingDate || "",
+    productionDate: traceRow?.productionDate || "",
+    inboundQtyLabel: traceRow?.inboundQtyLabel || "",
+    workQtyLabel: traceRow?.workQtyLabel || "",
     qty: record?.qty ?? 0,
     unit: record?.unit || "EA",
     inspectionDate: getJournalReferenceDate(),
@@ -159,13 +256,11 @@ export function buildInitialRegisterReport({ record = null, product = null } = {
     approver: "—",
     appliedSpecification,
     hardnessUnit: appliedSpecification?.hardness?.unit || "HV",
-    specifications: appliedSpecification
-      ? buildSpecificationsFromSpec(appliedSpecification)
-      : [],
-    hardnessRows: appliedSpecification ? buildHardnessRowsFromSpec(appliedSpecification) : [],
-    dimensionRows: appliedSpecification ? buildDimensionRowsFromSpec(appliedSpecification) : [],
-    appearanceRows: appliedSpecification ? buildAppearanceRowsFromSpec(appliedSpecification) : [],
-    otherRows: [{ item: "—", result: "—", note: "—" }],
+    specifications: rebuilt.specifications,
+    hardnessRows: rebuilt.hardnessRows,
+    dimensionRows: rebuilt.dimensionRows,
+    appearanceRows: rebuilt.appearanceRows,
+    otherRows: rebuilt.otherRows,
     hardeningDepthRows: [],
     hardeningDepthHv: [],
     hasMicrostructurePhoto: Boolean(appliedSpecification?.microstructure?.enabled),
@@ -180,11 +275,43 @@ export function buildInitialRegisterReport({ record = null, product = null } = {
 
 export function loadRegisterReportFromSearchParams(searchParams) {
   const managementId = searchParams.get("managementId")?.trim();
-  if (!managementId) return buildInitialRegisterReport();
+  if (managementId) {
+    const record = getSessionProductionRecords().find((item) => item.id === managementId);
+    const product = record ? getProductByCompanyAndPartNo(record.company, record.partNo) : null;
+    return buildInitialRegisterReport({ record, product });
+  }
 
-  const record = getSessionProductionRecords().find((item) => item.id === managementId);
-  const product = record ? getProductByCompanyAndPartNo(record.company, record.partNo) : null;
-  return buildInitialRegisterReport({ record, product });
+  const devId = searchParams.get("devId")?.trim();
+  if (devId) {
+    const dev = getDevelopmentInspectionById(devId);
+    if (dev) {
+      const base = buildInitialRegisterReport();
+      return syncReportJudgments({
+        ...base,
+        company: dev.company || base.company,
+        partName: dev.partName || base.partName,
+        material: dev.material || base.material,
+        remarks: [dev.testPurpose, dev.measurementItems, dev.note].filter(Boolean).join(" · "),
+      });
+    }
+  }
+
+  const otherId = searchParams.get("otherId")?.trim();
+  if (otherId) {
+    const other = getOtherInspectionById(otherId);
+    if (other) {
+      const base = buildInitialRegisterReport();
+      return syncReportJudgments({
+        ...base,
+        company: other.company || base.company,
+        partName: other.partName || base.partName,
+        material: other.material || base.material,
+        remarks: other.note || base.remarks,
+      });
+    }
+  }
+
+  return buildInitialRegisterReport();
 }
 
 export function applyProductToReport(report, partNo, company = report.company) {

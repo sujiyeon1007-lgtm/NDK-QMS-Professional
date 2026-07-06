@@ -67,6 +67,23 @@ export function saveInspectionReport(logId, patch) {
   return updated;
 }
 
+/** Persist a newly registered full report without rebuilding from the log summary. */
+export function createInspectionReport(logId, report) {
+  const trimmed = logId?.trim();
+  if (!trimmed || !report) return null;
+
+  const normalized = normalizeInspectionReport({
+    ...report,
+    logId: trimmed,
+    updatedAt: new Date().toISOString(),
+  });
+
+  const store = safeRead();
+  store[trimmed] = normalized;
+  safeWrite(store);
+  return normalized;
+}
+
 export function ensureInspectionReportForLog(logId) {
   return getInspectionReportByLogId(logId);
 }

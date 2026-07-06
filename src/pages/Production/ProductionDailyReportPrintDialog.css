@@ -1,0 +1,189 @@
+.production-daily-print-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+body.production-daily-print-dialog-open {
+  overflow: hidden;
+}
+
+.production-daily-print-dialog {
+  width: min(480px, 100%);
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.production-daily-print-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 10px;
+  color: #2563eb;
+}
+
+.production-daily-print-dialog-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.production-daily-print-dialog-close {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.production-daily-print-dialog-body {
+  padding: 8px 20px 18px;
+}
+
+.production-daily-print-dialog-message {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.production-daily-print-dialog-lot-list {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.production-daily-print-dialog-lot-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.production-daily-print-dialog-lot-option:has(input:checked) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.production-daily-print-dialog-lot-option input {
+  margin: 0;
+}
+
+.production-daily-print-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.production-daily-print-dialog-footer--single {
+  justify-content: center;
+}
+
+.production-daily-print-dialog--partial-lot {
+  width: min(520px, 100%);
+}
+
+.production-daily-print-dialog-detail {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.production-daily-print-dialog-detail strong {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.production-daily-print-dialog-question {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.production-daily-print-dialog-footer--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.production-daily-print-dialog-action {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  word-break: keep-all;
+  line-height: 1.45;
+}
+
+.production-daily-print-dialog-action--selected {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.production-daily-print-dialog-action--selected:hover {
+  background: #dbeafe;
+}
+
+.production-daily-print-dialog-action--all-lot {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.production-daily-print-dialog-action--all-lot:hover {
+  background: #d1fae5;
+}
+
+.production-daily-print-dialog-action--cancel {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #be123c;
+}
+
+.production-daily-print-dialog-action--cancel:hover {
+  background: #ffe4e6;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -18,6 +18,7 @@ import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFil
 import { createEmptyInspectionLogSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildInspectionLogListColumns } from "../../config/standardProductList";
 import { INSPECTION_LOG_REGISTER_LABEL, INSPECTION_REPORT_LABEL } from "../../config/registerModalStandard";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import {
   getProcessChipVariant,
   getProductionProcessCodes,
@@ -26,6 +27,7 @@ import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { getInspectionLogs } from "../../utils/inspectionLogSession";
+import { getInspectionScreenData } from "../../utils/titanScreenDataSource";
 import { ensureInspectionReportForLog } from "../../utils/inspectionReportSession";
 import {
   mapInspectionLogToListRow,
@@ -45,7 +47,10 @@ export default function InspectionLogManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const chipRecords = useMemo(
+    () => getInspectionScreenData(getInspectionLogs()).baseRecords,
+    [refreshKey]
+  );
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -90,12 +95,7 @@ export default function InspectionLogManagement() {
     }
   };
 
-  const renderProcessChip = (row) =>
-    row.currentProcess && row.currentProcess !== "—" ? (
-      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
-    ) : (
-      "—"
-    );
+  const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
@@ -103,10 +103,6 @@ export default function InspectionLogManagement() {
         renderProcess: renderProcessChip,
         renderActions: (row) => (
           <InspectionRegisterRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onRegister={() => openRegister(row.managementId)}
             onEdit={() => {
               ensureInspectionReportForLog(row.id);
@@ -299,12 +295,13 @@ export default function InspectionLogManagement() {
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
         context={{
-          detailContent: buildInspectionLogDetailContent(detailPopupRow),
-          traceRecord: detailPopupRow
-            ? getSessionProductionRecords().find((record) => record.id === detailPopupRow.managementId)
-            : null,
-          statusLabel: detailPopupRow?.statusLabel,
-          statusVariant: detailPopupRow?.statusVariant,
+          onSelectCoLotProduct: (id) => {
+            const target = rows.find((row) => row.managementId === id || row.id === id);
+            if (target) {
+              setActiveId(target.id);
+              setDetailPopupRow(target);
+            }
+          },
         }}
       />
     </div>

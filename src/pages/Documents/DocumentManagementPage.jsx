@@ -1,69 +1,45 @@
 import { useCallback, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
+import { SecondaryButton } from "../../foundation/components/Button";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
-import {
-  createEmptyDocumentManagementSearch,
-  STANDARD_PRODUCT_BASIC_SEARCH_FIELDS,
-} from "../../config/listSearchStandard";
-import { buildDocumentProductListColumns } from "../../config/standardProductList";
-import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
-import { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
-import StatusChip from "../../foundation/components/StatusChip";
-import { getProductionProcessCodes } from "../../config/productionProcessCodes";
+import { createEmptyDocumentManagementSearch } from "../../config/listSearchStandard";
+import { buildDocumentCompanyListColumns } from "../../config/standardProductList";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
-  buildProductDocumentListRows,
-  buildProductDocumentStatusRows,
-  matchesDocumentManagementSearch,
-} from "../../utils/productDocumentStatus";
-import TitanWorkspaceModal from "../../foundation/components/TitanWorkspaceModal";
-import ProductDocumentStatusPanel from "./ProductDocumentStatusPanel";
-import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
-import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
-import DocumentStatusChip from "./DocumentStatusChip";
-import {
-  buildProductDocumentHistoryRows,
-  buildProductRevisionHistoryRows,
-} from "../../utils/productDocumentStatus";
-import { EventListPanel } from "../../foundation/components/detailPopup/DetailPopupPanels";
-import InspectionRegisterRowActions from "../Quality/InspectionRegisterRowActions";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
+  buildCompanyDocumentListRows,
+  matchesCompanyDocumentListSearch,
+} from "../../utils/companyDocumentManagement";
+import DocumentCompanyPopup from "./DocumentCompanyPopup";
 
 import "../Quality/QualityManagement.css";
 import "./DocumentManagementPage.css";
 
-const PRODUCT_SELECTION_KEY = "titan-document-product-id";
-
 export default function DocumentManagementPage() {
-  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeId, setActiveId] = useState(null);
-  const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const [documentModalOpen, setDocumentModalOpen] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyDocumentManagementSearch, { storageKey: "documents" });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), [refreshKey]);
 
-  const listRows = useMemo(() => buildProductDocumentListRows(), [refreshKey]);
+  const listRows = useMemo(() => buildCompanyDocumentListRows(), [refreshKey]);
 
   const filteredRows = useMemo(
-    () => listRows.filter((row) => matchesDocumentManagementSearch(search, row)),
+    () => listRows.filter((row) => matchesCompanyDocumentListSearch(row, search)),
     [listRows, search]
   );
 
   const searchRecords = useMemo(
     () =>
       listRows.map((row) => ({
-        ...row,
-        partName: row.name,
-        status: row.documentStatusLabel,
+        company: row.company,
+        manager: row.manager,
       })),
     [listRows]
   );
@@ -83,124 +59,31 @@ export default function DocumentManagementPage() {
     [activeId, filteredRows]
   );
 
-  const traceRecord = useMemo(() => {
-    if (!activeRow) return null;
-    const records = getSessionProductionRecords();
-    return (
-      records.find(
-        (record) =>
-          record.partNo === activeRow.partNo &&
-          String(record.company ?? "").trim() === String(activeRow.company ?? "").trim()
-      ) ??
-      records.find((record) => record.id === activeRow.id) ?? {
-        id: activeRow.id,
-        partNo: activeRow.partNo,
-        partName: activeRow.name,
-        material: activeRow.material,
-        company: activeRow.company,
-      }
-    );
-  }, [activeRow, refreshKey]);
-
-  const documentStatusRows = useMemo(
-    () => buildProductDocumentStatusRows(activeRow),
-    [activeRow, refreshKey, documentModalOpen]
-  );
-
-  const openDocumentModal = useCallback((row = activeRow) => {
+  const openCompanyPopup = useCallback((row) => {
     if (!row) return;
     setActiveId(row.id);
-    sessionStorage.setItem(PRODUCT_SELECTION_KEY, row.id);
-    setDocumentModalOpen(true);
-  }, [activeRow]);
-
-  const handleDeleteRow = useCallback((row) => {
-    if (!row) return;
-    const confirmed = globalThis.confirm?.(
-      `${row.partNo} 문서 등록 정보를 삭제하시겠습니까?\n(Demo — 실제 삭제는 기준정보 연동 후 적용)`
-    );
-    if (!confirmed) return;
-    setRefreshKey((key) => key + 1);
+    setPopupOpen(true);
   }, []);
-
-  const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
-    process: processCodes.map((item) => item.name),
-  });
 
   const columns = useMemo(
     () =>
-      buildDocumentProductListColumns({
-        renderProcess: (row) =>
-          row.currentProcess && row.currentProcess !== "—" ? (
-            <StatusChip variant="wait">{row.currentProcess}</StatusChip>
-          ) : (
-            "—"
-          ),
-        renderActions: (row) => {
-          const isUnregistered = row.documentStatusId === "unregistered";
-          return (
-            <InspectionRegisterRowActions
-              onDetail={() => {
-                setActiveId(row.id);
-                setDetailPopupRow(row);
-              }}
-              canRegister
-              canEdit={!isUnregistered}
-              canDelete={!isUnregistered}
-              onRegister={() => openDocumentModal(row)}
-              onEdit={() => openDocumentModal(row)}
-              onDelete={() => handleDeleteRow(row)}
-            />
-          );
-        },
+      buildDocumentCompanyListColumns({
+        renderActions: (row) => (
+          <SecondaryButton
+            type="button"
+            className="titan-btn--table-action"
+            onClick={(event) => {
+              event.stopPropagation();
+              openCompanyPopup(row);
+            }}
+          >
+            <FolderOpen size={12} aria-hidden="true" />
+            열기
+          </SecondaryButton>
+        ),
       }),
-    [openDocumentModal, handleDeleteRow]
+    [openCompanyPopup]
   );
-
-  const openDetailPopup = (row) => {
-    openRowDetailPopup(row, { setActiveId, setDetailPopupRow });
-  };
-
-  const handleRowDoubleClick = useCallback(
-    (row) => {
-      openDetailPopup(row);
-    },
-    []
-  );
-
-  const handleSelectCoLotProduct = useCallback(
-    (managementId) => {
-      const prodRecord = getSessionProductionRecords().find((record) => record.id === managementId);
-      if (!prodRecord) return;
-      const target = filteredRows.find(
-        (row) =>
-          row.partNo === prodRecord.partNo &&
-          String(row.company ?? "").trim() === String(prodRecord.company ?? "").trim()
-      );
-      if (target) setActiveId(target.id);
-    },
-    [filteredRows]
-  );
-
-  const handleDocumentAction = (statusRow, mode = "register") => {
-    if (!activeRow) return;
-    if (statusRow.registerRoute === "inspection") {
-      navigate(
-        `/documents/inspection?partNo=${encodeURIComponent(activeRow.partNo)}&company=${encodeURIComponent(activeRow.company)}`
-      );
-      return;
-    }
-    sessionStorage.setItem("titan-product-selected-id", activeRow.id);
-    if (mode === "view" && statusRow.statusId === "unregistered") return;
-    navigate("/settings/products");
-  };
-
-  const handleDownload = (statusRow) => {
-    if (!statusRow.canDownload || !activeRow) return;
-    sessionStorage.setItem("titan-product-selected-id", activeRow.id);
-    navigate("/settings/products");
-  };
 
   return (
     <div className="qms-document-page">
@@ -213,17 +96,17 @@ export default function DocumentManagementPage() {
         onAdvancedToggle={onAdvancedToggle}
         companies={companies}
         records={searchRecords}
-        basicFields={STANDARD_PRODUCT_BASIC_SEARCH_FIELDS}
-        showStatusField
-        statusFieldLabel="문서상태"
-        advancedContent={
-          <TitanStandardProductAdvancedSearch
-            draft={draft}
-            onDraftChange={onDraftChange}
-            getSuggestions={getSuggestions}
-          />
-        }
+        basicFields={[
+          { key: "company", label: "업체명", placeholder: "업체명" },
+          { key: "manager", label: "담당자", placeholder: "담당자" },
+        ]}
+        advancedContent={null}
       />
+
+      <p className="qms-document-page__workflow-note">
+        업체를 선택하면 문서 종류(가로 탭) · 문서 리스트 · 상세 Popup에서 Revision · 첨부파일을
+        관리합니다.
+      </p>
 
       <div className="qms-document-page__list quality-page__list">
         <TitanDataTable
@@ -232,8 +115,8 @@ export default function DocumentManagementPage() {
           rows={pagedRows}
           activeRowId={activeRow?.id}
           onRowClick={(row) => setActiveId(row.id)}
-          onRowDoubleClick={handleRowDoubleClick}
-          emptyMessage="조회된 제품이 없습니다."
+          onRowDoubleClick={openCompanyPopup}
+          emptyMessage="등록된 업체가 없습니다."
         />
 
         <TitanTableFooter
@@ -246,105 +129,11 @@ export default function DocumentManagementPage() {
         />
       </div>
 
-      <TitanWorkspaceModal
-        open={documentModalOpen}
-        onClose={() => {
-          setDocumentModalOpen(false);
-          setRefreshKey((key) => key + 1);
-        }}
-        title="문서현황"
-        kicker={activeRow ? `${activeRow.company} · ${activeRow.partNo}` : "문서관리"}
-      >
-        {activeRow ? (
-          <div className="qms-document-modal-body">
-            <p className="qms-document-hub__modal-desc">
-              <FileText size={14} aria-hidden="true" />
-              {activeRow.name} — 연결 문서 {documentStatusRows.length}종
-            </p>
-            <ProductDocumentStatusPanel
-              rows={documentStatusRows}
-              onView={(row) => handleDocumentAction(row, "view")}
-              onRegister={(row) => handleDocumentAction(row, "register")}
-              onEdit={(row) => handleDocumentAction(row, "edit")}
-              onDownload={handleDownload}
-            />
-          </div>
-        ) : null}
-      </TitanWorkspaceModal>
-
-      <TitanScreenDetailPopup
-        screenKey="documents"
-        open={Boolean(detailPopupRow)}
-        onClose={() => setDetailPopupRow(null)}
-        record={detailPopupRow}
-        context={{
-          detailContent: detailPopupRow ? (
-            <dl className="titan-row-summary__meta inbound-detail">
-              <div>
-                <dt>품번</dt>
-                <dd>{detailPopupRow.partNo}</dd>
-              </div>
-              <div>
-                <dt>품명</dt>
-                <dd>{detailPopupRow.name}</dd>
-              </div>
-              <div>
-                <dt>재질</dt>
-                <dd>{detailPopupRow.material}</dd>
-              </div>
-              <div>
-                <dt>규격</dt>
-                <dd>{detailPopupRow.spec}</dd>
-              </div>
-              <div>
-                <dt>거래처</dt>
-                <dd>{detailPopupRow.company}</dd>
-              </div>
-              <div>
-                <dt>문서상태</dt>
-                <dd>
-                  <DocumentStatusChip statusId={detailPopupRow.documentStatusId} />
-                </dd>
-              </div>
-              <div>
-                <dt>Revision</dt>
-                <dd>{detailPopupRow.revision}</dd>
-              </div>
-              <div>
-                <dt>최종 수정일</dt>
-                <dd>{detailPopupRow.lastModified}</dd>
-              </div>
-            </dl>
-          ) : null,
-          traceRecord: detailPopupRow
-            ? getSessionProductionRecords().find(
-                (record) =>
-                  record.partNo === detailPopupRow.partNo &&
-                  String(record.company ?? "").trim() === String(detailPopupRow.company ?? "").trim()
-              )
-            : null,
-          onSelectCoLotProduct: handleSelectCoLotProduct,
-          eventLists: {
-            documentHistory: detailPopupRow ? (
-              <EventListPanel
-                items={buildProductDocumentHistoryRows(detailPopupRow).map((row) => ({
-                  key: `${row.date}-${row.label}`,
-                  label: row.date,
-                  detail: row.label,
-                }))}
-              />
-            ) : null,
-            revision: detailPopupRow ? (
-              <EventListPanel
-                items={buildProductRevisionHistoryRows(detailPopupRow).map((row) => ({
-                  key: `${row.revision}-${row.note}`,
-                  label: row.revision,
-                  detail: row.note,
-                }))}
-              />
-            ) : null,
-          },
-        }}
+      <DocumentCompanyPopup
+        open={popupOpen}
+        companyRow={activeRow}
+        onClose={() => setPopupOpen(false)}
+        onRefresh={() => setRefreshKey((key) => key + 1)}
       />
     </div>
   );

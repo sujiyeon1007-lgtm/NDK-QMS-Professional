@@ -58,9 +58,33 @@ export function buildInboundListColumns({ renderProcess, renderActions }) {
   return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
 }
 
-/** 출고관리 — V1.3 공통 컬럼 */
+/** 출고관리 — V1.3 (입고일 · 출고일 · LOT.NO …) */
+export function buildOutboundV13ListColumns({ renderCurrentProcess, renderActions } = {}) {
+  const columns = [
+    titanColumn("incomingDate", { key: "incomingDate", label: "입고일" }),
+    titanColumn("outboundDate", { key: "outboundDate", label: "출고일" }),
+    titanColumn("lotNo"),
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("inboundQty", { key: "inboundQtyLabel", label: "입고수량" }),
+    titanColumn("workQty", { key: "workQtyLabel", label: "작업수량" }),
+    titanColumn("currentProcess", {
+      key: "currentProcess",
+      label: "현재공정",
+      render: renderCurrentProcess,
+    }),
+    titanColumn("note", { key: "remark", label: "비고" }),
+  ];
+  if (renderActions) {
+    columns.push(titanColumn("tableActions", { key: "actions", render: renderActions }));
+  }
+  return columns;
+}
+
+/** 출고관리 — V1.3 출고일 컬럼 */
 export function buildOutboundListColumns({ renderProcess, renderActions }) {
-  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+  return buildOutboundV13ListColumns({ renderCurrentProcess: renderProcess, renderActions });
 }
 
 /** 검사일지 — V1.3 공통 컬럼 */
@@ -73,7 +97,54 @@ export function buildCertificateListColumns({ renderProcess, renderActions }) {
   return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
 }
 
-/** 문서관리 — V1.3 공통 컬럼 */
+/** 문서관리 — V1.3 업체 중심 메인 리스트 */
+export function buildDocumentCompanyListColumns({ renderActions }) {
+  return [
+    titanColumn("company"),
+    titanColumn("manager", { key: "manager", label: "담당자" }),
+    titanColumn("qty", { key: "documentCountLabel", label: "문서 개수", widthPercent: 9 }),
+    titanColumn("incomingDate", { key: "lastModified", label: "최근 수정일" }),
+    titanColumn("tableActions", { key: "actions", label: "작업", render: renderActions }),
+  ];
+}
+
+/** 문서관리 Popup — 문서 리스트 (PM V1.3 간결 컬럼) */
+export function buildDocumentRegistryListColumns({ renderStatus }) {
+  return [
+    titanColumn("partName", { key: "title", label: "문서명", widthPercent: 24 }),
+    titanColumn("managementId", { key: "documentNo", label: "문서번호", widthPercent: 14 }),
+    titanColumn("revision", { key: "revision", label: "Rev", widthPercent: 6 }),
+    titanColumn("incomingDate", { key: "registeredDate", label: "등록일", widthPercent: 10 }),
+    titanColumn("manager", { key: "registeredBy", label: "등록자", widthPercent: 9 }),
+    titanColumn("status", {
+      key: "approvalStatus",
+      label: "상태",
+      widthPercent: 9,
+      render: renderStatus,
+    }),
+  ];
+}
+
+/** 문서관리 Popup — 품목별 문서 탭 품목 리스트 (PM V1.4) */
+export function buildDocumentProductSummaryListColumns({ renderStatus }) {
+  return [
+    titanColumn("partName", { label: "품명", widthPercent: 18 }),
+    titanColumn("partNo", { label: "품번", widthPercent: 12 }),
+    titanColumn("material", { label: "재질", widthPercent: 10 }),
+    titanColumn("spec", { label: "규격", widthPercent: 12 }),
+    titanColumn("qty", { key: "documentCountLabel", label: "등록 문서 수", widthPercent: 9 }),
+    titanColumn("revision", { key: "latestRevision", label: "최신 Rev", widthPercent: 8 }),
+    titanColumn("incomingDate", { key: "lastRegisteredDate", label: "최근 등록일", widthPercent: 11 }),
+    titanColumn("status", {
+      key: "statusLabel",
+      label: "상태",
+      widthPercent: 8,
+      render: renderStatus,
+    }),
+  ];
+}
+
+/** @deprecated product-centric — use buildDocumentCompanyListColumns */
 export function buildDocumentProductListColumns({ renderProcess, renderActions }) {
   return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
 }
@@ -89,19 +160,21 @@ export function buildWorkJournalListColumns({ renderSource }) {
   return [
     titanColumn("incomingDate", { key: "date", label: "일자" }),
     titanColumn("registeredAt", { key: "time", label: "시간", widthPercent: 7 }),
-    titanColumn("process", { key: "category", label: "업무구분", widthPercent: 11 }),
-    titanColumn("taskTitle", { key: "title", label: "업무내용", widthPercent: 24 }),
+    titanColumn("process", { key: "category", label: "업무구분", widthPercent: 10 }),
+    titanColumn("taskTitle", { key: "title", label: "업무내용", widthPercent: 20 }),
+    titanColumn("manager", { key: "assignee", label: "담당자", widthPercent: 8 }),
     titanColumn("company"),
     titanColumn("managementId"),
     titanColumn("lotNo"),
-    titanColumn("status", { key: "sourceLabel", label: "구분", render: renderSource, widthPercent: 8 }),
-    titanColumn("note", { widthPercent: 14 }),
+    titanColumn("status", { key: "sourceLabel", label: "구분", render: renderSource, widthPercent: 7 }),
+    titanColumn("note", { widthPercent: 12 }),
   ];
 }
 
 /** 재고관리 — 품목별 (업체+품번) */
 export function buildInventoryStatusListColumns({ renderStatus }) {
   return [
+    titanColumn("incomingDate", { key: "incomingDateLabel", label: "입고일" }),
     titanColumn("company"),
     titanColumn("partName"),
     titanColumn("partNo"),
@@ -111,7 +184,6 @@ export function buildInventoryStatusListColumns({ renderStatus }) {
     titanColumn("inboundQty", { key: "inboundQtyLabel" }),
     titanColumn("workInputQty", { key: "workInputQtyLabel" }),
     titanColumn("shippedQty", { key: "shippedQtyLabel" }),
-    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }
@@ -119,6 +191,7 @@ export function buildInventoryStatusListColumns({ renderStatus }) {
 /** 재고관리 — LOT별 (관리번호) */
 export function buildInventoryByLotListColumns({ renderStatus }) {
   return [
+    titanColumn("incomingDate", { key: "incomingDateLabel", label: "입고일" }),
     titanColumn("managementId"),
     titanColumn("lotNo"),
     titanColumn("company"),
@@ -128,7 +201,6 @@ export function buildInventoryByLotListColumns({ renderStatus }) {
     titanColumn("currentStock", { key: "currentStockLabel" }),
     titanColumn("inboundQty", { key: "inboundQtyLabel" }),
     titanColumn("shippedQty", { key: "shippedQtyLabel" }),
-    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }
@@ -136,13 +208,13 @@ export function buildInventoryByLotListColumns({ renderStatus }) {
 /** 재고관리 — 거래처별 */
 export function buildInventoryByCompanyListColumns({ renderStatus }) {
   return [
+    titanColumn("incomingDate", { key: "incomingDateLabel", label: "입고일" }),
     titanColumn("company"),
     titanColumn("qty", { key: "skuCountLabel", label: "품목수" }),
     titanColumn("qty", { key: "lotCountLabel", label: "LOT수" }),
     titanColumn("inboundQty", { key: "inboundQtyLabel" }),
     titanColumn("shippedQty", { key: "shippedQtyLabel" }),
     titanColumn("currentStock", { key: "currentStockLabel" }),
-    titanColumn("lastIncomingDate", { key: "lastIncomingDateLabel" }),
     titanColumn("status", { key: "statusLabel", render: renderStatus }),
   ];
 }

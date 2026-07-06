@@ -19,6 +19,7 @@ import {
 import { createEmptyCertificateSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildCertificateListColumns } from "../../config/standardProductList";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import {
   getProcessChipVariant,
   getProductionProcessCodes,
@@ -31,7 +32,12 @@ import {
   upsertCertificateFileEntry,
   buildCertificateEntryFromRecord,
 } from "../../utils/certificateSession";
-import { mapCertificateEntryToListRow, matchesCertificateSearch } from "../../utils/certificateStatus";
+import { getCertificateScreenData } from "../../utils/titanScreenDataSource";
+import {
+  getCertificateMenuListRows,
+  mapCertificateEntryToListRow,
+  matchesCertificateSearch,
+} from "../../utils/certificateStatus";
 import { getProcessFlowSteps } from "../../utils/processFlow";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import CertificateRegisterModal from "./CertificateRegisterModal";
@@ -54,7 +60,10 @@ export default function CertificateManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const chipRecords = useMemo(
+    () => getCertificateScreenData(getCertificateMenuListRows()).baseRecords,
+    [refreshKey]
+  );
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -65,11 +74,11 @@ export default function CertificateManagement() {
   const workers = useMemo(() => getActiveWorkers(), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(() => {
-    const sessionRecords = getSessionProductionRecords();
-    return getCertificateFileEntries().map((entry) => {
-      const record = sessionRecords.find((item) => item.id === entry.managementId);
-      return record ? { ...record, ...entry, managementId: entry.managementId || record.id } : entry;
-    });
+    return getCertificateMenuListRows().map((row) => ({
+      ...row.record,
+      ...row.entry,
+      managementId: row.managementId,
+    }));
   }, [refreshKey]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
@@ -77,8 +86,7 @@ export default function CertificateManagement() {
   });
 
   const rows = useMemo(() => {
-    return getCertificateFileEntries()
-      .map(mapCertificateEntryToListRow)
+    return getCertificateMenuListRows()
       .filter((row) => matchesCertificateSearch(row, search))
       .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
   }, [search, refreshKey]);
@@ -107,12 +115,7 @@ export default function CertificateManagement() {
     }
   };
 
-  const renderProcessChip = (row) =>
-    row.currentProcess && row.currentProcess !== "—" ? (
-      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
-    ) : (
-      "—"
-    );
+  const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
@@ -120,10 +123,6 @@ export default function CertificateManagement() {
         renderProcess: renderProcessChip,
         renderActions: (row) => (
           <CertificateRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onIssue={() => openRegister(buildRegisterInitialFromRow(row))}
             onEdit={() => openRegister(buildRegisterInitialFromRow(row))}
             onCancel={() => {
@@ -157,6 +156,7 @@ export default function CertificateManagement() {
       process: form.process.trim(),
       qty: Number(form.qty) || 0,
       unit: form.unit || "EA",
+      registeredBy: form.registeredBy?.trim() || "",
       excelFile: form.excelFile,
       pdfFile: form.pdfFile,
     });
@@ -361,19 +361,12 @@ export default function CertificateManagement() {
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
         context={{
-          detailContent: buildCertificateDetailContent(detailPopupRow),
-          traceRecord: detailPopupRow
-            ? getSessionProductionRecords().find((record) => record.id === detailPopupRow.managementId)
-            : null,
-          processFlowSteps: detailPopupRow
-            ? getProcessFlowSteps(
-                getSessionProductionRecords().find((record) => record.id === detailPopupRow.managementId)
-              )
-            : [],
-          eventLists: {
-            certificatePdf: detailPopupRow?.entry?.pdfFile?.name ? (
-              <p>{detailPopupRow.entry.pdfFile.name}</p>
-            ) : null,
+          onSelectCoLotProduct: (id) => {
+            const target = rows.find((row) => row.managementId === id || row.id === id);
+            if (target) {
+              setActiveId(target.id);
+              setDetailPopupRow(target);
+            }
           },
         }}
       />

@@ -73,7 +73,7 @@ function ProductionDailyReportLotPage({
         equipment={bundle.equipment}
         worker={bundle.worker}
         qrValue={qrValue}
-        qrLabel="생산일보 QR"
+        qrLabel="열처리일보 QR"
       />
 
       <section className="titan-print-section" aria-label="장입 제품 리스트">
@@ -98,7 +98,7 @@ function ProductionDailyReportLotPage({
       {pageIndex === totalPages - 1 ? (
         <TitanPrintOfficialFooter
           documentCode={TITAN_LIST_DOCUMENT_CODES.DPR}
-          notes={["※ 로트번호 · 장입 제품 · 열처리 조건은 생산일보 등록 데이터를 출력합니다."]}
+          notes={["※ 로트번호 · 장입 제품 · 열처리 조건은 열처리일보 등록 데이터를 출력합니다."]}
         />
       ) : null}
     </TitanPrintPage>
@@ -124,7 +124,7 @@ function ProductionDailyReportPrint({
     <div
       className={`titan-print-document production-daily-report-print ${TITAN_LIST_PRINT_DOCUMENT_CLASS} titan-print-landscape`}
       data-print-orientation="landscape"
-      aria-label="생산일보"
+      aria-label="열처리일보"
     >
       {bundles.map((bundle) => {
         const layout = buildProductionDailyChargeLayout(bundle.chargeProducts, { note: bundle.note });

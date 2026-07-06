@@ -12,8 +12,9 @@ function resolveScreenLabel(pathname = "") {
   if (pathname.includes("/inout/incoming")) return "입고현황";
   if (pathname.includes("/inout/shipment")) return "출고현황";
   if (pathname.includes("/production/daily-report")) return "작업일보";
-  if (pathname.includes("/production/")) return "생산관리";
+  if (pathname.includes("/production/")) return "열처리관리";
   if (pathname.includes("/quality/")) return "품질관리";
+  if (pathname.includes("/statistics")) return "통계관리";
   if (pathname === "/" || pathname === "") return "HOME";
   return pathname;
 }

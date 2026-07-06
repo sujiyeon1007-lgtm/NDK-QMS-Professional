@@ -23,6 +23,7 @@ export default function MasterEntityDetailModal({ open, row, onClose, screen, pa
     <TitanWorkspaceModal
       open={open}
       onClose={onClose}
+      size="standard"
       title={title}
       kicker={kicker}
       footer={

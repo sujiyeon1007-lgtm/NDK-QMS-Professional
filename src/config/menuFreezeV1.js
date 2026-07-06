@@ -67,7 +67,7 @@ export const MENU_FREEZE_SIDEBAR = [
   { order: 1, id: "home", label: "HOME", emoji: "🏠" },
   { order: 2, id: "masterData", label: "기준정보관리", emoji: "⚙" },
   { order: 3, id: "inboundStatus", label: "입고관리", emoji: "📥" },
-  { order: 4, id: "workDaily", label: "생산관리", emoji: "🏭" },
+  { order: 4, id: "workDaily", label: "열처리관리", emoji: "🏭" },
   { order: 5, id: "workJournal", label: "업무일지", emoji: "📒" },
   { order: 6, id: "quality", label: "검사관리", emoji: "🔍" },
   { order: 7, id: "certificateStatus", label: "성적서관리", emoji: "📋" },
@@ -117,7 +117,7 @@ export const MENU_FREEZE_CHANGE_POLICY =
 /** 제품 Workflow (업무 흐름) */
 export const PRODUCT_WORKFLOW_CHAIN = [
   "입고관리",
-  "생산관리",
+  "열처리관리",
   "업무일지",
   "검사관리",
   "문서관리",
@@ -130,7 +130,7 @@ export const TRACEABILITY_INQUIRY_CHAIN = PRODUCT_WORKFLOW_CHAIN;
 
 export const UNIFIED_STATUS_PIPELINE = [
   "입고완료",
-  "생산중",
+  "열처리중",
   "검사대기",
   "검사완료",
   "성적서대기",
@@ -165,10 +165,10 @@ export const MENU_FREEZE_ROLES = {
     features: ["입고등록", "입고조회", "입고현황", "작업지시 출력", "입고 PDF 출력"],
   },
   workDaily: {
-    label: "생산관리",
-    role: "생산 업무 통합",
-    features: ["생산일보", "생산현황", "작업지시", "생산이력", "설비현황", "생산 통계"],
-    note: "향후 QR/NFC 생산등록",
+    label: "열처리관리",
+    role: "열처리 업무 통합",
+    features: ["열처리일보", "열처리현황", "작업지시", "열처리이력", "설비현황", "열처리 통계"],
+    note: "향후 QR/NFC 열처리등록",
   },
   workJournal: {
     label: "업무일지",

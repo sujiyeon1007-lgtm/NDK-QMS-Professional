@@ -3,23 +3,27 @@
  */
 
 import {
+  AlertTriangle,
   BarChart3,
   Building2,
   CircleCheck,
   CircleX,
   ClipboardCheck,
-  Cog,
-  Factory,
+  Clock,
   FileText,
   Layers,
   Package,
   PackageCheck,
   Percent,
+  RotateCcw,
   ShieldCheck,
   TrendingUp,
   Truck,
   Users,
   Wrench,
+  ArrowDownToLine,
+  Flame,
+  Boxes,
 } from "lucide-react";
 
 export const STATISTICS_PERIODS = [
@@ -55,68 +59,63 @@ export const STATISTICS_STATUS_PANEL = {
   titleIcon: BarChart3,
 };
 
-const INQUIRY_KPI = [
-  { id: "productionQty", label: "생산량", quantity: true, icon: Factory, tone: "blue" },
-  { id: "shipmentQty", label: "출고량", quantity: true, icon: PackageCheck, tone: "green" },
-  { id: "inspectionCount", label: "검사 건수", unit: "건", icon: ShieldCheck, tone: "purple" },
-  { id: "passRate", label: "합격률", unit: "%", icon: CircleCheck, tone: "orange" },
-  { id: "defectRate", label: "불량률", unit: "%", icon: TrendingUp, tone: "red" },
-  { id: "reprocessRate", label: "재처리율", unit: "%", icon: BarChart3, tone: "gray" },
-];
+/** @deprecated V1.3 — redirects to production executive dashboard */
+const INQUIRY_KPI = [];
 
 const PRODUCTION_KPI = [
-  { id: "productionQty", label: "생산량", quantity: true, icon: Factory, tone: "blue" },
-  { id: "completedCount", label: "생산 완료 건수", unit: "건", icon: CircleCheck, tone: "blue" },
-  { id: "inProgressCount", label: "생산 진행 건수", unit: "건", icon: Cog, tone: "blue" },
-  { id: "avgProductionQty", label: "평균 생산량", quantity: true, icon: TrendingUp, tone: "blue" },
-  { id: "equipmentRunCount", label: "설비 가동 건수", unit: "건", icon: Wrench, tone: "blue" },
-  { id: "topProcessShare", label: "공정별 생산 비율", unit: "%", icon: Layers, tone: "blue" },
+  { id: "inboundCount", label: "입고", unit: "건", icon: ArrowDownToLine, tone: "incoming" },
+  { id: "heatTreatmentCount", label: "열처리", unit: "건", icon: Flame, tone: "production" },
+  { id: "inspectionCount", label: "검사", unit: "건", icon: ShieldCheck, tone: "inspection" },
+  { id: "certificateCount", label: "성적서", unit: "건", icon: FileText, tone: "certificate" },
+  { id: "shipmentQty", label: "출고", quantity: true, icon: Truck, tone: "shipment" },
+  { id: "inventoryQty", label: "재고", quantity: true, icon: Boxes, tone: "inventory" },
+  { id: "passRate", label: "합격률", unit: "%", icon: CircleCheck, tone: "inspection" },
+  { id: "defectRate", label: "불량률", unit: "%", icon: TrendingUp, tone: "rework" },
 ];
 
 const QUALITY_KPI = [
-  { id: "inspectionCount", label: "검사 건수", unit: "건", icon: ClipboardCheck, tone: "green" },
-  { id: "passCount", label: "합격 건수", unit: "건", icon: CircleCheck, tone: "green" },
-  { id: "failCount", label: "불합격 건수", unit: "건", icon: CircleX, tone: "green" },
-  { id: "passRate", label: "합격률", unit: "%", icon: Percent, tone: "green" },
-  { id: "defectRate", label: "불량률", unit: "%", icon: TrendingUp, tone: "green" },
-  { id: "reprocessRate", label: "재처리율", unit: "%", icon: BarChart3, tone: "green" },
+  { id: "inspectionCount", label: "검사건수", unit: "건", icon: ClipboardCheck, tone: "inspection" },
+  { id: "passCount", label: "합격", unit: "건", icon: CircleCheck, tone: "inspection" },
+  { id: "failCount", label: "불합격", unit: "건", icon: CircleX, tone: "rework" },
+  { id: "reinspectionCount", label: "재검사", unit: "건", icon: RotateCcw, tone: "rework" },
+  { id: "passRate", label: "합격률", unit: "%", icon: Percent, tone: "inspection" },
+  { id: "defectRate", label: "불량률", unit: "%", icon: TrendingUp, tone: "rework" },
+  { id: "ncrCount", label: "NCR", unit: "건", icon: AlertTriangle, tone: "rework" },
+  { id: "customerClaimCount", label: "고객클레임", unit: "건", icon: Users, tone: "rework" },
 ];
 
-const SHIPMENT_KPI = [
-  { id: "shipmentQty", label: "출고량", quantity: true, icon: Truck, tone: "orange" },
-  { id: "completedCount", label: "출고 완료 건수", unit: "건", icon: CircleCheck, tone: "orange" },
-  { id: "companyCount", label: "출고 업체 수", unit: "곳", icon: Building2, tone: "orange" },
-  { id: "avgShipmentQty", label: "평균 출고량", quantity: true, icon: TrendingUp, tone: "orange" },
-  { id: "statementCount", label: "거래명세서 발행 건수", unit: "건", icon: FileText, tone: "orange" },
-  { id: "shipmentRatio", label: "출고 비율", unit: "%", icon: Percent, tone: "orange" },
-];
+/** @deprecated V1.3 — consolidated into sales executive dashboard */
+const SHIPMENT_KPI = [];
 
 const SALES_KPI = [
-  { id: "totalShipmentQty", label: "총 출고량", quantity: true, icon: Package, tone: "purple" },
-  { id: "companyCount", label: "거래 업체 수", unit: "곳", icon: Building2, tone: "purple" },
-  { id: "itemCount", label: "품목 수", unit: "종", icon: Layers, tone: "purple" },
-  { id: "avgShipmentQty", label: "평균 출고량", quantity: true, icon: TrendingUp, tone: "purple" },
-  { id: "topCompanyShare", label: "업체별 실적", unit: "%", icon: Users, tone: "purple" },
-  { id: "topItemShare", label: "품목별 실적", unit: "%", icon: BarChart3, tone: "purple" },
+  { id: "totalShipmentQty", label: "총 출고", quantity: true, icon: Package, tone: "shipment" },
+  { id: "shipmentCompleted", label: "출고 완료", unit: "건", icon: PackageCheck, tone: "shipment" },
+  { id: "shipmentPending", label: "출고 대기", unit: "건", icon: Truck, tone: "shipment" },
+  { id: "companyCount", label: "거래처 수", unit: "곳", icon: Building2, tone: "incoming" },
+  { id: "monthlyRevenue", label: "월 매출", unit: "원", icon: TrendingUp, tone: "certificate" },
+  { id: "avgLeadTime", label: "평균 출고 리드타임", unit: "일", icon: Clock, tone: "production" },
 ];
 
 export const STATISTICS_TAB_SCOPES = {
   inquiry: {
     id: "inquiry",
     label: "통계조회",
-    pageTitle: "통계조회",
-    accentClass: "statistics-accent--default",
-    kpiItems: INQUIRY_KPI,
+    pageTitle: "전체 생산통계",
+    accentClass: "statistics-accent--blue",
+    kpiItems: PRODUCTION_KPI,
     dimensions: [],
     charts: [],
-    useInquiryAnalytics: true,
-    integratedDashboard: true,
+    useInquiryAnalytics: false,
+    integratedDashboard: false,
+    executiveDashboard: true,
+    redirectTo: "production",
   },
   production: {
     id: "production",
-    label: "생산통계",
-    pageTitle: "생산통계",
+    label: "전체 생산통계",
+    pageTitle: "전체 생산통계",
     accentClass: "statistics-accent--blue",
+    executiveDashboard: true,
     kpiItems: PRODUCTION_KPI,
     dimensions: [
       { id: "company", label: "업체별", field: "company" },
@@ -138,6 +137,7 @@ export const STATISTICS_TAB_SCOPES = {
     label: "품질통계",
     pageTitle: "품질통계",
     accentClass: "statistics-accent--green",
+    executiveDashboard: true,
     kpiItems: QUALITY_KPI,
     dimensions: [
       { id: "company", label: "업체별", field: "company" },
@@ -156,9 +156,11 @@ export const STATISTICS_TAB_SCOPES = {
   shipment: {
     id: "shipment",
     label: "출고통계",
-    pageTitle: "출고통계",
-    accentClass: "statistics-accent--orange",
-    kpiItems: SHIPMENT_KPI,
+    pageTitle: "영업통계",
+    accentClass: "statistics-accent--purple",
+    executiveDashboard: true,
+    redirectTo: "sales",
+    kpiItems: SALES_KPI,
     dimensions: [
       { id: "company", label: "업체별", field: "company" },
       { id: "partName", label: "품목별", field: "partName" },
@@ -175,9 +177,10 @@ export const STATISTICS_TAB_SCOPES = {
   },
   sales: {
     id: "sales",
-    label: "영업실적",
-    pageTitle: "영업실적",
+    label: "영업통계",
+    pageTitle: "영업통계",
     accentClass: "statistics-accent--purple",
+    executiveDashboard: true,
     kpiItems: SALES_KPI,
     dimensions: [
       { id: "company", label: "업체별", field: "company" },
@@ -195,7 +198,9 @@ export const STATISTICS_TAB_SCOPES = {
 };
 
 export function getStatisticsScope(tabId) {
-  return STATISTICS_TAB_SCOPES[tabId] ?? STATISTICS_TAB_SCOPES.inquiry;
+  const scope = STATISTICS_TAB_SCOPES[tabId];
+  if (scope?.redirectTo) return STATISTICS_TAB_SCOPES[scope.redirectTo] ?? STATISTICS_TAB_SCOPES.production;
+  return scope ?? STATISTICS_TAB_SCOPES.production;
 }
 
 export function getPeriodKpiLabel(period, baseLabel) {

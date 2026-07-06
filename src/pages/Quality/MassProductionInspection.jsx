@@ -1,15 +1,15 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, {
   TitanAdvancedSearchField,
   useSearchSuggestionHelpers,
 } from "../../foundation/components/TitanSearchPanel";
+import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
   AssigneeField,
-  CustomerLotNoField,
   DateRangeField,
 } from "../../foundation/components/TitanSearchAdvancedFields";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -21,9 +21,8 @@ import {
   STANDARD_PRODUCT_BASIC_SEARCH_FIELDS,
 } from "../../config/listSearchStandard";
 import { buildMassInspectionListColumns } from "../../config/standardProductList";
-import { MASS_INSPECTION_STATUS } from "../../config/inspectionManagement";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import {
-  getProcessChipVariant,
   getProductionProcessCodes,
 } from "../../config/productionProcessCodes";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
@@ -34,7 +33,11 @@ import {
   getMassProductionInspectionRows,
   matchesMassProductionInspectionSearch,
 } from "../../utils/massProductionInspection";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
+import {
+  isMassInspectionRegisterEligible,
+  navigateToInspectionRegister,
+} from "../../utils/inspectionRegisterNavigation";
+import { getMassInspectionBaseRows } from "../../utils/titanScreenDataSource";
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -43,18 +46,32 @@ import "./QualityManagement.css";
 
 export default function MassProductionInspection() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [refreshKey, setRefreshKey] = useState(0);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyInspectionManagementSearch, { storageKey: "inspection-mass" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const chipRecords = useMemo(() => getMassInspectionBaseRows(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
     onReset,
   });
+
+  useEffect(() => {
+    if (location.state?.inspectionRefresh) {
+      setRefreshKey((value) => value + 1);
+      const targetId = location.state?.activeId;
+      if (targetId) {
+        const targetRow = getMassProductionInspectionRows().find(
+          (row) => row.rowKey === targetId || row.managementId === targetId || row.logId === targetId
+        );
+        setActiveId(targetRow?.rowKey ?? targetId);
+      }
+    }
+  }, [location.state]);
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
@@ -98,27 +115,41 @@ export default function MassProductionInspection() {
     }
   };
 
-  const handleRegister = (row) => {
-    if (!row?.managementId) return;
-    navigate(`/quality/inspection/register?managementId=${encodeURIComponent(row.managementId)}`);
-  };
+  const handleRegister = useCallback(
+    (row) => {
+      const managementId = String(row?.managementId ?? row?.record?.id ?? "").trim();
+      if (!managementId || managementId === "—") {
+        window.alert("관리번호가 없어 검사등록을 진행할 수 없습니다.");
+        return;
+      }
+      if (!isMassInspectionRegisterEligible(row)) {
+        window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
+        return;
+      }
+      navigateToInspectionRegister(navigate, { managementId });
+    },
+    [navigate]
+  );
 
-  const handleEdit = (row) => {
-    if (!row?.logId) return;
-    navigate(`/quality/inspection/${row.logId}/report`);
-  };
+  const handleEdit = useCallback(
+    (row) => {
+      if (!row?.logId) return;
+      navigate(`/quality/inspection/${row.logId}/report`);
+    },
+    [navigate]
+  );
 
-  const handleDelete = (row) => {
+  const handleDelete = useCallback((row) => {
     if (!row?.logId) return;
     const confirmed = globalThis.confirm?.("검사 등록을 취소하고 검사대기 상태로 되돌리시겠습니까?");
     if (!confirmed) return;
     cancelInspectionRegistration(row.logId);
     setRefreshKey((value) => value + 1);
-  };
+  }, []);
 
-  const openDetailPopup = (row) => {
+  const openDetailPopup = useCallback((row) => {
     openRowDetailPopup(row, { setActiveId, setDetailPopupRow, getRowId: (r) => r.rowKey });
-  };
+  }, []);
 
   const columns = useMemo(
     () =>
@@ -126,22 +157,13 @@ export default function MassProductionInspection() {
         renderStatus: (row) => (
           <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
         ),
-        renderProcess: (row) =>
-          row.processName && row.processName !== "—" ? (
-            <StatusChip variant={getProcessChipVariant(row.processName)}>{row.processName}</StatusChip>
-          ) : (
-            "—"
-          ),
+        renderProcess: (row) => renderWorkflowProcessChip(row),
         renderActions: (row) => {
-          const isWaiting = row.statusLabel === MASS_INSPECTION_STATUS.WAIT;
-          const isDone = row.statusLabel === MASS_INSPECTION_STATUS.DONE;
+          const canRegister = isMassInspectionRegisterEligible(row);
+          const isDone = Boolean(row.logId);
           return (
             <InspectionRegisterRowActions
-              onDetail={() => {
-                setActiveId(row.rowKey);
-                setDetailPopupRow(row);
-              }}
-              canRegister={isWaiting}
+              canRegister={canRegister}
               canEdit={isDone}
               canDelete={isDone}
               onRegister={() => handleRegister(row)}
@@ -151,7 +173,7 @@ export default function MassProductionInspection() {
           );
         },
       }),
-    []
+    [handleRegister, handleEdit, handleDelete]
   );
 
   return (
@@ -179,26 +201,20 @@ export default function MassProductionInspection() {
         statusFieldLabel="현재상태"
         advancedContent={
           <div className="titan-advanced-search__rows">
+            <TitanStandardProductAdvancedSearch
+              draft={draft}
+              onDraftChange={onDraftChange}
+              getSuggestions={getSuggestions}
+            />
             <TitanAdvancedSearchGrid>
               <DateRangeField
-                label="등록일"
+                label="검사등록일"
                 fromKey="registeredDateFrom"
                 toKey="registeredDateTo"
                 draft={draft}
                 onDraftChange={onDraftChange}
               />
               <AssigneeField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-              <CustomerLotNoField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
-              <TitanAdvancedSearchField
-                label="재질"
-                fieldKey="material"
-                value={draft.material ?? ""}
-                onChange={(value) => onDraftChange({ ...draft, material: value })}
-                suggestions={getSuggestions("material", draft.material)}
-                placeholder="재질"
-              />
-            </TitanAdvancedSearchGrid>
-            <TitanAdvancedSearchGrid>
               <TitanAdvancedSearchField
                 label="비고"
                 fieldKey="note"
@@ -224,7 +240,7 @@ export default function MassProductionInspection() {
           activeRowId={activeRow?.rowKey}
           onRowClick={(row) => setActiveId(row.rowKey)}
           onRowDoubleClick={openDetailPopup}
-          emptyMessage="생산완료 · 검사대기 제품이 없습니다."
+          emptyMessage="열처리완료 · 검사대기 제품이 없습니다."
         />
 
         <TitanTableFooter
@@ -243,9 +259,6 @@ export default function MassProductionInspection() {
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
         context={{
-          traceRecord: detailPopupRow?.record,
-          statusLabel: detailPopupRow?.statusLabel,
-          statusVariant: detailPopupRow?.statusVariant,
           onSelectCoLotProduct: (managementId) => {
             const target = rows.find((row) => row.managementId === managementId);
             if (target) {

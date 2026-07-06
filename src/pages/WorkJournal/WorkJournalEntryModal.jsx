@@ -5,6 +5,10 @@ import {
   MANUAL_JOURNAL_CATEGORIES,
   getJournalReferenceDate,
 } from "../../utils/workJournalData";
+import {
+  resolveAssigneeWorkerOptions,
+  resolveDefaultAssigneeFromAuth,
+} from "../../utils/titanAssigneeResolver";
 import "./WorkJournalEntryModal.css";
 
 const emptyForm = {
@@ -12,6 +16,7 @@ const emptyForm = {
   time: "",
   category: MANUAL_JOURNAL_CATEGORIES[0],
   title: "",
+  assignee: resolveDefaultAssigneeFromAuth(),
   company: "",
   managementId: "",
   lotNo: "",
@@ -25,13 +30,14 @@ function getDefaultTime() {
 
 function getInitialForm(initialEntry) {
   if (!initialEntry) {
-    return { ...emptyForm, time: getDefaultTime() };
+    return { ...emptyForm, time: getDefaultTime(), assignee: resolveDefaultAssigneeFromAuth() };
   }
   return {
     date: initialEntry.date ?? getJournalReferenceDate(),
     time: initialEntry.time ?? "",
     category: initialEntry.category ?? MANUAL_JOURNAL_CATEGORIES[0],
     title: initialEntry.title ?? "",
+    assignee: initialEntry.assignee ?? resolveDefaultAssigneeFromAuth(),
     company: initialEntry.company ?? "",
     managementId: initialEntry.managementId ?? "",
     lotNo: initialEntry.lotNo ?? "",
@@ -43,6 +49,7 @@ function WorkJournalEntryModal({ mode, initialEntry, onSave, onClose }) {
   const [form, setForm] = useState(() => getInitialForm(initialEntry));
   const [error, setError] = useState("");
   const isAuto = initialEntry?.source === "auto";
+  const workerOptions = resolveAssigneeWorkerOptions();
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -75,6 +82,10 @@ function WorkJournalEntryModal({ mode, initialEntry, onSave, onClose }) {
     }
     if (!form.time.trim()) {
       setError("시간을 입력하세요.");
+      return;
+    }
+    if (!form.assignee.trim()) {
+      setError("담당자를 선택하세요.");
       return;
     }
     onSave(form);
@@ -120,6 +131,23 @@ function WorkJournalEntryModal({ mode, initialEntry, onSave, onClose }) {
               />
             </label>
           </div>
+
+          <label className="wj-field">
+            <span>담당자</span>
+            <select
+              value={form.assignee}
+              onChange={(e) => updateField("assignee", e.target.value)}
+              disabled={isAuto}
+            >
+              <option value="">담당자 선택</option>
+              {workerOptions.map((worker) => (
+                <option key={worker.id} value={worker.name}>
+                  {worker.name}
+                  {worker.department ? ` · ${worker.department}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <label className="wj-field">
             <span>업무구분</span>

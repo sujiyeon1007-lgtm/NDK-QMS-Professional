@@ -1,0 +1,76 @@
+---
+description: Project TITAN V1.3 — PM Official Architecture Direction (열처리 전문 QMS/MES)
+alwaysApply: true
+---
+
+# Project TITAN V1.3 — PM Architecture Direction (Official)
+
+**Purpose:** 열처리 전문 업체 QMS/MES — **일반 제조 ERP가 아님.**
+
+## 최우선 목표
+
+Project TITAN = **열처리 전문 QMS/MES** (NDK PQMS)
+
+Architecture 검토·개선 제안 시 아래 질문을 **먼저** 확인:
+
+1. 열처리 전문 업체 실제 업무에 필요한가?
+2. LOT Traceability를 더 강하게 만드는가?
+3. 품질(QMS) 업무를 더 편하게 만드는가?
+4. 성적서·검사 데이터 연결을 자연스럽게 하는가?
+5. 관리번호 중심 구조를 유지하는가?
+
+**YES → 우선 검토** · BOM/MRP/구매/회계/원가/일반 ERP → **현재 범위 아님**
+
+## 핵심 Workflow (Single Source of Truth)
+
+```text
+입고 → 열처리 → 검사 → 성적서 → 출고 → 재고
+```
+
+**데이터 축:** 관리번호 → LOT → Traceability
+
+**Workflow SSOT (code):** `src/utils/titanWorkflowStatus.js`  
+**UI/QR/이력 헬퍼:** `src/utils/ndkWorkflow.js` — 상태 판단은 `titanWorkflowStatus` 위임
+
+## 기능 우선순위
+
+| ★★★★★ | LOT · 관리번호 · Traceability · 검사 · 성적서 · 경도 · 유효경화깊이 · 화합물층 · 조직사진 · QR · 공정이력 |
+| ★★★★☆ | 출고 · 재고 · 통계 · 문서관리 |
+| ★★★☆☆ | 작업일보 · Dashboard |
+
+**품질(QMS) → Traceability → 열처리** 중심
+
+## SessionStorage · Repository · Dead Code · Lazy Load
+
+| 항목 | PM 방침 |
+|------|---------|
+| SessionStorage | **= Demo Database** (현재 운영) |
+| Repository | 구조만 유지 — **지금 교체 ❌** · SQLite/Oracle/API 직전 순차 적용 |
+| Dead Code Sprint | **모든 화면 완료 후** 별도 진행 |
+| Lazy Loading | **적용 ❌** — Electron Windows, 초기 1회 로딩 |
+
+## 절대 원칙 — KPI = 리스트
+
+```text
+리스트 데이터 = KPI 데이터  (예외 없음)
+```
+
+동일 화면·동일 필터(검색·칩·기간·차원)에서 KPI와 리스트는 **같은 records**에서 계산.
+
+**SSoT:** `src/utils/titanScreenDataSource.js` (운영 화면) · 통계는 `buildExecutiveStatisticsDashboard()` 단일 진입
+
+## 통계관리
+
+```text
+Dashboard → Chart → List = 동일 Data Source
+```
+
+**Single pipeline:** `src/utils/statisticsExecutiveAnalytics.js` → `buildExecutiveStatisticsDashboard()`
+
+## Do Not (현재 단계)
+
+- Repository로 SessionStorage 일괄 교체
+- Dead Code 대량 삭제
+- Route lazy loading
+- 일반 ERP 기능 확장 제안 (BOM/MRP/구매/회계/원가)
+- Workflow 이중 정책 (ndkWorkflow vs titanWorkflowStatus 분리 유지 금지)

@@ -10,8 +10,8 @@
 /** @type {Record<TitanStatusToneKey, { label: string }>} */
 export const TITAN_STATUS_TONES = {
   "incoming-reg": { label: "입고등록" },
-  "prod-wait": { label: "생산대기" },
-  "prod-progress": { label: "생산중" },
+  "prod-wait": { label: "열처리대기" },
+  "prod-progress": { label: "열처리중" },
   "inspect-wait": { label: "검사대기" },
   "inspect-progress": { label: "검사중" },
   "cert-wait": { label: "성적서대기" },
@@ -41,8 +41,8 @@ export function getStatusLabelTone(statusLabel = "") {
   if (label.includes("성적서")) return "cert-wait";
   if (label === "검사진행" || label.includes("검사중")) return "inspect-progress";
   if (label.includes("검사")) return "inspect-wait";
-  if (label.includes("생산진행") || label === "생산중") return "prod-progress";
-  if (label.includes("생산대기")) return "prod-wait";
+  if (label.includes("열처리진행") || label === "열처리중" || label.includes("생산진행") || label === "생산중") return "prod-progress";
+  if (label.includes("열처리대기") || label.includes("생산대기")) return "prod-wait";
   if (label.includes("입고")) return "incoming-reg";
   return "incoming-reg";
 }

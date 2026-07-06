@@ -4,6 +4,11 @@
 
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
 import { getProductionProcessName } from "../config/productionProcessCodes";
+import {
+  applyScreenWorkflowFields,
+  applyRecordCurrentProcessFields,
+  resolveRecordCurrentProcess,
+} from "./workflowProcessStatus";
 
 /** @typedef {'done' | 'active' | 'pending'} ProcessFlowState */
 
@@ -16,7 +21,7 @@ export const PROCESS_FLOW_STEPS = [
   { id: "schedule", label: "생산 예정일" },
   { id: "progress", label: "생산 진행" },
   { id: "done", label: "생산 완료" },
-  { id: "daily-report", label: "생산일보 등록" },
+  { id: "daily-report", label: "열처리일보 등록" },
   { id: "inspection", label: "검사일지" },
   { id: "certificate", label: "엑셀 / PDF 등록" },
   { id: "ship-register", label: "출고 등록" },
@@ -149,18 +154,27 @@ export function formatWorkQtyLabel(record, options = {}) {
   return `${qty ?? 0} ${record.unit || "EA"}`;
 }
 
-/** @param {object} record @param {{ label: string, variant: string }} status */
+/** @param {object} record @param {{ label: string, variant: string }} status @param {{ workQty?: number, screenKey?: string }} [options] */
 export function mapV13ProductListRow(record, status, options = {}) {
   const base = mapStandardProductListRow(record, status);
-  return {
-    ...base,
-    incomingDate: formatStandardRegisteredDate(record),
-    productionDate: formatProductionDate(record),
-    inboundQtyLabel: formatInboundQtyLabel(record),
-    workQtyLabel: formatWorkQtyLabel(record, options),
-    currentProcess: base.processName,
-    remark: record.note?.trim() || "—",
-  };
+  const heatTreatmentProcess = base.processName;
+  const { screenKey } = options;
+  const row = applyRecordCurrentProcessFields(
+    {
+      ...base,
+      heatTreatmentProcess,
+      incomingDate: formatStandardRegisteredDate(record),
+      productionDate: formatProductionDate(record),
+      inboundQtyLabel: formatInboundQtyLabel(record),
+      workQtyLabel: formatWorkQtyLabel(record, options),
+      workflowStatus: status?.label ?? "—",
+      remark: record.note?.trim() || "—",
+    },
+    record,
+    screenKey
+  );
+
+  return screenKey ? applyScreenWorkflowFields(row, screenKey, status) : row;
 }
 
 /** @param {object} record @param {{ label: string, variant: string }} status */

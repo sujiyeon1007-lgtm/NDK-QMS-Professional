@@ -29,7 +29,7 @@ import {
 } from "../../utils/qrManagementSession";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import QrCreateModal from "./QrCreateModal";
-import { getProcessChipVariant } from "../../config/productionProcessCodes";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { useQrPrintActions } from "./useQrPrintActions";
 import "../InOut/InboundManagement.css";
 import "./QrManagement.css";
@@ -150,12 +150,7 @@ export default function QrInoutScreen() {
     refresh();
   };
 
-  const renderProcessChip = (row) =>
-    row.currentProcess && row.currentProcess !== "—" ? (
-      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
-    ) : (
-      "—"
-    );
+  const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
@@ -163,10 +158,6 @@ export default function QrInoutScreen() {
         renderCurrentProcess: renderProcessChip,
         renderActions: (row) => (
           <QrInoutRowActions
-            onDetail={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
             onPrint={() => handlePrintRows([row])}
             onRegenerate={() => handleRegenerate(row)}
             onDelete={() => handleDelete(row)}

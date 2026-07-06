@@ -21,6 +21,7 @@ import {
   STANDARD_PRODUCT_BASIC_SEARCH_FIELDS,
 } from "../../config/listSearchStandard";
 import { buildOutboundListColumns } from "../../config/standardProductList";
+import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import {
   getProcessChipVariant,
   getProductionProcessCodes,
@@ -35,6 +36,9 @@ import {
   OUTBOUND_STATUS_LABELS,
   filterOutboundCompletedRecords,
   filterOutboundManagementRecords,
+  formatOutboundDateDetailLabel,
+  formatOutboundDateLabel,
+  formatOutboundTimeLabel,
   getOutboundManagementStatus,
   getOutboundManager,
   getOutboundShipDate,
@@ -79,17 +83,31 @@ function resolveRegisterTargetId(selectedRows = [], activeRow = null) {
   return activeRow?.managementId ?? activeRow?.id ?? "";
 }
 
+function appendOutboundListFields(record, row = {}) {
+  return {
+    ...row,
+    outboundDate: formatOutboundDateLabel(record),
+    outboundDateLabel: formatOutboundDateDetailLabel(record),
+    shipDateLabel: formatOutboundDateDetailLabel(record),
+    outboundTimeLabel: formatOutboundTimeLabel(record),
+    outboundManagerLabel: getOutboundManager(record),
+    manager: record.outboundManager?.trim() || record.registrar?.trim() || "관리자",
+  };
+}
+
 function mapOutboundListRow(record) {
   const statementStatus = getStatementPrintStatus(record);
   const stock = getStockQty(record);
 
   if (record.shipmentStatus === SHIPMENT_STATUS.DONE && stock <= 0) {
-    return {
-      ...mapV13ProductListRow(record, { label: "출고완료", variant: "complete" }, { workQty: getOutboundTotalShippedQty(record) }),
-      statementStatusLabel: statementStatus.label,
-      statementStatusVariant: statementStatus.variant,
-      manager: getOutboundManager(record),
-    };
+    return appendOutboundListFields(
+      record,
+      {
+        ...mapV13ProductListRow(record, { label: "출고완료", variant: "complete" }, { workQty: getOutboundTotalShippedQty(record), screenKey: "outbound" }),
+        statementStatusLabel: statementStatus.label,
+        statementStatusVariant: statementStatus.variant,
+      }
+    );
   }
 
   const status = getOutboundManagementStatus(record) ?? {
@@ -97,17 +115,19 @@ function mapOutboundListRow(record) {
     variant: "ship-wait",
   };
 
-  return {
-    ...mapV13ProductListRow(record, status, { workQty: stock }),
-    statementStatusLabel: statementStatus.label,
-    statementStatusVariant: statementStatus.variant,
-    manager: getOutboundManager(record),
-  };
+  return appendOutboundListFields(
+    record,
+    {
+      ...mapV13ProductListRow(record, status, { workQty: stock, screenKey: "outbound" }),
+      statementStatusLabel: statementStatus.label,
+      statementStatusVariant: statementStatus.variant,
+    }
+  );
 }
 
 function resolveOutboundListRecords(search) {
   const all = getSessionProductionRecords();
-  if (search.__chipProductShipDone) {
+  if (search.__chipShipDone || search.__chipProductShipDone) {
     return filterOutboundCompletedRecords(all);
   }
   return filterOutboundManagementRecords(all);
@@ -120,18 +140,22 @@ function matchesOutboundSearch(record, row, search) {
   if (search.process && getProductionProcessName(record) !== search.process) return false;
   if (search.manager && !row.manager.includes(search.manager)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
-  if (search.__chipProductShipWait && row.statusLabel !== OUTBOUND_STATUS_LABELS.SHIP_WAIT) {
+  if (
+    (search.__chipShipNotDone || search.__chipProductShipWait) &&
+    row.statusLabel !== OUTBOUND_STATUS_LABELS.NOT_DONE
+  ) {
     return false;
   }
-  if (search.__chipProductShipDone && row.statusLabel !== "출고완료") {
+  if (
+    (search.__chipShipDone || search.__chipProductShipDone) &&
+    row.statusLabel !== OUTBOUND_STATUS_LABELS.DONE
+  ) {
     return false;
   }
   if (search.note && !String(record.note ?? "").includes(search.note)) return false;
   const shipDate = getOutboundShipDate(record);
   if (search.shipDateFrom && shipDate !== "—" && shipDate < search.shipDateFrom) return false;
   if (search.shipDateTo && shipDate !== "—" && shipDate > search.shipDateTo) return false;
-  if (search.productionDateFrom && shipDate !== "—" && shipDate < search.productionDateFrom) return false;
-  if (search.productionDateTo && shipDate !== "—" && shipDate > search.productionDateTo) return false;
   if (search.incomingDateFrom && record.incomingDate < search.incomingDateFrom) return false;
   if (search.incomingDateTo && record.incomingDate > search.incomingDateTo) return false;
   return true;
@@ -274,7 +298,15 @@ export default function OutboundManagement() {
         </div>
         <div>
           <dt>출고일</dt>
-          <dd>{row.shipDateLabel}</dd>
+          <dd>{row.shipDateLabel ?? row.outboundDateLabel ?? "—"}</dd>
+        </div>
+        <div>
+          <dt>출고 담당자</dt>
+          <dd>{row.outboundManagerLabel ?? row.manager ?? "—"}</dd>
+        </div>
+        <div>
+          <dt>출고 시간</dt>
+          <dd>{row.outboundTimeLabel ?? "—"}</dd>
         </div>
         <div>
           <dt>현재상태</dt>
@@ -473,12 +505,7 @@ export default function OutboundManagement() {
     });
   };
 
-  const renderProcessChip = (row) =>
-    row.currentProcess && row.currentProcess !== "—" ? (
-      <StatusChip variant={getProcessChipVariant(row.currentProcess)}>{row.currentProcess}</StatusChip>
-    ) : (
-      "—"
-    );
+  const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
@@ -489,10 +516,6 @@ export default function OutboundManagement() {
           const canShip = getStockQty(record) > 0;
           return (
             <OutboundRowActions
-              onDetail={() => {
-                setActiveId(row.id);
-                setDetailPopupRow(row);
-              }}
               canShip={canShip || (record?.shippedQty ?? 0) > 0}
               shipLabel={canShip ? "출고" : "명세서"}
               onShip={() => handleRowShip(row)}
@@ -552,6 +575,7 @@ export default function OutboundManagement() {
             getSuggestions={getSuggestions}
             productionDateFromKey="shipDateFrom"
             productionDateToKey="shipDateTo"
+            productionDateLabel="출고일"
           />
         }
       />
@@ -638,14 +662,13 @@ export default function OutboundManagement() {
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
         context={{
-          detailContent: buildOutboundDetailContent(
-            detailPopupRow,
-            detailPopupRow ? formatMultiSelectCompany([detailPopupRow]) : ""
-          ),
-          traceRecord: detailPopupRow?.record,
-          processFlowSteps: detailPopupProcessSteps,
-          statusLabel: detailPopupRow?.statusLabel,
-          statusVariant: detailPopupRow?.statusVariant,
+          onSelectCoLotProduct: (id) => {
+            const target = rows.find((row) => row.managementId === id || row.id === id);
+            if (target) {
+              setActiveId(target.id);
+              setDetailPopupRow(target);
+            }
+          },
         }}
       />
     </div>

@@ -1,11 +1,8 @@
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * 출고관리 — [상세] [출고] [수정] [취소]
- */
+/** 출고관리 — [출고] [수정] [취소] (상세는 더블클릭) */
 export default function OutboundRowActions({
-  onDetail,
   onShip,
   onEdit,
   onCancel,
@@ -15,7 +12,7 @@ export default function OutboundRowActions({
   shipLabel = "출고",
 }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <PrimaryButton
         type="button"
         className="titan-btn--table-action"

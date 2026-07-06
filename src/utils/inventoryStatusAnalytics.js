@@ -90,6 +90,7 @@ export function buildInventoryStatusRows(records = getSessionProductionRecords()
         workInputQtyLabel: `${row.workInputQty.toLocaleString("ko-KR")} ${row.unit}`,
         shippedQtyLabel: `${row.shippedQty.toLocaleString("ko-KR")} ${row.unit}`,
         currentStockLabel: `${row.currentStock.toLocaleString("ko-KR")} ${row.unit}`,
+        incomingDateLabel: row.lastIncomingDate || "—",
         lastIncomingDateLabel: row.lastIncomingDate || "—",
         statusLabel: status.label,
         statusVariant: status.variant,
@@ -123,7 +124,7 @@ export function buildInventoryByLotRows(records = getSessionProductionRecords())
         lastIncomingDate: String(record.incomingDate ?? ""),
       };
       const status = resolveInventoryStatusLabel(row);
-      const v13 = mapV13ProductListRow(record, status, { workQty: workInputQty || inboundQty });
+      const v13 = mapV13ProductListRow(record, status, { workQty: workInputQty || inboundQty, screenKey: "inventory" });
       return {
         ...row,
         ...v13,
@@ -134,6 +135,7 @@ export function buildInventoryByLotRows(records = getSessionProductionRecords())
         workInputQtyLabel: `${row.workInputQty.toLocaleString("ko-KR")} ${row.unit}`,
         shippedQtyLabel: `${row.shippedQty.toLocaleString("ko-KR")} ${row.unit}`,
         currentStockLabel: `${row.currentStock.toLocaleString("ko-KR")} ${row.unit}`,
+        incomingDateLabel: row.lastIncomingDate || "—",
         lastIncomingDateLabel: row.lastIncomingDate || "—",
         statusLabel: status.label,
         statusVariant: status.variant,
@@ -201,6 +203,7 @@ export function buildInventoryByCompanyRows(records = getSessionProductionRecord
         currentStockLabel: `${row.currentStock.toLocaleString("ko-KR")} ${row.unit}`,
         skuCountLabel: skuCount.toLocaleString("ko-KR"),
         lotCountLabel: row.lotCount.toLocaleString("ko-KR"),
+        incomingDateLabel: row.lastIncomingDate || "—",
         lastIncomingDateLabel: row.lastIncomingDate || "—",
         statusLabel: status.label,
         statusVariant: status.variant,
@@ -221,12 +224,17 @@ export function buildInventoryRowsByViewMode(viewMode = "byItem", records = getS
 }
 
 export function summarizeInventoryStatus(rows = buildInventoryStatusRows()) {
+  const shortageSkuCount = rows.filter(
+    (row) => row.currentStock <= 0 && row.workInputQty > 0 && row.statusLabel === "재고없음"
+  ).length;
+
   return {
     skuCount: rows.length,
     inStockSkuCount: rows.filter((row) => row.currentStock > 0).length,
     totalCurrentStock: rows.reduce((sum, row) => sum + row.currentStock, 0),
     totalInboundQty: rows.reduce((sum, row) => sum + row.inboundQty, 0),
     totalShippedQty: rows.reduce((sum, row) => sum + row.shippedQty, 0),
+    shortageSkuCount,
   };
 }
 

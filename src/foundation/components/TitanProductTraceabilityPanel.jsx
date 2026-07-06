@@ -5,7 +5,7 @@ import { buildProductTraceability } from "../../utils/productTraceabilityModel";
 
 const DEFAULT_DURATION_ROWS = [
   { key: "incoming", label: "입고", durationLabel: "—" },
-  { key: "production", label: "생산", durationLabel: "—" },
+  { key: "production", label: "열처리", durationLabel: "—" },
   { key: "inspection", label: "검사", durationLabel: "—" },
   { key: "certificate", label: "성적서", durationLabel: "—" },
   { key: "shipment", label: "출고", durationLabel: "—" },
@@ -13,7 +13,7 @@ const DEFAULT_DURATION_ROWS = [
 
 const DEFAULT_TIMELINE_STEPS = [
   { id: "incoming", label: "입고", timeLabel: "—", detail: "", status: "pending" },
-  { id: "production", label: "생산", timeLabel: "—", detail: "", status: "pending" },
+  { id: "production", label: "열처리", timeLabel: "—", detail: "", status: "pending" },
   { id: "inspection", label: "검사", timeLabel: "—", detail: "", status: "pending" },
   { id: "certificate", label: "성적서", timeLabel: "—", detail: "", status: "pending" },
   { id: "shipment", label: "출고", timeLabel: "—", detail: "", status: "pending" },

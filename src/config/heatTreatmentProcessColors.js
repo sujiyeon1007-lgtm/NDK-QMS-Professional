@@ -33,3 +33,17 @@ export function getHeatTreatmentProcessTone(processName = "") {
 export function getProcessChipVariant(processName) {
   return getHeatTreatmentProcessTone(processName);
 }
+
+/**
+ * 열처리 공정명(이온질화 · 연질화 등) — 현재공정(workflow stage)과 구분
+ * @param {string | null | undefined} label
+ * @returns {boolean}
+ */
+export function isHeatTreatmentProcessLabel(label = "") {
+  const name = String(label ?? "").trim();
+  if (!name || name === "—") return false;
+  if (Object.prototype.hasOwnProperty.call(HEAT_TREATMENT_PROCESS_TONE_BY_NAME, name)) {
+    return true;
+  }
+  return getHeatTreatmentProcessTone(name) !== "default";
+}

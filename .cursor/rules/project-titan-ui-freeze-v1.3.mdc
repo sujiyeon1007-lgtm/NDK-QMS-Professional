@@ -70,7 +70,7 @@ HOME은 **현재 디자인과 구성으로 최종 승인**되었다.
 | 로그인 | 🟢 UI Freeze |
 | 기준정보관리 | 🟡 In Progress |
 | 입고관리 | 🟡 In Progress |
-| 생산일보 | 🟡 In Progress |
+| **생산일보 (생산관리)** | 🟢 **UI Freeze (V1.3)** — PM 2026-07-06 · See `project-titan-production-ui-freeze-v1.3.mdc` |
 | 검사관리 | 🟡 In Progress |
 | 성적서관리 | 🟡 In Progress |
 | 출고관리 | 🟡 In Progress |

@@ -4,10 +4,14 @@ import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import { createEmptyCertificateRegister } from "../../config/listSearchStandard";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
-import { getProductionProcessName } from "../../config/productionProcessCodes";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { buildCertificateEntryFromRecord } from "../../utils/certificateSession";
+import {
+  resolveAssigneeWorkerOptions,
+  resolveDefaultAssigneeFromAuth,
+} from "../../utils/titanAssigneeResolver";
 
 const emptyProductFields = {
   lotNo: "",
@@ -38,7 +42,10 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
       });
       return;
     }
-    setForm(createEmptyCertificateRegister());
+    setForm({
+      ...createEmptyCertificateRegister(),
+      registeredBy: resolveDefaultAssigneeFromAuth(),
+    });
   }, [open, initialData]);
 
   const handleCompanyChange = (value) => {
@@ -79,20 +86,22 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
       if (key === "managementId") {
         const existing = getSessionProductionRecords().find((record) => record.id === value.trim());
         if (existing) {
+          const fromInspection = buildCertificateEntryFromRecord(existing);
           return {
             ...next,
-            company: existing.company || prev.company,
-            lotNo: existing.lotNo?.trim() || prev.lotNo,
-            partName: existing.partName || prev.partName,
-            partNo: existing.partNo || prev.partNo,
+            company: fromInspection.company || prev.company,
+            lotNo: fromInspection.lotNo || prev.lotNo,
+            partName: fromInspection.partName || prev.partName,
+            partNo: fromInspection.partNo || prev.partNo,
             drawingNo: existing.drawingNo || prev.drawingNo,
-            material: existing.material || prev.material,
+            material: fromInspection.material || prev.material,
             spec: existing.spec || prev.spec,
             unitPrice:
               existing.unitPrice != null ? String(existing.unitPrice) : prev.unitPrice,
-            process: getProductionProcessName(existing) !== "—" ? getProductionProcessName(existing) : prev.process,
-            qty: existing.qty != null ? String(existing.qty) : prev.qty,
-            unit: existing.unit || prev.unit,
+            process: fromInspection.process || prev.process,
+            qty: fromInspection.qty != null ? String(fromInspection.qty) : prev.qty,
+            unit: fromInspection.unit || prev.unit,
+            registeredBy: fromInspection.registeredBy || prev.registeredBy,
           };
         }
       }
@@ -166,6 +175,19 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
           fieldClassName="titan-modal__field"
           kicker="성적서 등록"
         />
+
+        <label className="titan-modal__field">
+          <span>담당자</span>
+          <select value={form.registeredBy} onChange={(e) => updateField("registeredBy", e.target.value)}>
+            <option value="">담당자 선택</option>
+            {resolveAssigneeWorkerOptions().map((worker) => (
+              <option key={worker.id} value={worker.name}>
+                {worker.name}
+                {worker.department ? ` · ${worker.department}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="titan-modal__field">
           <span>수량</span>

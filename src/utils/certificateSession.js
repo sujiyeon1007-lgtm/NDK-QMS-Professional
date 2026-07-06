@@ -3,19 +3,26 @@
  * V1.0: 엑셀/PDF 파일 관리 · 향후 자동 발행 연동 확장
  */
 
-import { getCurrentTitanUser } from "./titanHistorySession";
+import { resolveDefaultAssigneeFromAuth, normalizeAssigneeValue } from "./titanAssigneeResolver";
+import { appendWorkJournalAutoEntry } from "./workJournalAutoRecord";
+import { WORK_JOURNAL_ACTION_TYPES } from "../config/titanAssigneePolicy";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getProductionProcessName } from "../config/productionProcessCodes";
 import { onCertificateIssued } from "./titanWorkflowStatus";
+import { getTitanDemoCertificateSeeds } from "../data/titanDemoSampleData";
+import { getInspectionLogsByManagementId } from "./inspectionLogSession";
+import { getInspectionReportByLogId } from "./inspectionReportSession";
 
-const STORAGE_KEY = "project-titan-certificate-files-v1";
+const STORAGE_KEY = "project-titan-certificate-files-v2";
 
 function safeRead() {
   try {
     const raw = globalThis.sessionStorage?.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (parsed.length > 0) return parsed;
+    return getTitanDemoCertificateSeeds();
   } catch {
-    return [];
+    return getTitanDemoCertificateSeeds();
   }
 }
 
@@ -58,7 +65,7 @@ function normalizeEntry(entry) {
     excelFile: entry.excelFile ?? null,
     pdfFile: entry.pdfFile ?? null,
     registeredDate: entry.registeredDate?.trim() || getJournalReferenceDate(),
-    registeredBy: entry.registeredBy?.trim() || getCurrentTitanUser(),
+    registeredBy: normalizeAssigneeValue(entry.registeredBy) || resolveDefaultAssigneeFromAuth(),
     deleted: Boolean(entry.deleted),
     createdAt: entry.createdAt || new Date().toISOString(),
     updatedAt: entry.updatedAt || new Date().toISOString(),
@@ -103,10 +110,24 @@ export function getCertificateFileStatus(entry) {
   return { label: "등록대기", variant: "wait" };
 }
 
+function getLatestInspectionReportForManagementId(managementId) {
+  const trimmed = managementId?.trim();
+  if (!trimmed) return { log: null, report: null };
+
+  const log = getInspectionLogsByManagementId(trimmed)
+    .filter((entry) => !entry.deleted)
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+
+  if (!log) return { log: null, report: null };
+  return { log, report: getInspectionReportByLogId(log.id) };
+}
+
 export function buildCertificateEntryFromRecord(record, overrides = {}) {
   if (!record) return null;
-  return {
-    managementId: record.id,
+
+  const managementId = record.id || record.managementId;
+  const fromRecord = {
+    managementId,
     company: record.company,
     partName: record.partName,
     partNo: record.partNo,
@@ -118,7 +139,29 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
     unit: record.unit || "EA",
     process: getProductionProcessName(record),
     registeredDate: getJournalReferenceDate(),
-    registeredBy: getCurrentTitanUser(),
+    registeredBy: resolveDefaultAssigneeFromAuth(),
+  };
+
+  const { log, report } = getLatestInspectionReportForManagementId(managementId);
+  if (!report) {
+    return { ...fromRecord, ...overrides };
+  }
+
+  return {
+    ...fromRecord,
+    company: report.company?.trim() || fromRecord.company,
+    partName: report.partName?.trim() || fromRecord.partName,
+    partNo: report.partNo?.trim() || fromRecord.partNo,
+    material: report.material?.trim() || fromRecord.material,
+    lotNo: report.lotNo?.trim() || fromRecord.lotNo,
+    purchaseOrderNo: report.purchaseOrderNo?.trim() || fromRecord.purchaseOrderNo,
+    customerLotNo: report.customerLotNo?.trim() || fromRecord.customerLotNo,
+    qty: report.qty ?? fromRecord.qty,
+    unit: report.unit?.trim() || fromRecord.unit,
+    process: report.process?.trim() || fromRecord.process,
+    registeredDate: report.inspectionDate?.trim() || log?.inspectionDate || fromRecord.registeredDate,
+    registeredBy: report.inspector?.trim() || log?.assignee || fromRecord.registeredBy,
+    inspectionLogId: log?.id || "",
     ...overrides,
   };
 }
@@ -156,6 +199,15 @@ export function upsertCertificateFileEntry(payload) {
   const saved = getCertificateEntryByManagementId(base.managementId);
   if (saved && saved.excelFile?.name && saved.pdfFile?.name) {
     onCertificateIssued(saved.managementId);
+    appendWorkJournalAutoEntry({
+      actionType: WORK_JOURNAL_ACTION_TYPES.CERTIFICATE_ISSUE,
+      assignee: saved.registeredBy,
+      managementId: saved.managementId,
+      company: saved.company,
+      lotNo: saved.lotNo,
+      date: saved.registeredDate,
+      title: `성적서 발행 — ${saved.company} ${saved.lotNo || saved.managementId}`,
+    });
   }
 
   return saved;

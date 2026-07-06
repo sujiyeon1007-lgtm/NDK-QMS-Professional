@@ -98,4 +98,4 @@ export const INSPECTION_RESULT_OPTIONS = ["합격", "불합격"];
 
 export const INSPECTION_LOG_STATUS_OPTIONS = ["합격", "불합격", "보류"];
 
-export const CERTIFICATE_FILE_STATUS_OPTIONS = ["등록완료", "등록대기", "엑셀만", "PDF만"];
+export const CERTIFICATE_FILE_STATUS_OPTIONS = ["발행완료", "발행대기"];

@@ -32,20 +32,20 @@ export function isProductionComplete(record) {
  */
 export function canCompleteProduction(record) {
   if (!record?.registered || !record?.lotNo?.trim()) {
-    return { ok: false, reason: "생산일보 등록 후 생산 완료할 수 있습니다." };
+    return { ok: false, reason: "열처리일보 등록 후 열처리 완료할 수 있습니다." };
   }
 
   if (isProductionComplete(record)) {
-    return { ok: false, reason: "이미 생산 완료 처리된 제품입니다." };
+    return { ok: false, reason: "이미 열처리 완료 처리된 제품입니다." };
   }
 
   if (hasInspectionLogForManagementId(record.id)) {
-    return { ok: false, reason: "검사가 시작된 제품은 생산 완료를 변경할 수 없습니다." };
+    return { ok: false, reason: "검사가 시작된 제품은 열처리 완료를 변경할 수 없습니다." };
   }
 
   const status = getWorkflowStatus(record);
   if (status !== WORKFLOW_STATUS.PROD_PROGRESS) {
-    return { ok: false, reason: "생산중 상태에서만 생산 완료할 수 있습니다." };
+    return { ok: false, reason: "열처리중 상태에서만 열처리 완료할 수 있습니다." };
   }
 
   return { ok: true };
@@ -103,7 +103,7 @@ export function completeProductionRecord(managementId, options = {}) {
 export function completeProductionRecords(managementIds = [], options = {}) {
   const ids = [...new Set(managementIds.map((id) => String(id ?? "").trim()).filter(Boolean))];
   if (!ids.length) {
-    return { ok: false, reason: "생산 완료할 제품을 선택하세요." };
+    return { ok: false, reason: "열처리 완료할 제품을 선택하세요." };
   }
 
   const results = ids.map((id) => completeProductionRecord(id, options));
@@ -121,15 +121,15 @@ export function completeProductionRecords(managementIds = [], options = {}) {
  */
 export function canCancelProductionComplete(record) {
   if (!record?.registered || !record?.lotNo?.trim()) {
-    return { ok: false, reason: "생산일보 등록된 LOT만 생산완료를 취소할 수 있습니다." };
+    return { ok: false, reason: "열처리일보 등록된 LOT만 열처리완료를 취소할 수 있습니다." };
   }
 
   if (!isProductionComplete(record)) {
-    return { ok: false, reason: "생산완료 상태에서만 취소할 수 있습니다." };
+    return { ok: false, reason: "열처리완료 상태에서만 취소할 수 있습니다." };
   }
 
   if (hasInspectionLogForManagementId(record.id)) {
-    return { ok: false, reason: "검사가 등록된 제품은 생산완료를 취소할 수 없습니다." };
+    return { ok: false, reason: "검사가 등록된 제품은 열처리완료를 취소할 수 없습니다." };
   }
 
   return { ok: true };

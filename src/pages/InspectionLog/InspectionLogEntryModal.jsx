@@ -7,7 +7,7 @@ import {
 import { getActiveMasterNames, getActiveWorkers } from "../../utils/masterData";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import { getCurrentTitanUser } from "../../utils/titanHistorySession";
+import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { getProductUnitOptions, normalizeProductUnit } from "../../utils/productUnits";
 import "./InspectionLogEntryModal.css";
@@ -30,7 +30,7 @@ const emptyForm = () => ({
   lotNo: "",
   qty: "",
   unit: "EA",
-  assignee: getCurrentTitanUser(),
+  assignee: resolveDefaultAssigneeFromAuth(),
   inspectionItem: "",
   inspectionStandard: "",
   measuredValue: "",

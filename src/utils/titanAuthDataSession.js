@@ -92,8 +92,8 @@ function buildSeedRoles() {
     },
     {
       id: "ROLE_PRODUCTION",
-      name: "생산관리",
-      label: "생산관리",
+      name: "열처리관리",
+      label: "열처리관리",
       isSystem: false,
       menuPermissions: {
         ...createDefaultMenuPermissionMap(false),

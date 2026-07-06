@@ -1,0 +1,98 @@
+---
+description: Project TITAN V1.3 — 생산관리(작업일보) UI Freeze · PM 승인 확정
+alwaysApply: true
+---
+
+# Project TITAN V1.3 — 생산관리 UI Freeze (PM 승인)
+
+**Status:** 🟢 **UI Freeze** · **2026-07-06 PM 승인**
+
+**Screen:** 생산관리 · 작업일보 (`/production/daily-report` · `dailyProductionReport`)
+
+**SSoT (code):** `src/config/screenUiStatus.js` · `src/pages/Production/DailyProductionReport.jsx`
+
+**Reference:** 입고관리 레이아웃 · HOME 디자인 언어 · `TitanStandardDetailPopup`
+
+---
+
+## UI Freeze 범위 (확정 · 변경 금지)
+
+| 영역 | 확정 내용 |
+|------|-----------|
+| Toolbar | 생산일보 등록 · 생산일보 출력 · PDF 출력 · 엑셀 출력 (**4개만**) |
+| KPI | TitanKpiBarSlot + TitanWorkflowStatusChipBar (`chipSetId="production"`) |
+| 검색 | TitanSearchPanel + Live Search · 상세검색 접기/펼치기 |
+| 리스트 | TitanDataTable · V1.3 표준 컬럼 · 행 작업 `[상세] [수정] [완료] [취소]` |
+| Detail Popup | 입고관리와 동일 `TitanStandardDetailPopup` (880×660) |
+| Popup Tabs | 기본정보 · 공정이력 · QR 작업이력 · 동일 LOT 제품 · 첨부파일 · 메모 |
+
+### Toolbar에서 삭제 완료 (복원 ❌)
+
+- ~~생산일보 수정~~ → 리스트 행 **수정** 버튼
+- ~~생산일보 취소~~ → 리스트 행 **취소** 버튼 (LOT 취소 / 생산완료 취소 분기)
+
+---
+
+## 출력 정책 (확정 · 변경 금지)
+
+1. **체크박스 선택 기준** — 선택 Row 그대로 출력 · **선택 Row 수 = 출력 Row 수**
+2. **동일 LOT 일부 선택** → `ProductionDailyReportPartialLotDialog` (선택만 / LOT 전체 / 취소)
+3. **여러 LOT 선택** → `ProductionDailyReportLotSelectDialog`
+4. Print · PDF · Excel 동일 흐름
+
+**Logic SSoT:** `productionDailyReportPrintActions.js` · `productionDailyReportPrintData.js`
+
+---
+
+## 샘플 데이터 정책
+
+- **SSoT:** `src/data/titanDemoSampleData.js`
+- 입고 → 생산 → 검사 → 성적서 → 출고 → 재고 **자연스러운 Workflow** 유지
+- **동일 LOT** 제품 = 동일 공정 · 동일 workflowStatus · 동일 HTL/LOT 필드
+
+---
+
+## 허용 (Freeze 이후)
+
+- 버그 수정
+- Oracle / API 연동
+- SQLite 연동
+- 데이터 바인딩 · Session → DB 교체
+- 성능 개선
+- Demo 데이터 보강 (Workflow 정합성 유지)
+
+## 금지 (PM 승인 없이)
+
+- UI 변경 · 레이아웃 변경
+- Toolbar 버튼 추가/삭제/위치 변경
+- 리스트 컬럼 변경
+- Detail Popup 구조 · Tab 변경
+- KPI / 검색 / 테이블 디자인 변경
+- 출력 정책 변경 (체크 기준 · Row 수 일치 원칙)
+
+---
+
+## Cursor Do
+
+- 생산관리 작업 전 본 Rule + `screenUiStatus.js` 확인
+- 수정/취소는 **행 Action**만 — Toolbar 복원 ❌
+- 공통 Popup 변경 시 **입고관리 Freeze 영향** 반드시 검증
+- Regression: `scripts/verify-production-daily-print.mjs` 유지
+
+## Cursor Do Not
+
+- 생산관리 전용 Popup / Toolbar / 테이블 CSS 신규 작성
+- `registered` / 날짜 조건으로 출력 Row 제외 (체크 Row = 출력 Row)
+- Freeze 범위 UI "개선" 명목의 diff
+
+---
+
+## 다음 Sprint
+
+**업무일지 (Daily Work Log)** — 생산관리 UI Freeze를 Reference로 동일 디자인 시스템 적용
+
+```text
+업무일지 UI 설계 → PM 승인 → 구현 → 테스트 → UI Freeze → Commit
+```
+
+**원칙:** 페이지 하나 완성 → PM 승인 → UI Freeze → Commit → 다음 페이지

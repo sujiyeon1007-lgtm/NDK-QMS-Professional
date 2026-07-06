@@ -1,11 +1,8 @@
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/**
- * QR관리 입출고 — [상세] [출력] [재생성] [삭제]
- */
+/** QR관리 입출고 — [출력] [재생성] [삭제] (상세는 더블클릭) */
 export default function QrInoutRowActions({
-  onDetail,
   onPrint,
   onRegenerate,
   onDelete,
@@ -14,7 +11,7 @@ export default function QrInoutRowActions({
   canDelete = false,
 }) {
   return (
-    <TitanTableRowActions onDetail={onDetail}>
+    <TitanTableRowActions>
       <SecondaryButton
         type="button"
         className="titan-btn--table-action"
