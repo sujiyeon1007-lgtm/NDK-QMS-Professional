@@ -28,7 +28,7 @@ export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   inboundStatus: "/inout/incoming",
   workDaily: "/production/daily-report",
   workJournal: "/work-journal",
-  quality: "/quality/inspection",
+  quality: "/quality/inspection/mass",
   certificateStatus: "/quality/certificate",
   outboundStatus: "/inout/shipment",
   inventoryStatus: "/inventory",
@@ -41,7 +41,7 @@ export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   environment: "/environment",
 };
 
-const MENU_FREEZE_ITEM_COUNT = 15;
+const MENU_FREEZE_ITEM_COUNT = 16;
 
 const CRITICAL_MENU_IDS = ["documents", "history", "inventoryStatus"];
 
@@ -90,8 +90,8 @@ export function validateMenuIntegrity() {
     errors.push("DEVELOPMENT_FLOW_AFTER_MENU_FREEZE must include 검토 before 승인");
   }
 
-  if (PRODUCT_WORKFLOW_CHAIN.length !== 7) {
-    errors.push(`PRODUCT_WORKFLOW_CHAIN must have 7 items (got ${PRODUCT_WORKFLOW_CHAIN.length})`);
+  if (PRODUCT_WORKFLOW_CHAIN.length !== 8) {
+    errors.push(`PRODUCT_WORKFLOW_CHAIN must have 8 items (got ${PRODUCT_WORKFLOW_CHAIN.length})`);
   }
 
   if (SIDEBAR_MENU.length !== MENU_FREEZE_SIDEBAR_ORDER.length) {

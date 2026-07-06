@@ -74,7 +74,7 @@ export const TITAN_MENU_PERMISSIONS = [
   { key: "inbound", label: "입고관리", catalogId: "inboundStatus" },
   { key: "production", label: "생산관리", catalogId: "workDaily" },
   { key: "inspection", label: "검사관리", catalogId: "quality" },
-  { key: "certificate", label: "성적서관리", catalogId: "quality" },
+  { key: "certificate", label: "성적서관리", catalogId: "certificateStatus" },
   { key: "outbound", label: "출고관리", catalogId: "outboundStatus" },
   { key: "inventory", label: "재고관리", catalogId: "inventoryStatus" },
   { key: "documents", label: "문서관리", catalogId: "documents" },

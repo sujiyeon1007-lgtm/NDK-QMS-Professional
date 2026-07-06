@@ -10,7 +10,7 @@ export const MENU_FREEZE_VERSION = "V1.0";
 export const MENU_FREEZE_LOCKED = true;
 export const MENU_FREEZE_DATE = "2026-07-04";
 
-/** Sidebar 1Depth — 순서 고정 (15 menus · 공식 구조) */
+/** Sidebar 1Depth — 순서 고정 (16 menus · 공식 구조) */
 export const MENU_FREEZE_SIDEBAR_ORDER = [
   "home",
   "masterData",
@@ -18,6 +18,7 @@ export const MENU_FREEZE_SIDEBAR_ORDER = [
   "workDaily",
   "workJournal",
   "quality",
+  "certificateStatus",
   "documents",
   "outboundStatus",
   "inventoryStatus",
@@ -41,6 +42,7 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
       "workDaily",
       "workJournal",
       "quality",
+      "certificateStatus",
       "documents",
       "outboundStatus",
       "inventoryStatus",
@@ -68,15 +70,16 @@ export const MENU_FREEZE_SIDEBAR = [
   { order: 4, id: "workDaily", label: "생산관리", emoji: "🏭" },
   { order: 5, id: "workJournal", label: "업무일지", emoji: "📒" },
   { order: 6, id: "quality", label: "검사관리", emoji: "🔍" },
-  { order: 7, id: "documents", label: "문서관리", emoji: "📄" },
-  { order: 8, id: "outboundStatus", label: "출고관리", emoji: "🚚" },
-  { order: 9, id: "inventoryStatus", label: "재고관리", emoji: "📦" },
-  { order: 10, id: "history", label: "이력조회", emoji: "🕒" },
-  { order: 11, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
-  { order: 12, id: "accountingClerk", label: "경리관리", emoji: "💼" },
-  { order: 13, id: "accounting", label: "회계관리", emoji: "🧮" },
-  { order: 14, id: "qrManagement", label: "QR 관리", emoji: "▣" },
-  { order: 15, id: "environment", label: "관리자", emoji: "🔧" },
+  { order: 7, id: "certificateStatus", label: "성적서관리", emoji: "📋" },
+  { order: 8, id: "documents", label: "문서관리", emoji: "📄" },
+  { order: 9, id: "outboundStatus", label: "출고관리", emoji: "🚚" },
+  { order: 10, id: "inventoryStatus", label: "재고관리", emoji: "📦" },
+  { order: 11, id: "history", label: "이력조회", emoji: "🕒" },
+  { order: 12, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
+  { order: 13, id: "accountingClerk", label: "경리관리", emoji: "💼" },
+  { order: 14, id: "accounting", label: "회계관리", emoji: "🧮" },
+  { order: 15, id: "qrManagement", label: "QR 관리", emoji: "▣" },
+  { order: 16, id: "environment", label: "관리자", emoji: "🔧" },
 ];
 
 export const PRESENTATION_MENU_DEV_ORDER = [...MENU_FREEZE_SIDEBAR_ORDER];
