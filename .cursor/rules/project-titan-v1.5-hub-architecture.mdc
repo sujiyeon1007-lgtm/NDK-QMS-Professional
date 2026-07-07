@@ -28,7 +28,7 @@ HOME
 | **HOME** | `/home` | **Hub** — 요약 + 바로가기 |
 | **설비 현황** | `/equipment-status` | **MES Monitor** — 전체 설비 관제 |
 | **제품 현황** | `/product-status` | **QMS Monitor** — 제품·공정 추적 |
-| **설비 장입관리** | `/qr-workflow` | **MES Work** — 현장 작업 수행 |
+| **설비 장입관리** | `/qr-workflow` | **MES Work Hub** — QR Scan · 장입 · 열처리 완료 · Launcher 4카드 |
 
 **각 페이지의 역할을 절대 혼합하지 않는다.**
 

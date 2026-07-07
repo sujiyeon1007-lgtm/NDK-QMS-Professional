@@ -14,7 +14,7 @@ export default function LotTable({ rows = [], activeRowId, onRowClick }) {
         widthPercent: 12,
         render: (row) => `${row.qty?.toLocaleString("ko-KR") ?? "—"} ${row.unit ?? ""}`.trim(),
       }),
-      titanColumn("status", { key: "statusLabel", label: "상태", widthPercent: 14 }),
+      titanColumn("statusLabel", { label: "상태", widthPercent: 14 }),
     ],
     []
   );

@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 
 import { INOUT_MANAGEMENT_LAUNCHER_ITEMS } from "../../config/inoutManagementLauncher";
+import {
+  formatLauncherWorkflowLine,
+  INOUT_MANAGEMENT_WORKFLOW,
+} from "../../config/titanLauncherArchitectureV15";
 import TitanLauncherHubPage from "../../foundation/components/TitanLauncherHubPage";
 import { buildInoutLauncherMetrics } from "../../utils/operationsLauncherMetrics";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
@@ -13,7 +17,8 @@ export default function InoutManagementHubPage() {
 
   return (
     <TitanLauncherHubPage
-      intro="입고 · 출고 · 이력 · 출력 업무를 선택합니다. 각 카드는 해당 업무 화면으로 이동합니다."
+      intro="입출고 Hub — 입고 · 출고 · 이력 · 재고 · 출력 업무를 한 곳에서 선택합니다."
+      workflow={formatLauncherWorkflowLine(INOUT_MANAGEMENT_WORKFLOW)}
       items={INOUT_MANAGEMENT_LAUNCHER_ITEMS}
       metrics={metrics}
       cardsClassName="master-data-hub__cards"

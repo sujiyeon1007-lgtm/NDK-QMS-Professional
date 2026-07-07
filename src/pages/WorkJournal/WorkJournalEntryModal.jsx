@@ -28,14 +28,14 @@ function getDefaultTime() {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-function getInitialForm(initialEntry) {
+function getInitialForm(initialEntry, defaultCategory = MANUAL_JOURNAL_CATEGORIES[0]) {
   if (!initialEntry) {
-    return { ...emptyForm, time: getDefaultTime(), assignee: resolveDefaultAssigneeFromAuth() };
+    return { ...emptyForm, time: getDefaultTime(), assignee: resolveDefaultAssigneeFromAuth(), category: defaultCategory };
   }
   return {
     date: initialEntry.date ?? getJournalReferenceDate(),
     time: initialEntry.time ?? "",
-    category: initialEntry.category ?? MANUAL_JOURNAL_CATEGORIES[0],
+    category: initialEntry.category ?? defaultCategory,
     title: initialEntry.title ?? "",
     assignee: initialEntry.assignee ?? resolveDefaultAssigneeFromAuth(),
     company: initialEntry.company ?? "",
@@ -45,8 +45,9 @@ function getInitialForm(initialEntry) {
   };
 }
 
-function WorkJournalEntryModal({ mode, initialEntry, onSave, onClose }) {
-  const [form, setForm] = useState(() => getInitialForm(initialEntry));
+function WorkJournalEntryModal({ mode, initialEntry, manualCategories = MANUAL_JOURNAL_CATEGORIES, onSave, onClose }) {
+  const defaultCategory = manualCategories[0] ?? MANUAL_JOURNAL_CATEGORIES[0];
+  const [form, setForm] = useState(() => getInitialForm(initialEntry, defaultCategory));
   const [error, setError] = useState("");
   const isAuto = initialEntry?.source === "auto";
   const workerOptions = resolveAssigneeWorkerOptions();
@@ -156,7 +157,7 @@ function WorkJournalEntryModal({ mode, initialEntry, onSave, onClose }) {
               onChange={(e) => updateField("category", e.target.value)}
               disabled={isAuto}
             >
-              {(isAuto ? [form.category] : MANUAL_JOURNAL_CATEGORIES).map((cat) => (
+              {(isAuto ? [form.category] : manualCategories).map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>

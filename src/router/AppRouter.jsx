@@ -69,8 +69,6 @@ import InventoryStatusLayout from "../pages/Inventory/InventoryStatusLayout";
 
 import InventoryStatusPage from "../pages/Inventory/InventoryStatusPage";
 
-import WorkJournalLayout from "../pages/WorkJournal/WorkJournalLayout";
-
 import WorkJournal from "../pages/WorkJournal/WorkJournal";
 
 import OperationModeGuard from "./OperationModeGuard";
@@ -89,6 +87,8 @@ import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
 import QrInoutScreen from "../pages/QrManagement/QrInoutScreen";
 import QrEquipmentScreen from "../pages/QrManagement/QrEquipmentScreen";
 import QRManagement from "../pages/QrManagement";
+import QrChargingLayout from "../pages/QrManagement/QrChargingLayout";
+import QrChargingHubPage from "../pages/QrManagement/QrChargingHubPage";
 import EquipmentStatusPage from "../pages/EquipmentStatus/EquipmentStatusPage";
 import ProductStatusPage from "../pages/ProductStatus/ProductStatusPage";
 
@@ -146,6 +146,8 @@ function AppRoutes() {
 
               <Route path="shipment" element={<OutboundManagement />} />
 
+              <Route path="work-journal" element={<WorkJournal />} />
+
             </Route>
 
 
@@ -158,11 +160,7 @@ function AppRoutes() {
 
 
 
-            <Route path="/work-journal" element={<WorkJournalLayout />}>
-
-              <Route index element={<WorkJournal />} />
-
-            </Route>
+            <Route path="/work-journal" element={<Navigate to="/production/work-journal" replace />} />
 
 
 
@@ -174,9 +172,11 @@ function AppRoutes() {
 
               <Route path="results" element={<ProductionResultsManagement />} />
 
-              <Route path="defect-history" element={<DefectHistoryManagement />} />
+              <Route path="defect-history" element={<Navigate to="/quality/defect-history" replace />} />
 
               <Route path="daily-report" element={<DailyProductionReport />} />
+
+              <Route path="work-journal" element={<WorkJournal />} />
 
             </Route>
 
@@ -194,6 +194,10 @@ function AppRoutes() {
               </Route>
 
               <Route path="certificate" element={<CertificateManagement />} />
+
+              <Route path="defect-history" element={<DefectHistoryManagement />} />
+
+              <Route path="work-journal" element={<WorkJournal />} />
 
             </Route>
 
@@ -253,7 +257,10 @@ function AppRoutes() {
 
             <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
 
-            <Route path="/qr-workflow" element={<QRManagement />} />
+            <Route path="/qr-workflow" element={<QrChargingLayout />}>
+              <Route index element={<QrChargingHubPage />} />
+              <Route path="charging" element={<QRManagement />} />
+            </Route>
             <Route path="/equipment-status" element={<EquipmentStatusPage />} />
             <Route path="/product-status" element={<ProductStatusPage />} />
 

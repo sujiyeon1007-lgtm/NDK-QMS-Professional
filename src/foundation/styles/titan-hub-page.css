@@ -6,11 +6,24 @@
 }
 
 .titan-hub-page__intro {
-  margin: 0 0 20px;
+  margin: 0 0 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--titan-text-muted, #64748b);
   line-height: 1.6;
+  word-break: keep-all;
+}
+
+.titan-hub-page__workflow-line {
+  margin: 0 0 20px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text-primary, #0f172a);
+  line-height: 1.5;
   word-break: keep-all;
 }
 
@@ -41,6 +54,34 @@
 .titan-hub-card:hover {
   border-color: #93c5fd;
   box-shadow: 0 4px 16px rgba(29, 78, 216, 0.08);
+}
+
+.titan-hub-card--emphasis {
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.titan-hub-card--emphasis:hover {
+  border-color: #60a5fa;
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.12);
+}
+
+.titan-hub-card--badged {
+  position: relative;
+}
+
+.titan-hub-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  line-height: 1.4;
 }
 
 .titan-hub-card__label {

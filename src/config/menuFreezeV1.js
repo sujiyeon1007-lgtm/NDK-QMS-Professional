@@ -4,7 +4,8 @@
  *
  * Sidebar 10 menus · 6 groups (HOME · 운영관리 · 품질관리 · MES · 경영 · 시스템)
  * Launcher Hub: 입출고관리 · 생산관리 · 품질관리 · 기준정보관리
- * @see .cursor/rules/project-titan-v1.5-sidebar-architecture.mdc
+ * @see .cursor/rules/project-titan-v1.5-launcher-architecture-final.mdc
+ * @see src/config/titanLauncherArchitectureV15.js
  */
 
 export const MENU_FREEZE_VERSION = "V1.5";

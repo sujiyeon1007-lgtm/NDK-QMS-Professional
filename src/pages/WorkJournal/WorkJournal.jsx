@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PrimaryButton } from "../../foundation/components/Button";
 import Input from "../../foundation/components/Input";
@@ -10,6 +11,10 @@ import { DateRangeField } from "../../foundation/components/TitanSearchAdvancedF
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import { WORK_JOURNAL_ACTION_LABELS } from "../../config/titanAssigneePolicy";
+import {
+  getManualJournalCategoriesForDepartment,
+  resolveWorkJournalDepartmentFromPath,
+} from "../../config/workJournalDepartmentPolicy";
 import { createEmptyWorkJournalSearch, WORK_JOURNAL_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import { buildWorkJournalListColumns } from "../../config/standardProductList";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
@@ -80,6 +85,14 @@ function formatActionSummaryLabel(actionType) {
 }
 
 export default function WorkJournal() {
+  const location = useLocation();
+  const journalDepartment = resolveWorkJournalDepartmentFromPath(location.pathname);
+  const departmentId = journalDepartment?.id ?? "production";
+  const manualCategories = useMemo(
+    () => getManualJournalCategoriesForDepartment(departmentId),
+    [departmentId]
+  );
+
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
@@ -87,27 +100,38 @@ export default function WorkJournal() {
   const [activeId, setActiveId] = useState(null);
   const [adminAssigneeFilter, setAdminAssigneeFilter] = useState("");
   const [summaryDate, setSummaryDate] = useState(getJournalReferenceDate());
-  const [dailyNotesDraft, setDailyNotesDraft] = useState(() => getDailyNotes());
+  const [dailyNotesDraft, setDailyNotesDraft] = useState(() => getDailyNotes(departmentId));
 
   const isAdmin = isTitanAdminUser();
   const authSession = getAuthSession();
   const workerOptions = useMemo(() => resolveAssigneeWorkerOptions(), []);
 
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
-    useTitanListSearch(createEmptyWorkJournalSearch, { storageKey: "work-journal" });
+    useTitanListSearch(createEmptyWorkJournalSearch, {
+      storageKey: `work-journal-${departmentId}`,
+    });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const records = useMemo(() => getSessionProductionRecords(), [refreshKey]);
 
   const journalEntries = useMemo(() => {
-    return getWorkJournalEntries({
+    return getWorkJournalEntries(departmentId, {
       records,
       assigneeFilter: isAdmin ? adminAssigneeFilter || search.assignee : "",
       dateFrom: search.dateFrom,
       dateTo: search.dateTo,
       adminViewAll: isAdmin,
     });
-  }, [records, refreshKey, isAdmin, adminAssigneeFilter, search.assignee, search.dateFrom, search.dateTo]);
+  }, [
+    departmentId,
+    records,
+    refreshKey,
+    isAdmin,
+    adminAssigneeFilter,
+    search.assignee,
+    search.dateFrom,
+    search.dateTo,
+  ]);
 
   const rows = useMemo(() => {
     return journalEntries.map(mapJournalRow).filter((row) => matchesWorkJournalSearch(row, search));
@@ -162,22 +186,22 @@ export default function WorkJournal() {
 
   const handleSave = (form) => {
     if (modalMode === "edit" && editEntry) {
-      updateJournalEntry(editEntry.id, form);
+      updateJournalEntry(departmentId, editEntry.id, form);
     } else {
-      addManualJournalEntry(form);
+      addManualJournalEntry(departmentId, form);
     }
     setRefreshKey((k) => k + 1);
     setModalOpen(false);
   };
 
   const handleSaveDailyNotes = () => {
-    saveDailyNotes(summaryDate, dailyNotesDraft);
+    saveDailyNotes(departmentId, summaryDate, dailyNotesDraft);
     setRefreshKey((k) => k + 1);
   };
 
   const handleSummaryDateChange = (value) => {
     setSummaryDate(value);
-    setDailyNotesDraft(getDailyNotes(value));
+    setDailyNotesDraft(getDailyNotes(departmentId, value));
   };
 
   return (
@@ -423,6 +447,7 @@ export default function WorkJournal() {
           key={`${modalMode}-${editEntry?.id ?? "new"}`}
           mode={modalMode}
           initialEntry={editEntry}
+          manualCategories={manualCategories}
           onSave={handleSave}
           onClose={() => setModalOpen(false)}
         />

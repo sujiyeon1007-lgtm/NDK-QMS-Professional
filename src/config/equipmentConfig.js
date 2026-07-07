@@ -285,7 +285,7 @@ export const HOME_EQUIPMENT_WIDGET_COPY = {
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
   linkLabel: "장입관리",
-  linkTo: "/qr-workflow",
+  linkTo: "/qr-workflow/charging",
 };
 
 export const EQUIPMENT_STATUS_PAGE_COPY = {
@@ -295,7 +295,7 @@ export const EQUIPMENT_STATUS_PAGE_COPY = {
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
   chargingLinkLabel: "장입 작업",
-  chargingLinkTo: "/qr-workflow",
+  chargingLinkTo: "/qr-workflow/charging",
 };
 
 export const PRODUCT_STATUS_PAGE_COPY = {

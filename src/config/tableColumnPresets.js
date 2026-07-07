@@ -169,6 +169,7 @@ export const TITAN_COLUMN_WIDTHS = {
   workDate: { label: "작업일", widthHint: "medium", widthPercent: 9 },
   productionDate: { label: "생산일", widthHint: "medium", widthPercent: 9 },
   status: { label: "현재상태", widthHint: "narrow", widthPercent: 10 },
+  statusLabel: { label: "상태", widthHint: "narrow", widthPercent: 10 },
   incomingDate: { label: "입고일", widthHint: "medium", widthPercent: 9 },
   registeredAt: { label: "등록일시", widthHint: "medium", widthPercent: 12 },
   registrar: { label: "등록자", widthHint: "medium", widthPercent: 8 },

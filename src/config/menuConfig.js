@@ -436,7 +436,10 @@ export const TITAN_MENU_CATALOG = {
     section: {
       pathPrefix: "/qr-workflow",
       defaultTab: "main",
-      tabs: [{ id: "main", label: "설비 장입관리", path: "/qr-workflow" }],
+      tabs: [
+        { id: "hub", label: "설비 장입관리", path: "/qr-workflow" },
+        { id: "charging", label: "QR 장입", path: "/qr-workflow/charging" },
+      ],
     },
     pageMeta: {
       kicker: "Smart Access",
@@ -488,8 +491,8 @@ export const TITAN_MENU_ORDER = MENU_FREEZE_SIDEBAR_ORDER;
 
 /** V1.5 Sidebar — 통합 메뉴 활성 경로 (NavLink) */
 export const SIDEBAR_ACTIVE_PATH_PREFIXES = {
-  inoutManagement: ["/inout", "/inventory"],
-  productionManagement: ["/production", "/work-journal"],
+  inoutManagement: ["/inout", "/inventory", "/history"],
+  productionManagement: ["/production"],
   qualityManagement: ["/quality", "/documents"],
 };
 

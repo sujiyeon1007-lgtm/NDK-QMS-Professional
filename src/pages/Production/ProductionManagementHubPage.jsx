@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 
 import { PRODUCTION_MANAGEMENT_LAUNCHER_ITEMS } from "../../config/productionManagementLauncher";
+import {
+  formatLauncherWorkflowLine,
+  PRODUCTION_MANAGEMENT_WORKFLOW,
+} from "../../config/titanLauncherArchitectureV15";
 import TitanLauncherHubPage from "../../foundation/components/TitanLauncherHubPage";
 import { buildProductionLauncherMetrics } from "../../utils/operationsLauncherMetrics";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
@@ -13,7 +17,8 @@ export default function ProductionManagementHubPage() {
 
   return (
     <TitanLauncherHubPage
-      intro="생산계획 · 생산일보 · LOT · 작업지시 업무를 선택합니다. 향후 생산이력 · 스케줄 등을 확장할 수 있습니다."
+      intro="생산 Hub — QR 중심 생산 Workflow (계획 → 장입 → 일보 → 실적)"
+      workflow={formatLauncherWorkflowLine(PRODUCTION_MANAGEMENT_WORKFLOW)}
       items={PRODUCTION_MANAGEMENT_LAUNCHER_ITEMS}
       metrics={metrics}
       cardsClassName="master-data-hub__cards"

@@ -101,6 +101,20 @@ export const INCIDENT_FIX_PROCESS = GIT_BASED_INCIDENT_RECOVERY;
 export const BUG_FIX_PROCESS = INCIDENT_FIX_PROCESS;
 
 /**
+ * Project TITAN 공식 개발 프로세스 (V1.5 Launcher Architecture FINAL)
+ * 기능 개발 → Build → Architecture 점검 → 브라우저 QA → Commit → Push
+ * @see src/config/titanLauncherArchitectureV15.js
+ */
+export const LAUNCHER_ARCHITECTURE_DEV_PROCESS = [
+  "기능 개발",
+  "npm run build",
+  "Architecture 점검",
+  "브라우저 실제 QA",
+  "Git Commit",
+  "Git Push",
+];
+
+/**
  * Project TITAN 공식 개발 프로세스 (V1.3 최종)
  * 분석 → 보고 → 승인 → 최소 수정 → Build → 실행 테스트 → Regression → Commit → 다음 작업
  */

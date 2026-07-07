@@ -1,0 +1,66 @@
+---
+description: Project TITAN V1.5 — 부서별 업무일지 정책 (PM FINAL)
+alwaysApply: true
+---
+
+# 부서별 업무일지 정책
+
+**Status:** PM FINAL · **2026-07-07**
+
+**Code SSoT:** `src/config/workJournalDepartmentPolicy.js`
+
+---
+
+## 핵심 원칙
+
+Project TITAN은 **하나의 공통 업무일지를 사용하지 않습니다.**
+
+각 **Launcher(Hub)** 안에 해당 부서의 업무일지를 포함합니다.
+
+| Launcher | 업무일지 |
+|---|---|
+| 입출고관리 (운영) | 운영 업무일지 |
+| 생산관리 | 생산 업무일지 |
+| 품질관리 | 품질 업무일지 |
+
+**향후 (planned):** 영업 · 경리 · 관리 업무일지
+
+---
+
+## 설계 원칙
+
+1. 업무일지는 각 부서 **Workflow와 함께** Launcher 내부에서 관리
+2. 부서별 **양식·입력 항목 독립** 설계 (`manualCategories` per department)
+3. SessionStorage **부서별 분리** 저장
+4. Workflow 자동 기록은 `actionType` → 부서 매핑
+5. 향후 **전체 업무일지 통합 조회** API 고려 (`getUnifiedWorkJournalEntries`)
+
+---
+
+## 라우트 (활성)
+
+| 부서 | Route | Hub Back |
+|---|---|---|
+| 운영 | `/inout/work-journal` | `/inout` |
+| 생산 | `/production/work-journal` | `/production` |
+| 품질 | `/quality/work-journal` | `/quality` |
+
+**Legacy:** `/work-journal` → `/production/work-journal`
+
+**Sidebar 독립 메뉴 ❌** — Launcher 카드로만 진입
+
+---
+
+## Do Not
+
+- 단일 공통 업무일지 화면으로 모든 부서 통합 (조회 전용 통합은 향후 별도)
+- Sidebar에 업무일지 1Depth 메뉴 추가
+- 부서 간 SessionStorage 키 공유
+- Launcher 없이 업무일지 단독 메뉴 노출
+
+---
+
+## Companion
+
+- `.cursor/rules/project-titan-v1.5-launcher-architecture-final.mdc`
+- `.cursor/rules/project-titan-work-journal-assignee-v1.3.mdc`

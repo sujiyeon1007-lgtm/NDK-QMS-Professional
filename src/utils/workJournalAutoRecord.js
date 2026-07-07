@@ -8,6 +8,7 @@ import {
 } from "../config/titanAssigneePolicy";
 import { resolveAssigneeMeta } from "./titanAssigneeResolver";
 import { getPrintOutputDate } from "./titanPrintDates";
+import { resolveWorkJournalDepartmentFromAction } from "../config/workJournalDepartmentPolicy";
 import { appendAutoJournalEntry } from "./workJournalSession";
 
 function formatTime(now = new Date()) {
@@ -40,6 +41,7 @@ export function appendWorkJournalAutoEntry({
 
   const category = WORK_JOURNAL_ACTION_LABELS[actionType] ?? actionType;
   const assigneeMeta = resolveAssigneeMeta(assignee);
+  const departmentId = resolveWorkJournalDepartmentFromAction(actionType);
   const entryDate = date?.trim() || getPrintOutputDate();
   const now = new Date();
 
@@ -48,7 +50,7 @@ export function appendWorkJournalAutoEntry({
     [category, company, managementId].filter(Boolean).join(" — ") ||
     category;
 
-  return appendAutoJournalEntry({
+  return appendAutoJournalEntry(departmentId, {
     actionType,
     category,
     title: resolvedTitle,
@@ -60,6 +62,7 @@ export function appendWorkJournalAutoEntry({
     time: formatTime(now),
     source: WORK_JOURNAL_SOURCE_TYPE.AUTO,
     sourceType: WORK_JOURNAL_SOURCE_TYPE.AUTO,
+    journalDepartment: departmentId,
     ...assigneeMeta,
   });
 }
