@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-import { TITAN_MENU_CATALOG } from "../../config/menuConfig";
+import { NavLink, useLocation } from "react-router-dom";
+import { isSidebarMenuActive, TITAN_MENU_CATALOG } from "../../config/menuConfig";
 import { MENU_FREEZE_SIDEBAR_ORDER, buildSidebarGroups } from "../../config/menuFreezeV1";
 import { MODULE_SIDEBAR_EXTRAS } from "../../config/titanV12ModuleExpansion";
 import { getVisibleSidebarMenu } from "../../utils/titanEditionMenu";
@@ -11,6 +11,7 @@ import "./Sidebar.css";
 export default function Sidebar() {
   useTitanModuleFlags();
   useTitanAuth();
+  const location = useLocation();
   const menuItems = getVisibleSidebarMenu();
   const menuById = Object.fromEntries(menuItems.map((item) => [item.id, item]));
 
@@ -25,12 +26,13 @@ export default function Sidebar() {
     const item = menuById[id] ?? TITAN_MENU_CATALOG[id];
     if (!item) return null;
     const Icon = item.icon;
+    const active = isSidebarMenuActive(id, location.pathname);
     return (
       <NavLink
         key={id}
         to={item.path}
         end={item.end}
-        className={({ isActive }) => `titan-sidebar__link${isActive ? " active" : ""}`}
+        className={`titan-sidebar__link${active ? " active" : ""}`}
       >
         <Icon size={16} aria-hidden="true" />
         {item.label}
@@ -42,7 +44,7 @@ export default function Sidebar() {
     <aside className="titan-sidebar">
       <div className="titan-sidebar__brand">
         <strong>NDK PQMS</strong>
-        <span>Project TITAN · Menu Freeze V1.0</span>
+        <span>Project TITAN · Menu V1.5</span>
         <span className="titan-sidebar__edition">{getTitanEditionDisplayLabel()}</span>
       </div>
 
@@ -52,6 +54,16 @@ export default function Sidebar() {
             key={group.id}
             className={`titan-sidebar__group${groupIndex > 0 ? " titan-sidebar__group--divider" : ""}`}
           >
+            {group.label ? (
+              <div className="titan-sidebar__group-label">
+                {group.emoji ? (
+                  <span className="titan-sidebar__group-emoji" aria-hidden="true">
+                    {group.emoji}
+                  </span>
+                ) : null}
+                {group.label}
+              </div>
+            ) : null}
             {group.items.map(({ id }) => renderLink(id))}
           </div>
         ))}
@@ -63,7 +75,7 @@ export default function Sidebar() {
         ) : null}
       </nav>
 
-      <div className="titan-sidebar__footer">Menu Freeze V1.0 · © NDK</div>
+      <div className="titan-sidebar__footer">Menu V1.5 · © NDK</div>
     </aside>
   );
 }

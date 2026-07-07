@@ -3,7 +3,7 @@ import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { DEFECT_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { getActiveWorkers } from "../../utils/masterData";
+import { getActiveWorkers, getMasterDataByCategory } from "../../utils/masterData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   DEFECT_HANDLING_STATUS,

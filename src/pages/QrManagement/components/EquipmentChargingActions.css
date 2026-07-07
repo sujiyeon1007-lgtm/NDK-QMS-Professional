@@ -1,0 +1,23 @@
+.qr-equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.qr-equipment-actions .titan-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 960px) {
+  .qr-equipment-actions {
+    justify-content: stretch;
+  }
+
+  .qr-equipment-actions .titan-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 140px;
+  }
+}

@@ -1,85 +1,77 @@
 /**
- * Project TITAN — Menu Freeze V1.0 (공식 Sidebar 정책)
- * 2026-07-04 PM Final · Menu Simple, Function Deep
+ * Project TITAN — Menu Freeze V1.5 (공식 Sidebar 정책)
+ * 2026-07-07 PM Final · QMS + MES 통합 · 업무 흐름 기준
  *
- * ⚠️ V1.0 개발 완료 전까지 Sidebar 메뉴 추가·삭제·명칭·순서 변경 금지
- * @see docs/MENU_FREEZE_V1.0.md
+ * Sidebar 10 menus · 6 groups (HOME · 운영관리 · 품질관리 · MES · 경영 · 시스템)
+ * Launcher Hub: 입출고관리 · 생산관리 · 품질관리 · 기준정보관리
+ * @see .cursor/rules/project-titan-v1.5-sidebar-architecture.mdc
  */
 
-export const MENU_FREEZE_VERSION = "V1.0";
+export const MENU_FREEZE_VERSION = "V1.5";
 export const MENU_FREEZE_LOCKED = true;
-export const MENU_FREEZE_DATE = "2026-07-04";
+export const MENU_FREEZE_DATE = "2026-07-07";
 
-/** Sidebar 1Depth — 순서 고정 (16 menus · 공식 구조) */
+/** Sidebar 1Depth — V1.5 FINAL 순서 고정 (10 menus · Launcher Hub) */
 export const MENU_FREEZE_SIDEBAR_ORDER = [
   "home",
-  "masterData",
-  "inboundStatus",
-  "workDaily",
-  "workJournal",
-  "quality",
-  "certificateStatus",
-  "documents",
-  "outboundStatus",
-  "inventoryStatus",
-  "history",
+  "inoutManagement",
+  "productionManagement",
+  "qualityManagement",
+  "equipmentStatus",
+  "productStatus",
+  "qrCharging",
   "statisticsInquiry",
-  "accountingClerk",
-  "accounting",
-  "qrManagement",
+  "masterData",
   "environment",
 ];
 
-/** Sidebar 시각 그룹 (구분선) */
+/** Sidebar 시각 그룹 — 구분선 + 그룹 제목 */
 export const MENU_FREEZE_SIDEBAR_GROUPS = [
-  { id: "home", label: null, menuIds: ["home"] },
-  { id: "master", label: null, menuIds: ["masterData"] },
+  { id: "home", label: null, emoji: null, menuIds: ["home"] },
   {
     id: "operations",
-    label: null,
-    menuIds: [
-      "inboundStatus",
-      "workDaily",
-      "workJournal",
-      "quality",
-      "certificateStatus",
-      "documents",
-      "outboundStatus",
-      "inventoryStatus",
-    ],
+    label: "운영관리",
+    emoji: "📦",
+    menuIds: ["inoutManagement", "productionManagement"],
   },
   {
-    id: "analysis",
-    label: null,
-    menuIds: ["history", "statisticsInquiry"],
+    id: "quality",
+    label: "품질관리",
+    emoji: "🧪",
+    menuIds: ["qualityManagement"],
   },
   {
-    id: "business",
-    label: null,
-    menuIds: ["accountingClerk", "accounting"],
+    id: "mes",
+    label: "MES",
+    emoji: "🏭",
+    menuIds: ["equipmentStatus", "productStatus", "qrCharging"],
   },
-  { id: "smart", label: null, menuIds: ["qrManagement"] },
-  { id: "system", label: null, menuIds: ["environment"] },
+  {
+    id: "executive",
+    label: "경영",
+    emoji: "📊",
+    menuIds: ["statisticsInquiry"],
+  },
+  {
+    id: "system",
+    label: "시스템",
+    emoji: "⚙",
+    menuIds: ["masterData", "environment"],
+  },
 ];
 
 /** @type {Array<{ order: number, id: string, label: string, emoji: string }>} */
 export const MENU_FREEZE_SIDEBAR = [
   { order: 1, id: "home", label: "HOME", emoji: "🏠" },
-  { order: 2, id: "masterData", label: "기준정보관리", emoji: "⚙" },
-  { order: 3, id: "inboundStatus", label: "입고관리", emoji: "📥" },
-  { order: 4, id: "workDaily", label: "열처리관리", emoji: "🏭" },
-  { order: 5, id: "workJournal", label: "업무일지", emoji: "📒" },
-  { order: 6, id: "quality", label: "검사관리", emoji: "🔍" },
-  { order: 7, id: "certificateStatus", label: "성적서관리", emoji: "📋" },
-  { order: 8, id: "documents", label: "문서관리", emoji: "📄" },
-  { order: 9, id: "outboundStatus", label: "출고관리", emoji: "🚚" },
-  { order: 10, id: "inventoryStatus", label: "재고관리", emoji: "📦" },
-  { order: 11, id: "history", label: "이력조회", emoji: "🕒" },
-  { order: 12, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
-  { order: 13, id: "accountingClerk", label: "경리관리", emoji: "💼" },
-  { order: 14, id: "accounting", label: "회계관리", emoji: "🧮" },
-  { order: 15, id: "qrManagement", label: "QR 관리", emoji: "▣" },
-  { order: 16, id: "environment", label: "관리자", emoji: "🔧" },
+  { order: 2, id: "inoutManagement", label: "입출고관리", emoji: "📦" },
+  { order: 3, id: "productionManagement", label: "생산관리", emoji: "🏭" },
+  { order: 4, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
+  { order: 5, id: "equipmentStatus", label: "설비 현황", emoji: "📡" },
+  { order: 6, id: "productStatus", label: "제품 현황", emoji: "📦" },
+  { order: 7, id: "qrCharging", label: "설비 장입관리", emoji: "🏭" },
+  { order: 8, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
+  { order: 9, id: "masterData", label: "기준정보관리", emoji: "⚙" },
+  { order: 10, id: "environment", label: "환경설정", emoji: "🔧" },
 ];
 
 export const PRESENTATION_MENU_DEV_ORDER = [...MENU_FREEZE_SIDEBAR_ORDER];
@@ -112,7 +104,7 @@ export const PRESENTATION_PQMS_GOAL =
 export const MENU_FREEZE_BUILD_TARGET = PRESENTATION_PQMS_GOAL;
 
 export const MENU_FREEZE_CHANGE_POLICY =
-  "Menu Freeze V1.0 — 메뉴 추가·삭제·명칭·순서 변경 금지 · 기능은 각 메뉴 내부에서만 확장";
+  "Menu Freeze V1.5 FINAL — Sidebar 10메뉴·Launcher Hub · 업무 흐름 기준 · 그룹 역할 혼합 금지";
 
 /** 제품 Workflow (업무 흐름) */
 export const PRODUCT_WORKFLOW_CHAIN = [
@@ -228,10 +220,46 @@ export const MENU_FREEZE_ROLES = {
     role: "독립 메뉴 — QR 생성(권한) · 출력(전체)",
     features: ["QR 생성", "QR 출력", "QR 재출력", "QR 미리보기", "QR 관리", "QR 사용안내"],
   },
+  equipmentStatus: {
+    label: "설비 현황",
+    role: "MES 관제 Dashboard — 생산부장 · 공장장 · 관리자",
+    features: ["공정별 설비 그리드", "운전 상태", "LOT · 진행률", "Detail Panel"],
+    note: "V1.5 — equipmentWorkflowService SSOT · HOME Hub 바로가기",
+  },
+  productStatus: {
+    label: "제품 현황",
+    role: "제품 추적 Dashboard — 현재공정 · LOT · 검사 · 성적서 · 출고",
+    features: ["제품 Workflow 현황", "공정별 필터", "Traceability 리스트"],
+    note: "V1.5 — HOME Hub 바로가기 · 이력조회와 역할 분리",
+  },
+  qrCharging: {
+    label: "설비 장입관리",
+    role: "설비 QR 장입 · 현장 Workflow UI Foundation (V1.5)",
+    features: ["설비 선택", "장입 가능 LOT", "현재 장입 현황", "장입 시작", "열처리 완료"],
+    note: "Sprint 1 — UI Foundation · Scan/Workflow 다음 Sprint",
+  },
   environment: {
-    label: "관리자",
+    label: "환경설정",
     role: "시스템 관리 — QR 제외",
     features: ["사용자관리", "권한관리", "모듈관리", "Storage 관리", "백업", "복원", "시스템 로그"],
+  },
+  inoutManagement: {
+    label: "입출고관리",
+    role: "입고 · 출고 · 재고 일상 업무",
+    features: ["입고관리", "출고관리", "재고관리", "입출고 출력"],
+    note: "V1.5 Sidebar 통합 · 개별 입고/출고/재고는 내부 탭",
+  },
+  productionManagement: {
+    label: "생산관리",
+    role: "생산 운영 Launcher Hub",
+    features: ["생산계획", "생산일보", "LOT 관리", "작업지시"],
+    note: "V1.5 Launcher Hub · 향후 생산이력 · 스케줄 확장",
+  },
+  qualityManagement: {
+    label: "품질관리",
+    role: "품질 업무 Launcher Hub",
+    features: ["검사관리", "성적서관리", "문서관리"],
+    note: "V1.5 Launcher Hub · 향후 NCR · CAPA · 고객불만 확장",
   },
 };
 

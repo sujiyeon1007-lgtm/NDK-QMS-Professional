@@ -45,7 +45,7 @@ export const SIDEBAR_MENU_BY_ID = Object.fromEntries(
 
 /** @type {Record<string, MenuSection>} */
 export const MENU_SECTIONS = {
-  ...buildMenuSectionsFromConfig(TITAN_MENU_ORDER),
+  ...buildMenuSectionsFromConfig(Object.keys(TITAN_MENU_CATALOG)),
   /** Module-gated Sidebar extras (QR 관리 · 경리 · 회계) */
   ...buildMenuSectionsFromConfig(MODULE_SIDEBAR_EXTRAS),
   /** @deprecated Presentation 이전 — 라우트 유지 */
@@ -108,15 +108,7 @@ export const MENU_SECTIONS = {
       { id: "sales", label: "영업통계", path: "/statistics/sales" },
     ],
   },
-  qualityManagement: {
-    id: "qualityManagement",
-    label: "품질관리",
-    pathPrefix: "/quality/inspection",
-    defaultTab: "inspection",
-    deprecated: true,
-    tabs: [{ id: "inspection", label: "품질관리", path: "/quality/inspection" }],
-  },
-  /** @deprecated 검사관리 → 품질관리 · qualityManagement 사용 */
+  /** @deprecated 검사관리 → Sidebar quality · 품질관리 그룹 */
   inspectionManagement: {
     id: "inspectionManagement",
     label: "검사관리",
@@ -202,7 +194,7 @@ export function getActiveTab(section, pathname) {
 /** 구 라우트 → QMS 라우트 (호환 리다이렉트) */
 export const LEGACY_ROUTE_REDIRECTS = {
   "/dashboard": "/home",
-  "/inout": "/inout/incoming",
+  "/inout": "/inout",
   "/incoming": "/inout/incoming",
   "/incoming/register": "/inout/incoming",
   "/incoming/products": "/inout/incoming",

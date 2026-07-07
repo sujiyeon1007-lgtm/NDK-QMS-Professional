@@ -10,12 +10,14 @@ import Home from "../pages/Home/Home";
 
 import InOutLayout from "../pages/InOut/InOutLayout";
 
+import InoutManagementHubPage from "../pages/InOut/InoutManagementHubPage";
 import InboundManagement from "../pages/InOut/InboundManagement";
 
 import OutboundManagement from "../pages/InOut/OutboundManagement";
 
 import ProductionLayout from "../pages/Production/ProductionLayout";
 
+import ProductionManagementHubPage from "../pages/Production/ProductionManagementHubPage";
 import DailyProductionReport from "../pages/Production/DailyProductionReport";
 
 import ProductionResultsManagement from "../pages/Production/ProductionResultsManagement";
@@ -24,6 +26,7 @@ import DefectHistoryManagement from "../pages/Production/DefectHistoryManagement
 
 import QualityLayout from "../pages/Quality/QualityLayout";
 
+import QualityManagementHubPage from "../pages/Quality/QualityManagementHubPage";
 import InspectionManagementScreen from "../pages/Quality/InspectionManagementScreen";
 
 import CertificateManagement from "../pages/Quality/CertificateManagement";
@@ -85,6 +88,9 @@ import AccountingFeaturePage from "../pages/Accounting/AccountingFeaturePage";
 import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
 import QrInoutScreen from "../pages/QrManagement/QrInoutScreen";
 import QrEquipmentScreen from "../pages/QrManagement/QrEquipmentScreen";
+import QRManagement from "../pages/QrManagement";
+import EquipmentStatusPage from "../pages/EquipmentStatus/EquipmentStatusPage";
+import ProductStatusPage from "../pages/ProductStatus/ProductStatusPage";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
 
@@ -134,7 +140,7 @@ function AppRoutes() {
 
             <Route path="/inout" element={<InOutLayout />}>
 
-              <Route index element={<Navigate to="/inout/incoming" replace />} />
+              <Route index element={<InoutManagementHubPage />} />
 
               <Route path="incoming" element={<InboundManagement />} />
 
@@ -162,7 +168,7 @@ function AppRoutes() {
 
             <Route path="/production" element={<ProductionLayout />}>
 
-              <Route index element={<Navigate to="/production/daily-report" replace />} />
+              <Route index element={<ProductionManagementHubPage />} />
 
               <Route path="register" element={<Navigate to="/production/daily-report" replace />} />
 
@@ -178,7 +184,7 @@ function AppRoutes() {
 
             <Route path="/quality" element={<QualityLayout />}>
 
-              <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
+              <Route index element={<QualityManagementHubPage />} />
 
               <Route path="inspection">
                 <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
@@ -246,6 +252,10 @@ function AppRoutes() {
             <Route path="/accounting" element={<AccountingHubPage />} />
 
             <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
+
+            <Route path="/qr-workflow" element={<QRManagement />} />
+            <Route path="/equipment-status" element={<EquipmentStatusPage />} />
+            <Route path="/product-status" element={<ProductStatusPage />} />
 
             <Route path="/qr-management" element={<QrManagementLayout />}>
               <Route index element={<Navigate to="/qr-management/inout" replace />} />

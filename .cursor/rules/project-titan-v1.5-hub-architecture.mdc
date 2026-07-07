@@ -1,0 +1,185 @@
+---
+description: Project TITAN V1.5 — Official Hub Architecture (HOME · 설비 현황 · 제품 현황 · 설비 장입관리)
+alwaysApply: true
+---
+
+# Project TITAN V1.5 Official Architecture
+
+**Official Architecture Rule.** 모든 신규 기능은 본 Rule을 반드시 따른다.
+
+**Code SSoT:** `src/utils/equipmentWorkflowService.js` · `src/config/equipmentConfig.js` · `src/config/homeWorkLauncher.js` · `src/utils/homeWorkLauncherData.js`
+
+---
+
+## Architecture
+
+```text
+HOME
+ ↓
+설비 현황
+ ↓
+제품 현황
+ ↓
+설비 장입관리
+```
+
+| Page | Route | Role |
+|---|---|---|
+| **HOME** | `/home` | **Hub** — 요약 + 바로가기 |
+| **설비 현황** | `/equipment-status` | **MES Monitor** — 전체 설비 관제 |
+| **제품 현황** | `/product-status` | **QMS Monitor** — 제품·공정 추적 |
+| **설비 장입관리** | `/qr-workflow` | **MES Work** — 현장 작업 수행 |
+
+**각 페이지의 역할을 절대 혼합하지 않는다.**
+
+---
+
+## HOME
+
+HOME = **통합 Dashboard (Hub)**.
+
+- 요약 정보 + 바로가기만 제공
+- **HOME에 Widget를 계속 추가하지 않는다**
+- 기능이 커질 경우 → **독립 페이지 생성**
+
+### HOME 구성 (V1.5 FINAL)
+
+- KPI (`HomeTodaySummary`)
+- 공지사항 (`HomeNoticePanel`)
+- 업무일정 (`HomeWorkSchedulePanel`)
+- **업무 바로가기** (`HomeWorkLauncherPanel` · `HOME_WORK_LAUNCHER_ITEMS`)
+- 최근 작업 / Timeline (`HomeRecentWorkPanel`)
+
+### HOME에서 제거 (전용 페이지만)
+
+- 통합검색 · 제품 진행현황 · LOT/Workflow 리스트 · 설비 리스트
+
+### Do Not (HOME)
+
+- 통합검색 · 제품/LOT/Workflow/설비 **리스트 Widget 추가 ❌**
+- 작업 수행 UI (장입·검사 등) ❌
+
+---
+
+## 설비 현황 (MES Dashboard)
+
+공장 전체 설비 관제 — 관리자 · 공장장 · 생산부장이 항상 켜두는 화면.
+
+**Screen:** `src/pages/EquipmentStatus/EquipmentStatusPage.jsx`
+
+### 표시 항목
+
+- 설비 상태 · 설비 LOT · 진행률 · 동일 LOT 제품
+- 시작시간 · 예상 종료시간 · Detail Panel
+
+### Do Not (설비 현황)
+
+- **작업 수행 ❌** — QR Scan · 장입 시작 · 열처리 완료 버튼 **두지 않음**
+- 관제·조회 전용
+
+---
+
+## 제품 현황 (QMS Dashboard)
+
+제품 기준 공정 추적 Dashboard.
+
+**Screen:** `src/pages/ProductStatus/ProductStatusPage.jsx`
+
+### 표시 항목
+
+- LOT · 공정 · 검사 · 성적서 · 출고 · Timeline
+
+---
+
+## 설비 장입관리 (현장 작업)
+
+실제 작업자가 사용하는 **현장 작업 화면**.
+
+**Screen:** `src/pages/QrManagement/` (`/qr-workflow`)
+
+### 기능
+
+- QR Scan · LOT 선택 · 장입 시작 · 열처리 완료 · Timeline · 작업 이력
+
+### UI Freeze
+
+현재 승인된 설비 장입관리 **레이아웃·디자인·색상 변경 ❌** — **기능만 추가**
+
+---
+
+## 설비 상태 (공식 SSOT)
+
+| 상태 | 표시 |
+|---|---|
+| Idle | ⚪ 대기 |
+| Ready | 🟡 장입 준비 |
+| Running | 🟢 운전중 |
+| Maintenance | 🔴 점검중 |
+
+- **상태 저장 ❌** — `equipmentWorkflowService`에서 **항상 계산**
+- Config: `EQUIPMENT_RUN_STATUS_META` · `computeEquipmentRunStatus()`
+
+### 버튼 정책 (설비 장입관리만)
+
+| 상태 | 버튼 |
+|---|---|
+| ⚪ Idle | 없음 |
+| 🟡 Ready | 장입 시작 |
+| 🟢 Running | 열처리 완료 |
+| 🔴 Maintenance | 모두 비활성 |
+
+---
+
+## SSOT — equipmentWorkflowService
+
+```text
+HOME · 설비 현황 · 제품 현황 · 설비 장입관리 · QR Scan
+ → equipmentWorkflowService (동일 데이터)
+```
+
+**중복 데이터 생성 ❌**
+
+---
+
+## Workflow Roadmap (다음 Sprint)
+
+```text
+Workflow Engine
+ ↓ SessionStorage
+ ↓ QR Scan
+ ↓ Timeline
+ ↓ HOME 자동 갱신
+ ↓ 설비 현황 자동 갱신
+ ↓ 제품 현황 자동 갱신
+```
+
+---
+
+## 개발 원칙
+
+1. **기존 Workflow 변경 ❌**
+2. **기존 UI 변경 ❌** (UI Freeze 화면 — 기능 diff만)
+3. **기능은 Additive 방식**
+4. 완료 순서: **Build 성공 → 실제 화면 확인 → Commit → Push**
+
+Build 성공만으로 완료 처리 ❌
+
+---
+
+## Cursor Do
+
+- 신규 기능 전 본 Rule + 페이지 역할 확인
+- 설비 데이터는 `equipmentWorkflowService` 경유
+- HOME 확장 = Hub 바로가기 요약만 · 상세 = 독립 페이지
+
+## Cursor Do Not
+
+- HOME에 관제/작업 Widget 추가
+- 설비 현황에 작업 버튼·QR Scan 추가
+- 설비 장입관리 UI/layout 변경 (PM 승인 없이)
+- 페이지별 equipment 데이터 중복 생성
+- Hub · Monitor · Work 역할 혼합
+
+---
+
+향후 모든 신규 기능은 **각 페이지의 역할을 유지**하면서 구현한다.

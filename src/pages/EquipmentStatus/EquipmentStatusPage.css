@@ -1,0 +1,108 @@
+.equipment-status-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  height: 100%;
+}
+
+.equipment-status-page__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 16px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.equipment-status-page__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.equipment-status-page__group-title {
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.equipment-status-page__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.equipment-monitor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: var(--titan-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.equipment-monitor-card:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.equipment-monitor-card.is-selected {
+  border-color: #93c5fd;
+  background: #edf4fd;
+}
+
+.equipment-monitor-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.equipment-monitor-card__head strong {
+  font-size: 12px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.equipment-monitor-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  margin: 0;
+}
+
+.equipment-monitor-card__meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.equipment-monitor-card__meta dt {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.equipment-monitor-card__meta dd {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+@media (max-width: 1200px) {
+  .equipment-status-page__workspace {
+    grid-template-columns: 1fr;
+  }
+}

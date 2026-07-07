@@ -4,20 +4,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PageTopBar from "../../foundation/layout/PageTopBar";
 import { HOME_PAGE_META } from "../../config/homeDashboard";
 import { TITAN_MODULE_REGISTRY } from "../../config/titanV12ModuleExpansion";
-import { buildProductWorkflowPreview } from "../../utils/homeDashboardData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import { getMasterDataByCategory } from "../../utils/masterData";
 import { setTitanErrorContext, clearTitanErrorContext } from "../../utils/titanErrorContext";
 import {
-  HomeIntegratedSearchPanel,
   HomeNoticePanel,
-  HomeProgressPanel,
   HomeRecentWorkPanel,
   HomeTodaySummary,
-  HomeTodayTasksPanel,
+  HomeWorkSchedulePanel,
 } from "./HomeDashboardPanels";
 import HomeLeftPanel from "./HomeLeftPanel";
-import { useHomeIntegratedSearch } from "./useHomeIntegratedSearch";
+import HomeWorkLauncherPanel from "./HomeWorkLauncherPanel";
 import "./Home.css";
 
 function HomeAccessNotice() {
@@ -50,24 +46,7 @@ function HomeAccessNotice() {
 
 export default function Home() {
   const [refreshKey, setRefreshKey] = useState(0);
-  const {
-    search,
-    draft,
-    onDraftChange,
-    onSearch,
-    onReset,
-    advancedOpen,
-    onAdvancedToggle,
-    activeChipId,
-    handleChipClick,
-  } = useHomeIntegratedSearch();
-
   const records = useMemo(() => getSessionProductionRecords(), [refreshKey]);
-  const companies = useMemo(() => getMasterDataByCategory("companies"), []);
-  const searchRecords = useMemo(
-    () => buildProductWorkflowPreview(records, { limit: 9999 }),
-    [records]
-  );
 
   useEffect(() => {
     setTitanErrorContext({ screen: "HOME", component: "Home", path: "/home" });
@@ -79,7 +58,7 @@ export default function Home() {
   };
 
   return (
-    <div className="home-page">
+    <div className="home-page home-page--hub-v15">
       <PageTopBar
         title={HOME_PAGE_META.title}
         kicker={HOME_PAGE_META.kicker}
@@ -91,39 +70,15 @@ export default function Home() {
 
       <HomeTodaySummary records={records} />
 
-      <div className="home-board" aria-label="HOME Dashboard">
+      <div className="home-board home-board--hub-v15" aria-label="HOME Dashboard">
         <HomeLeftPanel>
           <HomeNoticePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
-          <HomeTodayTasksPanel
-            records={records}
-            refreshKey={refreshKey}
-            onRefresh={handleRefresh}
-          />
+          <HomeWorkSchedulePanel refreshKey={refreshKey} onRefresh={handleRefresh} />
           <HomeRecentWorkPanel records={records} />
         </HomeLeftPanel>
 
-        <div className="home-board__right" aria-label="통합검색 · 진행현황">
-          <div className="home-board__cell home-board__cell--search">
-            <HomeIntegratedSearchPanel
-              draft={draft}
-              onDraftChange={onDraftChange}
-              onSearch={onSearch}
-              onReset={onReset}
-              advancedOpen={advancedOpen}
-              onAdvancedToggle={onAdvancedToggle}
-              companies={companies}
-              searchRecords={searchRecords}
-            />
-          </div>
-
-          <div className="home-board__cell home-board__cell--progress">
-            <HomeProgressPanel
-              records={records}
-              search={search}
-              activeChipId={activeChipId}
-              onChipClick={handleChipClick}
-            />
-          </div>
+        <div className="home-board__main" aria-label="업무 바로가기">
+          <HomeWorkLauncherPanel records={records} />
         </div>
       </div>
     </div>

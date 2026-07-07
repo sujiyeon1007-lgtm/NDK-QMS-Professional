@@ -41,6 +41,9 @@ function buildSeedRoles() {
   const viewOnlyMenu = createDefaultMenuPermissionMap(false);
   viewOnlyMenu.home = true;
   viewOnlyMenu.qrManagement = true;
+  viewOnlyMenu.equipmentStatus = true;
+  viewOnlyMenu.productStatus = true;
+  viewOnlyMenu.qrCharging = true;
   const viewOnlyFeature = createDefaultFeaturePermissionMap(false);
   viewOnlyFeature.view = true;
   viewOnlyFeature.print = true;
@@ -78,6 +81,9 @@ function buildSeedRoles() {
         documents: true,
         statistics: true,
         qrManagement: true,
+        equipmentStatus: true,
+        productStatus: true,
+        qrCharging: true,
       },
       featurePermissions: {
         ...createDefaultFeaturePermissionMap(false),
@@ -102,6 +108,9 @@ function buildSeedRoles() {
         production: true,
         outbound: true,
         qrManagement: true,
+        equipmentStatus: true,
+        productStatus: true,
+        qrCharging: true,
       },
       featurePermissions: {
         ...createDefaultFeaturePermissionMap(false),
@@ -156,6 +165,14 @@ function buildSeedRoles() {
       isSystem: false,
       menuPermissions: viewOnlyMenu,
       featurePermissions: viewOnlyFeature,
+    },
+    {
+      id: "ROLE_DEVELOPER",
+      name: "Developer",
+      label: "Developer",
+      isSystem: true,
+      menuPermissions: { ...fullMenu },
+      featurePermissions: { ...fullFeature },
     },
   ];
 }
@@ -213,6 +230,15 @@ function migrateRoles(roles = []) {
     });
 
     if (role.id === TITAN_DEFAULT_ADMIN.roleId) {
+      TITAN_MENU_PERMISSIONS.forEach((item) => {
+        menuPermissions[item.key] = true;
+      });
+      TITAN_FEATURE_PERMISSIONS.forEach((item) => {
+        featurePermissions[item.key] = true;
+      });
+    }
+
+    if (role.id === "ROLE_DEVELOPER") {
       TITAN_MENU_PERMISSIONS.forEach((item) => {
         menuPermissions[item.key] = true;
       });
@@ -628,6 +654,7 @@ export function resolveUserFeaturePermissions(userId) {
 
 export function hasMenuPermission(userId, permissionKey) {
   if (isProgramAdministrator(userId)) return true;
+  if (getUserRoleIds(userId).includes("ROLE_DEVELOPER")) return true;
   return Boolean(resolveUserMenuPermissions(userId)[permissionKey]);
 }
 

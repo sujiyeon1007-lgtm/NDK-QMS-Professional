@@ -100,9 +100,9 @@ export const TITAN_MODULE_REGISTRY = {
     category: "smartAccess",
     defaultEnabled: true,
     toggleable: true,
-    menuIds: ["qrManagement"],
+    menuIds: ["qrManagement", "equipmentStatus", "productStatus", "qrCharging"],
     homeWidgetIds: [],
-    permissionKeys: ["qrManagement", "qrCreate"],
+    permissionKeys: ["qrManagement", "equipmentStatus", "productStatus", "qrCharging", "qrCreate"],
     smartAccessTargets: ["incoming", "equipment", "inspection", "certificate", "outgoing", "production"],
   },
   nfcSystem: {
@@ -373,6 +373,9 @@ export const MODULE_SIDEBAR_AFTER_INSERTS = [];
 export const MENU_CATALOG_MODULE_MAP = {
   home: null,
   masterData: "masterData",
+  inoutManagement: ["inbound", "outbound", "inventoryManagement"],
+  productionManagement: "production",
+  qualityManagement: ["quality", "certificate", "documents"],
   inboundStatus: "inbound",
   inventoryStatus: "inventoryManagement",
   workDaily: "production",
@@ -387,13 +390,19 @@ export const MENU_CATALOG_MODULE_MAP = {
   accountingClerk: "accountingClerk",
   accounting: "accounting",
   qrManagement: "qrSystem",
+  equipmentStatus: "qrSystem",
+  productStatus: "qrSystem",
+  qrCharging: "qrSystem",
 };
 
 /** Route prefix → module (ModuleGuard) */
 export const MODULE_ROUTE_GUARDS = [
   { pathPrefix: "/accounting-clerk", moduleId: "accountingClerk" },
   { pathPrefix: "/accounting", moduleId: "accounting" },
+  { pathPrefix: "/qr-workflow", moduleId: "qrSystem" },
   { pathPrefix: "/qr-management", moduleId: "qrSystem" },
+  { pathPrefix: "/equipment-status", moduleId: "qrSystem" },
+  { pathPrefix: "/product-status", moduleId: "qrSystem" },
   { pathPrefix: "/documents", moduleId: "documents" },
   { pathPrefix: "/statistics", moduleId: "statistics" },
   { pathPrefix: "/inventory", moduleId: "inventoryManagement" },

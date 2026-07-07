@@ -73,7 +73,7 @@ export function isUiFrozen(screenKey) {
 
 /** Cursor · 개발자용 요약 테이블 */
 export const SCREEN_UI_STATUS_TABLE = [
-  { screen: "HOME Dashboard", key: "home", status: "ui-freeze" },
+  { screen: "HOME Dashboard (V1.5 Hub UI Freeze)", key: "home", status: "ui-freeze" },
   { screen: "로그인", key: "login", status: "ui-freeze" },
   { screen: "기준정보관리", key: "masterData", status: "in-progress" },
   { screen: "입고관리", key: "inbound", status: "in-progress" },

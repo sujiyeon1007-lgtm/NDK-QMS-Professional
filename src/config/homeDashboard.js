@@ -114,8 +114,8 @@ export const HOME_STATUS_GROUPS = [
 
 export const HOME_PAGE_META = {
   title: "HOME",
-  kicker: "Project TITAN · Integrated Dashboard",
-  description: "KPI · 진행현황 · 금일 업무 · 통합 검색을 한 화면에서 확인합니다.",
+  kicker: "Project TITAN · Integrated Hub",
+  description: "현재 회사 상황 요약 · 업무 바로가기 · Timeline",
 };
 
 /** HOME 금일 업무현황 — V1.4 Workflow KPI (6 waiting stages) */
@@ -235,7 +235,26 @@ export const HOME_WORKFLOW_PHASES = [
 export const HOME_WORKFLOW_PREVIEW_LIMIT = 12;
 
 /** HOME 진행현황 — 전체 보기 → 이력조회 */
-export const HOME_WORKFLOW_FULL_VIEW_PATH = "/history";
+export const HOME_WORKFLOW_FULL_VIEW_PATH = "/product-status";
+
+/** @deprecated HomeWorkLauncherPanel + homeWorkLauncher.js 사용 */
+export const HOME_HUB_SHORTCUTS = [
+  {
+    id: "equipmentStatus",
+    label: "설비 현황",
+    to: "/equipment-status",
+    actionLabel: "전체 보기 →",
+    summary: ({ equipmentRunning, equipmentReady, equipmentMaintenance }) =>
+      `운전중 ${equipmentRunning} · 준비 ${equipmentReady} · 점검 ${equipmentMaintenance}`,
+  },
+  {
+    id: "productStatus",
+    label: "제품 현황",
+    to: "/product-status",
+    actionLabel: "전체 보기 →",
+    summary: ({ productInProgress }) => `진행 중 ${productInProgress.toLocaleString("ko-KR")}건`,
+  },
+];
 
 /** Status Chip KPI — @deprecated statusChipConfigs.js WORKFLOW_CHIP_STATUS_FILTER */
 export { WORKFLOW_CHIP_STATUS_FILTER } from "./statusChipConfigs";
@@ -305,4 +324,6 @@ export const HOME_ADMIN_SHORTCUTS = [
 ];
 
 export const HOME_RECENT_LIST_TITLE = "최근 작업";
+export const HOME_RECENT_PREVIEW_LIMIT = 7;
+export const HOME_RECENT_FULL_VIEW_PATH = "/history";
 export const HOME_PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];

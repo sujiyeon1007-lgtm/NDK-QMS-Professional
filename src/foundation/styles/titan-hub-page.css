@@ -57,6 +57,21 @@
   word-break: keep-all;
 }
 
+.titan-hub-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-primary, #1d4ed8);
+  text-decoration: none;
+}
+
+.titan-hub-back-link:hover {
+  text-decoration: underline;
+}
+
 .titan-hub-page__workflow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

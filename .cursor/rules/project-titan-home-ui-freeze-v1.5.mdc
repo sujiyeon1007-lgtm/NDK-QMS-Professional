@@ -1,0 +1,69 @@
+---
+description: Project TITAN V1.5 — HOME Dashboard UI Freeze (PM Final Approval)
+alwaysApply: true
+---
+
+# Project TITAN V1.5 — HOME Dashboard UI Freeze
+
+**Status:** 🟢 **UI Freeze** · **PM Final Approval 2026-07-07**
+
+**Screen:** HOME (`/home`) · `src/pages/Home/Home.jsx`
+
+**Reference mockup:** PM 승인 시안 — KPI · 좌측 패널 · 우측 업무 바로가기 2×3
+
+---
+
+## 확정 레이아웃 (변경 금지)
+
+```text
+상단: KPI (HomeTodaySummary)
+좌측: 공지사항 · 업무일정 · 최근 작업 Timeline
+우측: 업무 바로가기 2×3 Launcher (HomeWorkLauncherPanel)
+```
+
+---
+
+## 확정 항목
+
+| 영역 | Component | 규칙 |
+|---|---|---|
+| KPI | `HomeTodaySummary` | 6 Workflow 칩 · 현재 구조 유지 |
+| 공지 | `HomeNoticePanel` | 좌측 패널 |
+| 업무일정 | `HomeWorkSchedulePanel` | 좌측 패널 |
+| Timeline | `HomeRecentWorkPanel` | 좌측 · 5~7건 · 전체보기 → `/history` |
+| 업무 바로가기 | `HomeWorkLauncherPanel` | **메인 영역** · 2×3 · 파스텔 카드 |
+
+---
+
+## 업무 바로가기 카드 (Freeze)
+
+- 카드 **전체 클릭** · `cursor: pointer` · Hover Shadow
+- **"바로가기" 버튼 ❌**
+- 파스텔 톤 · Badge · Icon · Metrics
+- Config: `src/config/homeWorkLauncher.js`
+- Metrics: `src/utils/homeWorkLauncherData.js`
+
+---
+
+## HOME에서 금지
+
+- 제품/LOT/설비/Workflow **상세 리스트**
+- 통합검색 · 진행현황 테이블 Widget
+- 업무 수행 UI (장입·검사 등)
+- 레이아웃 재구성 · Widget 추가 (PM 승인 없이)
+
+---
+
+## 허용
+
+- 카드 metrics 데이터 연동
+- Demo 데이터 보강
+- 버그 수정 (Console Error 0)
+- Workflow Engine · SessionStorage 연동 (기능 diff)
+
+---
+
+## Companion
+
+- `.cursor/rules/project-titan-v1.5-hub-architecture.mdc` — Hub 역할 · 페이지 분리
+- `.cursor/rules/project-titan-ui-freeze-v1.3.mdc` — HOME Reference Screen

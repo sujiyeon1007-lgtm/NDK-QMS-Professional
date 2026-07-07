@@ -11,7 +11,7 @@ export default function HomeLeftPanel({ children }) {
     <aside
       ref={panelRef}
       className={`home-board__left${collapsed ? " is-collapsed" : ""}`}
-      aria-label="공지사항 · 금일 업무 · 최근 작업"
+      aria-label="공지사항 · 업무일정 · 최근 작업"
       aria-expanded={!collapsed}
     >
       <TitanFloatingPanelToggle

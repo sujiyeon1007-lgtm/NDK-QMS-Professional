@@ -42,7 +42,7 @@ const DISPLAY_TIMES = [
   "07:45",
 ];
 
-function countHomeStatusCards(records = []) {
+export function countHomeStatusCards(records = []) {
   return {
     incomingDone: records.filter((r) => isIncomingRegistered(r)).length,
     shipWaiting: records.filter(

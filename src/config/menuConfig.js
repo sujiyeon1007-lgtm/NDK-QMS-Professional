@@ -22,6 +22,10 @@ import {
   Wallet,
   Calculator,
   QrCode,
+  Factory,
+  Monitor,
+  LayoutGrid,
+  ArrowLeftRight,
 } from "lucide-react";
 
 import {
@@ -65,6 +69,74 @@ export const TITAN_MENU_CATALOG = {
       description: "금일 운영 현황과 실시간 제품 진행 상태를 확인합니다.",
     },
     breadcrumb: ["HOME"],
+  },
+  inoutManagement: {
+    id: "inoutManagement",
+    label: "입출고관리",
+    path: "/inout",
+    icon: ArrowLeftRight,
+    end: true,
+    section: {
+      pathPrefix: "/inout",
+      defaultTab: "hub",
+      tabs: [
+        { id: "hub", label: "입출고관리", path: "/inout" },
+        { id: "incoming", label: "입고관리", path: "/inout/incoming" },
+        { id: "shipment", label: "출고관리", path: "/inout/shipment" },
+      ],
+    },
+    pageMeta: {
+      kicker: "PQMS Operations",
+      title: "입출고관리",
+      description: "입고 · 출고 · 이력 · 출력 — Launcher Hub",
+    },
+    breadcrumb: ["입출고관리"],
+  },
+  productionManagement: {
+    id: "productionManagement",
+    label: "생산관리",
+    path: "/production",
+    icon: Factory,
+    end: true,
+    section: {
+      pathPrefix: "/production",
+      defaultTab: "hub",
+      tabs: [
+        { id: "hub", label: "생산관리", path: "/production" },
+        { id: "daily-report", label: "생산일보", path: "/production/daily-report" },
+        { id: "results", label: "생산실적관리", path: "/production/results" },
+        { id: "work-journal", label: "업무일지", path: "/work-journal" },
+      ],
+    },
+    pageMeta: {
+      kicker: "Production",
+      title: "생산관리",
+      description: "생산계획 · 생산일보 · LOT · 작업지시 — Launcher Hub",
+    },
+    breadcrumb: ["생산관리"],
+  },
+  qualityManagement: {
+    id: "qualityManagement",
+    label: "품질관리",
+    path: "/quality",
+    icon: ShieldCheck,
+    end: true,
+    section: {
+      pathPrefix: "/quality",
+      defaultTab: "hub",
+      tabs: [
+        { id: "hub", label: "품질관리", path: "/quality" },
+        { id: "mass", label: "검사관리", path: "/quality/inspection/mass" },
+        { id: "certificate", label: "성적서관리", path: "/quality/certificate" },
+        { id: "documents", label: "문서관리", path: "/documents" },
+      ],
+    },
+    pageMeta: {
+      kicker: "Quality",
+      title: "품질관리",
+      description: "검사 · 성적서 · 품질 문서 — Launcher Hub",
+    },
+    breadcrumb: ["품질관리"],
   },
   inboundStatus: {
     id: "inboundStatus",
@@ -272,7 +344,7 @@ export const TITAN_MENU_CATALOG = {
   },
   environment: {
     id: "environment",
-    label: "관리자",
+    label: "환경설정",
     path: "/environment",
     icon: SlidersHorizontal,
     section: {
@@ -292,11 +364,11 @@ export const TITAN_MENU_CATALOG = {
       ],
     },
     pageMeta: {
-      kicker: "관리자",
-      title: "관리자",
+      kicker: "System",
+      title: "환경설정",
       description: "사용자 · 권한 · 모듈 · Storage · 백업 · 로그 등 시스템 전반 설정",
     },
-    breadcrumb: ["관리자"],
+    breadcrumb: ["환경설정"],
   },
   accountingClerk: {
     id: "accountingClerk",
@@ -355,10 +427,83 @@ export const TITAN_MENU_CATALOG = {
     },
     breadcrumb: ["QR관리"],
   },
+  qrCharging: {
+    id: "qrCharging",
+    label: "설비 장입관리",
+    path: "/qr-workflow",
+    icon: Factory,
+    end: true,
+    section: {
+      pathPrefix: "/qr-workflow",
+      defaultTab: "main",
+      tabs: [{ id: "main", label: "설비 장입관리", path: "/qr-workflow" }],
+    },
+    pageMeta: {
+      kicker: "Smart Access",
+      title: "설비 장입관리",
+      description: "설비 QR를 통해 장입을 시작하고 현재 장입 현황을 관리하는 화면",
+    },
+    breadcrumb: ["설비 장입관리"],
+  },
+  equipmentStatus: {
+    id: "equipmentStatus",
+    label: "설비 현황",
+    path: "/equipment-status",
+    icon: Monitor,
+    end: true,
+    section: {
+      pathPrefix: "/equipment-status",
+      defaultTab: "main",
+      tabs: [{ id: "main", label: "설비 현황", path: "/equipment-status" }],
+    },
+    pageMeta: {
+      kicker: "MES Dashboard",
+      title: "설비 현황",
+      description: "공정 그룹별 설비 운전 상태 · LOT · 진행률을 한 화면에서 관제합니다.",
+    },
+    breadcrumb: ["설비 현황"],
+  },
+  productStatus: {
+    id: "productStatus",
+    label: "제품 현황",
+    path: "/product-status",
+    icon: LayoutGrid,
+    end: true,
+    section: {
+      pathPrefix: "/product-status",
+      defaultTab: "main",
+      tabs: [{ id: "main", label: "제품 현황", path: "/product-status" }],
+    },
+    pageMeta: {
+      kicker: "Product Traceability",
+      title: "제품 현황",
+      description: "현재공정 · LOT · 검사 · 성적서 · 출고를 제품 중심으로 추적합니다.",
+    },
+    breadcrumb: ["제품 현황"],
+  },
 };
 
-/** Menu Freeze V1.3 — Sidebar 순서 (id) */
+/** Menu Freeze V1.5 — Sidebar 순서 (id) */
 export const TITAN_MENU_ORDER = MENU_FREEZE_SIDEBAR_ORDER;
+
+/** V1.5 Sidebar — 통합 메뉴 활성 경로 (NavLink) */
+export const SIDEBAR_ACTIVE_PATH_PREFIXES = {
+  inoutManagement: ["/inout", "/inventory"],
+  productionManagement: ["/production", "/work-journal"],
+  qualityManagement: ["/quality", "/documents"],
+};
+
+export function isSidebarMenuActive(menuId, pathname = "") {
+  const path = String(pathname).split("?")[0];
+  const prefixes = SIDEBAR_ACTIVE_PATH_PREFIXES[menuId];
+  if (prefixes) {
+    return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+  }
+  const item = TITAN_MENU_CATALOG[menuId];
+  if (!item) return false;
+  if (item.end) return path === item.path;
+  return path === item.path || path.startsWith(`${item.path}/`);
+}
 
 /** @type {SidebarItem[]} */
 export function buildSidebarMenuFromConfig(order = TITAN_MENU_ORDER) {
@@ -378,7 +523,7 @@ export function buildSidebarMenuFromConfig(order = TITAN_MENU_ORDER) {
 }
 
 /** @type {Record<string, MenuSection>} */
-export function buildMenuSectionsFromConfig(order = TITAN_MENU_ORDER) {
+export function buildMenuSectionsFromConfig(order = Object.keys(TITAN_MENU_CATALOG)) {
   /** @type {Record<string, MenuSection>} */
   const sections = {};
   order.forEach((id) => {
@@ -411,9 +556,18 @@ export function getMenuCatalogItem(menuId) {
 
 export function getMenuCatalogItemByPath(pathname = "") {
   const path = String(pathname).split("?")[0];
-  const ordered = TITAN_MENU_ORDER.map((id) => TITAN_MENU_CATALOG[id]).filter(Boolean);
-  const sorted = [...ordered].sort((a, b) => b.path.length - a.path.length);
-  return sorted.find((item) => path === item.path || path.startsWith(`${item.path}/`)) ?? null;
+  const sidebarIds = new Set(TITAN_MENU_ORDER);
+  const allItems = Object.values(TITAN_MENU_CATALOG);
+  const matches = allItems.filter(
+    (item) => path === item.path || path.startsWith(`${item.path}/`)
+  );
+  if (!matches.length) return null;
+  matches.sort((a, b) => {
+    const sidebarBoost = (sidebarIds.has(a.id) ? 1 : 0) - (sidebarIds.has(b.id) ? 1 : 0);
+    if (sidebarBoost !== 0) return -sidebarBoost;
+    return b.path.length - a.path.length;
+  });
+  return matches[0];
 }
 
 export function getMenuSectionFromConfig(menuId) {

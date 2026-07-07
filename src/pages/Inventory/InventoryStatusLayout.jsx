@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { getSectionByPathname } from "../../config/menuStructure";
+import TitanHubBackLink from "../../foundation/components/TitanHubBackLink";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
+import "../../foundation/styles/titan-hub-page.css";
 
 export default function InventoryStatusLayout() {
   const location = useLocation();
@@ -14,6 +16,7 @@ export default function InventoryStatusLayout() {
 
   return (
     <SectionPageLayout section={layoutSection} description={null}>
+      <TitanHubBackLink to="/inout" label="입출고관리" />
       <Outlet />
     </SectionPageLayout>
   );

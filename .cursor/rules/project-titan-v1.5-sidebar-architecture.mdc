@@ -1,0 +1,66 @@
+---
+description: Project TITAN V1.5 — Sidebar Architecture FINAL (PM 승인 · Launcher Hub)
+alwaysApply: true
+---
+
+# Project TITAN V1.5 — Sidebar Architecture FINAL
+
+**Status:** PM 최종 승인 · **2026-07-07**
+
+**원칙:** QMS + MES 통합 · Sidebar = **업무 흐름** 기준 (기능 나열 ❌)
+
+**SSoT:** `src/config/menuFreezeV1.js` · `src/foundation/components/TitanLauncherHubPage.jsx`
+
+---
+
+## Sidebar (10 menus · 6 groups)
+
+```text
+🏠 HOME
+
+📦 운영관리 — 입출고관리 · 생산관리 (Launcher Hub)
+🧪 품질관리 — 품질관리 (Launcher Hub)
+🏭 MES — 설비 현황 · 제품 현황 · 설비 장입관리
+📊 경영 — 통계관리
+⚙ 시스템 — 기준정보관리 (Launcher) · 환경설정
+```
+
+## Launcher(Hub) 메뉴
+
+| Sidebar | Hub Route | 카드 (예) |
+|---|---|---|
+| 입출고관리 | `/inout` | 입고등록 · 출고등록 · 입출고 이력 · 출력관리 |
+| 생산관리 | `/production` | 생산계획 · 생산일보 · LOT · 작업지시 |
+| 품질관리 | `/quality` | 검사관리 · 성적서관리 · 문서관리 |
+| 기준정보관리 | `/settings` | 거래처 · 제품 · 재질 · 공정 · 설비 · 작업자 |
+
+**UX:** 기준정보관리 Launcher와 동일 — `titan-hub-page.css` · 카드형 · Hover · Shadow · Radius
+
+Hub에서 **업무 수행 ❌** — 카드 클릭 → 실제 업무 화면 이동
+
+## 그룹 역할 (혼합 금지)
+
+| 그룹 | 역할 |
+|---|---|
+| HOME | 통합 Hub — 현황 · 바로가기 |
+| 운영관리 | 생산 운영 (입고→생산→출고) |
+| 품질관리 | 검사 · 성적서 · 품질 문서 |
+| MES | 설비 관제 · 현장 작업 |
+| 경영 | 통계 · KPI |
+| 시스템 | Master · 환경설정 |
+
+## 확장 원칙
+
+1. 새 기능 → **기존 Launcher 카드** 추가 우선
+2. Sidebar 최상위 메뉴 **불필요하게 추가 ❌**
+3. 그룹 역할 **절대 혼합 ❌**
+
+## Do Not
+
+- Hub 없이 세부 기능을 Sidebar 1Depth에 직접 배치 (검사/성적서/문서 개별 Sidebar ❌)
+- Launcher UX를 페이지별로 다르게 디자인
+- MES 그룹에 QMS 업무 배치
+
+## Companion
+
+- `.cursor/rules/project-titan-v1.5-hub-architecture.mdc` — HOME · MES Monitor

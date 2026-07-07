@@ -82,7 +82,10 @@ export const TITAN_MENU_PERMISSIONS = [
   { key: "accountingClerk", label: "경리관리", catalogId: "accountingClerk" },
   { key: "accounting", label: "회계관리", catalogId: "accounting" },
   { key: "qrManagement", label: "QR 관리", catalogId: "qrManagement" },
-  { key: "admin", label: "관리자", catalogId: "environment" },
+  { key: "equipmentStatus", label: "설비 현황", catalogId: "equipmentStatus" },
+  { key: "productStatus", label: "제품 현황", catalogId: "productStatus" },
+  { key: "qrCharging", label: "설비 장입관리", catalogId: "qrCharging" },
+  { key: "admin", label: "환경설정", catalogId: "environment" },
 ];
 
 /** 기능 권한 — 메뉴 내부 CRUD · 출력 · 승인 */
@@ -113,11 +116,14 @@ export const TITAN_ROUTE_PERMISSION_GUARDS = [
   { pathPrefix: "/accounting-clerk", permissionKey: "accountingClerk" },
   { pathPrefix: "/accounting", permissionKey: "accounting" },
   { pathPrefix: "/qr-management", permissionKey: "qrManagement" },
+  { pathPrefix: "/equipment-status", permissionKey: "equipmentStatus" },
+  { pathPrefix: "/product-status", permissionKey: "productStatus" },
+  { pathPrefix: "/qr-workflow", permissionKey: "qrCharging" },
   { pathPrefix: "/environment", permissionKey: "admin" },
   { pathPrefix: "/environment/storage", permissionKey: "admin" },
   { pathPrefix: "/history", permissionKey: "home" },
   { pathPrefix: "/inventory", permissionKey: "inventory" },
-  { pathPrefix: "/work-journal", permissionKey: "home" },
+  { pathPrefix: "/work-journal", permissionKey: "production" },
 ];
 
 export function createDefaultMenuPermissionMap(enabled = false) {

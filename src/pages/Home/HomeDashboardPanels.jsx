@@ -22,6 +22,8 @@ import {
   HOME_NOTICES_PREVIEW_LIMIT,
   HOME_QUICK_MENUS,
   HOME_RECENT_LIST_TITLE,
+  HOME_RECENT_PREVIEW_LIMIT,
+  HOME_RECENT_FULL_VIEW_PATH,
   HOME_RECENT_TABS,
   HOME_TODAY_TASKS_LIMIT,
   HOME_TODAY_WORK_CARDS,
@@ -292,6 +294,7 @@ export function HomeTodaySummary({ records }) {
             tone={card.tone}
             count={summaryMap[card.summaryId] ?? 0}
             countSuffix="건"
+            iconSize={20}
           />
         ))}
       </div>
@@ -574,28 +577,57 @@ export function HomeNoticePanel({ refreshKey, onRefresh }) {
   );
 }
 
+function resolveRecentTimelineChip(statusLabel = "") {
+  const label = String(statusLabel);
+  if (label.includes("완료") || label.includes("발행")) {
+    return { label: "완료", variant: "complete" };
+  }
+  if (label.includes("대기")) {
+    return { label: "대기", variant: "hold" };
+  }
+  if (label.includes("중")) {
+    return { label: "진행", variant: "progress" };
+  }
+  return { label: label.slice(0, 4) || "—", variant: "hold" };
+}
+
 export function HomeRecentWorkPanel({ records }) {
-  const items = useMemo(() => buildRecentWorkList(records).slice(0, 5), [records]);
+  const items = useMemo(
+    () => buildRecentWorkList(records).slice(0, HOME_RECENT_PREVIEW_LIMIT),
+    [records]
+  );
 
   return (
     <Card className="home-panel home-panel--recent home-panel--left-clamp">
-      <div className="home-panel__head">
+      <div className="home-panel__head home-panel__head--recent">
         <h3>{HOME_RECENT_LIST_TITLE}</h3>
+        <Link to={HOME_RECENT_FULL_VIEW_PATH} className="home-panel__more-link">
+          전체보기 &gt;
+        </Link>
       </div>
       {items.length === 0 ? (
         <p className="home-empty">표시할 이력이 없습니다.</p>
       ) : (
         <ul className="home-recent-timeline">
-          {items.map((item, index) => (
-            <li key={`recent-${item.managementId}-${index}`} className="home-recent-timeline__item">
-              <div className="home-recent-timeline__main">
-                <strong>{item.company}</strong>
-                <span>{item.partName}</span>
-                <span className="home-recent-timeline__action">{item.statusLabel}</span>
-              </div>
-              <span className="home-recent-timeline__meta">{item.registeredAt}</span>
-            </li>
-          ))}
+          {items.map((item, index) => {
+            const timeLabel = String(item.registeredAt ?? "").split(" ").pop()?.slice(0, 5) ?? "—";
+            const lotLabel = item.lotNo ? ` (${item.lotNo})` : "";
+            const chip = resolveRecentTimelineChip(item.statusLabel);
+
+            return (
+              <li key={`recent-${item.managementId}-${index}`} className="home-recent-timeline__item">
+                <span className="home-recent-timeline__time">{timeLabel}</span>
+                <div className="home-recent-timeline__body">
+                  <strong>
+                    {item.partName}
+                    {lotLabel}
+                  </strong>
+                  <span className="home-recent-timeline__action">{item.statusLabel}</span>
+                </div>
+                <StatusChip variant={chip.variant}>{chip.label}</StatusChip>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>
