@@ -1,0 +1,56 @@
+---
+description: Project TITAN V1.5 — TitanWorkflowEngine (Foundation Workflow Layer)
+alwaysApply: false
+---
+
+# TitanWorkflowEngine V1.5 — Workflow SSOT
+
+**Code:** `src/foundation/workflow/` · **Entry:** `getTitanWorkflowEngine()`
+
+## Data Flow (공식)
+
+```text
+QR Scan → TitanWorkflowEngine → TitanDataEngine → Store → Page
+```
+
+- Page는 **Store 직접 제어 ❌** · **Workflow 함수만 호출**
+- Store는 **EventBus** 구독으로 데이터 갱신
+- Page는 Event 직접 처리 ❌
+
+## Components
+
+| File | Role |
+|---|---|
+| `TitanWorkflowEngine.js` | 공식 진입점 · startCharging · finishCharging · … |
+| `TitanEventBus.js` | Workflow 내부 pub/sub |
+| `workflowEvents.js` | Event name SSOT |
+| `equipmentStateMachine.js` | 설비 상태 전이 검증 |
+| `workflowPipeline.js` | Event → Store Handler · Pipeline |
+
+## Equipment State Machine
+
+```text
+대기 → 장입중 → 열처리중 → 검사대기 → 완료 → 대기
+```
+
+허용되지 않는 전환은 `WorkflowTransitionError`로 차단.
+
+## Workflow API
+
+- `startCharging()` — Equipment → Production → Timeline → Dashboard
+- `finishCharging()` — Production 종료 → 검사대기
+- `startInspection()` / `finishInspection()`
+- `issueCertificate()` / `shipProduct()`
+
+## Verify
+
+```bash
+npm run verify:workflow-engine
+npm run build
+```
+
+## Do Not (Workflow Sprint)
+
+- UI / CSS / Router / Launcher / Breadcrumb 변경
+- QR Scanner · Camera · Oracle · SQLite 연동
+- Page에서 Store 직접 수정

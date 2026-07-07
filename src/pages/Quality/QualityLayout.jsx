@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
+import { QUALITY_MANAGEMENT_HUB_BREADCRUMB } from "../../config/titanBreadcrumbPolicy";
 import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
+import TitanBreadcrumb from "../../foundation/components/TitanBreadcrumb";
 import TitanHubBackLink from "../../foundation/components/TitanHubBackLink";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 import "../../foundation/styles/titan-hub-page.css";
@@ -29,12 +31,15 @@ export default function QualityLayout() {
   const hubSection = getSectionById("qualityManagement");
   const section = isHub ? hubSection : getSectionByPathname(location.pathname);
 
-  if (!section) return null;
-
   const filteredSection = useMemo(
-    () => (isHub ? hubSection : filterSectionTabs(section, isModuleEnabled)),
+    () => {
+      if (!section) return null;
+      return isHub ? hubSection : filterSectionTabs(section, isModuleEnabled);
+    },
     [hubSection, isHub, isModuleEnabled, section]
   );
+
+  if (!section || !filteredSection) return null;
 
   if (isHub) {
     return (
@@ -42,6 +47,7 @@ export default function QualityLayout() {
         <header className="titan-section-page__header">
           <h1 className="titan-section-page__title">{hubSection?.label ?? "품질관리"}</h1>
         </header>
+        <TitanBreadcrumb items={QUALITY_MANAGEMENT_HUB_BREADCRUMB} />
         <div className="titan-section-page__body">
           <Outlet />
         </div>

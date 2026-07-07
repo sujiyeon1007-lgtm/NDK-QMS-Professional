@@ -4,6 +4,11 @@
  */
 
 import { canDeleteProduct } from "./productUsage";
+import {
+  canDeleteCompany,
+  canDeleteEquipment,
+  canDeleteWorker,
+} from "./masterUsage";
 import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
 import {
   buildCompanyAbbreviation,
@@ -11,8 +16,18 @@ import {
   shouldAutoUpdateAbbreviation,
 } from "./companyAbbreviation";
 import { normalizeCompanyNdkAssignees, getCompanyNdkAssigneeLabel } from "./companyNdkAssigneesModel";
+import {
+  initMasterDataStoresFromSession,
+  readMasterCategoryFromStore,
+  resolveMasterStoreCategory,
+  syncAllMasterStoresFromSession,
+} from "../foundation/data/master/masterDataSync";
+import { MASTER_STORE_CATEGORIES } from "../foundation/data/master/masterConstants";
+import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 
 const STORAGE_KEY = "project-titan-master-data-v3";
+
+const INTEGRATED_MASTER_KEYS = new Set(MASTER_STORE_CATEGORIES);
 
 export const MASTER_CATEGORIES = [
   { key: "companies", label: "업체", desc: "입고·생산·성적서 공통 업체" },
@@ -601,12 +616,23 @@ function loadMasterDataFromStorage() {
 /** @type {typeof MASTER_DATA} */
 let sessionMasterData = loadMasterDataFromStorage();
 
-function persistMasterData() {
+function syncMasterStoresAfterPersist(changedCategory = null) {
+  syncAllMasterStoresFromSession(sessionMasterData);
+  notifyWorkflowDataRefresh({
+    source: "master-data",
+    category: changedCategory ? resolveMasterStoreCategory(changedCategory) : "all",
+  });
+}
+
+initMasterDataStoresFromSession(sessionMasterData);
+
+function persistMasterData(changedCategory = null) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
   } catch {
     /* ignore quota errors in UI mode */
   }
+  syncMasterStoresAfterPersist(changedCategory);
 }
 
 function resolveStorageCategory(categoryKey) {
@@ -632,6 +658,12 @@ export function getMasterDataByCategory(categoryKey) {
   const resolvedKey = resolveCategoryKey(categoryKey);
   if (CODE_GROUP_ALIASES[resolvedKey]) {
     return filterByCodeGroup(sessionMasterData.customCodes ?? [], CODE_GROUP_ALIASES[resolvedKey]);
+  }
+  if (INTEGRATED_MASTER_KEYS.has(resolvedKey)) {
+    const storeRows = readMasterCategoryFromStore(resolvedKey);
+    if (storeRows.length > 0) {
+      return storeRows;
+    }
   }
   return sessionMasterData[resolvedKey] ?? [];
 }
@@ -963,7 +995,7 @@ export function stageMasterAdd(categoryKey, payload, { skipValidation = false } 
 
   const storageKey = validation.storageKey;
   sessionMasterData[storageKey] = [...(sessionMasterData[storageKey] ?? []), newRow];
-  persistMasterData();
+  persistMasterData(resolvedKey);
   return { ok: true, row: newRow };
 }
 
@@ -983,7 +1015,7 @@ export function stageMasterUpdate(categoryKey, rowId, payload) {
 
   const updated = { ...rows[index], ...validation.normalized };
   sessionMasterData[storageKey] = rows.map((row, i) => (i === index ? updated : row));
-  persistMasterData();
+  persistMasterData(resolvedKey);
   return { ok: true, row: updated };
 }
 
@@ -1002,15 +1034,33 @@ export function stageMasterDelete(categoryKey, rowId) {
     }
   }
 
+  if (resolveCategoryKey(categoryKey) === "companies") {
+    const guard = canDeleteCompany(target.name);
+    if (!guard.ok) {
+      return { ok: false, message: guard.message };
+    }
+  }
+
+  if (resolveCategoryKey(categoryKey) === "equipment") {
+    const guard = canDeleteEquipment(target.code, target.name);
+    if (!guard.ok) {
+      return { ok: false, message: guard.message };
+    }
+  }
+
   if (resolveCategoryKey(categoryKey) === "workers") {
+    const guard = canDeleteWorker(target.name);
+    if (!guard.ok) {
+      return { ok: false, message: guard.message };
+    }
     const updated = { ...target, active: false };
     sessionMasterData[storageKey] = rows.map((row) => (row.id === rowId ? updated : row));
-    persistMasterData();
+    persistMasterData("workers");
     return { ok: true, row: updated, soft: true };
   }
 
   sessionMasterData[storageKey] = rows.filter((row) => row.id !== rowId);
-  persistMasterData();
+  persistMasterData(categoryKey);
   return { ok: true, row: target };
 }
 
@@ -1151,7 +1201,7 @@ export function revertMasterImport(categoryKey, undoSnapshot) {
 
   const createdIds = new Set(undoSnapshot.createdIds ?? []);
   sessionMasterData[storageKey] = rows.filter((row) => !createdIds.has(row.id));
-  persistMasterData();
+  persistMasterData(categoryKey);
   return { ok: true };
 }
 

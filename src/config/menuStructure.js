@@ -51,7 +51,7 @@ export const MENU_SECTIONS = {
   /** @deprecated Presentation 이전 — 라우트 유지 */
   inout: {
     id: "inout",
-    label: "입출고관리",
+    label: "운영관리",
     pathPrefix: "/inout",
     defaultTab: "incoming",
     deprecated: true,
@@ -104,10 +104,10 @@ export const MENU_SECTIONS = {
   },
   workJournalOperations: {
     id: "workJournalOperations",
-    label: "운영 업무일지",
+    label: "영업업무일지",
     pathPrefix: "/inout/work-journal",
     defaultTab: "journal",
-    tabs: [{ id: "journal", label: "운영 업무일지", path: "/inout/work-journal" }],
+    tabs: [{ id: "journal", label: "영업업무일지", path: "/inout/work-journal" }],
   },
   workJournalProduction: {
     id: "workJournalProduction",
@@ -290,4 +290,6 @@ export const LEGACY_ROUTE_REDIRECTS = {
   "/environment/system": "/environment/status",
   "/environment/documents": "/documents",
   "/notices": "/documents",
+  "/qr-workflow": "/production/charging",
+  "/qr-workflow/charging": "/production/charging",
 };

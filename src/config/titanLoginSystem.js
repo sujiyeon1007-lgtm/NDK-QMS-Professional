@@ -118,6 +118,7 @@ export const TITAN_ROUTE_PERMISSION_GUARDS = [
   { pathPrefix: "/qr-management", permissionKey: "qrManagement" },
   { pathPrefix: "/equipment-status", permissionKey: "equipmentStatus" },
   { pathPrefix: "/product-status", permissionKey: "productStatus" },
+  { pathPrefix: "/production/charging", permissionKey: "productionManagement" },
   { pathPrefix: "/qr-workflow/charging", permissionKey: "qrCharging" },
   { pathPrefix: "/qr-workflow", permissionKey: "qrCharging" },
   { pathPrefix: "/environment", permissionKey: "admin" },

@@ -234,8 +234,8 @@ export const HOME_WORKFLOW_PHASES = [
 
 export const HOME_WORKFLOW_PREVIEW_LIMIT = 12;
 
-/** HOME 진행현황 — 전체 보기 → 이력조회 */
-export const HOME_WORKFLOW_FULL_VIEW_PATH = "/product-status";
+/** HOME 진행현황 — 전체 보기 → Control Room Product View (Sprint 3E) */
+export const HOME_WORKFLOW_FULL_VIEW_PATH = "/equipment-status?view=product";
 
 /** @deprecated HomeWorkLauncherPanel + homeWorkLauncher.js 사용 */
 export const HOME_HUB_SHORTCUTS = [

@@ -27,13 +27,12 @@ import { getProcessChipVariant, getProductionProcessCodes } from "../../config/p
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
+import { getNcrWorkspaceScreenData } from "../../utils/qualityWorkspaceData";
 import {
   DEFECT_HANDLING_STATUS,
   DEFECT_TYPE_OPTIONS,
   addSessionDefectRecord,
-  computeDefectMetrics,
   generateDefectId,
-  getSessionDefectRecords,
 } from "../../utils/defectHistorySession";
 import DefectHistoryRegisterModal from "./DefectHistoryRegisterModal";
 import "../InOut/InboundManagement.css";
@@ -103,20 +102,22 @@ export default function DefectHistoryManagement() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const equipmentList = useMemo(() => getMasterDataByCategory("equipment"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const searchRecords = useMemo(() => getSessionDefectRecords(), [refreshKey]);
+
+  const screenData = useMemo(() => getNcrWorkspaceScreenData(), [refreshKey]);
+  const searchRecords = useMemo(() => screenData.baseRecords, [screenData.baseRecords]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
     equipment: equipmentList.map((item) => item.name ?? item.code),
   });
 
   const rows = useMemo(() => {
-    return getSessionDefectRecords()
+    return screenData.baseRecords
       .filter((record) => matchesDefectHistorySearch(record, search))
       .map(mapDefectRow)
       .sort((a, b) => String(b.occurredDate).localeCompare(String(a.occurredDate)));
-  }, [search, refreshKey]);
+  }, [search, screenData.baseRecords]);
 
-  const metrics = useMemo(() => computeDefectMetrics(getSessionDefectRecords()), [refreshKey]);
+  const metrics = screenData.counts;
 
   const kpiCards = useMemo(
     () =>

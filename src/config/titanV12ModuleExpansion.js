@@ -100,7 +100,7 @@ export const TITAN_MODULE_REGISTRY = {
     category: "smartAccess",
     defaultEnabled: true,
     toggleable: true,
-    menuIds: ["qrManagement", "equipmentStatus", "productStatus", "qrCharging"],
+    menuIds: ["qrManagement", "equipmentStatus", "productStatus"],
     homeWidgetIds: [],
     permissionKeys: ["qrManagement", "equipmentStatus", "productStatus", "qrCharging", "qrCreate"],
     smartAccessTargets: ["incoming", "equipment", "inspection", "certificate", "outgoing", "production"],

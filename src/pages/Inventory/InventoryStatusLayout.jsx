@@ -16,7 +16,7 @@ export default function InventoryStatusLayout() {
 
   return (
     <SectionPageLayout section={layoutSection} description={null}>
-      <TitanHubBackLink to="/inout" label="입출고관리" />
+      <TitanHubBackLink to="/inout" label="운영관리" />
       <Outlet />
     </SectionPageLayout>
   );

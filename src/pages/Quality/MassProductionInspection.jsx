@@ -37,7 +37,7 @@ import {
   isMassInspectionRegisterEligible,
   navigateToInspectionRegister,
 } from "../../utils/inspectionRegisterNavigation";
-import { getMassInspectionBaseRows } from "../../utils/titanScreenDataSource";
+import { getInspectionMassScreenData } from "../../utils/qualityWorkspaceData";
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -53,7 +53,8 @@ export default function MassProductionInspection() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const chipRecords = useMemo(() => getMassInspectionBaseRows(), [refreshKey]);
+  const screenData = useMemo(() => getInspectionMassScreenData(), [refreshKey]);
+  const chipRecords = screenData.baseRecords;
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -75,16 +76,16 @@ export default function MassProductionInspection() {
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const searchRecords = useMemo(() => getMassProductionInspectionRows(), [refreshKey]);
+  const searchRecords = useMemo(() => screenData.baseRecords, [screenData.baseRecords]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
   });
 
   const rows = useMemo(() => {
-    return getMassProductionInspectionRows()
+    return screenData.baseRecords
       .filter((row) => matchesMassProductionInspectionSearch(row, search))
       .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
-  }, [search, refreshKey]);
+  }, [search, screenData.baseRecords]);
 
   const {
     page,

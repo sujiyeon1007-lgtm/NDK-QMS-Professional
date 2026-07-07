@@ -26,11 +26,10 @@ import { buildV13ProductListColumns } from "../../config/standardProductList";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { getProductionBaseRecords } from "../../utils/titanScreenDataSource";
+import { getProductionDailyReportScreenData } from "../../utils/productionWorkspaceData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   APPROVAL_STATUS_OPTIONS,
-  filterProductionDailyReportRecords,
   formatProductionDailyReportDateTime,
   getProductionDailyReportApprovalStatus,
   getProductionDailyReportStatus,
@@ -179,10 +178,10 @@ export default function DailyProductionReport() {
   const pendingPdfExportRef = useRef(false);
   const pendingExcelExportRef = useRef(false);
   const pendingPrintOptionsRef = useRef(null);
-  const chipRecords = useMemo(
-    () => getProductionBaseRecords(getSessionProductionRecords()),
-    [refreshKey]
-  );
+  const chipRecords = useMemo(() => {
+    void refreshKey;
+    return getProductionDailyReportScreenData().baseRecords;
+  }, [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -192,17 +191,17 @@ export default function DailyProductionReport() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const equipmentList = useMemo(() => getMasterDataByCategory("equipment"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const searchRecords = useMemo(
-    () => filterProductionDailyReportRecords(getSessionProductionRecords()),
-    [refreshKey]
-  );
+  const searchRecords = useMemo(() => {
+    void refreshKey;
+    return getProductionDailyReportScreenData().baseRecords;
+  }, [refreshKey]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
     equipment: equipmentList.map((item) => item.name ?? item.code),
   });
 
   const rows = useMemo(() => {
-    const records = filterProductionDailyReportRecords(getSessionProductionRecords());
+    const records = getProductionDailyReportScreenData().baseRecords;
     return records
       .map(mapRecordToRow)
       .filter((row) => matchesProductionDailyReportSearch(row.record, row, search))
@@ -210,7 +209,7 @@ export default function DailyProductionReport() {
   }, [search, refreshKey]);
 
   const allListRows = useMemo(() => {
-    const records = filterProductionDailyReportRecords(getSessionProductionRecords());
+    const records = getProductionDailyReportScreenData().baseRecords;
     return records
       .map(mapRecordToRow)
       .sort((a, b) => b.managementId.localeCompare(a.managementId));

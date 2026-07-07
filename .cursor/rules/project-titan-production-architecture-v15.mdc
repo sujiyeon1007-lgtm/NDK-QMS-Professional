@@ -1,95 +1,84 @@
 ---
-description: Project TITAN V1.5 — Production Architecture Renewal (PM 최종 승인)
+description: Project TITAN V1.5 — Production / MES Architecture FINAL (PM 승인)
 alwaysApply: true
 ---
 
-# Production Architecture Renewal V1.5
+# Production / MES Architecture V1.5 FINAL
 
 **Status:** PM 최종 승인 · **2026-07-07**
 
-**Code SSoT:** `src/config/productionArchitectureV15.js` · `src/config/productionManagementLauncher.js`
+**Code SSoT:** `src/config/productionArchitectureV15.js` · `src/config/productionManagementLauncher.js` · `src/config/productionChargingLauncher.js`
 
 ---
 
-## 변경 목적
+## 역할 분리 (공식)
 
-생산 Workflow가 세분화(작업지시·LOT·일보 분리)되어 동일 데이터 반복 입력 느낌 → **QR 중심 · 업무 중심 단순화**
+| 영역 | 역할 |
+|---|---|
+| **생산관리** | 생산 수행 — 계획 · **설비 장입** · 일보 · 실적 |
+| **MES (Sidebar)** | **관제만** — 설비 현황 · 제품 현황 |
+
+**설비 장입은 Sidebar MES 메뉴 ❌** → **생산관리 Launcher 내부 Hub**
 
 ---
 
 ## 공식 생산 Workflow
 
 ```text
-생산계획 → 설비 장입관리(QR) → 생산일보(자동 생성) → 생산실적 → 생산 업무일지
+생산계획 → 설비 장입관리 → 생산일보 → 생산실적 → 생산 업무일지
 ```
-
-**생산관리** = 생산 수행 허브 · **MES** = 관제 허브 (역할 분리)
 
 ---
 
 ## 생산관리 Launcher (5카드)
 
-| 카드 | 역할 |
+| 카드 | Route |
 |---|---|
-| 생산계획 | 일정 계획 (부장/생산관리자) |
-| **설비 장입관리** | QR 생산 핵심 → `/qr-workflow` Hub |
-| 생산일보 | 공식 기록 · QR 시작 시 초안 자동(로드맵) |
-| 생산실적관리 | 완료 후 실적 조회 |
-| 생산 업무일지 | 생산부 특이사항 |
-
-**제거 (Launcher):** 작업지시 · LOT관리 · 불량이력관리
+| 생산계획 | `/production/daily-report` |
+| **설비 장입관리** | `/production/charging` Hub |
+| **생산일보** | `/production/daily-report` |
+| 생산실적관리 | `/production/results` |
+| 생산 업무일지 | `/production/work-journal` |
 
 ---
 
-## 생산일보 정책
+## 설비 장입관리 Hub (`/production/charging`)
 
-- **삭제 ❌** — 공식 생산 기록
-- QR 장입 시작 → 초안 자동 (설비·시작·LOT·작업정보)
-- QR 완료 → 종료·작업시간·상태 자동
-- 사용자 → 특이사항만 보완
+생산관리 카드 클릭 → **별도 Launcher 4카드:**
 
----
-
-## 불량이력 → 품질관리
+① 전체 설비 현황 · ② 이온질화 · ③ 가스질화 · ④ 가스연질화
 
 ```text
-검사관리 → 성적서관리 → 불량이력관리 → 문서관리 → 품질 업무일지
+Hub → 공정 선택 → 설비 목록 → 설비 상세 (장입 시작 · 열처리 완료)
 ```
 
-Route: `/quality/defect-history` · Legacy `/production/defect-history` → redirect
-
----
-
-## 설비 장입관리 Hub (`/qr-workflow`)
-
-MES Sidebar · **Launcher 4카드:**
-
-① 설비 현황 · ② QR 장입 (`/qr-workflow/charging`) · ③ 진행현황 · ④ 작업이력
-
----
-
-## MES 역할
-
-| 메뉴 | 역할 |
+| Route | 화면 |
 |---|---|
-| 설비 현황 | 전체 관제 |
-| 제품 현황 | LOT·제품 추적 |
-| 설비 장입관리 | 실제 작업 + Hub |
+| `/production/charging` | Hub |
+| `/production/charging/overview` | 전체 설비 Dashboard |
+| `/production/charging/process/:slug` | 공정별 설비 목록 |
+| `/production/charging/equipment/:id` | 설비 작업 상세 |
+
+**Breadcrumb (Header 아래):** `TitanBreadcrumb` · `titanBreadcrumbPolicy.js`
+
+```text
+생산관리 > 설비 장입관리 > 전체 설비 현황
+생산관리 > 설비 장입관리 > 이온질화 > 이온질화 1호기
+```
+
+Legacy: `/qr-workflow` → `/production/charging`
 
 ---
 
-## 구현 원칙
+## MES Sidebar (2 menus only)
 
-- 기존 Workflow·데이터 유지
-- UI 최소 변경
-- QR 자동화 **단계적** 전환
-- 동일 데이터 다중 화면 입력 **지양**
+- **설비 현황** — 관제 · 작업 버튼 ❌
+- **제품 현황** — 제품·LOT 추적
 
 ---
 
 ## Do Not
 
-- 생산일보 삭제
+- MES Sidebar에 설비 장입관리 복원
+- 설비 현황(MES)에 장입 시작/완료 버튼 추가
 - 불량이력을 생산 Launcher에 복원
-- 설비 현황에 작업 버튼 추가
-- QR 없이 LOT/일보 이중 수동 입력 구조 재도입

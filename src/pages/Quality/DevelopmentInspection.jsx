@@ -21,11 +21,10 @@ import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
-  getDevelopmentInspections,
-  mapDevelopmentInspectionToListRow,
   matchesDevelopmentInspectionSearch,
   softDeleteDevelopmentInspection,
 } from "../../utils/developmentInspectionSession";
+import { getInspectionDevScreenData } from "../../utils/qualityWorkspaceData";
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
@@ -48,22 +47,19 @@ export default function DevelopmentInspection() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
+  const screenData = useMemo(() => getInspectionDevScreenData(), [refreshKey]);
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
-  const searchRecords = useMemo(
-    () => getDevelopmentInspections().map(mapDevelopmentInspectionToListRow),
-    [refreshKey]
-  );
+  const searchRecords = useMemo(() => screenData.baseRecords, [screenData.baseRecords]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     status: DEVELOPMENT_INSPECTION_STATUS,
   });
 
   const rows = useMemo(() => {
-    return getDevelopmentInspections()
-      .map(mapDevelopmentInspectionToListRow)
+    return screenData.baseRecords
       .filter((row) => matchesDevelopmentInspectionSearch(row, search))
       .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
-  }, [search, refreshKey]);
+  }, [search, screenData.baseRecords]);
 
   const {
     page,

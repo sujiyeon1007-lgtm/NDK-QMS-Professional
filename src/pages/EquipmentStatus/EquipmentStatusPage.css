@@ -6,6 +6,79 @@
   height: 100%;
 }
 
+/* Control Room Shell (Sprint 3A) */
+.control-room__tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+}
+
+.control-room__tab {
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.control-room__tab:hover {
+  background: #f3f7fc;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.control-room__tab.is-active {
+  border-color: var(--titan-table-border, #dde6f0);
+  background: var(--titan-surface, #fff);
+  color: var(--titan-primary, #2563eb);
+}
+
+.control-room__view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room__equipment-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 240px;
+  flex: 1 1 auto;
+  border: 1px dashed var(--titan-table-border, #dde6f0);
+  border-radius: 12px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.control-room__placeholder-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.control-room__placeholder-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
 .equipment-status-page__workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
@@ -101,8 +174,563 @@
   word-break: keep-all;
 }
 
+.equipment-monitor-card--link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.equipment-status-page__workspace--single {
+  grid-template-columns: 1fr;
+}
+
+/* Control Room — Equipment Card (Sprint 3B · Blueprint ②) */
+.control-room-equipment-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: var(--titan-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.control-room-equipment-card:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.control-room-equipment-card.is-selected {
+  border-color: #93c5fd;
+  background: #edf4fd;
+}
+
+.control-room-equipment-card.is-running {
+  border-color: #86efac;
+}
+
+.control-room-equipment-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.control-room-equipment-card__name {
+  font-size: 12px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.control-room-equipment-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex: 0 0 auto;
+}
+
+.control-room-equipment-card__dot[data-status="running"] {
+  background: #22c55e;
+  animation: control-room-pulse 1.4s ease-in-out infinite;
+}
+
+.control-room-equipment-card__dot[data-status="ready"] {
+  background: #f59e0b;
+}
+
+.control-room-equipment-card__dot[data-status="maintenance"] {
+  background: #ef4444;
+}
+
+@keyframes control-room-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.control-room-equipment-card__alarm {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.control-room-equipment-card__alarm--warning {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.control-room-equipment-card__alarm--info {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.control-room-equipment-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  margin: 0;
+}
+
+.control-room-equipment-card__meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.control-room-equipment-card__meta dt {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-card__meta dd {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+.control-room-equipment-card__util {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-room-equipment-card__util-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-card__util-head strong {
+  font-size: 11px;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.control-room-equipment-card__util-track {
+  height: 5px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.control-room-equipment-card__util-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #34d399, #22c55e);
+  transition: width 0.4s ease;
+}
+
+.equipment-monitor-detail__alarm {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+/* Control Room — Equipment Popup (Sprint 3B) */
+.control-room-equipment-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.control-room-equipment-popup__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.control-room-equipment-popup__head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.control-room-equipment-popup__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.control-room-equipment-popup__grid > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.control-room-equipment-popup__grid dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-popup__grid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+.control-room-equipment-popup__util {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-room-equipment-popup__util-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-popup__same-lot {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+}
+
+.control-room-equipment-popup__same-lot h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.control-room-equipment-popup__lot-no {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.control-room-equipment-popup__same-lot ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.control-room-equipment-popup__same-lot li {
+  font-size: 12px;
+}
+
+/* Control Room — LOT View (Sprint 3C · Blueprint ②) */
+.control-room__lot-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room-lot-view__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 16px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room-lot-view__grid {
+  min-height: 0;
+  overflow: auto;
+}
+
+.control-room-lot-view__table {
+  width: 100%;
+}
+
+.control-room-lot-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface, #fff);
+}
+
+.control-room-lot-timeline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.control-room-lot-timeline__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.control-room-lot-timeline__lot {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.control-room-lot-timeline__empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-timeline__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.control-room-lot-timeline__list li {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 2px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+  font-size: 12px;
+}
+
+.control-room-lot-timeline__list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.control-room-lot-timeline__list time {
+  grid-row: span 2;
+  font-weight: 700;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-timeline__list strong {
+  font-weight: 700;
+}
+
+.control-room-lot-timeline__list span {
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-timeline__list em {
+  grid-column: 2;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-popup__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.control-room-lot-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.control-room-lot-popup__head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.control-room-lot-popup__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.control-room-lot-popup__grid > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.control-room-lot-popup__grid dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-popup__grid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+.control-room-lot-popup__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-room-lot-popup__progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-lot-popup__timeline h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Product View (Sprint 3D) — 제품 중심 Monitor Grid (Full width · Timeline Summary 없음) */
+.control-room__product-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room-product-view__grid {
+  min-height: 0;
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.control-room-product-view__table {
+  width: 100%;
+}
+
+.control-room-product-popup__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-product-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.control-room-product-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.control-room-product-popup__head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.control-room-product-popup__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.control-room-product-popup__grid > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.control-room-product-popup__grid dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-product-popup__grid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: keep-all;
+}
+
+.control-room-product-popup__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-room-product-popup__progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-product-popup__lots h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.control-room-product-popup__lot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.control-room-product-popup__lot-table th,
+.control-room-product-popup__lot-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+  white-space: nowrap;
+}
+
+.control-room-product-popup__lot-table th {
+  background: var(--titan-table-header, #e3e9f0);
+  color: var(--titan-table-header-text, #1e293b);
+  font-weight: 600;
+}
+
 @media (max-width: 1200px) {
-  .equipment-status-page__workspace {
+  .equipment-status-page__workspace,
+  .control-room-lot-view__workspace {
     grid-template-columns: 1fr;
   }
 }

@@ -33,7 +33,7 @@ import TitanStandardProductAdvancedSearch from "../../foundation/components/Tita
 import { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { buildInventoryWorkspaceRecords } from "../../utils/operationsWorkspaceData";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import "../InOut/InboundManagement.css";
@@ -55,7 +55,7 @@ export default function InventoryStatusPage() {
 
   const sessionRecords = useMemo(() => {
     void refreshKey;
-    return getSessionProductionRecords();
+    return buildInventoryWorkspaceRecords();
   }, [refreshKey]);
 
   const allRows = useMemo(

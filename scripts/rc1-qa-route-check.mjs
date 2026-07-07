@@ -12,15 +12,14 @@ const read = (rel) => readFileSync(join(root, rel), "utf8");
 
 const SIDEBAR_ROUTES = [
   { menu: "HOME", path: "/home" },
-  { menu: "입출고관리", path: "/inout" },
+  { menu: "설비현황", path: "/equipment-status" },
+  { menu: "운영관리", path: "/inout" },
   { menu: "생산관리", path: "/production" },
   { menu: "품질관리", path: "/quality" },
-  { menu: "설비 현황", path: "/equipment-status" },
-  { menu: "제품 현황", path: "/product-status" },
-  { menu: "설비 장입관리", path: "/qr-workflow" },
   { menu: "통계관리", path: "/statistics/production" },
   { menu: "기준정보관리", path: "/settings" },
   { menu: "환경설정", path: "/environment/users" },
+  { menu: "회사정보", path: "/company" },
 ];
 
 const LAUNCHER_ROUTES = [

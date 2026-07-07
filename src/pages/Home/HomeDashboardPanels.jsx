@@ -39,6 +39,7 @@ import {
   buildHomeTopKpiCounts,
   buildProductWorkflowPreview,
   buildRecentWorkList,
+  buildHomeRecentWorkItems,
   buildTodayActionItems,
   buildTodayWorkSummary,
   buildDocumentExpiryAlerts,
@@ -52,7 +53,7 @@ import {
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanWorkflowStepTrack from "../../foundation/components/TitanWorkflowStepTrack";
 import TitanProductTraceabilityPanel from "../../foundation/components/TitanProductTraceabilityPanel";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { getHomeWorkspaceRecords } from "../../utils/homeWorkspaceData";
 import { getHomeNotices, mapHomeNoticeToPanelItem } from "../../utils/homeNoticesSession";
 import { buildHomeProductProgressTableColumns } from "../../config/productWorkflowList";
 import HomeWorkflowProgressRate from "./HomeWorkflowProgressRate";
@@ -305,7 +306,7 @@ export function HomeTodaySummary({ records }) {
 /** 제품 진행 Row Expand 상세 — 진행률 · 공정 Step · 메타 정보 (REV.6) */
 export function HomeWorkflowRowDetail({ item }) {
   const traceRecord = useMemo(
-    () => getSessionProductionRecords().find((record) => record.id === item.managementId) ?? null,
+    () => getHomeWorkspaceRecords().find((record) => record.id === item.managementId) ?? null,
     [item.managementId]
   );
 
@@ -592,10 +593,7 @@ function resolveRecentTimelineChip(statusLabel = "") {
 }
 
 export function HomeRecentWorkPanel({ records }) {
-  const items = useMemo(
-    () => buildRecentWorkList(records).slice(0, HOME_RECENT_PREVIEW_LIMIT),
-    [records]
-  );
+  const items = useMemo(() => buildHomeRecentWorkItems(records, HOME_RECENT_PREVIEW_LIMIT), [records]);
 
   return (
     <Card className="home-panel home-panel--recent home-panel--left-clamp">

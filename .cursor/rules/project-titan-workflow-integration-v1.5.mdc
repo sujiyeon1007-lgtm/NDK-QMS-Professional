@@ -1,0 +1,33 @@
+---
+description: Project TITAN V1.5 — Workflow Integration (Foundation 재사용)
+alwaysApply: false
+---
+
+# Workflow Integration V1.5
+
+**Bridge:** `src/utils/titanWorkflowIntegration.js`  
+**Refresh:** `src/utils/titanWorkflowRefresh.js`
+
+## 공식 흐름
+
+```text
+UI Action → executeStartCharging / executeFinishCharging
+         → TitanWorkflowEngine → TitanDataEngine → Store
+         → Legacy productionRecords Bridge (점진적)
+         → notifyWorkflowDataRefresh → HOME · MES · Charging UI
+```
+
+## 개발 원칙
+
+- 새 Service / SessionStorage 직접 접근 ❌
+- TitanWorkflowEngine · TitanDataEngine · Store 재사용 ⭕
+- UI / CSS / Router / Launcher / Breadcrumb 변경 ❌
+- `equipmentWorkflowService` · `productionRecords` 즉시 삭제 ❌
+
+## Verify
+
+```bash
+npm run verify:workflow-integration
+npm run verify:workflow-engine
+npm run build
+```

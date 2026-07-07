@@ -26,7 +26,6 @@ import { getProcessChipVariant, getProductionProcessCodes } from "../../config/p
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   aggregateProductionByField,
   aggregateProductionByFieldWithOther,
@@ -37,12 +36,12 @@ import {
   filterByAnalysisDimension,
   getDimensionOptionsWithLabels,
   getDimensionShortLabel,
-  getProductionResultsRecords,
   isWithinAnalysisPeriod,
   mapProductionResultRow,
   matchesProductionResultsSearch,
   narrowRecordsForSelectedRow,
 } from "../../utils/productionAnalytics";
+import { getProductionResultScreenData } from "../../utils/productionWorkspaceData";
 import "../InOut/InboundManagement.css";
 import "./ProductionManagement.css";
 
@@ -60,10 +59,12 @@ export default function ProductionResultsManagement() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const equipmentList = useMemo(() => getMasterDataByCategory("equipment"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const searchRecords = useMemo(
-    () => getProductionResultsRecords(getSessionProductionRecords()),
-    [refreshKey]
-  );
+  const { baseRecords: workspaceRecords } = useMemo(() => {
+    void refreshKey;
+    return getProductionResultScreenData();
+  }, [refreshKey]);
+
+  const searchRecords = useMemo(() => workspaceRecords, [workspaceRecords]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
     equipment: equipmentList.map((item) => item.name ?? item.code),
@@ -75,9 +76,8 @@ export default function ProductionResultsManagement() {
     ] ?? "equipment");
 
   const completedRecords = useMemo(() => {
-    const records = getProductionResultsRecords(getSessionProductionRecords());
-    return records.filter((record) => matchesProductionResultsSearch(record, search));
-  }, [search, refreshKey]);
+    return workspaceRecords.filter((record) => matchesProductionResultsSearch(record, search));
+  }, [workspaceRecords, search, refreshKey]);
 
   const dimensionOptions = useMemo(
     () => getDimensionOptionsWithLabels(completedRecords, dimensionField),

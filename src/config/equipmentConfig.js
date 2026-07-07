@@ -120,7 +120,7 @@ const EQUIPMENT_FLEET_SPECS = [
   { process: "기타", prefix: "AUX", count: 3 },
 ];
 
-const EQUIPMENT_MAINTENANCE_IDS = new Set(["SOFT-01", "CAR-02", "AUX-02"]);
+export const EQUIPMENT_MAINTENANCE_IDS = new Set(["63", "64", "65"]);
 
 function buildEquipmentRawList() {
   /** @type {EquipmentRawRecord[]} */
@@ -147,46 +147,48 @@ function buildEquipmentRawList() {
 export const EQUIPMENT_RAW_LIST = buildEquipmentRawList();
 
 /**
- * @typedef {{ lotNo: string, startTime: string, expectedEndTime: string, progress: number, statusLabel: string }} EquipmentRunningSession
+ * @typedef {{ lotNo: string, startTime: string, expectedEndTime: string, progress: number, statusLabel: string, operator?: string }} EquipmentRunningSession
  */
 
-/** @type {Record<string, EquipmentRunningSession>} */
+/** @type {Record<string, EquipmentRunningSession>} — Master 설비 코드 (EquipmentStore SSOT) */
 export const EQUIPMENT_RUNNING_LOTS = {
-  "ION-01": {
+  "3S-1": {
     lotNo: "LOT240630",
     startTime: "08:32",
     expectedEndTime: "18:20",
     progress: 65,
     statusLabel: "진행중",
+    operator: "홍길동",
   },
-  "ION-03": {
+  "3S-3": {
     lotNo: "LOT240615",
     startTime: "07:10",
     expectedEndTime: "16:40",
     progress: 82,
     statusLabel: "진행중",
+    operator: "김철수",
   },
-  "GAS-02": {
+  "10S-02": {
     lotNo: "LOT240628",
     startTime: "09:05",
     expectedEndTime: "19:30",
     progress: 48,
     statusLabel: "진행중",
+    operator: "이영희",
   },
-  "HF-01": {
+  "61": {
     lotNo: "LOT240620",
     startTime: "10:15",
     expectedEndTime: "14:00",
     progress: 91,
     statusLabel: "진행중",
+    operator: "박민수",
   },
 };
 
-/** @typedef {{ id: string, lotNo: string, partName: string, qty: number, unit: string, statusLabel: string }} EquipmentChargeableLotRow */
-
-/** @type {Record<string, EquipmentChargeableLotRow[]>} */
+/** @type {Record<string, EquipmentChargeableLotRow[]>} — Master 설비 코드 */
 export const EQUIPMENT_CHARGEABLE_LOTS = {
-  "ION-02": [
+  "3S-2": [
     {
       id: "lot-240701",
       lotNo: "LOT240701",
@@ -204,7 +206,7 @@ export const EQUIPMENT_CHARGEABLE_LOTS = {
       statusLabel: "장입대기",
     },
   ],
-  "ION-04": [
+  "3S-4": [
     {
       id: "lot-240703",
       lotNo: "LOT240703",
@@ -214,7 +216,7 @@ export const EQUIPMENT_CHARGEABLE_LOTS = {
       statusLabel: "장입대기",
     },
   ],
-  "ION-05": [
+  "10S-01": [
     {
       id: "lot-240704",
       lotNo: "LOT240704",
@@ -224,7 +226,7 @@ export const EQUIPMENT_CHARGEABLE_LOTS = {
       statusLabel: "장입대기",
     },
   ],
-  "GAS-03": [
+  "10S-03": [
     {
       id: "lot-240705",
       lotNo: "LOT240705",
@@ -234,7 +236,7 @@ export const EQUIPMENT_CHARGEABLE_LOTS = {
       statusLabel: "장입대기",
     },
   ],
-  "CAR-01": [
+  "62": [
     {
       id: "lot-240706",
       lotNo: "LOT240706",
@@ -285,7 +287,7 @@ export const HOME_EQUIPMENT_WIDGET_COPY = {
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
   linkLabel: "장입관리",
-  linkTo: "/qr-workflow/charging",
+  linkTo: "/production/charging",
 };
 
 export const EQUIPMENT_STATUS_PAGE_COPY = {
@@ -295,25 +297,19 @@ export const EQUIPMENT_STATUS_PAGE_COPY = {
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
   chargingLinkLabel: "장입 작업",
-  chargingLinkTo: "/qr-workflow/charging",
-};
-
-export const PRODUCT_STATUS_PAGE_COPY = {
-  title: "제품 현황",
-  kicker: "Product Traceability",
-  description: "관리번호 · LOT · 현재공정 · 검사 · 성적서 · 출고를 제품 중심으로 추적합니다.",
+  chargingLinkTo: "/production/charging",
 };
 
 /** @deprecated EQUIPMENT_RAW_LIST 사용 — status는 계산값 */
 export const QR_CHARGING_EQUIPMENT_LIST = EQUIPMENT_RAW_LIST;
 
 /** @deprecated EQUIPMENT_CHARGEABLE_LOTS / equipmentWorkflowService 사용 */
-export const QR_CHARGING_AVAILABLE_LOTS = EQUIPMENT_CHARGEABLE_LOTS["ION-02"] ?? [];
+export const QR_CHARGING_AVAILABLE_LOTS = EQUIPMENT_CHARGEABLE_LOTS["3S-2"] ?? [];
 
 /** @deprecated EQUIPMENT_RUNNING_LOTS 사용 */
 export const QR_CHARGING_ACTIVE_SESSION = {
-  ...EQUIPMENT_RUNNING_LOTS["ION-01"],
+  ...EQUIPMENT_RUNNING_LOTS["3S-1"],
   partName: "CARRIER SHAFT",
-  equipmentId: "ION-01",
-  equipmentName: "이온질화 1호기",
+  equipmentId: "3S-1",
+  equipmentName: "3S-1",
 };

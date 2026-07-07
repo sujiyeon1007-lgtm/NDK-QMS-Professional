@@ -8,7 +8,7 @@ import {
 import HomeAnimatedProgressBar from "../Home/HomeAnimatedProgressBar";
 import "./EquipmentMonitorDetailPanel.css";
 
-export default function EquipmentMonitorDetailPanel({ detail }) {
+export default function EquipmentMonitorDetailPanel({ detail, showChargingLink = true }) {
   if (!detail) {
     return (
       <aside className="equipment-monitor-detail equipment-monitor-detail--empty">
@@ -18,7 +18,8 @@ export default function EquipmentMonitorDetailPanel({ detail }) {
   }
 
   const statusMeta = EQUIPMENT_RUN_STATUS_META[detail.status] ?? EQUIPMENT_RUN_STATUS_META.idle;
-  const progress = detail.progress ?? 0;
+  const isRunning = detail.status === "running";
+  const utilization = isRunning ? detail.utilization ?? detail.progress ?? 0 : 0;
 
   return (
     <aside className="equipment-monitor-detail" aria-label={EQUIPMENT_STATUS_PAGE_COPY.detailTitle}>
@@ -28,6 +29,14 @@ export default function EquipmentMonitorDetailPanel({ detail }) {
           {statusMeta.emoji} {statusMeta.label}
         </StatusChip>
       </div>
+
+      {detail.alarm ? (
+        <div
+          className={`control-room-equipment-card__alarm control-room-equipment-card__alarm--${detail.alarm.level} equipment-monitor-detail__alarm`}
+        >
+          설비 알람 · {detail.alarm.label}
+        </div>
+      ) : null}
 
       <dl className="equipment-monitor-detail__grid">
         <div>
@@ -41,8 +50,16 @@ export default function EquipmentMonitorDetailPanel({ detail }) {
           </dd>
         </div>
         <div>
+          <dt>작업자</dt>
+          <dd>{detail.operator ?? "—"}</dd>
+        </div>
+        <div>
           <dt>LOT</dt>
           <dd>{detail.currentLotNo ?? "—"}</dd>
+        </div>
+        <div>
+          <dt>현재 제품</dt>
+          <dd>{detail.currentProductName ?? "—"}</dd>
         </div>
         <div>
           <dt>시작시간</dt>
@@ -53,9 +70,9 @@ export default function EquipmentMonitorDetailPanel({ detail }) {
           <dd>{detail.expectedEndTime ?? "—"}</dd>
         </div>
         <div className="equipment-monitor-detail__progress">
-          <dt>진행률</dt>
+          <dt>가동률</dt>
           <dd>
-            <HomeAnimatedProgressBar percent={progress} processKey="production" />
+            <HomeAnimatedProgressBar percent={utilization} processKey="production" />
           </dd>
         </div>
       </dl>
@@ -74,21 +91,21 @@ export default function EquipmentMonitorDetailPanel({ detail }) {
         </div>
       ) : null}
 
-      <div className="equipment-monitor-detail__footer">
-        <Link to={EQUIPMENT_STATUS_PAGE_COPY.chargingLinkTo} className="equipment-monitor-detail__link">
-          {EQUIPMENT_STATUS_PAGE_COPY.chargingLinkLabel}
-        </Link>
-      </div>
+      {showChargingLink ? (
+        <div className="equipment-monitor-detail__footer">
+          <Link to={EQUIPMENT_STATUS_PAGE_COPY.chargingLinkTo} className="equipment-monitor-detail__link">
+            {EQUIPMENT_STATUS_PAGE_COPY.chargingLinkLabel}
+          </Link>
+        </div>
+      ) : null}
 
       <div className="equipment-monitor-detail__future-slots" aria-hidden="true" hidden>
         <dl>
-          <div data-future-field="operator" />
           <div data-future-field="temperature" />
           <div data-future-field="pressure" />
           <div data-future-field="gas" />
           <div data-future-field="voltage" />
           <div data-future-field="ampere" />
-          <div data-future-field="alarm" />
           <div data-future-field="note" />
         </dl>
       </div>

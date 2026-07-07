@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Megaphone } from "lucide-react";
 
 import Card from "../../foundation/components/Card";
+import { TitanStatusBadge } from "../../components/common/badge";
 import { HOME_WORK_LAUNCHER_ITEMS } from "../../config/homeWorkLauncher";
 import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
 import { buildHomeWorkLauncherMetrics } from "../../utils/homeWorkLauncherData";
@@ -47,7 +48,7 @@ export default function HomeWorkLauncherPanel({ records }) {
               <span className={`home-work-launcher-card__icon home-work-launcher-card__icon--${item.tone}`}>
                 <Icon size={22} strokeWidth={2} aria-hidden="true" />
               </span>
-              <span className="home-work-launcher-card__badge">{item.badge}</span>
+              <TitanStatusBadge text={item.badge} color={item.tone} />
               <strong className="home-work-launcher-card__title">{item.label}</strong>
 
               <ul className="home-work-launcher-card__metrics">

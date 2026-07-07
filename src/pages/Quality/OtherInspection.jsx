@@ -50,15 +50,13 @@ import { getMasterDataByCategory } from "../../utils/masterData";
 
 import {
 
-  getOtherInspections,
-
-  mapOtherInspectionToListRow,
-
   matchesOtherInspectionSearch,
 
   softDeleteOtherInspection,
 
 } from "../../utils/otherInspectionSession";
+
+import { getInspectionOtherScreenData } from "../../utils/qualityWorkspaceData";
 
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 
@@ -104,17 +102,11 @@ export default function OtherInspection() {
 
   const [detailPopupRow, setDetailPopupRow] = useState(null);
 
-
+  const screenData = useMemo(() => getInspectionOtherScreenData(), [refreshKey]);
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
 
-  const searchRecords = useMemo(
-
-    () => getOtherInspections().map(mapOtherInspectionToListRow),
-
-    [refreshKey]
-
-  );
+  const searchRecords = useMemo(() => screenData.baseRecords, [screenData.baseRecords]);
 
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
 
@@ -128,15 +120,13 @@ export default function OtherInspection() {
 
   const rows = useMemo(() => {
 
-    return getOtherInspections()
-
-      .map(mapOtherInspectionToListRow)
+    return screenData.baseRecords
 
       .filter((row) => matchesOtherInspectionSearch(row, search))
 
       .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
 
-  }, [search, refreshKey]);
+  }, [search, screenData.baseRecords]);
 
 
 

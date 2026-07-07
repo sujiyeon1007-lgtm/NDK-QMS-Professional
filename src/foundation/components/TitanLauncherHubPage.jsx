@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { TitanLauncherCategoryBadge } from "../../components/common/badge";
 import "../../foundation/styles/titan-hub-page.css";
 
 /**
@@ -25,18 +26,22 @@ export default function TitanLauncherHubPage({
             ? item.metricKeys.map((key) => metrics[key]).filter(Boolean)
             : [];
           const desc = metricLines.length > 0 ? metricLines.join(" · ") : item.description;
+          const categoryBadge = item.badge ?? item.categoryBadge ?? "";
           const cardClass = [
             "titan-hub-card",
             item.emphasis ? "titan-hub-card--emphasis" : "",
-            item.badge ? "titan-hub-card--badged" : "",
+            categoryBadge ? "titan-hub-card--badged" : "",
           ]
             .filter(Boolean)
             .join(" ");
 
           return (
             <Link key={item.id} to={item.path} className={cardClass}>
-              {item.badge ? (
-                <span className="titan-hub-card__badge">{item.badge}</span>
+              {categoryBadge ? (
+                <TitanLauncherCategoryBadge
+                  text={categoryBadge}
+                  color={item.badgeColor ?? item.tone ?? "blue"}
+                />
               ) : null}
               <Icon size={22} aria-hidden="true" />
               <span className="titan-hub-card__label">{item.label}</span>

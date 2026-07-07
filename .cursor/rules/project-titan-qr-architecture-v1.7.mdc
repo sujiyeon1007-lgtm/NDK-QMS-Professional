@@ -1,0 +1,137 @@
+---
+description: Project TITAN V1.7 — QR Architecture & Traceability (PM 공식 · Architecture Only)
+---
+
+# Project TITAN V1.7 — QR Architecture & Traceability (PM 승인)
+
+**Purpose:** QR을 목적별 3분류로 공식 정의 · **LOT 기준 Traceability** · Lifecycle 연결
+
+**SSoT (code):** `src/config/titanQrArchitectureV17.js`
+
+**Status:** 🟢 **Architecture 확정** (2026-07-07 + PM 추가 승인 보완) · 구현은 Roadmap 순서 · **별도 QR 메뉴 추가 ❌**
+
+Companion: `.cursor/rules/project-titan-vision-roadmap-v1.mdc` · `src/config/smartAccessArchitecture.js`
+
+---
+
+## PM 공식 철학
+
+> Project TITAN의 모든 QR은 **제품의 흐름(Traceability)을 연결하는 수단**
+
+> Traceability QR = **문서를 식별하는 QR ❌** · **제품(LOT) Lifecycle 추적 QR ✅**
+
+### PM 최종 원칙 (추가 승인)
+
+- **하나의 LOT = 하나의 Traceability QR**
+- 동일 LOT의 모든 공식 출력물은 **동일 Traceability QR** 사용
+- QR Scan → **문서 열기 ❌** · **LOT Lifecycle 화면 조회 ✅**
+- Document No. → QR payload ❌ · **Lifecycle 화면에서 관련 문서번호 표시**
+- 문서번호 변경 시 **QR 변경 ❌**
+- QR 생성보다 **QR 재사용** 우선
+
+---
+
+## QR 3분류
+
+| 분류 | 역할 | 기준 | 생성 | Scan 결과 |
+|---|---|---|---|---|
+| **① Master QR** | 설비 식별 · 생산 시작 | 설비 | 기준정보 → 설비 상세 | Workflow (장입) |
+| **② Operation QR** | LOT 내부 업무 | LOT | 입고등록 → 자동 생성 | 내부 업무 처리 |
+| **③ Traceability QR** | Lifecycle 추적 | **LOT** (문서 ❌) | LOT당 1회 · 출력 시 **재사용** | **LOT Lifecycle 화면** |
+
+### ③ Traceability QR — LOT 기준 (PM 추가 승인)
+
+```text
+LOT 1개 → Traceability QR 1개
+```
+
+동일 LOT (예: `LOT-202607001`)의 아래 문서는 **모두 동일 QR**:
+
+입고리스트 · 생산일보 · 검사일지 · 성적서 · 거래명세서 · 출고리스트
+
+**문서마다 QR 새로 생성 ❌**
+
+#### Scan Workflow
+
+```text
+Traceability QR Scan
+  → LOT Lifecycle
+  → 관리번호 · 제품 · 고객 · 현재공정 · 설비
+  → 생산일보 · 검사일지 · 성적서 · 출고 · Timeline
+```
+
+#### Document No. 정책
+
+- **QR 안에 Document No. 저장 ❌**
+- Lifecycle 화면에서 관련 문서번호 표시 (예: `NDK-IN-…` · `NDK-PR-…` · `NDK-QA-…` · `NDK-COA-…` · `NDK-OUT-…`)
+- 출력물 레이아웃: **Document No. (문서별) + Traceability QR (LOT별 · 동일)**
+
+---
+
+## QR 조회 권한 (Lifecycle 화면)
+
+| 역할 | 조회 가능 | 조회 불가 |
+|---|---|---|
+| **관리자** | LOT · 제품 · 관리번호 · 설비 · Timeline · 생산일보 · 검사 · 성적서 · 출고 · **내부 메모** | — |
+| **사내 사용자** | LOT · 제품 · 현재공정 · 설비 · 생산/검사/출고 상태 · 성적서 · Timeline | (업무 필요 범위) |
+| **고객** | 제품 · LOT · 성적서 · 출고 · 진행상태 | 생산일보 · 내부/품질 메모 · 작업자 · 설비 상세 |
+
+Config: `TITAN_QR_LOOKUP_PERMISSIONS` in `titanQrArchitectureV17.js`
+
+---
+
+## 메뉴별 QR 역할
+
+| 메뉴 | QR 역할 |
+|---|---|
+| **기준정보관리** | Master QR 생성 · 설비 Master |
+| **입출고관리** | Operation LOT QR · 라벨 · 출력관리(QR 포함) |
+| **생산관리** | Scan only · Workflow (생성 ❌) |
+| **품질관리** | Traceability Lifecycle 조회 · 성적서 출력 QR 포함 (생성 ❌) |
+
+---
+
+## 구현 Roadmap (순서 고정 · 변경 없음)
+
+| # | Scope | Status |
+|---|--------|--------|
+| 1 | 설비 QR 생성 (기준정보 설비 상세) | ⏳ Planned |
+| 2 | LOT QR 자동 생성 (입고등록) | ⏳ Planned |
+| 3 | 출력물 Traceability QR (Document No. + **동일 LOT QR 재사용**) | ⏳ Planned |
+| 4 | QR 조회 — **LOT Lifecycle 화면** (역할별 권한) | ⏳ Planned |
+| 5 | LOT Traceability 화면 연동 | 🔄 Partial (V1.7 Foundation) |
+
+**이번 Sprint: Architecture 문서만 · UI/Router/Launcher/기능 구현 ❌**
+
+**V1.7 Foundation (Scan/Model only):**
+
+- Master QR Scan → 장입 Workflow
+- `lotTraceabilityModel.js` — Roadmap 4·5 Lifecycle 데이터 기반
+
+---
+
+## Cursor Do
+
+- Traceability QR 설계 시 **LOT = QR 1:1** · 문서별 QR 생성 금지
+- Print Engine: Document No. + **동일 LOT Traceability QR** 부착 (Roadmap 3)
+- Lifecycle 화면: Document No. 목록 표시 · **QR payload에 문서번호 저장 ❌**
+- 조회 API/UI: `TITAN_QR_LOOKUP_PERMISSIONS` 역할별 필드 마스킹
+
+## Cursor Do Not
+
+- Traceability QR를 **문서 Deep Link**로 설계
+- 문서 출력마다 **새 Traceability QR 생성**
+- Document No.를 **QR payload에 embed**
+- QR 생성 전용 Sidebar/Router/Launcher 메뉴 추가
+- Roadmap 순서 무시한 일괄 구현
+- Architecture Rule 없이 ad-hoc QR Scheme 추가
+
+---
+
+## Legacy 매핑
+
+| Legacy | V1.7 분류 |
+|--------|-----------|
+| 설비 QR (`NDK://EQ/`) | Master QR |
+| Print Engine per-doc QR (V1.0) | → LOT 단일 Traceability QR로 Roadmap 3 통합 |
+| `lotTraceabilityModel.js` | Lifecycle 조회 데이터 Foundation (Roadmap 4·5) |

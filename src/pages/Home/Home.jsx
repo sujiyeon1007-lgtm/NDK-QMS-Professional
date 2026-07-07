@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import PageTopBar from "../../foundation/layout/PageTopBar";
 import { HOME_PAGE_META } from "../../config/homeDashboard";
 import { TITAN_MODULE_REGISTRY } from "../../config/titanV12ModuleExpansion";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { setTitanErrorContext, clearTitanErrorContext } from "../../utils/titanErrorContext";
+import useHomeWorkspace from "./useHomeWorkspace";
 import {
   HomeNoticePanel,
   HomeRecentWorkPanel,
@@ -45,17 +45,12 @@ function HomeAccessNotice() {
 }
 
 export default function Home() {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const records = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const { records, refreshKey, refresh: handleRefresh } = useHomeWorkspace();
 
   useEffect(() => {
     setTitanErrorContext({ screen: "HOME", component: "Home", path: "/home" });
     return () => clearTitanErrorContext(["screen", "component"]);
   }, []);
-
-  const handleRefresh = () => {
-    setRefreshKey((k) => k + 1);
-  };
 
   return (
     <div className="home-page home-page--hub-v15">

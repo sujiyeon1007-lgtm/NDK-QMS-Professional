@@ -104,6 +104,41 @@
   text-decoration: none;
 }
 
+.equipment-monitor-detail--inline {
+  margin-bottom: 12px;
+}
+
+.equipment-monitor-detail__timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.equipment-monitor-detail__timeline li {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.equipment-monitor-detail__timeline time {
+  font-weight: 700;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.equipment-monitor-detail__timeline strong {
+  grid-column: 2;
+  font-weight: 700;
+}
+
+.equipment-monitor-detail__timeline span {
+  grid-column: 2;
+  color: var(--titan-text-secondary, #64748b);
+}
+
 .equipment-monitor-detail__future-slots {
   display: none;
 }

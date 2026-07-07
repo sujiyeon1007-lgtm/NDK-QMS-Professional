@@ -8,6 +8,7 @@
  * @see src/config/titanV12OfficialArchitecture.js — V1.2 Consolidated Config
  * @see docs/TITAN_OFFICIAL_ARCHITECTURE.md
  * @see src/config/smartAccessArchitecture.js — Route Registry · Handler mapping
+ * @see src/config/titanQrArchitectureV17.js — V1.7 QR 3분류 (Master · Operation · Traceability)
  * @see src/config/titanV11Workflow.js — Paper · Smart workflow chains
  */
 

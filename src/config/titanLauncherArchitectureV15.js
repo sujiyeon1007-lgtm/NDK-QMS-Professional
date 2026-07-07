@@ -26,7 +26,6 @@ export const LAUNCHER_HUB_MENU_IDS = [
   "inoutManagement",
   "productionManagement",
   "qualityManagement",
-  "qrCharging",
   "masterData",
 ];
 
@@ -59,10 +58,10 @@ export const INOUT_MANAGEMENT_WORKFLOW = [
 
 export const PRODUCTION_MANAGEMENT_WORKFLOW = [
   "생산계획",
-  "설비 장입관리",
+  "설비장입",
   "생산일보",
   "생산실적관리",
-  "생산 업무일지",
+  "출력관리",
 ];
 
 export const QUALITY_MANAGEMENT_WORKFLOW = [
@@ -73,7 +72,15 @@ export const QUALITY_MANAGEMENT_WORKFLOW = [
   "품질 업무일지",
 ];
 
-export const QR_CHARGING_HUB_WORKFLOW = ["설비 현황", "QR 장입", "진행현황", "작업이력"];
+export const PRODUCTION_CHARGING_HUB_WORKFLOW = [
+  "전체 설비 현황",
+  "이온질화",
+  "가스질화",
+  "가스연질화",
+];
+
+/** @deprecated PRODUCTION_CHARGING_HUB_WORKFLOW — 생산관리 내부 Hub */
+export const QR_CHARGING_HUB_WORKFLOW = PRODUCTION_CHARGING_HUB_WORKFLOW;
 
 export const MASTER_DATA_WORKFLOW = [
   "거래처",

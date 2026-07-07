@@ -95,27 +95,9 @@
   color: #0891b2;
 }
 
-.home-work-launcher-card__badge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  min-height: 22px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 22px;
-  letter-spacing: 0.02em;
-}
-
 .home-work-launcher-card--blue {
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
   border-color: #dbeafe;
-}
-
-.home-work-launcher-card--blue .home-work-launcher-card__badge {
-  background: #dbeafe;
-  color: #1d4ed8;
 }
 
 .home-work-launcher-card--orange {
@@ -123,19 +105,9 @@
   border-color: #fed7aa;
 }
 
-.home-work-launcher-card--orange .home-work-launcher-card__badge {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
 .home-work-launcher-card--green {
   background: linear-gradient(180deg, #f7fef9 0%, #ecfdf5 100%);
   border-color: #bbf7d0;
-}
-
-.home-work-launcher-card--green .home-work-launcher-card__badge {
-  background: #dcfce7;
-  color: #15803d;
 }
 
 .home-work-launcher-card--purple {
@@ -143,29 +115,14 @@
   border-color: #ddd6fe;
 }
 
-.home-work-launcher-card--purple .home-work-launcher-card__badge {
-  background: #ede9fe;
-  color: #6d28d9;
-}
-
 .home-work-launcher-card--yellow {
   background: linear-gradient(180deg, #fefef8 0%, #fefce8 100%);
   border-color: #fde68a;
 }
 
-.home-work-launcher-card--yellow .home-work-launcher-card__badge {
-  background: #fef9c3;
-  color: #a16207;
-}
-
 .home-work-launcher-card--cyan {
   background: linear-gradient(180deg, #f8feff 0%, #ecfeff 100%);
   border-color: #a5f3fc;
-}
-
-.home-work-launcher-card--cyan .home-work-launcher-card__badge {
-  background: #cffafe;
-  color: #0e7490;
 }
 
 .home-work-launcher-card--blue:hover {

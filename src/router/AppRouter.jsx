@@ -19,6 +19,7 @@ import ProductionLayout from "../pages/Production/ProductionLayout";
 
 import ProductionManagementHubPage from "../pages/Production/ProductionManagementHubPage";
 import DailyProductionReport from "../pages/Production/DailyProductionReport";
+import ProductionPlanWorkspace from "../pages/Production/ProductionPlanWorkspace";
 
 import ProductionResultsManagement from "../pages/Production/ProductionResultsManagement";
 
@@ -71,6 +72,8 @@ import InventoryStatusPage from "../pages/Inventory/InventoryStatusPage";
 
 import WorkJournal from "../pages/WorkJournal/WorkJournal";
 
+import PrintManagementWorkspace from "../pages/InOut/PrintManagementWorkspace";
+
 import OperationModeGuard from "./OperationModeGuard";
 import ModuleGuard from "./ModuleGuard";
 import LoginGuard from "./LoginGuard";
@@ -86,11 +89,12 @@ import AccountingFeaturePage from "../pages/Accounting/AccountingFeaturePage";
 import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
 import QrInoutScreen from "../pages/QrManagement/QrInoutScreen";
 import QrEquipmentScreen from "../pages/QrManagement/QrEquipmentScreen";
-import QRManagement from "../pages/QrManagement";
-import QrChargingLayout from "../pages/QrManagement/QrChargingLayout";
-import QrChargingHubPage from "../pages/QrManagement/QrChargingHubPage";
+import ProductionChargingLayout from "../pages/Production/charging/ProductionChargingLayout";
+import ProductionChargingHubPage from "../pages/Production/charging/ProductionChargingHubPage";
+import ProductionChargingOverviewPage from "../pages/Production/charging/ProductionChargingOverviewPage";
+import ProductionChargingProcessPage from "../pages/Production/charging/ProductionChargingProcessPage";
+import ProductionChargingEquipmentPage from "../pages/Production/charging/ProductionChargingEquipmentPage";
 import EquipmentStatusPage from "../pages/EquipmentStatus/EquipmentStatusPage";
-import ProductStatusPage from "../pages/ProductStatus/ProductStatusPage";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
 
@@ -146,6 +150,8 @@ function AppRoutes() {
 
               <Route path="shipment" element={<OutboundManagement />} />
 
+              <Route path="print" element={<PrintManagementWorkspace />} />
+
               <Route path="work-journal" element={<WorkJournal />} />
 
             </Route>
@@ -174,9 +180,20 @@ function AppRoutes() {
 
               <Route path="defect-history" element={<Navigate to="/quality/defect-history" replace />} />
 
+              <Route path="plan" element={<ProductionPlanWorkspace />} />
+
               <Route path="daily-report" element={<DailyProductionReport />} />
 
+              <Route path="print" element={<PrintManagementWorkspace />} />
+
               <Route path="work-journal" element={<WorkJournal />} />
+
+              <Route path="charging" element={<ProductionChargingLayout />}>
+                <Route index element={<ProductionChargingHubPage />} />
+                <Route path="overview" element={<ProductionChargingOverviewPage />} />
+                <Route path="process/:processSlug" element={<ProductionChargingProcessPage />} />
+                <Route path="equipment/:equipmentId" element={<ProductionChargingEquipmentPage />} />
+              </Route>
 
             </Route>
 
@@ -257,12 +274,15 @@ function AppRoutes() {
 
             <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
 
-            <Route path="/qr-workflow" element={<QrChargingLayout />}>
-              <Route index element={<QrChargingHubPage />} />
-              <Route path="charging" element={<QRManagement />} />
-            </Route>
+            <Route path="/qr-workflow" element={<Navigate to="/production/charging" replace />} />
+            <Route path="/qr-workflow/charging" element={<Navigate to="/production/charging" replace />} />
             <Route path="/equipment-status" element={<EquipmentStatusPage />} />
-            <Route path="/product-status" element={<ProductStatusPage />} />
+            <Route path="/company" element={<Navigate to="/environment/company" replace />} />
+            {/* Sprint 3E — 제품현황 독립 메뉴 제거 · Control Room Product View로 흡수 */}
+            <Route
+              path="/product-status"
+              element={<Navigate to="/equipment-status?view=product" replace />}
+            />
 
             <Route path="/qr-management" element={<QrManagementLayout />}>
               <Route index element={<Navigate to="/qr-management/inout" replace />} />

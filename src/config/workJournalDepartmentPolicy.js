@@ -24,10 +24,10 @@ export const WORK_JOURNAL_LEGACY_STORAGE_KEY = "project-titan-work-journal-v1";
 export const WORK_JOURNAL_DEPARTMENTS = {
   operations: {
     id: "operations",
-    label: "운영 업무일지",
+    label: "영업업무일지",
     launcherHubId: "inoutManagement",
     hubPath: "/inout",
-    hubLabel: "입출고관리",
+    hubLabel: "운영관리",
     route: "/inout/work-journal",
     status: "active",
     manualCategories: [

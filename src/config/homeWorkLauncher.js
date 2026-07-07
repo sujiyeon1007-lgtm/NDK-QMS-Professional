@@ -17,7 +17,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "입고관리",
     badge: "입고",
     tone: "blue",
-    path: "/inout/incoming",
+    path: "/inout",
     icon: Package,
     moduleId: "inbound",
     metrics: [
@@ -27,7 +27,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
   },
   {
     id: "equipmentStatus",
-    label: "설비 현황",
+    label: "설비현황",
     badge: "관제",
     tone: "orange",
     path: "/equipment-status",
@@ -44,7 +44,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "제품 현황",
     badge: "추적",
     tone: "green",
-    path: "/product-status",
+    path: "/equipment-status?view=product",
     icon: LayoutGrid,
     moduleId: null,
     metrics: [
@@ -55,10 +55,10 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
   },
   {
     id: "qrCharging",
-    label: "설비 장입관리",
+    label: "설비장입",
     badge: "작업",
     tone: "purple",
-    path: "/qr-workflow",
+    path: "/production",
     icon: Factory,
     moduleId: "qrSystem",
     metrics: [
@@ -71,7 +71,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "출고관리",
     badge: "출고",
     tone: "yellow",
-    path: "/inout/shipment",
+    path: "/inout",
     icon: Truck,
     moduleId: "outbound",
     metrics: [
@@ -84,7 +84,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "통계관리",
     badge: "통계",
     tone: "cyan",
-    path: "/statistics/production",
+    path: "/statistics",
     icon: BarChart3,
     moduleId: "statistics",
     metrics: [

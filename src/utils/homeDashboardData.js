@@ -26,6 +26,8 @@ import {
 import { mapStandardProductListRow } from "./processFlow";
 import { getExpiringDocuments } from "./companyDocumentManagement";
 import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { getTitanDataEngine } from "../foundation/data";
+import { getHomeWorkspaceRecords } from "./homeWorkspaceData";
 
 const REGISTRAR_FALLBACK = "관리자";
 
@@ -87,7 +89,7 @@ export function countHomeStatusCards(records = []) {
   };
 }
 
-export function buildHomeStatusGroups(records = getSessionProductionRecords()) {
+export function buildHomeStatusGroups(records = getHomeWorkspaceRecords()) {
   const counts = countHomeStatusCards(records);
 
   return HOME_STATUS_GROUPS.map((group) => ({
@@ -137,7 +139,7 @@ function formatRegisteredAt(record, index) {
   return `${date} ${time}`;
 }
 
-export function buildRecentWorkList(records = getSessionProductionRecords(), options = {}) {
+export function buildRecentWorkList(records = getHomeWorkspaceRecords(), options = {}) {
   const { requireIncoming = true } = options;
   return [...records]
     .filter((r) => (requireIncoming ? isIncomingRegistered(r) : true))
@@ -153,7 +155,28 @@ export function buildRecentWorkList(records = getSessionProductionRecords(), opt
     });
 }
 
-export function getHomeDashboardData(records = getSessionProductionRecords()) {
+/** HOME 최근 작업 — TimelineStore 우선 · Fallback productionRecords */
+export function buildHomeRecentWorkItems(records = getHomeWorkspaceRecords(), limit = 10) {
+  try {
+    const timelineRows = getTitanDataEngine().timeline.list().slice(0, limit);
+    if (timelineRows.length > 0) {
+      return timelineRows.map((row, index) => ({
+        managementId: row.id ?? `timeline-${index}`,
+        partName: row.title ?? "Workflow",
+        lotNo: String(row.target ?? "").split("·").pop()?.trim() ?? "",
+        statusLabel: row.detail ?? row.title ?? "",
+        registeredAt: row.time ? `2026-07-07 ${row.time}` : formatRegisteredAt({}, index),
+        registrar: row.user ?? REGISTRAR_FALLBACK,
+      }));
+    }
+  } catch {
+    // fallback below
+  }
+
+  return buildRecentWorkList(records).slice(0, limit);
+}
+
+export function getHomeDashboardData(records = getHomeWorkspaceRecords()) {
   return {
     statusGroups: buildHomeStatusGroups(records),
     recentWorkList: buildRecentWorkList(records),
@@ -197,7 +220,7 @@ const HOME_KPI_CHIP_IDS = [
  * @param {object[]} records
  * @returns {{ baseRecords: object[], counts: Record<string, number> }}
  */
-export function getHomeScreenData(records = getSessionProductionRecords()) {
+export function getHomeScreenData(records = getHomeWorkspaceRecords()) {
   const baseRecords = records.filter(isActiveWorkflowRecordForHome);
 
   const countKpiBucket = (kpiId) =>
@@ -209,7 +232,7 @@ export function getHomeScreenData(records = getSessionProductionRecords()) {
   };
 }
 
-export function buildTodayWorkSummary(records = getSessionProductionRecords()) {
+export function buildTodayWorkSummary(records = getHomeWorkspaceRecords()) {
   const { counts } = getHomeScreenData(records);
 
   return [
@@ -262,7 +285,7 @@ const TODAY_ACTION_ROUTES = {
 };
 
 /** HOME — Workflow 기반 오늘 해야 할 일 (시스템 추천 액션) */
-export function buildTodayActionItems(records = getSessionProductionRecords()) {
+export function buildTodayActionItems(records = getHomeWorkspaceRecords()) {
   return buildTodayWorkSummary(records)
     .filter((item) => item.value > 0)
     .map((item) => {
@@ -279,7 +302,7 @@ export function buildTodayActionItems(records = getSessionProductionRecords()) {
     });
 }
 
-export function buildHomeTopKpiCounts(records = getSessionProductionRecords()) {
+export function buildHomeTopKpiCounts(records = getHomeWorkspaceRecords()) {
   const today = new Date().toISOString().slice(0, 10);
   const { counts } = getHomeScreenData(records);
 
@@ -307,7 +330,7 @@ export function buildHomeTopKpiCounts(records = getSessionProductionRecords()) {
   };
 }
 
-export function buildProductionPeriodStats(records = getSessionProductionRecords(), period = "today") {
+export function buildProductionPeriodStats(records = getHomeWorkspaceRecords(), period = "today") {
   const scoped = filterRecordsByPeriod(records, period);
   const counts = countHomeStatusCards(scoped);
   return [
@@ -316,7 +339,7 @@ export function buildProductionPeriodStats(records = getSessionProductionRecords
   ];
 }
 
-export function buildHomeStatusSummaryStats(records = getSessionProductionRecords(), tabId = "production") {
+export function buildHomeStatusSummaryStats(records = getHomeWorkspaceRecords(), tabId = "production") {
   const counts = countHomeStatusCards(records);
 
   if (tabId === "production") {
@@ -547,7 +570,7 @@ export function getDueDateDisplay(record) {
   return { label: text, tone: "normal" };
 }
 
-export function buildProductWorkflowPreview(records = getSessionProductionRecords(), options = {}) {
+export function buildProductWorkflowPreview(records = getHomeWorkspaceRecords(), options = {}) {
   const { limit = 15, search = null } = options;
   const { baseRecords } = getHomeScreenData(records);
 
@@ -589,7 +612,7 @@ export function buildProductWorkflowPreview(records = getSessionProductionRecord
   return filtered.slice(0, limit);
 }
 
-export function buildRecentListByTab(records = getSessionProductionRecords(), tab = "incoming") {
+export function buildRecentListByTab(records = getHomeWorkspaceRecords(), tab = "incoming") {
   let scoped = [...records];
 
   if (tab === "incoming") {

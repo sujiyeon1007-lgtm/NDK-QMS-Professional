@@ -1,16 +1,51 @@
 import { getEquipmentList, getEquipmentSummary } from "./equipmentWorkflowService";
+import { getTitanDataEngine } from "../foundation/data";
 import { buildHomeTopKpiCounts, getHomeScreenData } from "./homeDashboardData";
-import { getSessionProductionRecords } from "./productionRecords";
+import { getHomeWorkspaceRecords } from "./homeWorkspaceData";
+
+function readDashboardKpi() {
+  try {
+    return getTitanDataEngine().dashboard.getKpi();
+  } catch {
+    return null;
+  }
+}
+
+function readLotSummary() {
+  try {
+    const lots = getTitanDataEngine().lot.list();
+    return {
+      inProgress: lots.filter((row) => {
+        const status = String(row.status ?? "");
+        return status.includes("열처리") || status.includes("운전") || status.includes("생산");
+      }).length,
+      inspectionWait: lots.filter((row) => String(row.status ?? "").includes("검사")).length,
+      chargeReady: lots.filter((row) => String(row.status ?? "").includes("장입")).length,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
- * HOME 업무 바로가기 카드 — 현재 상태 요약 (KPI · List와 동일 records)
+ * HOME 업무 바로가기 카드 — DashboardStore · LotStore · EquipmentStore 집계
  * @param {object[]} [records]
  */
-export function buildHomeWorkLauncherMetrics(records = getSessionProductionRecords()) {
-  const equipmentSummary = getEquipmentSummary();
-  const chargeableLotCount = getEquipmentList()
-    .filter((item) => item.status === "ready")
-    .reduce((sum, item) => sum + item.chargeableLots.length, 0);
+export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()) {
+  const dashboardKpi = readDashboardKpi();
+  const lotSummary = readLotSummary();
+  const equipmentSummary = dashboardKpi
+    ? {
+        running: dashboardKpi.equipmentRunning ?? 0,
+        ready: dashboardKpi.equipmentReady ?? 0,
+        maintenance: dashboardKpi.equipmentMaintenance ?? 0,
+      }
+    : getEquipmentSummary();
+
+  const chargeableLotCount = lotSummary?.chargeReady ??
+    getEquipmentList()
+      .filter((item) => item.status === "ready")
+      .reduce((sum, item) => sum + item.chargeableLots.length, 0);
 
   const { counts, baseRecords } = getHomeScreenData(records);
   const topKpi = buildHomeTopKpiCounts(records);
@@ -26,8 +61,8 @@ export function buildHomeWorkLauncherMetrics(records = getSessionProductionRecor
       maintenance: equipmentSummary.maintenance,
     },
     productStatus: {
-      inProgress: baseRecords.length,
-      inspectionWait: counts.INSPECTION_WAIT ?? 0,
+      inProgress: lotSummary?.inProgress ?? baseRecords.length,
+      inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
       shipWait: counts.SHIP_WAIT ?? 0,
     },
     qrCharging: {
@@ -39,8 +74,8 @@ export function buildHomeWorkLauncherMetrics(records = getSessionProductionRecor
       shipWait: counts.SHIP_WAIT ?? 0,
     },
     statistics: {
-      heatRunning: counts.HT_RUNNING ?? 0,
-      inspectionWait: counts.INSPECTION_WAIT ?? 0,
+      heatRunning: dashboardKpi?.equipmentRunning ?? counts.HT_RUNNING ?? 0,
+      inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
     },
   };
 }

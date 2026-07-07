@@ -70,20 +70,6 @@
   position: relative;
 }
 
-.titan-hub-card__badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #1d4ed8;
-  background: #dbeafe;
-  border: 1px solid #bfdbfe;
-  line-height: 1.4;
-}
-
 .titan-hub-card__label {
   font-size: 16px;
   font-weight: 900;

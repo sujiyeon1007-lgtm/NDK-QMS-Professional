@@ -25,6 +25,7 @@ import {
   Factory,
   Monitor,
   LayoutGrid,
+  Building2,
   ArrowLeftRight,
 } from "lucide-react";
 
@@ -72,7 +73,7 @@ export const TITAN_MENU_CATALOG = {
   },
   inoutManagement: {
     id: "inoutManagement",
-    label: "입출고관리",
+    label: "운영관리",
     path: "/inout",
     icon: ArrowLeftRight,
     end: true,
@@ -80,17 +81,18 @@ export const TITAN_MENU_CATALOG = {
       pathPrefix: "/inout",
       defaultTab: "hub",
       tabs: [
-        { id: "hub", label: "입출고관리", path: "/inout" },
-        { id: "incoming", label: "입고관리", path: "/inout/incoming" },
-        { id: "shipment", label: "출고관리", path: "/inout/shipment" },
+        { id: "hub", label: "운영관리", path: "/inout" },
+        { id: "incoming", label: "입고등록", path: "/inout/incoming" },
+        { id: "shipment", label: "출고등록", path: "/inout/shipment" },
+        { id: "print", label: "출력관리", path: "/inout/print" },
       ],
     },
     pageMeta: {
-      kicker: "PQMS Operations",
-      title: "입출고관리",
-      description: "입고 · 출고 · 이력 · 출력 — Launcher Hub",
+      kicker: "Operations Workspace",
+      title: "운영관리",
+      description: "입고 · 출고 · 재고 · 출력 — Launcher Hub",
     },
-    breadcrumb: ["입출고관리"],
+    breadcrumb: ["운영관리"],
   },
   productionManagement: {
     id: "productionManagement",
@@ -103,15 +105,17 @@ export const TITAN_MENU_CATALOG = {
       defaultTab: "hub",
       tabs: [
         { id: "hub", label: "생산관리", path: "/production" },
+        { id: "plan", label: "생산계획", path: "/production/plan" },
+        { id: "charging", label: "설비장입", path: "/production/charging" },
         { id: "daily-report", label: "생산일보", path: "/production/daily-report" },
         { id: "results", label: "생산실적관리", path: "/production/results" },
-        { id: "work-journal", label: "업무일지", path: "/work-journal" },
+        { id: "print", label: "출력관리", path: "/production/print" },
       ],
     },
     pageMeta: {
       kicker: "Production",
       title: "생산관리",
-      description: "생산계획 · 생산일보 · LOT · 작업지시 — Launcher Hub",
+      description: "생산계획 · 설비장입 · 생산일보 · 실적 · 출력 — Launcher Hub",
     },
     breadcrumb: ["생산관리"],
   },
@@ -429,43 +433,49 @@ export const TITAN_MENU_CATALOG = {
   },
   qrCharging: {
     id: "qrCharging",
-    label: "설비 장입관리",
-    path: "/qr-workflow",
+    label: "설비장입",
+    path: "/production/charging",
     icon: Factory,
     end: true,
     section: {
-      pathPrefix: "/qr-workflow",
-      defaultTab: "main",
+      pathPrefix: "/production/charging",
+      defaultTab: "hub",
       tabs: [
-        { id: "hub", label: "설비 장입관리", path: "/qr-workflow" },
-        { id: "charging", label: "QR 장입", path: "/qr-workflow/charging" },
+        { id: "hub", label: "설비장입", path: "/production/charging" },
+        { id: "overview", label: "전체 설비 현황", path: "/production/charging/overview" },
       ],
     },
     pageMeta: {
-      kicker: "Smart Access",
-      title: "설비 장입관리",
-      description: "설비 QR를 통해 장입을 시작하고 현재 장입 현황을 관리하는 화면",
+      kicker: "Production",
+      title: "설비장입",
+      description: "LOT↔설비 연결 · 장입 · 열처리 완료 — 생산관리 내부 Hub",
     },
-    breadcrumb: ["설비 장입관리"],
+    breadcrumb: ["생산관리", "설비장입"],
   },
   equipmentStatus: {
     id: "equipmentStatus",
-    label: "설비 현황",
+    label: "설비현황",
     path: "/equipment-status",
     icon: Monitor,
     end: true,
     section: {
       pathPrefix: "/equipment-status",
       defaultTab: "main",
-      tabs: [{ id: "main", label: "설비 현황", path: "/equipment-status" }],
+      tabs: [{ id: "main", label: "설비현황", path: "/equipment-status" }],
     },
     pageMeta: {
-      kicker: "MES Dashboard",
-      title: "설비 현황",
-      description: "공정 그룹별 설비 운전 상태 · LOT · 진행률을 한 화면에서 관제합니다.",
+      kicker: "Control Room",
+      title: "설비현황",
+      description: "LOT 중심 Control Room — 설비 · LOT · 제품 View 관제",
     },
-    breadcrumb: ["설비 현황"],
+    breadcrumb: ["설비현황"],
   },
+  /**
+   * Sprint 3E — 제품현황 Sidebar 독립 메뉴 제거 · Control Room Product View로 흡수.
+   * Sidebar order(MENU_FREEZE_SIDEBAR_ORDER)에서 제외되어 Sidebar에는 표시되지 않으나,
+   * 권한(catalogId) · /product-status 리다이렉트 경로 정합성을 위해 catalog 항목은 유지한다.
+   * @deprecated 진입은 /equipment-status?view=product (Control Room)
+   */
   productStatus: {
     id: "productStatus",
     label: "제품 현황",
@@ -480,9 +490,27 @@ export const TITAN_MENU_CATALOG = {
     pageMeta: {
       kicker: "Product Traceability",
       title: "제품 현황",
-      description: "현재공정 · LOT · 검사 · 성적서 · 출고를 제품 중심으로 추적합니다.",
+      description: "Control Room Product View로 통합되었습니다.",
     },
-    breadcrumb: ["제품 현황"],
+    breadcrumb: ["설비현황", "제품 View"],
+  },
+  companyInfo: {
+    id: "companyInfo",
+    label: "회사정보",
+    path: "/company",
+    icon: Building2,
+    end: true,
+    section: {
+      pathPrefix: "/company",
+      defaultTab: "profile",
+      tabs: [{ id: "profile", label: "회사정보", path: "/company" }],
+    },
+    pageMeta: {
+      kicker: "Company Master",
+      title: "회사정보",
+      description: "Company Store — 출력물 공통 Header · Branding · 인증",
+    },
+    breadcrumb: ["회사정보"],
   },
 };
 
@@ -494,6 +522,7 @@ export const SIDEBAR_ACTIVE_PATH_PREFIXES = {
   inoutManagement: ["/inout", "/inventory", "/history"],
   productionManagement: ["/production"],
   qualityManagement: ["/quality", "/documents"],
+  companyInfo: ["/company", "/environment/company"],
 };
 
 export function isSidebarMenuActive(menuId, pathname = "") {

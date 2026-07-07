@@ -58,6 +58,7 @@ export { default as TitanCommonExpandRow } from "./TitanCommonExpandRow";
 export { default as TitanWorkspaceModal } from "./TitanWorkspaceModal";
 export { default as TitanAppDialog } from "./TitanWorkspaceModal";
 export { default as TitanMultilineText } from "./TitanMultilineText";
+export { default as TitanBreadcrumb } from "./TitanBreadcrumb";
 export { default as TitanRegisterSummaryText } from "./TitanRegisterSummaryText";
 export { default as CollapsePanel } from "./CollapsePanel";
 export { default as TitanCollapsibleWidget } from "./TitanCollapsibleWidget";

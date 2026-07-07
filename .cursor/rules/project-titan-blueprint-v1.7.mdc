@@ -1,0 +1,105 @@
+---
+description: Project TITAN V1.7 — Blueprint Development Methodology (PM 공식)
+---
+
+# Project TITAN V1.7 — Blueprint Development (PM 승인)
+
+**Purpose:** Architecture → Blueprint → PM 승인 → 구현 → QA → Freeze 공식 방법론
+
+**SSoT (code):** `src/config/titanBlueprintV17.js` · `src/config/blueprints/titanBlueprintsV17.js`
+
+**SSoT (docs):** `docs/blueprints/V2.0/INDEX.md` (V1.7 superseded)
+
+**Status:** ✅ Blueprint Architecture Final · 🔄 **Review ① HOME 진행** · 구현 ❌
+
+Companion: `.cursor/rules/project-titan-qr-architecture-v1.7.mdc` · `src/config/titanQrArchitectureV17.js`  
+**V2.0 Menu Architecture:** `.cursor/rules/project-titan-v2.0-menu-workflow-architecture.mdc` · Blueprint 개정 방향
+
+---
+
+## PM 공식 개발 파이프라인
+
+```text
+Architecture → Blueprint → PM 승인 → 구현 → QA → Freeze
+```
+
+### Blueprint 승인 전 금지
+
+- 기능 먼저 구현 ❌
+- 화면 먼저 구현 ❌
+- Architecture 변경 ❌
+- Foundation 변경 ❌
+
+---
+
+## Blueprint 표준 양식 — V2.0 Final (11항목)
+
+1. **Purpose** · 2. **Role** · 3. **Task Scope** (표시 데이터)
+4. **Exit Condition** (종료·이동) · 5. **Layout** · 6. **Data**
+7. **Workflow** · 8. **Automation** · 9. **Connected Screens**
+10. **Output** · 11. **Freeze Criteria**
+
+> Task Scope ≠ Exit Condition — 분리 필수.
+> **Workspace First:** 기능 중심 ❌ · Workspace 중심 ✅ — 화면 = 담당자 책상.
+> **Review:** 11항목 순차 · 항목별 PM 승인 → Freeze.
+
+---
+
+## Blueprint 대상 — V2.0 (9화면 + LOT Lifecycle · PM 2026-07-07)
+
+| # | ID | 화면 | Doc | Status |
+|---|----|------|-----|--------|
+| 1 | `home` | HOME | `V2.0/home.md` | 개정 ✅ · Review 대기 |
+| 2 | `equipmentMonitor` | 설비현황 (MES 대체) | `V2.0/equipment-monitor.md` | 개정 ✅ |
+| 3 | `operationsManagement` | 운영관리 | `V2.0/operations-management.md` | 개정 ✅ |
+| 4 | `productionManagement` | 생산관리 | `V2.0/production-management.md` | 개정 ✅ |
+| 5 | `qualityManagement` | 품질관리 | `V2.0/quality-management.md` | 개정 ✅ |
+| 6 | `statistics` | 통계관리 | `V2.0/statistics.md` | 개정 ✅ |
+| 7 | `masterData` | 기준정보관리 | `V2.0/master-data.md` | 개정 ✅ |
+| 8 | `environment` | 환경설정 | `V2.0/environment.md` | 개정 ✅ |
+| 9 | `companyInfo` | 회사정보 (Company Store) | `V2.0/company-info.md` | 개정 ✅ |
+| 10 | `lotLifecycle` | LOT Lifecycle (QR·LOT 선택) | `V2.0/lot-lifecycle.md` | 개정 ✅ |
+
+**진행:** B안 — 전체 개정 후 화면별 Review (HOME 단독 Freeze ❌)
+**SSoT (docs):** `docs/blueprints/V2.0/INDEX.md` · V1.7 docs는 List 중심 초안 (대체됨)
+
+---
+
+## Freeze 정책 (V1.7 공식)
+
+Freeze 조건 **전부** 충족 시:
+
+- 기능 정상 동작
+- Workflow 검증 완료
+- Store 연동 완료
+- Browser QA 완료
+- PM 승인 완료
+
+**Freeze 후:** 구조 변경 ❌ · Review 통한 개선만
+
+---
+
+## LOT Lifecycle · QR (Blueprint 연계)
+
+- **Traceability QR:** 1 LOT = 1 QR · Scan → **LOT Lifecycle** (문서 ❌)
+- **QR ID:** `QR-2026-000001` (design-only · `TITAN_QR_ID_POLICY`)
+- **QR Version:** V1 → 재발행 → V2 · 재출력 = 기존 Version (`TITAN_QR_VERSION_POLICY`)
+- **조회 권한:** admin · internal · customer (`TITAN_QR_LOOKUP_PERMISSIONS`)
+
+---
+
+## Cursor Do
+
+- 신규 화면/기능 → **Blueprint 먼저** · PM 승인 후 구현
+- Blueprint **V2.0 Final 11항목** (Task Scope + Exit Condition 분리)
+- 각 화면 = 업무 공간 — 담당자 업무 데이터만 (Task Scope 명시)
+- Store는 TitanDataEngine 기존 Store 우선
+- LOT Lifecycle Blueprint + QR Architecture 정합성 유지
+
+## Cursor Do Not
+
+- Blueprint 미승인 구현
+- Blueprint Sprint 중 UI/Router/Launcher/Foundation 변경
+- 동일 LOT를 여러 화면에 반복 표시 (V2.0 Task 중심 위배)
+- 문서별 Traceability QR 설계
+- Freeze 페이지 구조 임의 변경

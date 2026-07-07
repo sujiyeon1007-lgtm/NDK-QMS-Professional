@@ -1,0 +1,44 @@
+---
+description: Project TITAN V1.5 — TitanDataEngine SSOT (Foundation Data Layer)
+alwaysApply: false
+---
+
+# TitanDataEngine V1.5 — Data SSOT
+
+**Code:** `src/foundation/data/` · **Entry:** `getTitanDataEngine()`
+
+## Data Flow (공식)
+
+```text
+SessionStorage → TitanDataEngine → Store → Page
+```
+
+- Page / UI는 **SessionStorage 직접 접근 ❌**
+- Store만 SessionStorage Adapter 사용
+
+## Stores
+
+| Store | Role |
+|---|---|
+| equipmentStore | 설비 · 상태 · LOT · 진행률 |
+| lotStore | LOT · 제품 · 공정 · 진행 |
+| productionStore | 생산계획 · 장입 · 일보 · 실적 |
+| qualityStore | 검사 · 성적서 · 불량 · 문서 |
+| dashboardStore | HOME KPI · 최근 작업 · 진행 |
+| timelineStore | Timeline 이벤트 |
+
+## QR Workflow Models (정의만 · Sprint 미연동)
+
+Equipment · LOT · Production · Timeline — `titanDataModels.js`
+
+## Verify
+
+```bash
+npm run verify:data-engine
+npm run build
+```
+
+## Do Not (Data Sprint)
+
+- UI / CSS / Router / Launcher / Breadcrumb 변경
+- Page에서 SessionStorage 직접 접근

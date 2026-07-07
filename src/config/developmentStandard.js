@@ -69,8 +69,18 @@ export const UI_STANDARD_POLICY = UI_LAYOUT_STANDARD_V1;
 export const HUB_MODAL_UI_POLICY =
   "Hub + TitanWorkspaceModal(Popup V1.0 · 90vw×90vh Portal). overlap → titan-ui-standard.css 공통 scroll/layout.";
 
-/** 필수 개발 프로세스 */
+/** 필수 개발 프로세스 — V1.7 Blueprint Methodology @see titanBlueprintV17.js */
 export const DEVELOPMENT_PROCESS = [
+  "Architecture",
+  "Blueprint",
+  "PM 승인",
+  "구현",
+  "QA",
+  "Freeze",
+];
+
+/** @deprecated V1.7 이전 순서 — Blueprint Methodology 우선 */
+export const LEGACY_DEVELOPMENT_PROCESS = [
   "기획",
   "화면 설계",
   "PM 승인",

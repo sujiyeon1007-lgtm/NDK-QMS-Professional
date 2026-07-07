@@ -2,59 +2,47 @@
  * Project TITAN V1.4 — Screen data source (KPI · List · Popup sync)
  */
 
-import { getCertificateMenuListRows } from "./certificateStatus";
-import {
-  CERTIFICATE_MANAGEMENT_STATUS,
-  getCertificateManagementStatus,
-} from "./workflowProcessStatus";
-import {
-  filterInboundManagementRecords,
-  getInboundManagementStatus,
-  INBOUND_STATUS_LABELS,
-  isInboundShipOutComplete,
-} from "./inboundManagementStatus";
 import { isHtlFirstPrintTarget } from "./htlPrintEligibility";
 import { MENU_TASK_STATUS } from "./menuWorkflowGate";
-import { getMassProductionInspectionRows } from "./massProductionInspection";
 import {
-  filterOutboundCompletedRecords,
-  filterOutboundManagementRecords,
-  getOutboundManagementStatus,
-  OUTBOUND_STATUS_LABELS,
-} from "./outboundManagementStatus";
+  buildIncomingTaskWorkspaceRecords,
+  buildOutgoingCompletedWorkspaceRecords,
+  buildOutgoingTaskWorkspaceRecords,
+} from "./operationsWorkspaceData";
+import {
+  countCertificateWorkspace,
+  getCertificateWorkspaceScreenData,
+  getInspectionMassScreenData,
+} from "./qualityWorkspaceData";
 import {
   countProductionChipBucket,
   filterProductionDailyReportRecords,
   getProductionDailyReportStatusLabel,
 } from "./productionDailyReportStatus";
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
-import { getHomeScreenData } from "./homeDashboardData";
 
 /** @typedef {Record<string, number>} StatusChipCounts */
 
 export function getInboundScreenData(records = getSessionProductionRecords()) {
-  const session = getSessionProductionRecords();
-  const baseRecords = filterInboundManagementRecords(records.length ? records : session);
-  const statusOf = (record) => getInboundManagementStatus(record)?.label;
+  const source = records.length ? records : getSessionProductionRecords();
+  const taskRecords = buildIncomingTaskWorkspaceRecords(source);
 
   return {
-    baseRecords,
+    baseRecords: taskRecords,
     counts: {
-      productIncomingReg: baseRecords.length,
-      productHtlNotPrinted: baseRecords.filter(
+      productIncomingReg: taskRecords.length,
+      productHtlNotPrinted: taskRecords.filter(
         (record) => isIncomingRegistered(record) && isHtlFirstPrintTarget(record)
       ).length,
-      productShipWait: baseRecords.filter(
-        (record) => statusOf(record) === INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT
-      ).length,
-      productShipDone: session.filter((record) => isInboundShipOutComplete(record)).length,
+      productShipWait: 0,
+      productShipDone: 0,
     },
   };
 }
 
 export function getProductionScreenData(records = getSessionProductionRecords()) {
-  const baseRecords = filterProductionDailyReportRecords(records);
-
+  const source = records?.length ? records : getSessionProductionRecords();
+  const baseRecords = filterProductionDailyReportRecords(source);
   return {
     baseRecords,
     counts: {
@@ -73,22 +61,20 @@ function isMassInspectionRow(record) {
  * @returns {{ baseRecords: object[], counts: StatusChipCounts }}
  */
 export function getInspectionScreenData(records) {
-  const baseRecords =
-    records?.length && isMassInspectionRow(records[0])
-      ? records
-      : getMassProductionInspectionRows();
-
-  return {
-    baseRecords,
-    counts: {
-      inspectNotDone: baseRecords.filter(
-        (row) => row.statusLabel === MENU_TASK_STATUS.INSPECT_NOT_DONE
-      ).length,
-      inspectDone: baseRecords.filter(
-        (row) => row.statusLabel === MENU_TASK_STATUS.INSPECT_DONE
-      ).length,
-    },
-  };
+  if (records?.length && isMassInspectionRow(records[0])) {
+    return {
+      baseRecords: records,
+      counts: {
+        inspectNotDone: records.filter(
+          (row) => row.statusLabel === MENU_TASK_STATUS.INSPECT_NOT_DONE
+        ).length,
+        inspectDone: records.filter(
+          (row) => row.statusLabel === MENU_TASK_STATUS.INSPECT_DONE
+        ).length,
+      },
+    };
+  }
+  return getInspectionMassScreenData();
 }
 
 /**
@@ -96,34 +82,25 @@ export function getInspectionScreenData(records) {
  * @returns {{ baseRecords: object[], counts: StatusChipCounts }}
  */
 export function getCertificateScreenData(rows) {
-  const baseRecords = rows?.length ? rows : getCertificateMenuListRows();
-  const statusOf = (row) => row.statusLabel ?? getCertificateManagementStatus(row.entry)?.label;
-
-  return {
-    baseRecords,
-    counts: {
-      certNotIssued: baseRecords.filter(
-        (row) => statusOf(row) === CERTIFICATE_MANAGEMENT_STATUS.WAIT
-      ).length,
-      certIssued: baseRecords.filter(
-        (row) => statusOf(row) === CERTIFICATE_MANAGEMENT_STATUS.DONE
-      ).length,
-    },
-  };
+  if (rows?.length) {
+    return {
+      baseRecords: rows,
+      counts: countCertificateWorkspace(rows),
+    };
+  }
+  return getCertificateWorkspaceScreenData();
 }
 
 export function getOutboundScreenData(records = getSessionProductionRecords()) {
-  const session = getSessionProductionRecords();
-  const baseRecords = filterOutboundManagementRecords(records.length ? records : session);
-  const statusOf = (record) => getOutboundManagementStatus(record)?.label;
+  const source = records.length ? records : getSessionProductionRecords();
+  const taskRecords = buildOutgoingTaskWorkspaceRecords(source);
+  const completedRecords = buildOutgoingCompletedWorkspaceRecords(source);
 
   return {
-    baseRecords,
+    baseRecords: taskRecords,
     counts: {
-      shipNotDone: baseRecords.filter(
-        (record) => statusOf(record) === OUTBOUND_STATUS_LABELS.NOT_DONE
-      ).length,
-      shipDone: filterOutboundCompletedRecords(session).length,
+      shipNotDone: taskRecords.length,
+      shipDone: completedRecords.length,
     },
   };
 }
@@ -131,11 +108,12 @@ export function getOutboundScreenData(records = getSessionProductionRecords()) {
 export { getHomeScreenData } from "./homeDashboardData";
 
 export function getMassInspectionBaseRows() {
-  return getMassProductionInspectionRows();
+  return getInspectionMassScreenData().baseRecords;
 }
 
 export function getProductionBaseRecords(records = getSessionProductionRecords()) {
-  return filterProductionDailyReportRecords(records);
+  const source = records?.length ? records : getSessionProductionRecords();
+  return filterProductionDailyReportRecords(source);
 }
 
 export { getProductionDailyReportStatusLabel };

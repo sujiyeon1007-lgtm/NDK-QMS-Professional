@@ -25,8 +25,11 @@ import {
   createEmptyHistoryInquirySearch,
   findHistoryRecordByQuery,
   mapHistoryInquiryListRow,
-  searchHistoryInquiryRecords,
 } from "../../utils/qualityHistoryInquiry";
+import {
+  getQualityHistoryScreenData,
+  searchQualityHistoryWorkspaceRecords,
+} from "../../utils/qualityWorkspaceData";
 
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -106,9 +109,10 @@ export default function QualityHistoryInquiry() {
       storageKey: "quality-history-inquiry",
     });
 
-  const searchRecords = useMemo(() => searchHistoryInquiryRecords({}), []);
+  const screenData = useMemo(() => getQualityHistoryScreenData(), []);
+  const searchRecords = useMemo(() => screenData.baseRecords, [screenData.baseRecords]);
   const listRows = useMemo(
-    () => searchHistoryInquiryRecords(search).map(mapHistoryInquiryListRow),
+    () => searchQualityHistoryWorkspaceRecords(search).map(mapHistoryInquiryListRow),
     [search]
   );
 

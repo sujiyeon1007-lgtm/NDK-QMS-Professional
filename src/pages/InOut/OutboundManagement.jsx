@@ -34,8 +34,6 @@ import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { SHIPMENT_STATUS } from "../../utils/ndkWorkflow";
 import {
   OUTBOUND_STATUS_LABELS,
-  filterOutboundCompletedRecords,
-  filterOutboundManagementRecords,
   formatOutboundDateDetailLabel,
   formatOutboundDateLabel,
   formatOutboundTimeLabel,
@@ -47,6 +45,11 @@ import {
   getOutboundTotalShippedQty,
   getStatementPrintStatus,
 } from "../../utils/outboundManagementStatus";
+import {
+  buildOutgoingCompletedWorkspaceRecords,
+  buildOutgoingTaskWorkspaceRecords,
+  getOperationsRecords,
+} from "../../utils/operationsWorkspaceData";
 import { formatMultiSelectCompany } from "../../utils/selectionDisplay";
 import { getProcessFlowSteps, mapV13ProductListRow } from "../../utils/processFlow";
 import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
@@ -126,11 +129,10 @@ function mapOutboundListRow(record) {
 }
 
 function resolveOutboundListRecords(search) {
-  const all = getSessionProductionRecords();
   if (search.__chipShipDone || search.__chipProductShipDone) {
-    return filterOutboundCompletedRecords(all);
+    return buildOutgoingCompletedWorkspaceRecords();
   }
-  return filterOutboundManagementRecords(all);
+  return buildOutgoingTaskWorkspaceRecords();
 }
 
 function matchesOutboundSearch(record, row, search) {
@@ -177,7 +179,7 @@ export default function OutboundManagement() {
   const [statementContext, setStatementContext] = useState(null);
   const [statementPromptOpen, setStatementPromptOpen] = useState(false);
   const [pendingRegisterResult, setPendingRegisterResult] = useState(null);
-  const chipRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const chipRecords = useMemo(() => getOperationsRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -186,10 +188,12 @@ export default function OutboundManagement() {
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
-  const searchRecords = useMemo(
-    () => filterOutboundManagementRecords(getSessionProductionRecords()),
-    [refreshKey]
-  );
+  const searchRecords = useMemo(() => {
+    if (search.__chipShipDone || search.__chipProductShipDone) {
+      return buildOutgoingCompletedWorkspaceRecords();
+    }
+    return buildOutgoingTaskWorkspaceRecords();
+  }, [refreshKey, search.__chipShipDone, search.__chipProductShipDone]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
   });
@@ -608,7 +612,11 @@ export default function OutboundManagement() {
           activeRowId={activeRow?.id}
           onRowClick={(row) => setActiveId(row.id)}
           onRowDoubleClick={handleRowDoubleClick}
-          emptyMessage="출고 가능한 제품이 없습니다."
+          emptyMessage={
+            search.__chipShipDone || search.__chipProductShipDone
+              ? "출고 완료 제품이 없습니다."
+              : "출고 대기 제품이 없습니다. (출고 완료 제품은 출고완료 탭에서 확인)"
+          }
         />
 
         <TitanTableFooter

@@ -32,7 +32,7 @@ import {
   upsertCertificateFileEntry,
   buildCertificateEntryFromRecord,
 } from "../../utils/certificateSession";
-import { getCertificateScreenData } from "../../utils/titanScreenDataSource";
+import { getCertificateWorkspaceScreenData } from "../../utils/qualityWorkspaceData";
 import {
   getCertificateMenuListRows,
   mapCertificateEntryToListRow,
@@ -60,10 +60,8 @@ export default function CertificateManagement() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
-  const chipRecords = useMemo(
-    () => getCertificateScreenData(getCertificateMenuListRows()).baseRecords,
-    [refreshKey]
-  );
+  const screenData = useMemo(() => getCertificateWorkspaceScreenData(), [refreshKey]);
+  const chipRecords = screenData.baseRecords;
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
     onDraftChange,
@@ -74,22 +72,22 @@ export default function CertificateManagement() {
   const workers = useMemo(() => getActiveWorkers(), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(() => {
-    return getCertificateMenuListRows().map((row) => ({
+    return screenData.baseRecords.map((row) => ({
       ...row.record,
       ...row.entry,
       managementId: row.managementId,
     }));
-  }, [refreshKey]);
+  }, [screenData.baseRecords]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
     assignee: workers.map((worker) => worker.name),
   });
 
   const rows = useMemo(() => {
-    return getCertificateMenuListRows()
+    return screenData.baseRecords
       .filter((row) => matchesCertificateSearch(row, search))
       .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
-  }, [search, refreshKey]);
+  }, [search, screenData.baseRecords]);
 
   const {
     page,

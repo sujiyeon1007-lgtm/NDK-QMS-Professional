@@ -1,8 +1,19 @@
 import { getEquipmentSummary, getEquipmentList } from "./equipmentWorkflowService";
-import { buildHomeTopKpiCounts, countHomeStatusCards, getHomeScreenData } from "./homeDashboardData";
+import { buildHomeTopKpiCounts, getHomeScreenData } from "./homeDashboardData";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getSessionProductionRecords } from "./productionRecords";
 import { getWorkJournalEntries } from "./workJournalSession";
+import { getQualityWorkspaceSnapshot } from "./qualityWorkspaceData";
+import {
+  buildProductionChargingWorkspaceRecords,
+  buildProductionDailyReportWorkspaceRecords,
+  buildProductionPlanWorkspaceRecords,
+  buildProductionResultWorkspaceRecords,
+  countProductionChargingWorkspace,
+  countProductionDailyReportWorkspace,
+  countProductionPlanWorkspace,
+  getProductionChargingScreenData,
+} from "./productionWorkspaceData";
 
 /**
  * Launcher Hub 카드 요약 — HOME KPI와 동일 records
@@ -44,29 +55,58 @@ export function buildInoutLauncherMetrics(records = getSessionProductionRecords(
 }
 
 export function buildProductionLauncherMetrics(records = getSessionProductionRecords()) {
-  const { counts } = getHomeScreenData(records);
-  const dailyRows = records.filter((row) => row.productionStatus || row.workflowStatus === "HT_RUNNING");
-  const dailyPending = records.filter(
-    (row) => row.workflowStatus === "HT_RUNNING" && !row.productionStatus
-  ).length;
-  const todayQty = dailyRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0);
-  const referenceDate = getJournalReferenceDate();
-  const journalTodayCount = getWorkJournalEntries("production", {
-    dateFrom: referenceDate,
-    dateTo: referenceDate,
-    adminViewAll: true,
-  }).length;
+  const planCounts = countProductionPlanWorkspace(buildProductionPlanWorkspaceRecords(records));
+  const chargingCounts = countProductionChargingWorkspace(buildProductionChargingWorkspaceRecords(records));
+  const dailyCounts = countProductionDailyReportWorkspace(
+    buildProductionDailyReportWorkspaceRecords(records)
+  );
   const equipmentSummary = getEquipmentSummary();
+  const printPending = records.filter(
+    (row) => row.workflowStatus === "RECEIVED" || row.printStatus === "미출력"
+  ).length;
+  const todayQty = buildProductionResultWorkspaceRecords(records).reduce(
+    (sum, row) => sum + (Number(row.qty) || 0),
+    0
+  );
 
   return {
-    planToday: `금일 계획 ${dailyRows.length}건`,
-    planCount: `계획 ${dailyRows.length}건`,
+    planToday: `열처리 대기 ${planCounts.htWait}건`,
+    planCount: `LOT 미생성 ${planCounts.lotPending}건`,
     chargingRunning: `운전중 ${equipmentSummary.running}대`,
-    chargingReady: `장입 준비 ${equipmentSummary.ready}대`,
-    dailyReportPending: `미작성 ${dailyPending}건`,
-    htRunning: `열처리중 ${counts.HT_RUNNING ?? 0}건`,
-    resultsToday: `금일 실적 ${todayQty}EA`,
-    journalToday: `금일 작성 ${journalTodayCount}건`,
+    chargingReady: `장입 대기 ${chargingCounts.chargePending}건`,
+    dailyReportPending: `진행중 ${dailyCounts.prodProgress}건`,
+    htRunning: `열처리중 ${dailyCounts.htRunning}건`,
+    resultsToday: `완료 ${todayQty}EA`,
+    dailyReportPrint: `생산일보 ${dailyCounts.prodProgress}건`,
+    htlPrint: `작업지시 ${printPending}건`,
+  };
+}
+
+export function buildProductionChargingLauncherMetrics(records = getSessionProductionRecords()) {
+  const { counts, equipmentSummary } = getProductionChargingScreenData(records);
+  const list = getEquipmentList();
+
+  const countByProcess = (processName) =>
+    list.filter((item) => item.process === processName).length;
+  const runningByProcess = (processName) =>
+    list.filter((item) => item.process === processName && item.status === "running").length;
+  const idleCount = list.filter(
+    (item) => item.status === "idle" || item.status === "ready"
+  ).length;
+  const maintenanceCount = list.filter((item) => item.status === "maintenance").length;
+
+  return {
+    equipmentRunning: `운전중 ${equipmentSummary.running}대`,
+    equipmentIdle: `대기 ${idleCount}대`,
+    equipmentMaintenance: `점검 ${maintenanceCount}대`,
+    chargePending: `장입 대기 ${counts.chargePending}건`,
+    chargeActive: `장입중 ${counts.chargeActive}건`,
+    ionEquipmentCount: `설비 ${countByProcess("이온질화")}대`,
+    ionRunning: `운전 ${runningByProcess("이온질화")}대`,
+    gasEquipmentCount: `설비 ${countByProcess("가스질화")}대`,
+    gasRunning: `운전 ${runningByProcess("가스질화")}대`,
+    softEquipmentCount: `설비 ${countByProcess("가스연질화")}대`,
+    softRunning: `운전 ${runningByProcess("가스연질화")}대`,
   };
 }
 
@@ -93,24 +133,17 @@ export function buildQrChargingLauncherMetrics(records = getSessionProductionRec
 }
 
 export function buildQualityLauncherMetrics(records = getSessionProductionRecords()) {
-  const { counts } = getHomeScreenData(records);
-  const statusCounts = countHomeStatusCards(records);
-  const referenceDate = getJournalReferenceDate();
-  const qualityJournalToday = getWorkJournalEntries("quality", {
-    dateFrom: referenceDate,
-    dateTo: referenceDate,
-    adminViewAll: true,
-  }).length;
-  const defectRows = records.filter((row) => row.defectStatus || row.inspectionResult === "불합격");
+  const snapshot = getQualityWorkspaceSnapshot(records);
+  const { counts, ncr } = snapshot;
 
   return {
-    inspectionWait: `검사대기 ${counts.INSPECTION_WAIT ?? 0}건`,
-    inspectionDone: `진행중 검사 ${statusCounts.inspectDone ?? 0}건`,
-    certificateWait: `발행대기 ${counts.CERT_WAIT ?? 0}건`,
-    certificateDone: `금일 발행 ${statusCounts.certDone ?? 0}건`,
-    defectToday: `금일 불량 ${defectRows.length}건`,
-    documentStandards: "표준서 · 도면 · 절차서",
+    inspectionWait: `검사 대기 ${counts.inspectionWait}건`,
+    inspectionDone: `검사 진행 ${counts.inspectionInProgress}건`,
+    certificateWait: `발행 대기 ${counts.certNotIssued}건`,
+    certificateDone: `발행 완료 ${counts.certIssued}건`,
+    defectToday: `금일 불량 ${ncr.counts.todayDefect ?? ncr.counts.defectToday ?? 0}건`,
+    documentStandards: "도면 · 절차 · 공차",
     documentQuality: "품질문서 · Revision",
-    qualityJournalToday: `금일 작성 ${qualityJournalToday}건`,
+    qualityJournalToday: `금일 작성 ${counts.qualityJournalToday}건`,
   };
 }

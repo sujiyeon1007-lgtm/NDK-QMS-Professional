@@ -27,6 +27,9 @@ export default function QRManagement() {
     activeSession,
     selectEquipment,
     selectLot,
+    handleStartCharging,
+    handleFinishCharging,
+    workflowError,
   } = useQRWorkflow();
 
   return (
@@ -70,8 +73,17 @@ export default function QRManagement() {
         }`}
       >
         <CurrentProcess session={activeSession} />
-        <EquipmentChargingActions buttonState={chargingButtons} />
+        <EquipmentChargingActions
+          buttonState={chargingButtons}
+          onStart={handleStartCharging}
+          onComplete={handleFinishCharging}
+        />
       </div>
+      {workflowError ? (
+        <p className="home-empty" role="alert">
+          {workflowError}
+        </p>
+      ) : null}
     </div>
   );
 }

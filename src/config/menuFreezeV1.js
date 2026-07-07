@@ -2,8 +2,9 @@
  * Project TITAN — Menu Freeze V1.5 (공식 Sidebar 정책)
  * 2026-07-07 PM Final · QMS + MES 통합 · 업무 흐름 기준
  *
- * Sidebar 10 menus · 6 groups (HOME · 운영관리 · 품질관리 · MES · 경영 · 시스템)
+ * Sidebar 8 menus · 6 groups (HOME · 운영관리 · 품질관리 · MES · 경영 · 시스템)
  * Launcher Hub: 입출고관리 · 생산관리 · 품질관리 · 기준정보관리
+ * Sprint 3E — 제품현황 독립 메뉴 제거 · Control Room(설비 현황) Product View로 흡수
  * @see .cursor/rules/project-titan-v1.5-launcher-architecture-final.mdc
  * @see src/config/titanLauncherArchitectureV15.js
  */
@@ -12,23 +13,28 @@ export const MENU_FREEZE_VERSION = "V1.5";
 export const MENU_FREEZE_LOCKED = true;
 export const MENU_FREEZE_DATE = "2026-07-07";
 
-/** Sidebar 1Depth — V1.5 FINAL 순서 고정 (10 menus · Launcher Hub) */
+/** Sidebar 1Depth — V2.0 Blueprint 정렬 (9 menus · 2026-07-08 Beta Freeze) */
 export const MENU_FREEZE_SIDEBAR_ORDER = [
   "home",
+  "equipmentStatus",
   "inoutManagement",
   "productionManagement",
   "qualityManagement",
-  "equipmentStatus",
-  "productStatus",
-  "qrCharging",
   "statisticsInquiry",
   "masterData",
   "environment",
+  "companyInfo",
 ];
 
 /** Sidebar 시각 그룹 — 구분선 + 그룹 제목 */
 export const MENU_FREEZE_SIDEBAR_GROUPS = [
   { id: "home", label: null, emoji: null, menuIds: ["home"] },
+  {
+    id: "mes",
+    label: "MES",
+    emoji: "🏭",
+    menuIds: ["equipmentStatus"],
+  },
   {
     id: "operations",
     label: "운영관리",
@@ -42,12 +48,6 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
     menuIds: ["qualityManagement"],
   },
   {
-    id: "mes",
-    label: "MES",
-    emoji: "🏭",
-    menuIds: ["equipmentStatus", "productStatus", "qrCharging"],
-  },
-  {
     id: "executive",
     label: "경영",
     emoji: "📊",
@@ -57,22 +57,21 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
     id: "system",
     label: "시스템",
     emoji: "⚙",
-    menuIds: ["masterData", "environment"],
+    menuIds: ["masterData", "environment", "companyInfo"],
   },
 ];
 
-/** @type {Array<{ order: number, id: string, label: string, emoji: string }>} */
+/** Sidebar 1Depth — V2.0 Blueprint 정렬 (9 menus · Launcher Hub) */
 export const MENU_FREEZE_SIDEBAR = [
   { order: 1, id: "home", label: "HOME", emoji: "🏠" },
-  { order: 2, id: "inoutManagement", label: "입출고관리", emoji: "📦" },
-  { order: 3, id: "productionManagement", label: "생산관리", emoji: "🏭" },
-  { order: 4, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
-  { order: 5, id: "equipmentStatus", label: "설비 현황", emoji: "📡" },
-  { order: 6, id: "productStatus", label: "제품 현황", emoji: "📦" },
-  { order: 7, id: "qrCharging", label: "설비 장입관리", emoji: "🏭" },
-  { order: 8, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
-  { order: 9, id: "masterData", label: "기준정보관리", emoji: "⚙" },
-  { order: 10, id: "environment", label: "환경설정", emoji: "🔧" },
+  { order: 2, id: "equipmentStatus", label: "설비현황", emoji: "📡" },
+  { order: 3, id: "inoutManagement", label: "운영관리", emoji: "📦" },
+  { order: 4, id: "productionManagement", label: "생산관리", emoji: "🏭" },
+  { order: 5, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
+  { order: 6, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
+  { order: 7, id: "masterData", label: "기준정보관리", emoji: "⚙" },
+  { order: 8, id: "environment", label: "환경설정", emoji: "🔧" },
+  { order: 9, id: "companyInfo", label: "회사정보", emoji: "🏢" },
 ];
 
 export const PRESENTATION_MENU_DEV_ORDER = [...MENU_FREEZE_SIDEBAR_ORDER];
@@ -222,22 +221,16 @@ export const MENU_FREEZE_ROLES = {
     features: ["QR 생성", "QR 출력", "QR 재출력", "QR 미리보기", "QR 관리", "QR 사용안내"],
   },
   equipmentStatus: {
-    label: "설비 현황",
-    role: "MES 관제 Dashboard — 생산부장 · 공장장 · 관리자",
-    features: ["공정별 설비 그리드", "운전 상태", "LOT · 진행률", "Detail Panel"],
-    note: "V1.5 — equipmentWorkflowService SSOT · HOME Hub 바로가기",
-  },
-  productStatus: {
-    label: "제품 현황",
-    role: "제품 추적 Dashboard — 현재공정 · LOT · 검사 · 성적서 · 출고",
-    features: ["제품 Workflow 현황", "공정별 필터", "Traceability 리스트"],
-    note: "V1.5 — HOME Hub 바로가기 · 이력조회와 역할 분리",
+    label: "설비현황",
+    role: "Control Room — 생산부장 · 공장장 · 관리자 (Equipment · LOT · Product View)",
+    features: ["Equipment View", "LOT View", "Product View", "KPI 7 · Detail Popup"],
+    note: "Sprint 3E — Control Room 통합 · 제품현황 Product View 흡수 · equipmentWorkflowService SSOT",
   },
   qrCharging: {
-    label: "설비 장입관리",
-    role: "설비 QR 장입 · 현장 Workflow UI Foundation (V1.5)",
-    features: ["설비 선택", "장입 가능 LOT", "현재 장입 현황", "장입 시작", "열처리 완료"],
-    note: "Sprint 1 — UI Foundation · Scan/Workflow 다음 Sprint",
+    label: "설비장입",
+    role: "생산관리 Launcher 내부 — Sidebar ❌ · 공정별 장입 작업",
+    features: ["전체 설비 현황", "공정별 설비 목록", "장입 시작", "열처리 완료"],
+    note: "V2.0 Blueprint — /production/charging · MES는 관제만",
   },
   environment: {
     label: "환경설정",
@@ -245,16 +238,16 @@ export const MENU_FREEZE_ROLES = {
     features: ["사용자관리", "권한관리", "모듈관리", "Storage 관리", "백업", "복원", "시스템 로그"],
   },
   inoutManagement: {
-    label: "입출고관리",
+    label: "운영관리",
     role: "입고 · 출고 · 재고 일상 업무",
-    features: ["입고관리", "출고관리", "재고관리", "입출고 출력"],
-    note: "V1.5 Sidebar 통합 · 개별 입고/출고/재고는 내부 탭",
+    features: ["입고등록", "출고등록", "재고관리", "입출고 출력"],
+    note: "V2.0 Blueprint — Operations Workspace",
   },
   productionManagement: {
     label: "생산관리",
     role: "생산 운영 Launcher Hub",
-    features: ["생산계획", "생산일보", "LOT 관리", "작업지시"],
-    note: "V1.5 Launcher Hub · 향후 생산이력 · 스케줄 확장",
+    features: ["생산계획", "설비장입", "생산일보", "생산실적관리", "출력관리"],
+    note: "V1.5 Launcher Hub · 설비 장입은 내부 Hub",
   },
   qualityManagement: {
     label: "품질관리",

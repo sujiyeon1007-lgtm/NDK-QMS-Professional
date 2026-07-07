@@ -1,0 +1,150 @@
+---
+description: Project TITAN V2.0 — 업무 중심 Menu & Workflow Architecture (PM 최종 승인 · Architecture Only)
+---
+
+# Project TITAN V2.0 — Menu & Workflow Architecture (PM 최종 승인)
+
+**Purpose:** List 중심 → **Task(업무) 중심** 전환 — 한 화면 = 한 업무
+
+**SSoT (code):** `src/config/titanV20MenuWorkflowArchitecture.js`  
+**SSoT (docs):** `docs/TITAN_V20_MENU_WORKFLOW_ARCHITECTURE.md`
+
+**Status:** ✅ Architecture PM 승인 · ✅ Blueprint Architecture Final · 🔄 **HOME Blueprint Review 진행**
+
+> ⚠️ Vision Roadmap V2.0 (Smart QR · Mobile)과 **별개** — 본 Rule = Menu & Workflow only
+
+Companion: `.cursor/rules/project-titan-blueprint-v1.7.mdc` · `src/config/titanBlueprintV17.js`
+
+---
+
+## Workspace First Principle (PM 추가 지시)
+
+```text
+기능(Function) 중심 ❌ → 업무 공간(Workspace) 중심 ✅
+화면 하나 = 담당자의 책상 (HOME·설비현황 = 관제/상황판 — 작업 ❌)
+```
+
+**설계 목표:** 사용자가 "어디서 무엇을 해야 하는지" 고민하지 않도록 Workspace 설계.
+
+| 화면 | Workspace |
+|------|-----------|
+| HOME | 회사 전체 상황 |
+| 설비현황 | 공장 관제실 |
+| 운영관리 | 운영담당자 오늘 업무 |
+| 생산관리 | 생산담당자 오늘 업무 |
+| 품질관리 | 품질담당자 오늘 업무 |
+
+---
+
+## 핵심 철학
+
+```text
+한 화면 = 한 업무
+한 LOT = 하나의 Workflow
+한 작업 완료 = 다음 단계 자동 이동
+같은 LOT 리스트를 모든 화면에 반복 표시 ❌
+사용자 = "지금 처리할 업무"만 조회 · 상태 직접 변경 ❌
+```
+
+**Engine:** TitanWorkflowEngine — 자동 stage 전환 · 화면 필터
+
+---
+
+## V1.x → V2.0 문제
+
+입고·생산·품질·출고 **동일 LOT 리스트 + 현재공정만 변경** → 혼란 · 비전문적 UX
+
+**V2.0:** 각 화면 = **해당 Workflow 단계 데이터만**
+
+---
+
+## Sidebar (9 · Launcher Hub)
+
+```text
+HOME · 설비현황(Launcher❌) · 운영관리 · 생산관리 · 품질관리
+통계관리 · 기준정보관리 · 환경설정 · 회사정보(신규)
+```
+
+| V1.5 | V2.0 |
+|------|------|
+| MES 그룹 (설비·제품 Sidebar) | **삭제** → 설비현황 하위 |
+| 입출고관리 | **운영관리** |
+| — | **회사정보** 신규 |
+
+---
+
+## 설비현황 (관제 · Launcher ❌)
+
+공장 실시간 관제 — **작업 수행 ❌**
+
+하위: 설비현황 · 제품현황  
+표시: 상태 · LOT · 작업 · 가동률 · 알람 · 진행률
+
+---
+
+## Launcher 요약
+
+### 운영관리
+
+입고등록 · 출고등록 · 입출고이력 · 재고관리 · 출력관리 · **영업업무일지**
+
+### 생산관리
+
+생산계획 · **설비장입현황** · 생산일보 · 생산실적관리 · 출력관리
+
+### 품질관리
+
+검사관리(Tab) · 성적서관리(Tab) · 불량이력 · 문서관리 · 품질업무일지
+
+---
+
+## 데이터 표시 (SSOT)
+
+| 화면 | 표시만 |
+|------|--------|
+| 입고등록 | 입고완료 · 생산 미투입 |
+| 생산계획 | 열처리 대기 |
+| 설비장입 | 장입중 LOT |
+| 생산일보 | 생산 진행 |
+| 검사관리 | 검사 대기 (생산완료) |
+| 성적서관리 | 미발행 |
+| 출고등록 | 출고 대기 (+ 출고완료 탭) |
+| 재고관리 | 현재 재고 |
+
+완료 시 **이전 화면 제거 · 다음 화면 표시** — Workflow Engine
+
+---
+
+## UI
+
+- Launcher = `TitanLauncherHubPage` 통일
+- List = `TitanDataTable` 통일
+- 출력관리 = 운영 · 생산 **동일 Layout**
+
+---
+
+## 개발 게이트
+
+```text
+V2.0 Architecture ✅ → Blueprint V2.0 개정 → PM 승인 → 구현 → QA → Freeze
+```
+
+**Blueprint V2.0 승인 전 금지:**
+
+- Sidebar · Router · Store · Workflow · CSS (list filter 전환 포함)
+- V1.7 Blueprint를 V2.0 Task 규칙으로 **개정 후** 구현
+
+---
+
+## Cursor Do
+
+- 화면/메뉴 설계 시 `TITAN_V20_SCREEN_DATA_RULES` 확인
+- Blueprint 작성·개정 시 Task 필터 · auto-transition 명시
+- Workflow 변경은 TitanWorkflowEngine 경유
+
+## Cursor Do Not
+
+- Architecture만 승인된 상태에서 Sidebar/Router 구현
+- 모든 화면에 동일 full LOT list 복원
+- 사용자 수동 workflow status 변경 UI 추가 (V2.0)
+- Vision Roadmap V2.0 (Smart QR)과 본 Menu Architecture 혼동

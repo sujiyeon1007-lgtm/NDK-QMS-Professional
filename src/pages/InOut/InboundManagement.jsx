@@ -33,7 +33,6 @@ import {
 } from "../../config/registerModalStandard";
 import { parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
-import { isIncomingRegistered } from "../../utils/productionRecords";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
@@ -41,10 +40,10 @@ import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
 import {
   INBOUND_STATUS_LABELS,
-  filterInboundManagementRecords,
   getInboundManagementStatus,
   isInboundShipOutComplete,
 } from "../../utils/inboundManagementStatus";
+import { buildIncomingTaskWorkspaceRecords, getOperationsRecords } from "../../utils/operationsWorkspaceData";
 import { mapV13ProductListRow } from "../../utils/processFlow";
 import { isHtlFirstPrintTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -97,12 +96,9 @@ function recordToRegisterForm(record) {
   };
 }
 
-function resolveInboundListRecords(search) {
-  const all = getSessionProductionRecords();
-  if (search.__chipProductShipDone) {
-    return all.filter((record) => isIncomingRegistered(record) && isInboundShipOutComplete(record));
-  }
-  return filterInboundManagementRecords(all);
+function resolveInboundListRecords() {
+  // 입고등록 Task Workspace — RECEIVED · 생산 미투입 Stage만 (생산계획 투입 시 자동 제거)
+  return buildIncomingTaskWorkspaceRecords();
 }
 
 function matchesInboundSearch(record, row, search) {
@@ -150,10 +146,7 @@ export default function InboundManagement() {
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
-  const chipRecords = useMemo(
-    () => filterInboundManagementRecords(getSessionProductionRecords()),
-    [refreshKey]
-  );
+  const chipRecords = useMemo(() => getOperationsRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useStatusChipFilter({
     draft,
     onDraftChange,
@@ -163,7 +156,7 @@ export default function InboundManagement() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(
-    () => filterInboundManagementRecords(getSessionProductionRecords()),
+    () => buildIncomingTaskWorkspaceRecords(),
     [refreshKey]
   );
   const masterProducts = useMemo(() => getMasterDataByCategory("products"), [refreshKey]);
@@ -177,7 +170,7 @@ export default function InboundManagement() {
   });
 
   const rows = useMemo(() => {
-    const records = resolveInboundListRecords(search);
+    const records = resolveInboundListRecords();
     return records
       .map((record) => mapInboundListRow(record))
       .filter((row) => matchesInboundSearch(row.record, row, search))
@@ -455,7 +448,7 @@ export default function InboundManagement() {
           activeRowId={activeRow?.id}
           onRowClick={(row) => setActiveId(row.id)}
           onRowDoubleClick={handleRowDoubleClick}
-          emptyMessage="진행 중인 입고 제품이 없습니다. (출고완료 제품은 이력조회에서 확인)"
+          emptyMessage="생산 미투입 입고 제품이 없습니다. (생산계획 투입 제품은 생산관리에서 확인)"
         />
 
         <TitanTableFooter

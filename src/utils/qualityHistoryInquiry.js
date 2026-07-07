@@ -3,7 +3,8 @@
  */
 
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
-import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
+import { isIncomingRegistered } from "./productionRecords";
+import { buildInoutHistoryWorkspaceRecords } from "./operationsWorkspaceData";
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
@@ -109,7 +110,7 @@ export function buildQualityTraceabilityTimeline(record) {
 }
 
 export function searchHistoryInquiryRecords(search) {
-  return getSessionProductionRecords()
+  return buildInoutHistoryWorkspaceRecords()
     .filter((record) => matchesHistoryInquirySearch(record, search))
     .sort((a, b) => String(b.incomingDate ?? "").localeCompare(String(a.incomingDate ?? "")));
 }
@@ -118,7 +119,7 @@ export function findHistoryRecordByQuery(queryParams = {}) {
   const managementId = String(queryParams.id ?? queryParams.managementId ?? "").trim();
   const lotNo = String(queryParams.lot ?? queryParams.lotNo ?? "").trim();
 
-  const records = getSessionProductionRecords();
+  const records = buildInoutHistoryWorkspaceRecords();
   if (managementId) {
     return records.find((row) => row.id === managementId) ?? null;
   }

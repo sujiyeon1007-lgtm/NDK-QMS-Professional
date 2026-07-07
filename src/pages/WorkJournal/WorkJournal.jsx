@@ -24,6 +24,8 @@ import { getAuthSession } from "../../utils/titanAuthSession";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import { resolveAssigneeWorkerOptions } from "../../utils/titanAssigneeResolver";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { getProductionWorkJournalScreenData } from "../../utils/productionWorkspaceData";
+import { getQualityWorkJournalScreenData } from "../../utils/qualityWorkspaceData";
 import {
   addManualJournalEntry,
   getDailyNotes,
@@ -112,26 +114,47 @@ export default function WorkJournal() {
     });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
-  const records = useMemo(() => getSessionProductionRecords(), [refreshKey]);
+  const productionRecords = useMemo(() => getSessionProductionRecords(), [refreshKey]);
 
-  const journalEntries = useMemo(() => {
-    return getWorkJournalEntries(departmentId, {
-      records,
+  const journalPipeline = useMemo(() => {
+    const options = {
+      records: productionRecords,
       assigneeFilter: isAdmin ? adminAssigneeFilter || search.assignee : "",
       dateFrom: search.dateFrom,
       dateTo: search.dateTo,
       adminViewAll: isAdmin,
-    });
+      referenceDate: search.dateFrom || getJournalReferenceDate(),
+    };
+
+    if (departmentId === "production") {
+      return getProductionWorkJournalScreenData(options);
+    }
+
+    if (departmentId === "quality") {
+      return getQualityWorkJournalScreenData(options);
+    }
+
+    return {
+      baseRecords: getWorkJournalEntries(departmentId, options),
+      counts: {
+        total: 0,
+        today: 0,
+        manual: 0,
+        auto: 0,
+      },
+    };
   }, [
     departmentId,
-    records,
-    refreshKey,
+    productionRecords,
     isAdmin,
     adminAssigneeFilter,
     search.assignee,
     search.dateFrom,
     search.dateTo,
+    refreshKey,
   ]);
+
+  const journalEntries = journalPipeline.baseRecords;
 
   const rows = useMemo(() => {
     return journalEntries.map(mapJournalRow).filter((row) => matchesWorkJournalSearch(row, search));

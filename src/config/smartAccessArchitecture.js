@@ -24,6 +24,8 @@
 
  * @see src/config/titanOfficialArchitecture.js — Smart Access ID Registry (NDK://)
 
+ * @see src/config/titanQrArchitectureV17.js — V1.7 QR 3분류 (Master · Operation · Traceability)
+
  * @see docs/SMART_ACCESS_ARCHITECTURE.md
 
  * @see src/config/titanV11Workflow.js
@@ -192,13 +194,15 @@ export const SMART_ACCESS_TARGETS = {
 
     registryId: "equipment",
 
-    label: "설비 QR · 생산등록",
+    label: "설비 QR · 장입 Workflow",
+
+    qrType: "master",
 
     menuDomain: "workDaily",
 
-    pathTemplate: "/production/daily-report",
+    pathTemplate: "/production/charging/equipment/{code}",
 
-    query: { equipment: "{code}", qr: "{payload}" },
+    query: { qr: "{payload}" },
 
     canonicalPattern: SMART_ACCESS_ID_REGISTRY.equipment.canonicalPattern,
 
@@ -206,31 +210,27 @@ export const SMART_ACCESS_TARGETS = {
 
     workflowSteps: [
 
+      "설비 QR Scan",
+
       "설비 자동 인식",
 
-      "공정 자동 확인",
+      "장입 가능 LOT",
 
-      "생산 가능 목록",
+      "LOT 선택",
 
-      "LOT",
+      "장입 시작",
 
-      "생산중",
+      "생산일보 자동 생성",
 
-      "생산완료",
+      "열처리 완료",
 
       "검사대기",
-
-      "검사",
-
-      "성적서",
-
-      "출고",
 
     ],
 
     implementationStatus: "active",
 
-    codeRef: "src/utils/equipmentQr.js",
+    codeRef: "src/utils/equipmentQrWorkflow.js",
 
   },
 
@@ -404,9 +404,9 @@ export const PAPER_MODE_PRINTS = [
 
 export const SMART_ACCESS_URL_EXAMPLES = {
 
-  equipmentIonCanonical: "/production/daily-report?equipment=ION-01&qr=NDK%3A%2F%2FEQ%2FION-01",
+  equipmentIonCanonical: "/production/charging/equipment/3S-1?qr=NDK%3A%2F%2FEQ%2F3S-1",
 
-  equipmentIonLegacy: "/production/daily-report?equipment=ION-01&qr=NDK%7CEQ%7CION-01",
+  equipmentIonLegacy: "/production/charging/equipment/3S-1?qr=NDK%7CEQ%7C3S-1",
 
   inboundRegister: "/inout/incoming?smart=register",
 
@@ -491,6 +491,8 @@ export function buildSmartAccessPath(targetId, params = {}) {
     (buildLegacySmartAccessPayload(target.registryId, code) ||
       buildCanonicalSmartAccessId(target.registryId, code));
 
+  const path = String(target.pathTemplate ?? "/").replace("{code}", code);
+
   const search = new URLSearchParams();
 
 
@@ -511,7 +513,7 @@ export function buildSmartAccessPath(targetId, params = {}) {
 
   const qs = search.toString();
 
-  return qs ? `${target.pathTemplate}?${qs}` : target.pathTemplate;
+  return qs ? `${path}?${qs}` : path;
 
 }
 
