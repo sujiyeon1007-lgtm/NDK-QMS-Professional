@@ -1,0 +1,156 @@
+/* Project TITAN Sprint 7 — 품질통계 (Dashboard · 생산통계 디자인 언어 재사용) */
+
+.stat-qual-row {
+  display: grid;
+  gap: var(--stat-card-gap);
+  align-items: stretch;
+}
+
+.stat-qual-row--main {
+  grid-template-columns: 65fr 35fr;
+}
+
+.stat-qual-row--pareto {
+  grid-template-columns: 55fr 45fr;
+}
+
+.stat-qual-row--rank {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stat-qual-row--lower {
+  grid-template-columns: 40fr 60fr;
+}
+
+/* 품질 accent — green */
+.stat-qual-kpi__icon {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.stat-qual-kpi__spark {
+  color: #16a34a;
+}
+
+.stat-dash-kpi.is-danger .stat-qual-kpi__icon {
+  background: #fee2e2;
+  color: var(--titan-danger);
+}
+
+.stat-qual-pareto__bar span {
+  background: linear-gradient(90deg, #fbbf24, #d97706);
+}
+
+.stat-qual-heatmap__cell {
+  background: rgba(220, 38, 38, calc(0.1 + var(--heat, 0) * 0.6));
+  color: #991b1b;
+}
+
+.stat-qual-gauge .stat-dash-gauge__value {
+  stroke: #16a34a;
+}
+
+.stat-qual-trend__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--titan-text-muted);
+}
+
+.stat-dash-lot__item.is-red .stat-dash-lot__value {
+  color: #dc2626;
+}
+
+.stat-dash-lot__item.is-green .stat-dash-lot__value {
+  color: #16a34a;
+}
+
+.stat-dash-lot__item.is-orange .stat-dash-lot__value {
+  color: #d97706;
+}
+
+.stat-dash-lot__item.is-purple .stat-dash-lot__value {
+  color: #7c3aed;
+}
+
+.stat-dash-lot__item.is-blue .stat-dash-lot__value {
+  color: #2563eb;
+}
+
+.stat-dash-lot__value em {
+  font-size: 12px;
+  font-style: normal;
+  margin-left: 2px;
+  color: var(--titan-text-muted);
+}
+
+/* Alarm Timeline — Final Polish: 높이 확대 */
+.stat-qual-alarm__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 260px;
+}
+
+.stat-qual-alarm__item {
+  display: grid;
+  grid-template-columns: 96px 16px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--titan-border);
+  font-size: 13px;
+}
+
+.stat-qual-alarm__item:last-child {
+  border-bottom: none;
+}
+
+.stat-qual-alarm__time {
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-qual-alarm__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  justify-self: center;
+  background: var(--titan-text-muted);
+}
+
+.stat-qual-alarm__item.is-danger .stat-qual-alarm__dot {
+  background: var(--titan-danger);
+}
+
+.stat-qual-alarm__item.is-warning .stat-qual-alarm__dot {
+  background: var(--titan-warning);
+}
+
+.stat-qual-alarm__item.is-info .stat-qual-alarm__dot {
+  background: var(--titan-success);
+}
+
+.stat-qual-alarm__label {
+  color: var(--titan-text);
+}
+
+@media (max-width: 1280px) {
+  .stat-qual-row--main,
+  .stat-qual-row--pareto,
+  .stat-qual-row--lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1100px) {
+  .stat-qual-row--rank {
+    grid-template-columns: 1fr;
+  }
+}

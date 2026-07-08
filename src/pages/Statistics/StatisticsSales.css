@@ -1,0 +1,232 @@
+/* Project TITAN Sprint 7 — 영업통계 (Dashboard 디자인 언어 재사용 · purple accent) */
+
+.stat-sales-row {
+  display: grid;
+  gap: var(--stat-card-gap);
+  align-items: stretch;
+}
+
+.stat-sales-row--main {
+  grid-template-columns: 65fr 35fr;
+}
+
+.stat-sales-row--top {
+  grid-template-columns: 1fr 1fr;
+}
+
+.stat-sales-row--mid {
+  grid-template-columns: 60fr 40fr;
+}
+
+.stat-sales-row--lower {
+  grid-template-columns: 40fr 60fr;
+}
+
+/* 영업 accent — purple */
+.stat-sales-kpi__icon {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.stat-sales-kpi__spark {
+  color: #7c3aed;
+}
+
+.stat-dash-kpi.is-danger .stat-sales-kpi__icon {
+  background: #fee2e2;
+  color: var(--titan-danger);
+}
+
+.stat-sales-gauge .stat-dash-gauge__value {
+  stroke: #7c3aed;
+}
+
+/* 품목별 출고 비율 — 세로 막대 */
+.stat-sales-item__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  align-items: end;
+  flex: 1;
+  min-height: var(--stat-chart-min-h);
+  padding-top: 8px;
+}
+
+.stat-sales-item__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.stat-sales-item__bar {
+  width: 60%;
+  max-width: 40px;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  background: var(--titan-bg);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.stat-sales-item__bar span {
+  display: block;
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, #a78bfa, #7c3aed);
+  min-height: 2px;
+}
+
+.stat-sales-item__val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.stat-sales-item__label {
+  font-size: 10px;
+  color: var(--titan-text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 출고 LOT 현황 — 4개 */
+.stat-sales-lot__grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-dash-lot__item.is-green .stat-dash-lot__value {
+  color: #16a34a;
+}
+.stat-dash-lot__item.is-purple .stat-dash-lot__value {
+  color: #7c3aed;
+}
+.stat-dash-lot__item.is-red .stat-dash-lot__value {
+  color: #dc2626;
+}
+.stat-dash-lot__item.is-orange .stat-dash-lot__value {
+  color: #d97706;
+}
+
+/* 월별 출고 실적 — Bar + Trend */
+.stat-sales-monthly__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  align-items: end;
+  flex: 1;
+  min-height: var(--stat-chart-min-h);
+  padding-top: 8px;
+}
+
+.stat-sales-monthly__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.stat-sales-monthly__bar {
+  width: 60%;
+  max-width: 46px;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  background: var(--titan-bg);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.stat-sales-monthly__bar span {
+  display: block;
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, #a78bfa, #7c3aed);
+  min-height: 2px;
+}
+
+.stat-sales-monthly__qty {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.stat-sales-monthly__lot {
+  font-size: 11px;
+  color: var(--titan-text-muted);
+}
+
+.stat-sales-monthly__label {
+  font-size: 12px;
+  color: var(--titan-text-muted);
+}
+
+/* Alarm Timeline — Final Polish: 높이 확대 */
+.stat-sales-alarm__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 260px;
+}
+
+.stat-sales-alarm__item {
+  display: grid;
+  grid-template-columns: 96px 16px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--titan-border);
+  font-size: 13px;
+}
+
+.stat-sales-alarm__item:last-child {
+  border-bottom: none;
+}
+
+.stat-sales-alarm__time {
+  font-size: 12px;
+  color: var(--titan-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sales-alarm__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  justify-self: center;
+  background: var(--titan-text-muted);
+}
+
+.stat-sales-alarm__item.is-danger .stat-sales-alarm__dot {
+  background: var(--titan-danger);
+}
+
+.stat-sales-alarm__item.is-warning .stat-sales-alarm__dot {
+  background: var(--titan-warning);
+}
+
+.stat-sales-alarm__item.is-info .stat-sales-alarm__dot {
+  background: var(--titan-success);
+}
+
+.stat-sales-alarm__label {
+  color: var(--titan-text);
+}
+
+@media (max-width: 1280px) {
+  .stat-sales-row--main,
+  .stat-sales-row--top,
+  .stat-sales-row--mid,
+  .stat-sales-row--lower {
+    grid-template-columns: 1fr;
+  }
+}

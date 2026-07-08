@@ -46,6 +46,8 @@ export const SCREEN_UI_STATUS_BY_KEY = {
   qr: "planning",
   masterData: "in-progress",
   admin: "in-progress",
+  // Sprint 7 — Statistics Workspace Official Freeze (PM 승인 2026-07-08)
+  statistics: "ui-freeze",
 };
 
 /** HOME을 기준으로 통일할 디자인 언어 */
@@ -86,4 +88,9 @@ export const SCREEN_UI_STATUS_TABLE = [
   { screen: "문서관리", key: "documents", status: "in-progress" },
   { screen: "QR관리", key: "qr", status: "planning" },
   { screen: "관리자", key: "admin", status: "in-progress" },
+  {
+    screen: "통계관리 (Executive Dashboard · 생산 · 품질 · 영업 · 공통 Statistics UI)",
+    key: "statistics",
+    status: "ui-freeze",
+  },
 ];

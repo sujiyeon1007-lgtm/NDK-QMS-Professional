@@ -7,7 +7,7 @@ export default function StatisticsLayout() {
   const section = resolveMenuSectionByPathname(location.pathname);
 
   if (location.pathname === "/statistics" || location.pathname === "/statistics/") {
-    return <Navigate to="/statistics/production" replace />;
+    return <Navigate to="/statistics/dashboard" replace />;
   }
 
   if (!section) return null;

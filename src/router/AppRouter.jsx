@@ -39,6 +39,10 @@ import InspectionLogRegisterView from "../pages/Quality/InspectionLogRegisterVie
 import StatisticsLayout from "../pages/Statistics/StatisticsLayout";
 
 import StatisticsScreen from "../pages/Statistics/StatisticsScreen";
+import StatisticsDashboard from "../pages/Statistics/StatisticsDashboard";
+import StatisticsProduction from "../pages/Statistics/StatisticsProduction";
+import StatisticsQuality from "../pages/Statistics/StatisticsQuality";
+import StatisticsSales from "../pages/Statistics/StatisticsSales";
 
 import SettingsLayout from "../pages/Settings/SettingsLayout";
 
@@ -234,7 +238,15 @@ function AppRoutes() {
 
             <Route path="/statistics" element={<StatisticsLayout />}>
 
-              <Route index element={<Navigate to="/statistics/production" replace />} />
+              <Route index element={<Navigate to="/statistics/dashboard" replace />} />
+
+              <Route path="dashboard" element={<StatisticsDashboard />} />
+
+              <Route path="production" element={<StatisticsProduction />} />
+
+              <Route path="quality" element={<StatisticsQuality />} />
+
+              <Route path="sales" element={<StatisticsSales />} />
 
               <Route path="inquiry" element={<Navigate to="/statistics/production" replace />} />
 

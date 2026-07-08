@@ -327,13 +327,14 @@ export const TITAN_MENU_CATALOG = {
   statisticsInquiry: {
     id: "statisticsInquiry",
     label: "통계관리",
-    path: "/statistics/production",
+    path: "/statistics/dashboard",
     icon: BarChart3,
     section: {
       pathPrefix: "/statistics",
-      defaultTab: "production",
+      defaultTab: "dashboard",
       tabs: [
-        { id: "production", label: "전체 생산통계", path: "/statistics/production" },
+        { id: "dashboard", label: "Dashboard", path: "/statistics/dashboard" },
+        { id: "production", label: "생산통계", path: "/statistics/production" },
         { id: "quality", label: "품질통계", path: "/statistics/quality" },
         { id: "sales", label: "영업통계", path: "/statistics/sales" },
       ],
@@ -522,6 +523,7 @@ export const SIDEBAR_ACTIVE_PATH_PREFIXES = {
   inoutManagement: ["/inout", "/inventory", "/history"],
   productionManagement: ["/production"],
   qualityManagement: ["/quality", "/documents"],
+  statisticsInquiry: ["/statistics"],
   companyInfo: ["/company", "/environment/company"],
 };
 

@@ -29,7 +29,7 @@ export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   inoutManagement: "/inout",
   productionManagement: "/production",
   qualityManagement: "/quality",
-  statisticsInquiry: "/statistics/production",
+  statisticsInquiry: "/statistics/dashboard",
   masterData: "/settings",
   environment: "/environment",
   companyInfo: "/company",

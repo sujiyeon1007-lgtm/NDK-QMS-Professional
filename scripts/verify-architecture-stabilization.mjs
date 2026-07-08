@@ -45,7 +45,7 @@ const sidebarRoutes = [
   "/inout",
   "/production",
   "/quality",
-  "/statistics/production",
+  "/statistics/dashboard",
   "/settings",
   "/environment/users",
   "/company",
