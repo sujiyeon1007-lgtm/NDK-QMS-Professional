@@ -45,6 +45,79 @@
   word-break: keep-all;
 }
 
+/* ── Sprint 8 · 거래처 Summary KPI (Statistics / Master Dashboard 디자인 언어) ── */
+.company-master-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.company-master-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 104px;
+  padding: 16px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: var(--titan-radius, 12px);
+  background: var(--titan-surface, #fff);
+  box-shadow: var(--titan-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
+}
+
+.company-master-kpi.is-danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.company-master-kpi__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.company-master-kpi__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #eff4ff;
+  color: var(--titan-primary, #2563eb);
+}
+
+.company-master-kpi.is-danger .company-master-kpi__icon {
+  background: #fee2e2;
+  color: var(--titan-danger, #dc2626);
+}
+
+.company-master-kpi__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.company-master-kpi__value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+  line-height: 1;
+}
+
+.company-master-kpi__value em {
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  margin-left: 3px;
+  color: var(--titan-text-muted, #64748b);
+}
+
+@media (max-width: 900px) {
+  .company-master-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .company-management-page__search {
   display: flex;
   flex-direction: column;
@@ -331,6 +404,112 @@
   font-size: 10px;
   font-weight: 700;
   color: #64748b;
+}
+
+.company-detail-tabs__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.company-detail-tabs__btn.is-active .company-detail-tabs__count {
+  background: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* ── Sprint 8 · 거래처 상세 Popup — 담당자/품질/수정 ── */
+.company-detail-section__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.company-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.company-quality-badge.is-pass {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.company-quality-badge.is-fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.company-quality-badge.is-hold {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.company-detail-updates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.company-detail-updates__row {
+  display: grid;
+  grid-template-columns: 92px 44px 12px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+  font-size: 12px;
+}
+
+.company-detail-updates__row:last-child {
+  border-bottom: none;
+}
+
+.company-detail-updates__date,
+.company-detail-updates__time {
+  color: var(--titan-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.company-detail-updates__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--titan-primary, #2563eb);
+  justify-self: center;
+}
+
+.company-detail-updates__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.company-detail-updates__label {
+  color: var(--titan-text-primary, #0f172a);
+  font-weight: 600;
+}
+
+.company-detail-updates__user {
+  color: var(--titan-text-muted, #64748b);
+  font-size: 11px;
 }
 
 .company-detail-section__grid--profile {

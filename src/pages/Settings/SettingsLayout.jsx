@@ -6,7 +6,12 @@ import "../../foundation/layout/SectionPageLayout.css";
 import "../../foundation/styles/titan-hub-page.css";
 
 function isMasterDataHubPath(pathname) {
-  return pathname === "/settings" || pathname === "/settings/";
+  return (
+    pathname === "/settings" ||
+    pathname === "/settings/" ||
+    pathname === "/settings/dashboard" ||
+    pathname === "/settings/hub"
+  );
 }
 
 /**

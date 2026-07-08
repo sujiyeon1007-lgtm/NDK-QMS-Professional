@@ -48,6 +48,8 @@ import SettingsLayout from "../pages/Settings/SettingsLayout";
 
 import MasterDataHubPage from "../pages/Settings/MasterDataHubPage";
 
+import MasterDashboard from "../pages/Settings/MasterDashboard";
+
 import CompanyManagementPage from "../pages/Settings/CompanyManagementPage";
 
 import ProductManagementPage from "../pages/Settings/ProductManagementPage";
@@ -311,7 +313,11 @@ function AppRoutes() {
 
             <Route path="/settings" element={<SettingsLayout />}>
 
-              <Route index element={<MasterDataHubPage />} />
+              <Route index element={<Navigate to="/settings/dashboard" replace />} />
+
+              <Route path="dashboard" element={<MasterDashboard />} />
+
+              <Route path="hub" element={<MasterDataHubPage />} />
 
               <Route path="companies" element={<CompanyManagementPage />} />
 

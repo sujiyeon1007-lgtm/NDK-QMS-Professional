@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, Handshake, Pencil, Plus, Trash2, UserCheck, UserX } from "lucide-react";
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
@@ -15,6 +15,7 @@ import {
   stageMasterDelete,
   stageMasterUpdate,
 } from "../../utils/masterData";
+import { buildCompanyMasterSummary } from "../../utils/companyMasterDetail";
 import CompanyDetailModal from "./CompanyDetailModal";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import MasterDataBackLink from "./MasterDataBackLink";
@@ -25,6 +26,13 @@ import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
 
 const COMPANY_SELECTION_KEY = "titan-master-selected-company-id";
+
+const COMPANY_KPI_ICON = {
+  total: Building2,
+  trading: Handshake,
+  "with-contact": UserCheck,
+  "missing-contact": UserX,
+};
 
 function renderActiveLabel(row) {
   return row.activeLabel ?? (row.active === false ? "미사용" : "사용");
@@ -47,6 +55,8 @@ export default function CompanyManagementPage() {
   const allCompanies = useMemo(() => {
     return getMasterDataByCategory("companies").map((row) => formatMasterRowForDisplay(row));
   }, [refreshKey]);
+
+  const summaryKpis = useMemo(() => buildCompanyMasterSummary(), [refreshKey]);
 
   const filteredCompanies = useMemo(() => {
     const keyword = searchKeyword.trim();
@@ -166,11 +176,34 @@ export default function CompanyManagementPage() {
           <div>
             <h2>거래처관리</h2>
             <p className="company-management-page__intro">
-              거래처 목록을 관리합니다. 행을 더블클릭하면 상세 Popup에서 기본정보 · 담당자 · 거래
-              이력을 확인할 수 있습니다.
+              Project TITAN 전체가 참조하는 거래처 Master 입니다. 행을 더블클릭하면 상세 Popup에서
+              기본정보 · 담당자 · 거래이력 · 관련 제품 · LOT · 출고 · 품질까지 확인할 수 있습니다.
             </p>
           </div>
         </div>
+
+        <section className="company-master-kpis" aria-label="거래처 현황 요약">
+          {summaryKpis.map((kpi) => {
+            const Icon = COMPANY_KPI_ICON[kpi.id] ?? Building2;
+            return (
+              <div
+                key={kpi.id}
+                className={`company-master-kpi${kpi.tone === "danger" ? " is-danger" : ""}`}
+              >
+                <div className="company-master-kpi__head">
+                  <span className="company-master-kpi__icon">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <span className="company-master-kpi__label">{kpi.label}</span>
+                </div>
+                <div className="company-master-kpi__value">
+                  {Number(kpi.value ?? 0).toLocaleString("ko-KR")}
+                  <em>{kpi.unit}</em>
+                </div>
+              </div>
+            );
+          })}
+        </section>
 
         <TitanListInteractionHint />
 

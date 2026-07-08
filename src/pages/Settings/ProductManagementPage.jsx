@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Boxes, CheckCircle2, Factory, Pencil, Plus, ShieldAlert, Trash2, X } from "lucide-react";
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
-import { PRODUCT_LIST_COLUMNS } from "../../config/productDetailSections";
+import { PRODUCT_MASTER_LIST_COLUMNS } from "../../config/productDetailSections";
 import { getMasterDataScreen } from "../../config/masterDataScreens";
 import {
   formatMasterRowForDisplay,
@@ -16,6 +16,10 @@ import {
   stageMasterDelete,
   stageMasterUpdate,
 } from "../../utils/masterData";
+import {
+  buildProductListMeta,
+  buildProductMasterSummary,
+} from "../../utils/productMasterDetail";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import ProductDetailModal from "./ProductDetailModal";
 import MasterDataBackLink from "./MasterDataBackLink";
@@ -24,8 +28,16 @@ import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
+import "./ProductManagement.css";
 
 const PRODUCT_SELECTION_KEY = "titan-master-selected-product-id";
+
+const PRODUCT_KPI_ICON = {
+  total: Boxes,
+  active: CheckCircle2,
+  producible: Factory,
+  "needs-care": ShieldAlert,
+};
 
 function renderActiveLabel(row) {
   return row.activeLabel ?? (row.active === false ? "미사용" : "사용");
@@ -52,6 +64,9 @@ export default function ProductManagementPage() {
   const allProducts = useMemo(() => {
     return getMasterDataByCategory("products").map((row) => formatMasterRowForDisplay(row));
   }, [refreshKey]);
+
+  const summaryKpis = useMemo(() => buildProductMasterSummary(), [refreshKey]);
+  const listMeta = useMemo(() => buildProductListMeta(), [refreshKey]);
 
   const filteredProducts = useMemo(() => {
     let rows = allProducts;
@@ -118,7 +133,7 @@ export default function ProductManagementPage() {
 
   const tableColumns = useMemo(
     () =>
-      PRODUCT_LIST_COLUMNS.map((col) => ({
+      PRODUCT_MASTER_LIST_COLUMNS.map((col) => ({
         key: col.key,
         label: col.label,
         widthPercent: col.widthPercent,
@@ -129,9 +144,18 @@ export default function ProductManagementPage() {
                   {renderActiveLabel(row)}
                 </span>
               )
-            : undefined,
+            : col.render === "meta"
+              ? (row) => (
+                  <span className="product-master-meta-cell">
+                    {listMeta.get(row.id)?.[col.key] ?? "—"}
+                  </span>
+                )
+              : (row) => {
+                  const value = row?.[col.key];
+                  return value == null || String(value).trim() === "" ? "—" : String(value);
+                },
       })),
-    []
+    [listMeta]
   );
 
   const openDetail = (row) => {
@@ -188,11 +212,35 @@ export default function ProductManagementPage() {
           <div>
             <h2>제품관리</h2>
             <p className="company-management-page__intro">
-              제품 목록을 관리합니다. 행을 더블클릭하면 상세 Popup에서 거래처 · 재질 · 규격 · 단가
-              정보를 확인할 수 있습니다.
+              Project TITAN LOT Lifecycle · QR · 성적서(TDE) 연결의 중심이 되는 제품 Master 입니다.
+              행을 더블클릭하면 상세 Popup에서 재질 · 공정 · 생산 · 품질 · 성적서 · LOT · 출고까지
+              확인할 수 있습니다.
             </p>
           </div>
         </div>
+
+        <section className="company-master-kpis" aria-label="제품 현황 요약">
+          {summaryKpis.map((kpi) => {
+            const Icon = PRODUCT_KPI_ICON[kpi.id] ?? Boxes;
+            return (
+              <div
+                key={kpi.id}
+                className={`company-master-kpi${kpi.tone === "danger" ? " is-danger" : ""}`}
+              >
+                <div className="company-master-kpi__head">
+                  <span className="company-master-kpi__icon">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <span className="company-master-kpi__label">{kpi.label}</span>
+                </div>
+                <div className="company-master-kpi__value">
+                  {Number(kpi.value ?? 0).toLocaleString("ko-KR")}
+                  <em>{kpi.unit}</em>
+                </div>
+              </div>
+            );
+          })}
+        </section>
 
         <TitanListInteractionHint />
 
@@ -216,7 +264,7 @@ export default function ProductManagementPage() {
             type="search"
             value={searchKeyword}
             onChange={(event) => setSearchKeyword(event.target.value)}
-            placeholder="업체 · 품명 · 품번 · 재질 검색"
+            placeholder="품명 · 품번 · 거래처 · 재질 · 공정 · 상태 검색"
             aria-label="제품 검색"
           />
         </div>
@@ -264,6 +312,38 @@ export default function ProductManagementPage() {
             삭제
           </SecondaryButton>
         </div>
+
+        <footer className="product-master-status" aria-live="polite">
+          {selectedProduct ? (
+            <>
+              <span className="product-master-status__title">선택 제품</span>
+              <span className="product-master-status__name">
+                {selectedProduct.name || "—"}
+              </span>
+              <span className="product-master-status__item">
+                품번 <strong>{selectedProduct.partNo || "—"}</strong>
+              </span>
+              <span className="product-master-status__item">
+                거래처 <strong>{selectedProduct.company || "—"}</strong>
+              </span>
+              <span className="product-master-status__item">
+                재질 <strong>{selectedProduct.material || "—"}</strong>
+              </span>
+              <span
+                className={`product-master-status__health is-${
+                  listMeta.get(selectedProduct.id)?.healthStatus ?? "error"
+                }`}
+              >
+                {listMeta.get(selectedProduct.id)?.healthIcon ?? "🔴"}{" "}
+                {listMeta.get(selectedProduct.id)?.healthLabel ?? "관리 필요"}
+              </span>
+            </>
+          ) : (
+            <span className="product-master-status__empty">
+              목록에서 제품을 선택하면 요약이 표시됩니다.
+            </span>
+          )}
+        </footer>
       </div>
 
       <ProductDetailModal

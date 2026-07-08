@@ -30,13 +30,19 @@ export const COMPANY_CONTACT_COLUMNS = COMPANY_CONTACT_TABLE_COLUMNS;
 /** @deprecated legacy role fields */
 export const COMPANY_ROLE_CONTACT_FIELDS = COMPANY_CONTACT_TABLE_COLUMNS;
 
-/** 거래처 Popup 탭 */
+/**
+ * 거래처 Popup 탭 (Sprint 8 · Blueprint V1.0 — ERP Master 상세)
+ * 기본정보 · 담당자 · 거래이력 · 관련 제품 · 관련 LOT · 최근 출고 · 최근 품질 · 최근 수정
+ */
 export const COMPANY_DETAIL_TABS = [
   { id: "profile", label: "기본정보" },
-  { id: "contacts", label: "거래처 담당자" },
-  { id: "ndkAssignees", label: "우리회사 담당자" },
+  { id: "people", label: "담당자" },
   { id: "trade", label: "거래이력" },
-  { id: "products", label: "품목정보", future: true },
+  { id: "products", label: "관련 제품" },
+  { id: "lots", label: "관련 LOT" },
+  { id: "shipments", label: "최근 출고" },
+  { id: "quality", label: "최근 품질" },
+  { id: "updates", label: "최근 수정" },
 ];
 
 /** 거래처 Popup — 거래이력 필드 */
@@ -47,6 +53,42 @@ export const COMPANY_TRADE_SUMMARY_FIELDS = [
   { key: "inboundCount", label: "입고 건수", render: "count" },
   { key: "outboundCount", label: "출고 건수", render: "count" },
   { key: "latestCertificate", label: "최근 성적서" },
+];
+
+/** 거래처 Popup — 관련 제품 테이블 */
+export const COMPANY_RELATED_PRODUCT_COLUMNS = [
+  { key: "partName", label: "품명" },
+  { key: "partNo", label: "품번" },
+  { key: "material", label: "재질" },
+  { key: "process", label: "공정" },
+  { key: "activeLabel", label: "상태", render: "active" },
+];
+
+/** 거래처 Popup — 관련 LOT 테이블 */
+export const COMPANY_RELATED_LOT_COLUMNS = [
+  { key: "managementId", label: "관리번호" },
+  { key: "lotNo", label: "LOT.NO" },
+  { key: "partName", label: "품명" },
+  { key: "process", label: "현재공정" },
+  { key: "workDate", label: "작업일" },
+  { key: "qty", label: "수량" },
+];
+
+/** 거래처 Popup — 최근 출고 테이블 */
+export const COMPANY_SHIPMENT_COLUMNS = [
+  { key: "shippedAt", label: "출고일" },
+  { key: "managementId", label: "관리번호" },
+  { key: "partName", label: "품명" },
+  { key: "shipQty", label: "출고수량" },
+  { key: "shippedBy", label: "담당자" },
+];
+
+/** 거래처 Popup — 최근 품질(검사) 테이블 */
+export const COMPANY_QUALITY_COLUMNS = [
+  { key: "inspectionDate", label: "검사일" },
+  { key: "lotNo", label: "LOT.NO" },
+  { key: "partName", label: "품명" },
+  { key: "judgment", label: "판정", render: "judgment" },
 ];
 
 /**

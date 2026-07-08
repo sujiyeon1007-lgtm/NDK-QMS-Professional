@@ -14,3 +14,140 @@
 .product-page .inbound-page__workspace {
   margin-top: 12px;
 }
+
+/* ── Sprint 8 · Product Master (ERP/MES Master Data Hub) ── */
+
+/* 리스트 최근 생산/수정 메타 셀 */
+.product-master-meta-cell {
+  font-variant-numeric: tabular-nums;
+  color: var(--titan-text-muted, #64748b);
+}
+
+/* Product Health 배지 (Popup Header) */
+.product-health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.product-health-badge.is-ok {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.product-health-badge.is-warn {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fcd34d;
+}
+
+.product-health-badge.is-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+/* Footer Status — 선택 제품 요약 */
+.product-master-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 10px;
+  background: var(--titan-bg, #f8fafc);
+  font-size: 13px;
+}
+
+.product-master-status__title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--titan-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.product-master-status__name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.product-master-status__item {
+  color: var(--titan-text-muted, #64748b);
+}
+
+.product-master-status__item strong {
+  color: var(--titan-text-primary, #0f172a);
+  font-weight: 700;
+}
+
+.product-master-status__health {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.product-master-status__health.is-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.product-master-status__health.is-warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+.product-master-status__health.is-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.product-master-status__empty {
+  color: var(--titan-text-muted, #64748b);
+}
+
+/* 최근 수정 Timeline — 타입 배지 (등록 · 수정 · Import · Sync) */
+.company-detail-updates__row--typed {
+  grid-template-columns: 92px 44px 56px 1fr;
+}
+
+.company-detail-updates__type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.company-detail-updates__type.is-reg {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.company-detail-updates__type.is-edit {
+  background: #e2e8f0;
+  color: #475569;
+}
+.company-detail-updates__type.is-import {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.company-detail-updates__type.is-sync {
+  background: #cffafe;
+  color: #0e7490;
+}
