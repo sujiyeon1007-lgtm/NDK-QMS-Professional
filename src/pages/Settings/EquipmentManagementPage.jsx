@@ -37,6 +37,7 @@ import {
   buildEquipmentMasterDetail,
   buildEquipmentMasterSummary,
 } from "../../utils/equipmentMasterDetail";
+import { ensureEquipmentQrEntry } from "../../utils/qrEngineRegistryService";
 import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
@@ -218,6 +219,8 @@ export default function EquipmentManagementPage() {
         ? stageMasterUpdate(CATEGORY_KEY, selectedRow.id, form)
         : stageMasterAdd(CATEGORY_KEY, form);
     if (!result.ok) return;
+    const equipmentCode = String(form.code ?? result.row?.code ?? "").trim();
+    if (equipmentCode) ensureEquipmentQrEntry(equipmentCode);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) setSelectedId(result.row.id);

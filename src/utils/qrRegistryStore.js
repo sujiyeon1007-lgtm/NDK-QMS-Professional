@@ -10,6 +10,7 @@ import { getCurrentTitanUser } from "./titanHistorySession";
 export const QR_REGISTRY_TYPES = {
   INOUT: "inout",
   EQUIPMENT: "equipment",
+  LOT: "lot",
 };
 
 const STORAGE_KEY = "project-titan-qr-registry-v1";
@@ -61,16 +62,19 @@ function safeWriteSessionRows(rows) {
 
 function normalizeRow(row) {
   if (!row) return null;
+  const payload = String(row.payload ?? "");
   return {
     id: String(row.id ?? ""),
     qrType: row.qrType ?? row.qr_type,
     entityKey: String(row.entityKey ?? row.entity_key ?? ""),
-    payload: String(row.payload ?? ""),
+    payload,
+    scanValue: String(row.scanValue ?? row.scan_value ?? payload).trim() || payload,
     status: row.status === "regenerated" ? "regenerated" : "active",
     createdAt: row.createdAt ?? row.created_at ?? new Date().toISOString(),
     createdBy: row.createdBy ?? row.created_by ?? null,
     regeneratedAt: row.regeneratedAt ?? row.regenerated_at ?? null,
     regeneratedBy: row.regeneratedBy ?? row.regenerated_by ?? null,
+    reissueCount: Number(row.reissueCount ?? row.reissue_count ?? 0) || 0,
     printCount: Number(row.printCount ?? row.print_count ?? 0) || 0,
     lastPrintedAt: row.lastPrintedAt ?? row.last_printed_at ?? null,
     deletedAt: row.deletedAt ?? row.deleted_at ?? null,
@@ -159,7 +163,13 @@ function persistMutation(mutator) {
  * @param {string} payload
  * @param {string} [createdBy]
  */
-export function createQrRegistryEntry(qrType, entityKey, payload, createdBy = getCurrentTitanUser()) {
+export function createQrRegistryEntry(
+  qrType,
+  entityKey,
+  payload,
+  createdBy = getCurrentTitanUser(),
+  options = {}
+) {
   const key = String(entityKey ?? "").trim();
   if (!key) return { ok: false, message: "대상 키가 없습니다." };
   if (!payload?.trim()) return { ok: false, message: "QR payload가 없습니다." };
@@ -168,16 +178,20 @@ export function createQrRegistryEntry(qrType, entityKey, payload, createdBy = ge
   if (existing) return { ok: false, message: "이미 QR이 생성된 항목입니다." };
 
   const now = new Date().toISOString();
+  const trimmedPayload = payload.trim();
+  const scanValue = String(options.scanValue ?? trimmedPayload).trim() || trimmedPayload;
   const record = {
     id: buildId(qrType, key),
     qrType,
     entityKey: key,
-    payload: payload.trim(),
+    payload: trimmedPayload,
+    scanValue,
     status: "active",
     createdAt: now,
     createdBy,
     regeneratedAt: null,
     regeneratedBy: null,
+    reissueCount: 0,
     printCount: 0,
     lastPrintedAt: null,
     deletedAt: null,
@@ -187,16 +201,26 @@ export function createQrRegistryEntry(qrType, entityKey, payload, createdBy = ge
   return { ok: true, record };
 }
 
-export function regenerateQrRegistryEntry(id, payload, regeneratedBy = getCurrentTitanUser()) {
+export function regenerateQrRegistryEntry(
+  id,
+  payload,
+  regeneratedBy = getCurrentTitanUser(),
+  options = {}
+) {
   const current = getQrByIdSync(id);
   if (!current) return { ok: false, message: "QR을 찾을 수 없습니다." };
 
+  const trimmedPayload = payload?.trim() || current.payload;
+  const scanValue =
+    String(options.scanValue ?? current.scanValue ?? trimmedPayload).trim() || trimmedPayload;
   const next = {
     ...current,
-    payload: payload?.trim() || current.payload,
+    payload: trimmedPayload,
+    scanValue,
     status: "regenerated",
     regeneratedAt: new Date().toISOString(),
     regeneratedBy,
+    reissueCount: (current.reissueCount ?? 0) + 1,
   };
 
   persistMutation((rows) => rows.map((row) => (row.id === id ? next : row)));

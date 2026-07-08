@@ -45,6 +45,7 @@ import {
 } from "../../config/registerModalStandard";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
+import { ensureLotQrEntry } from "../../utils/qrEngineRegistryService";
 import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import {
   buildProductionDailyReportLotBundleFromSelectedRows,
@@ -600,6 +601,8 @@ export default function DailyProductionReport() {
         date: form.workDate || today,
         title: `LOT 등록 — ${form.lotNo}`,
       });
+      const lotNo = form.lotNo?.trim();
+      if (lotNo) ensureLotQrEntry(lotNo);
     }
 
     const lastId = products[products.length - 1]?.managementId;

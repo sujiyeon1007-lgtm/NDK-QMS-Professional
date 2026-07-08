@@ -115,6 +115,12 @@ import ProductionChargingOverviewPage from "../pages/Production/charging/Product
 import ProductionChargingProcessPage from "../pages/Production/charging/ProductionChargingProcessPage";
 import ProductionChargingEquipmentPage from "../pages/Production/charging/ProductionChargingEquipmentPage";
 import EquipmentStatusPage from "../pages/EquipmentStatus/EquipmentStatusPage";
+import QrEngineLayout from "../pages/QrEngine/QrEngineLayout";
+import QrEngineDashboardPage from "../pages/QrEngine/QrEngineDashboardPage";
+import QrEngineGeneratorPage from "../pages/QrEngine/QrEngineGeneratorPage";
+import QrEngineRegistryPage from "../pages/QrEngine/QrEngineRegistryPage";
+import QrEngineScanPage from "../pages/QrEngine/QrEngineScanPage";
+import QrEngineEquipmentWorkPage from "../pages/QrEngine/QrEngineEquipmentWorkPage";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
 
@@ -307,6 +313,15 @@ function AppRoutes() {
             <Route path="/accounting" element={<AccountingHubPage />} />
 
             <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
+
+            <Route path="/qr" element={<QrEngineLayout />}>
+              <Route index element={<Navigate to="/qr/dashboard" replace />} />
+              <Route path="dashboard" element={<QrEngineDashboardPage />} />
+              <Route path="generator" element={<QrEngineGeneratorPage />} />
+              <Route path="registry" element={<QrEngineRegistryPage />} />
+              <Route path="scan" element={<QrEngineScanPage />} />
+              <Route path="equipment/:equipmentId" element={<QrEngineEquipmentWorkPage />} />
+            </Route>
 
             <Route path="/qr-workflow" element={<Navigate to="/production/charging" replace />} />
             <Route path="/qr-workflow/charging" element={<Navigate to="/production/charging" replace />} />
