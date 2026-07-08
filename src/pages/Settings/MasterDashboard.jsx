@@ -19,6 +19,7 @@ import { buildMasterDataDashboardSnapshot } from "../../utils/masterDataDashboar
 
 import "../Statistics/StatisticsDashboard.css";
 import "./MasterDashboard.css";
+import "./MasterDataSprint8Polish.css";
 
 const SUMMARY_ICON = {
   companies: Building2,
@@ -32,7 +33,7 @@ const SUMMARY_ICON = {
 const HEALTH_STATUS_LABEL = {
   ok: "정상",
   warn: "확인 필요",
-  error: "조치 필요",
+  error: "관리 필요",
 };
 
 function formatNumber(value) {

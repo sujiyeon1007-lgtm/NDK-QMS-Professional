@@ -1,0 +1,172 @@
+/*
+ * Project TITAN Sprint 8 — Domain Master Workspace (2-Panel) 공통 스타일
+ * 기준 화면: 재질관리(Material Master)
+ * ⑤ Process · ⑥ Equipment · ⑦ Worker Master 에서 동일 클래스 재사용.
+ * KPI · Badge · Timeline · Table 스타일은 CompanyManagement.css / ProductManagement.css 재사용.
+ */
+
+.domain-master-workspace {
+  display: grid;
+  grid-template-columns: minmax(380px, 40%) 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 4px;
+}
+
+/* ── 좌측 List Panel ── */
+.domain-master-workspace__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 12px;
+  background: var(--titan-surface, #fff);
+}
+
+.domain-master-workspace__list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.domain-master-workspace__list-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+/* ── 우측 Detail Workspace ── */
+.domain-master-workspace__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 480px;
+  padding: 16px 18px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 12px;
+  background: var(--titan-surface, #fff);
+}
+
+.domain-master-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--titan-border, #dde6f0);
+}
+
+.domain-master-detail__title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.domain-master-detail__title h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.domain-master-detail__spec {
+  font-size: 13px;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.domain-master-detail__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── 대표 스펙 카드 ── */
+.domain-master-detail__summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f6fc 100%);
+}
+
+.domain-master-summary__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.domain-master-summary__name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.domain-master-summary__spec {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.domain-master-summary__metrics {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.domain-master-summary__metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.domain-master-summary__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.domain-master-summary__metrics strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+/* ── Detail body ── */
+.domain-master-detail__body {
+  min-height: 200px;
+}
+
+.domain-master-detail__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 420px;
+  color: var(--titan-text-muted, #94a3b8);
+  text-align: center;
+}
+
+.domain-master-detail__empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ── Responsive (좁은 폭 → 세로 stack) ── */
+@media (max-width: 1180px) {
+  .domain-master-workspace {
+    grid-template-columns: 1fr;
+  }
+}

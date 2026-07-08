@@ -1,0 +1,175 @@
+/**
+ * Project TITAN Sprint 8 — Master Data Workspace Final Stabilization (UI Polish)
+ * Master Dashboard · Business Master · Domain Master 공통 디자인 통일.
+ * 기능/Architecture 변경 없음 — CSS + Footer Health 라벨 형식만 정리.
+ */
+
+/* ── KPI: company-master-kpi ↔ stat-dash-kpi 높이 · 숫자 정렬 통일 ── */
+.company-master-kpis {
+  gap: 12px;
+}
+
+.company-master-kpi {
+  min-height: 108px;
+  justify-content: space-between;
+}
+
+.company-master-kpi__value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.company-master-kpi__icon {
+  flex-shrink: 0;
+}
+
+/* Master Dashboard Summary — Business/Domain KPI와 동일 숫자 톤 */
+.master-dash-summary .stat-dash-kpi {
+  min-height: 108px;
+}
+
+.master-dash-summary .stat-dash-kpi__value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Search: 높이 · 폭 · Placeholder 통일 ── */
+.company-management-page__search input[type="search"] {
+  width: 100%;
+  max-width: none;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-primary, #0f172a);
+  background: var(--titan-surface, #fff);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.company-management-page__search input[type="search"]::placeholder {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.company-management-page__search input[type="search"]:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ── List: Domain Master Row Height · Hover/Selected (공통 테이블) ── */
+.domain-master-workspace__list .titan-table__cell {
+  padding: 8px 10px;
+}
+
+.domain-master-workspace__list .titan-table__cell--head {
+  padding: 9px 10px;
+}
+
+.company-management-page__table-wrap--compact .titan-table__cell {
+  padding: 8px 10px;
+}
+
+.company-management-page__table-wrap--compact .titan-table__cell--head {
+  padding: 9px 10px;
+}
+
+/* ── Detail: Header · Summary Card · Tab 높이 통일 ── */
+.domain-master-detail__header {
+  min-height: 52px;
+  align-items: center;
+}
+
+.domain-master-detail__summary-card {
+  min-height: 88px;
+}
+
+.domain-master-workspace__detail .company-detail-tabs__btn {
+  min-height: 34px;
+}
+
+.product-health-badge {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ── Footer Status: Sprint 8 공통 형식 ── */
+.product-master-status {
+  min-height: 46px;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+
+.product-master-status__title {
+  min-width: 72px;
+}
+
+.product-master-status__name {
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-master-status__item strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.product-master-status__health-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--titan-text-muted, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.product-master-status__health {
+  margin-left: 0;
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.product-master-status__health.is-ok {
+  border-color: #86efac;
+}
+
+.product-master-status__health.is-warn {
+  border-color: #fcd34d;
+}
+
+.product-master-status__health.is-error {
+  border-color: #fca5a5;
+}
+
+/* ── Empty State ── */
+.domain-master-detail__empty,
+.stat-dash-empty,
+.company-detail-section__empty {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.domain-master-detail__empty {
+  min-height: 400px;
+}
+
+.stat-dash-empty {
+  margin: 0;
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--titan-text-muted, #64748b);
+}

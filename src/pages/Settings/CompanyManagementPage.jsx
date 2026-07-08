@@ -24,6 +24,8 @@ import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
+import "./ProductManagement.css";
+import "./MasterDataSprint8Polish.css";
 
 const COMPANY_SELECTION_KEY = "titan-master-selected-company-id";
 
@@ -260,6 +262,25 @@ export default function CompanyManagementPage() {
             삭제
           </SecondaryButton>
         </div>
+
+        <footer className="product-master-status" aria-live="polite">
+          {selectedCompany ? (
+            <>
+              <span className="product-master-status__title">선택 거래처</span>
+              <span className="product-master-status__name">{selectedCompany.name || "—"}</span>
+              <span className="product-master-status__item">
+                코드 <strong>{selectedCompany.code || "—"}</strong>
+              </span>
+              <span className="product-master-status__item">
+                상태 <strong>{selectedCompany.activeLabel ?? "사용"}</strong>
+              </span>
+            </>
+          ) : (
+            <span className="product-master-status__empty">
+              목록에서 거래처를 선택하면 요약이 표시됩니다.
+            </span>
+          )}
+        </footer>
       </div>
 
       <CompanyDetailModal

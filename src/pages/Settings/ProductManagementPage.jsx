@@ -29,6 +29,7 @@ import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
 import "./ProductManagement.css";
+import "./MasterDataSprint8Polish.css";
 
 const PRODUCT_SELECTION_KEY = "titan-master-selected-product-id";
 
@@ -329,13 +330,18 @@ export default function ProductManagementPage() {
               <span className="product-master-status__item">
                 재질 <strong>{selectedProduct.material || "—"}</strong>
               </span>
-              <span
-                className={`product-master-status__health is-${
-                  listMeta.get(selectedProduct.id)?.healthStatus ?? "error"
-                }`}
-              >
-                {listMeta.get(selectedProduct.id)?.healthIcon ?? "🔴"}{" "}
-                {listMeta.get(selectedProduct.id)?.healthLabel ?? "관리 필요"}
+              <span className="product-master-status__item product-master-status__health-group">
+                Health
+                <span
+                  className={`product-master-status__health is-${
+                    listMeta.get(selectedProduct.id)?.healthStatus ?? "error"
+                  }`}
+                >
+                  <span aria-hidden="true">
+                    {listMeta.get(selectedProduct.id)?.healthIcon ?? "🔴"}
+                  </span>{" "}
+                  {listMeta.get(selectedProduct.id)?.healthLabel ?? "관리 필요"}
+                </span>
               </span>
             </>
           ) : (

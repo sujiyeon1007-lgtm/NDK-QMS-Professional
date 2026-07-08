@@ -54,6 +54,14 @@ import CompanyManagementPage from "../pages/Settings/CompanyManagementPage";
 
 import ProductManagementPage from "../pages/Settings/ProductManagementPage";
 
+import MaterialManagementPage from "../pages/Settings/MaterialManagementPage";
+
+import ProcessManagementPage from "../pages/Settings/ProcessManagementPage";
+
+import EquipmentManagementPage from "../pages/Settings/EquipmentManagementPage";
+
+import WorkerManagementPage from "../pages/Settings/WorkerManagementPage";
+
 import MasterEntityManagementPage from "../pages/Settings/MasterEntityManagementPage";
 
 import MasterDataManagement from "../pages/Settings/MasterDataManagement";
@@ -323,15 +331,17 @@ function AppRoutes() {
 
               <Route path="products" element={<ProductManagementPage />} />
 
-              <Route path="materials" element={<MasterEntityManagementPage tabId="materials" />} />
+              <Route path="materials" element={<MaterialManagementPage />} />
 
-              <Route path="processes" element={<MasterEntityManagementPage tabId="processes" />} />
+              <Route path="processes" element={<ProcessManagementPage />} />
 
-              <Route path="equipment" element={<MasterEntityManagementPage tabId="equipment" />} />
+              <Route path="equipment" element={<EquipmentManagementPage />} />
 
-              <Route path="workers" element={<MasterEntityManagementPage tabId="workers" />} />
+              <Route path="workers" element={<WorkerManagementPage />} />
 
               <Route path="company" element={<Navigate to="/settings/companies" replace />} />
+
+              <Route path="customers" element={<Navigate to="/settings/companies" replace />} />
 
               <Route path="baseline" element={<Navigate to="/settings/materials" replace />} />
 
