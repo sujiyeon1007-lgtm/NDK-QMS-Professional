@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./foundation/styles/foundation.css";
+import "./foundation/styles/titan-design-system.css";
 import App from "./App.jsx";
 import "./utils/masterData";
 import { getTitanDataEngine } from "./foundation/data";

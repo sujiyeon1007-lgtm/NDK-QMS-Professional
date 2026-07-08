@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 
+import { resolveQrBrowserPayload } from "../../config/qrBrowserUrlConfig";
 import { printTitanDocument } from "../../utils/titanPrintExport";
 import { reprintQrRecords } from "../../utils/qrManagementSession";
 import QrPrintSheet from "./QrPrintSheet";
@@ -10,7 +11,7 @@ export function useQrPrintActions({ title = "QR 라벨" } = {}) {
   const printRef = useRef(null);
 
   const handlePrintRows = async (targets) => {
-    const printable = targets.filter((row) => row?.hasQr && row?.qrPayload);
+    const printable = targets.filter((row) => row?.hasQr && resolveQrBrowserPayload(row));
     if (!printable.length) {
       window.alert("출력할 QR을 선택하세요.");
       return;

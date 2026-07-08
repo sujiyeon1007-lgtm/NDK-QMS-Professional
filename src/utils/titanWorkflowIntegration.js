@@ -15,6 +15,13 @@ import { recordQrTraceabilityEvent } from "./qrTraceabilitySession";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 import { getTimelineByLotNo, getTimelineByEquipmentId } from "./timelineQuery";
 import { prepareCertificateLinkForLot } from "./certificateLinkPrep";
+import {
+  addActualWorkRecord,
+  getActualWorkRecords,
+  getApprovedRecipesForSelection,
+  updateActualWorkRecord,
+} from "./actualWorkRecordStore";
+import { addKnowledgeRecord, getKnowledgeRecords } from "./knowledgeRecordStore";
 
 /** @type {boolean} */
 let integrationInitialized = false;
@@ -28,6 +35,21 @@ function formatNowClock() {
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
+}
+
+function formatNowDateTime() {
+  const date = new Date();
+  const day = date.toISOString().slice(0, 10);
+  return `${day} ${formatNowClock()}`;
+}
+
+function normalizeWorkConditions(value) {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, raw]) => [key, String(raw ?? "").trim()])
+      .filter(([, raw]) => raw.length > 0)
+  );
 }
 
 /**
@@ -168,6 +190,122 @@ function syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo) {
   }
 }
 
+function findActualWorkRecordForLot(lotNo, equipmentName = "") {
+  const lotKey = normalizeProductionLotKey(lotNo);
+  if (!lotKey) return null;
+
+  return (
+    getActualWorkRecords()
+      .filter((row) => normalizeProductionLotKey(row.lotNo) === lotKey)
+      .filter((row) => !equipmentName || row.equipmentName === equipmentName)
+      .sort((a, b) => String(b.updatedAt ?? b.createdAt ?? "").localeCompare(String(a.updatedAt ?? a.createdAt ?? "")))[0] ??
+    null
+  );
+}
+
+function syncActualWorkOnStart(params) {
+  const lotNo = String(params.lotNo ?? "").trim();
+  if (!lotNo) return null;
+
+  const equipmentName = String(params.equipmentName ?? params.equipmentId ?? "").trim();
+  const operator = String(params.operator ?? getCurrentTitanUser() ?? "생산부").trim();
+  const actualParameters = normalizeWorkConditions(params.workConditions);
+  const existing = findActualWorkRecordForLot(lotNo, equipmentName);
+
+  if (existing) {
+    const result = updateActualWorkRecord(existing.id, {
+      ...existing,
+      lotNo,
+      equipmentName,
+      workerName: operator,
+      chargeStartAt: existing.chargeStartAt || formatNowDateTime(),
+      chargeEndAt: existing.chargeEndAt || "",
+      workMemo: params.workMemo ?? existing.workMemo ?? "",
+      actualParameters: { ...(existing.actualParameters ?? {}), ...actualParameters },
+      status: "in-progress",
+    });
+    return result.ok ? result.row : existing;
+  }
+
+  const recipe = getApprovedRecipesForSelection()[0] ?? null;
+  if (!recipe) return null;
+
+  const result = addActualWorkRecord({
+    recipeId: recipe.id,
+    lotNo,
+    mesManagementNo: params.managementId ?? params.chargeableRow?.managementId ?? "",
+    equipmentName,
+    workerName: operator,
+    chargeStartAt: formatNowDateTime(),
+    chargeEndAt: "",
+    workMemo: params.workMemo ?? "",
+    actualParameters,
+    status: "in-progress",
+  });
+  return result.ok ? result.row : null;
+}
+
+function syncKnowledgeOnFinish(params) {
+  const lotNo = String(params.lotNo ?? "").trim();
+  if (!lotNo) return { actualWorkRecord: null, knowledgeRecord: null };
+
+  const equipmentName = String(params.equipmentName ?? params.equipmentId ?? "").trim();
+  const operator = String(params.operator ?? getCurrentTitanUser() ?? "생산부").trim();
+  const actualParameters = normalizeWorkConditions(params.workConditions);
+  const existingActual = findActualWorkRecordForLot(lotNo, equipmentName);
+  let actualWorkRecord = existingActual;
+
+  if (existingActual) {
+    const result = updateActualWorkRecord(existingActual.id, {
+      ...existingActual,
+      lotNo,
+      equipmentName,
+      workerName: operator,
+      chargeStartAt: existingActual.chargeStartAt || formatNowDateTime(),
+      chargeEndAt: formatNowDateTime(),
+      workMemo: params.workMemo ?? existingActual.workMemo ?? "",
+      actualParameters: { ...(existingActual.actualParameters ?? {}), ...actualParameters },
+      status: "completed",
+    });
+    actualWorkRecord = result.ok ? result.row : existingActual;
+  } else {
+    actualWorkRecord = syncActualWorkOnStart(params);
+    if (actualWorkRecord) {
+      const result = updateActualWorkRecord(actualWorkRecord.id, {
+        ...actualWorkRecord,
+        chargeEndAt: formatNowDateTime(),
+        status: "completed",
+      });
+      actualWorkRecord = result.ok ? result.row : actualWorkRecord;
+    }
+  }
+
+  if (!actualWorkRecord) return { actualWorkRecord: null, knowledgeRecord: null };
+
+  const alreadyLinked = getKnowledgeRecords().find(
+    (row) => row.actualWorkRecordId === actualWorkRecord.id
+  );
+  if (alreadyLinked) return { actualWorkRecord, knowledgeRecord: alreadyLinked };
+
+  const knowledge = addKnowledgeRecord({
+    actualWorkRecordId: actualWorkRecord.id,
+    company: params.chargeableRow?.companyName ?? params.companyName ?? "",
+    partNo: params.chargeableRow?.partNo ?? params.partNo ?? "",
+    partName: params.chargeableRow?.partName ?? params.productName ?? "",
+    quantity: String(params.chargeableRow?.qty ?? params.quantity ?? ""),
+    inspectionResult: {},
+    result: "PASS",
+    inspectorName: "",
+    inspectedAt: "",
+    knowledgeMemo: "Workflow Engine · finishCharging 자동 축적",
+  });
+
+  return {
+    actualWorkRecord,
+    knowledgeRecord: knowledge.ok ? knowledge.row : null,
+  };
+}
+
 /**
  * @param {{
  *   equipmentId: string,
@@ -200,6 +338,13 @@ export function executeStartCharging(input) {
   });
 
   syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo);
+  const actualWorkRecord = syncActualWorkOnStart({
+    ...input,
+    equipmentId,
+    lotNo,
+    operator,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+  });
 
   const legacyIds = bridgeLegacyDailyReportOnStart({
     ...input,
@@ -216,9 +361,10 @@ export function executeStartCharging(input) {
     lotNo,
     productionId: result.productionId,
     legacyRecordIds: legacyIds,
+    actualWorkRecordId: actualWorkRecord?.id ?? null,
   });
 
-  return { ...result, legacyRecordIds: legacyIds };
+  return { ...result, legacyRecordIds: legacyIds, actualWorkRecord };
 }
 
 /**
@@ -257,6 +403,13 @@ export function executeFinishCharging(input) {
     operator,
     equipmentName: equipment?.equipmentName ?? equipmentId,
   });
+  const knowledgeSync = syncKnowledgeOnFinish({
+    ...input,
+    equipmentId,
+    lotNo,
+    operator,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+  });
 
   notifyWorkflowDataRefresh({
     action: "finishCharging",
@@ -264,9 +417,11 @@ export function executeFinishCharging(input) {
     lotNo,
     productionId: result.productionId,
     legacyRecordIds: legacyIds,
+    actualWorkRecordId: knowledgeSync.actualWorkRecord?.id ?? null,
+    knowledgeRecordId: knowledgeSync.knowledgeRecord?.id ?? null,
   });
 
-  return { ...result, legacyRecordIds: legacyIds };
+  return { ...result, legacyRecordIds: legacyIds, ...knowledgeSync };
 }
 
 /** @param {string} [equipmentId] @param {string} [lotNo] */

@@ -80,8 +80,17 @@ export function useQRWorkflow(initialEquipmentId) {
     setWorkflowError("");
   }, []);
 
-  const handleStartCharging = useCallback(() => {
+  const normalizeActionOptions = useCallback((value) => {
+    if (!value || typeof value !== "object") return {};
+    if (typeof value.preventDefault === "function" || typeof value.stopPropagation === "function") {
+      return {};
+    }
+    return value;
+  }, []);
+
+  const handleStartCharging = useCallback((options) => {
     setWorkflowError("");
+    const actionOptions = normalizeActionOptions(options);
     const lotRow = selectedLotRow;
     const lotNo = lotRow?.lotNo ?? activeSession?.lotNo ?? "";
     if (!selectedEquipmentId) {
@@ -95,6 +104,7 @@ export function useQRWorkflow(initialEquipmentId) {
 
     try {
       executeStartCharging({
+        ...actionOptions,
         equipmentId: selectedEquipmentId,
         lotNo,
         chargeableRow: lotRow ?? undefined,
@@ -103,10 +113,11 @@ export function useQRWorkflow(initialEquipmentId) {
     } catch (error) {
       setWorkflowError(error instanceof Error ? error.message : String(error));
     }
-  }, [activeSession?.lotNo, selectedEquipmentId, selectedLotRow]);
+  }, [activeSession?.lotNo, normalizeActionOptions, selectedEquipmentId, selectedLotRow]);
 
-  const handleFinishCharging = useCallback(() => {
+  const handleFinishCharging = useCallback((options) => {
     setWorkflowError("");
+    const actionOptions = normalizeActionOptions(options);
     if (!selectedEquipmentId) {
       setWorkflowError("설비를 선택하세요.");
       return;
@@ -115,6 +126,7 @@ export function useQRWorkflow(initialEquipmentId) {
     const lotNo = activeSession?.lotNo ?? selectedLotRow?.lotNo ?? "";
     try {
       executeFinishCharging({
+        ...actionOptions,
         equipmentId: selectedEquipmentId,
         lotNo,
         chargeableRow: selectedLotRow ?? undefined,
@@ -122,7 +134,7 @@ export function useQRWorkflow(initialEquipmentId) {
     } catch (error) {
       setWorkflowError(error instanceof Error ? error.message : String(error));
     }
-  }, [activeSession?.lotNo, selectedEquipmentId, selectedLotRow]);
+  }, [activeSession?.lotNo, normalizeActionOptions, selectedEquipmentId, selectedLotRow]);
 
   return {
     equipmentList,

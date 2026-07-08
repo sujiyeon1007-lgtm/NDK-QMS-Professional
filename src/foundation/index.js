@@ -5,6 +5,7 @@ export { default as Footer } from "./layout/Footer";
 export { default as SectionPageLayout } from "./layout/SectionPageLayout";
 export { default as PageTopBar } from "./layout/PageTopBar";
 export * from "./components";
+export * from "./uiKit";
 export { default as PagePlaceholder } from "./pages/PagePlaceholder";
 export {
   default as TitanComingSoonPlaceholder,

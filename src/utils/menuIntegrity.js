@@ -1,6 +1,6 @@
 /**
  * Project TITAN — Menu Freeze integrity checks (재발 방지)
- * Menu Freeze V2.0 Blueprint — 9 sidebar menus · Launcher Hub
+ * Menu Freeze V1.0 Access Lock — 12 sidebar menus · Launcher Hub
  * Sprint 3E — 제품현황 제거 · Control Room(설비현황) Product View 흡수
  * @see src/config/menuFreezeV1.js
  */
@@ -26,16 +26,19 @@ import { QMS_APPROVED_SIDEBAR_MENUS } from "../config/qmsMenuWorkflow";
 export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   home: "/home",
   equipmentStatus: "/equipment-status",
+  qrEngine: "/qr",
   inoutManagement: "/inout",
   productionManagement: "/production",
   qualityManagement: "/quality",
   statisticsInquiry: "/statistics/dashboard",
+  accountingClerk: "/accounting-clerk",
+  accounting: "/accounting",
   masterData: "/settings",
   environment: "/environment",
   companyInfo: "/company",
 };
 
-const MENU_FREEZE_ITEM_COUNT = 9;
+const MENU_FREEZE_ITEM_COUNT = 12;
 
 const CRITICAL_MENU_IDS = [
   "inoutManagement",

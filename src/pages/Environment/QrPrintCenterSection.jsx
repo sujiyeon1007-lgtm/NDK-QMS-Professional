@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Eye, FileDown, Printer, QrCode, RotateCcw } from "lucide-react";
 
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton, SecondaryButton } from "../../foundation/uiKit";
 import { QR_PRINT_CENTER, buildSmartAccessPath } from "../../config/smartAccessArchitecture";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 

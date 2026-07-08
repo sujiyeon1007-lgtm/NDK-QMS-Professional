@@ -6,14 +6,25 @@ import { getEquipmentDetailSnapshot } from "../../utils/equipmentWorkflowService
 import { buildQrWorkflowTechnologyView } from "../../utils/qrWorkflowTechnologyBridge";
 import QrWorkflowTechnologyStack from "../QrManagement/components/QrWorkflowTechnologyStack";
 import { useQRWorkflow } from "../QrManagement/hooks/useQRWorkflow";
+import QrMobileWorkMode from "./components/QrMobileWorkMode";
 import QrEnginePageShell, { qrEngineBreadcrumbTrail } from "./QrEnginePageShell";
 import "../QrManagement/QRManagement.css";
 import "../QrManagement/components/QrWorkflowTechnologyStack.css";
 
 export default function QrEngineEquipmentWorkPage() {
   const { equipmentId } = useParams();
-  const { selectedEquipment, activeSession, availableLots, activeLotId, refreshKey } =
-    useQRWorkflow(equipmentId);
+  const {
+    selectedEquipment,
+    activeSession,
+    availableLots,
+    activeLotId,
+    chargingButtons,
+    workflowError,
+    selectLot,
+    handleStartCharging,
+    handleFinishCharging,
+    refreshKey,
+  } = useQRWorkflow(equipmentId);
 
   const detail = useMemo(
     () => getEquipmentDetailSnapshot(equipmentId),
@@ -67,7 +78,30 @@ export default function QrEngineEquipmentWorkPage() {
           </Link>
         </div>
 
-        <QrWorkflowTechnologyStack view={technologyView} />
+        <QrMobileWorkMode
+          view={technologyView}
+          buttonState={chargingButtons}
+          onStart={handleStartCharging}
+          onFinish={handleFinishCharging}
+          workflowError={workflowError}
+          availableLots={availableLots}
+          activeLotId={activeLotId}
+          onSelectLot={selectLot}
+        />
+
+        <div className="qr-engine-equipment-desktop-stack">
+          <QrWorkflowTechnologyStack
+            view={technologyView}
+            buttonState={chargingButtons}
+            onStart={handleStartCharging}
+            onFinish={handleFinishCharging}
+          />
+        </div>
+        {workflowError ? (
+          <p className="home-empty" role="alert">
+            {workflowError}
+          </p>
+        ) : null}
       </div>
     </QrEnginePageShell>
   );

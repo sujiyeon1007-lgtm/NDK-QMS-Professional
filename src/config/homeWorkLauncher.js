@@ -1,10 +1,13 @@
 import {
   BarChart3,
+  Calculator,
   Factory,
   LayoutGrid,
   Monitor,
   Package,
+  QrCode,
   Truck,
+  Wallet,
 } from "lucide-react";
 
 /**
@@ -90,6 +93,45 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     metrics: [
       { key: "heatRunning", label: "열처리 중", suffix: "건" },
       { key: "inspectionWait", label: "검사 대기", suffix: "건" },
+    ],
+  },
+  {
+    id: "accountingClerk",
+    label: "경리관리",
+    badge: "경리",
+    tone: "blue",
+    path: "/accounting-clerk",
+    icon: Wallet,
+    moduleId: "accountingClerk",
+    metrics: [
+      { key: "activeFeatures", label: "사용 기능", suffix: "개" },
+      { key: "comingSoon", label: "준비 중", suffix: "개" },
+    ],
+  },
+  {
+    id: "accounting",
+    label: "회계관리",
+    badge: "회계",
+    tone: "purple",
+    path: "/accounting",
+    icon: Calculator,
+    moduleId: "accounting",
+    metrics: [
+      { key: "referenceViews", label: "조회 화면", suffix: "개" },
+      { key: "comingSoon", label: "준비 중", suffix: "개" },
+    ],
+  },
+  {
+    id: "qrEngine",
+    label: "QR Engine",
+    badge: "QR",
+    tone: "cyan",
+    path: "/qr",
+    icon: QrCode,
+    moduleId: "qrSystem",
+    metrics: [
+      { key: "registry", label: "Registry", suffix: "건" },
+      { key: "scanRoutes", label: "Scan Route", suffix: "개" },
     ],
   },
 ];

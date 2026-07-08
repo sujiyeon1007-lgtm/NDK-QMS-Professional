@@ -1,3 +1,23 @@
+/* Environment Workspace — Sprint 12 placeholder CRUD actions */
+.environment-workspace-crud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.environment-workspace-crud-actions button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: not-allowed;
+}
+
 .environment-page .production-kpi-panel {
   margin-bottom: 0;
 }

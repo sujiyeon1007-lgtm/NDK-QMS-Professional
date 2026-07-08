@@ -36,12 +36,33 @@ function FieldGrid({ rows }) {
   );
 }
 
-function QrWorkflowActionBar({ links, lotNo }) {
+function QrWorkflowActionBar({ links, lotNo, buttonState, onStart, onFinish }) {
   const disabledTitle = "Sprint 10 Phase 1 placeholder";
+  const hasActions = Boolean(buttonState && (onStart || onFinish));
+  const startDisabled = hasActions
+    ? !buttonState?.showStart || !buttonState?.startEnabled
+    : true;
+  const finishDisabled = hasActions
+    ? !buttonState?.showComplete || !buttonState?.completeEnabled
+    : true;
   return (
     <footer className="qr-tech-stack__actions" aria-label="QR Workflow actions">
-      <PrimaryButton type="button" disabled title={disabledTitle}>작업 시작</PrimaryButton>
-      <SecondaryButton type="button" disabled title={disabledTitle}>작업 완료</SecondaryButton>
+      <PrimaryButton
+        type="button"
+        disabled={startDisabled}
+        title={hasActions ? undefined : disabledTitle}
+        onClick={onStart}
+      >
+        작업 시작
+      </PrimaryButton>
+      <SecondaryButton
+        type="button"
+        disabled={finishDisabled}
+        title={hasActions ? undefined : disabledTitle}
+        onClick={onFinish}
+      >
+        작업 종료
+      </SecondaryButton>
       <SecondaryButton type="button" disabled title={disabledTitle}>검사 등록</SecondaryButton>
       {lotNo ? (
         <Link to={links?.lotLifecycle ?? `/quality/lot-lifecycle?lot=${encodeURIComponent(lotNo)}`}>
@@ -61,7 +82,7 @@ function QrWorkflowActionBar({ links, lotNo }) {
   );
 }
 
-export default function QrWorkflowTechnologyStack({ view }) {
+export default function QrWorkflowTechnologyStack({ view, buttonState, onStart, onFinish }) {
   if (!view) return null;
   const summary = view.equipmentSummary;
   const statusMeta = EQUIPMENT_RUN_STATUS_META[summary?.status] ?? EQUIPMENT_RUN_STATUS_META.idle;
@@ -189,7 +210,13 @@ export default function QrWorkflowTechnologyStack({ view }) {
         ) : (<p className="qr-tech-stack__empty">LOT를 선택하면 Lifecycle 정보가 표시됩니다.</p>)}
       </SectionCard>
 
-      <QrWorkflowActionBar links={view.links} lotNo={view.lotNo} />
+      <QrWorkflowActionBar
+        links={view.links}
+        lotNo={view.lotNo}
+        buttonState={buttonState}
+        onStart={onStart}
+        onFinish={onFinish}
+      />
     </div>
   );
 }

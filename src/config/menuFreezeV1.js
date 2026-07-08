@@ -13,14 +13,17 @@ export const MENU_FREEZE_VERSION = "V1.5";
 export const MENU_FREEZE_LOCKED = true;
 export const MENU_FREEZE_DATE = "2026-07-07";
 
-/** Sidebar 1Depth — V2.0 Blueprint 정렬 (9 menus · 2026-07-08 Beta Freeze) */
+/** Sidebar 1Depth — V1.0 Access Lock (12 menus · 2026-07-08 PM) */
 export const MENU_FREEZE_SIDEBAR_ORDER = [
   "home",
   "equipmentStatus",
+  "qrEngine",
   "inoutManagement",
   "productionManagement",
   "qualityManagement",
   "statisticsInquiry",
+  "accountingClerk",
+  "accounting",
   "masterData",
   "environment",
   "companyInfo",
@@ -33,7 +36,7 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
     id: "mes",
     label: "MES",
     emoji: "🏭",
-    menuIds: ["equipmentStatus"],
+    menuIds: ["equipmentStatus", "qrEngine"],
   },
   {
     id: "operations",
@@ -51,7 +54,7 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
     id: "executive",
     label: "경영",
     emoji: "📊",
-    menuIds: ["statisticsInquiry"],
+    menuIds: ["statisticsInquiry", "accountingClerk", "accounting"],
   },
   {
     id: "system",
@@ -61,17 +64,20 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
   },
 ];
 
-/** Sidebar 1Depth — V2.0 Blueprint 정렬 (9 menus · Launcher Hub) */
+/** Sidebar 1Depth — V1.0 Access Lock (12 menus · Launcher Hub) */
 export const MENU_FREEZE_SIDEBAR = [
   { order: 1, id: "home", label: "HOME", emoji: "🏠" },
   { order: 2, id: "equipmentStatus", label: "설비현황", emoji: "📡" },
-  { order: 3, id: "inoutManagement", label: "운영관리", emoji: "📦" },
-  { order: 4, id: "productionManagement", label: "생산관리", emoji: "🏭" },
-  { order: 5, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
-  { order: 6, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
-  { order: 7, id: "masterData", label: "기준정보관리", emoji: "⚙" },
-  { order: 8, id: "environment", label: "환경설정", emoji: "🔧" },
-  { order: 9, id: "companyInfo", label: "회사정보", emoji: "🏢" },
+  { order: 3, id: "qrEngine", label: "QR Engine", emoji: "▣" },
+  { order: 4, id: "inoutManagement", label: "운영관리", emoji: "📦" },
+  { order: 5, id: "productionManagement", label: "생산관리", emoji: "🏭" },
+  { order: 6, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
+  { order: 7, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
+  { order: 8, id: "accountingClerk", label: "경리관리", emoji: "💼" },
+  { order: 9, id: "accounting", label: "회계관리", emoji: "🧾" },
+  { order: 10, id: "masterData", label: "기준정보관리", emoji: "⚙" },
+  { order: 11, id: "environment", label: "환경설정", emoji: "🔧" },
+  { order: 12, id: "companyInfo", label: "회사정보", emoji: "🏢" },
 ];
 
 export const PRESENTATION_MENU_DEV_ORDER = [...MENU_FREEZE_SIDEBAR_ORDER];

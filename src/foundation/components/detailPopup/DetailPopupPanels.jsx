@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { resolveQrBrowserPayload } from "../../../config/qrBrowserUrlConfig";
 import StatusChip from "../StatusChip";
 import TitanWorkflowStepTrack from "../TitanWorkflowStepTrack";
 import TitanTraceabilityTimeline from "../TitanTraceabilityTimeline";
@@ -243,16 +244,17 @@ export function EquipmentQrInfoPanel({ row }) {
 }
 
 export function QrPreviewPanel({ row }) {
-  if (!row?.qrPayload) {
+  const qrValue = resolveQrBrowserPayload(row);
+  if (!qrValue) {
     return <p className="titan-detail-popup__empty">QR 미리보기 데이터가 없습니다. QR 생성 후 확인할 수 있습니다.</p>;
   }
   return (
     <DetailPopupSection title="QR 미리보기">
       <div className="qr-detail-preview">
         <div className="qr-detail-preview__code" aria-hidden="true">
-          <QRCodeSVG value={row.qrPayload} size={220} level="M" includeMargin />
+          <QRCodeSVG value={qrValue} size={220} level="M" includeMargin />
         </div>
-        <pre className="qr-detail-preview__payload">{row.qrPayload}</pre>
+        <pre className="qr-detail-preview__payload">{qrValue}</pre>
       </div>
     </DetailPopupSection>
   );

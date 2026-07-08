@@ -2,12 +2,12 @@ import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { QR_ENGINE_COPY } from "../../config/qrEngineArchitecture";
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton, SecondaryButton, TitanDashboardCard } from "../../foundation/uiKit";
 import { processQrEngineScan } from "../../utils/qrEngineService";
 
 const DEMO_SCANS = [
   { label: "설비 3S-3", value: "NDK://EQ/3S-3" },
-  { label: "LOT LOT-20260707-001", value: "LOT-20260707-001" },
+  { label: "LOT LOT-20260707-001", value: "NDK|LOT|LOT-20260707-001" },
 ];
 
 export default function QrEngineScanPage() {
@@ -50,6 +50,7 @@ export default function QrEngineScanPage() {
 
   return (
     <div className="qr-engine-page">
+      <TitanDashboardCard title={QR_ENGINE_COPY.scanTitle}>
       <form className="qr-engine-scan-panel" onSubmit={handleSubmit}>
         <label htmlFor="qr-engine-scan-input" className="sr-only">
           QR Scan
@@ -114,7 +115,11 @@ export default function QrEngineScanPage() {
             </button>
           ))}
         </div>
+        <p className="qr-engine-hint" role="note">
+          QR Scan Gateway: Equipment QR은 현재 작업으로, LOT QR은 LOT Lifecycle로 이동합니다. 문서 직접 열기는 지원하지 않습니다.
+        </p>
       </form>
+      </TitanDashboardCard>
     </div>
   );
 }

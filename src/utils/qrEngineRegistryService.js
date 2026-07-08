@@ -3,6 +3,10 @@
  * Reuses qrRegistryStore — no duplicate data engine.
  */
 import { QR_ENGINE_GENERATOR_TYPES } from "../config/qrEngineArchitecture";
+import {
+  buildEquipmentQrBrowserUrl,
+  buildLotQrBrowserUrl,
+} from "../config/qrBrowserUrlConfig";
 import { buildEquipmentCanonicalId } from "./equipmentQr";
 import { buildEquipmentQrPayloadText } from "./qrManagementModel";
 import { getMasterDataByCategory } from "./masterData";
@@ -186,15 +190,22 @@ export function listQrEngineRegistryRows() {
       qrType === QR_REGISTRY_TYPES.EQUIPMENT
         ? QR_ENGINE_GENERATOR_TYPES.equipment
         : QR_ENGINE_GENERATOR_TYPES.lot;
+    const smartAccessId = row.scanValue ?? row.payload;
+    const browserUrl =
+      qrType === QR_REGISTRY_TYPES.EQUIPMENT
+        ? buildEquipmentQrBrowserUrl(row.entityKey)
+        : buildLotQrBrowserUrl(row.entityKey);
     return {
       id: row.id,
       displayQrId: formatEngineDisplayQrId(qrType, index),
       qrType,
       qrTypeLabel: typeMeta.labelKo,
       target: row.entityKey,
-      scanValue: row.scanValue ?? row.payload,
+      scanValue: browserUrl,
+      smartAccessId,
+      browserUrl,
       payload: row.payload,
-      status: row.status === "regenerated" ? "Active" : "Active",
+      status: row.status === "regenerated" ? "Reissued" : "Active",
       statusKey: row.status,
       createdAt: row.createdAt,
       createdAtLabel: formatTraceabilityDateTime(row.createdAt).slice(0, 10),
@@ -254,7 +265,9 @@ export function buildGeneratorPreview(generatorTypeId, target) {
     return {
       generatorTypeId,
       target: trimmed,
-      scanValue: buildEquipmentScanValue(trimmed),
+      scanValue: buildEquipmentQrBrowserUrl(trimmed),
+      smartAccessId: buildEquipmentScanValue(trimmed),
+      browserUrl: buildEquipmentQrBrowserUrl(trimmed),
       payload: buildEquipmentQrPayloadText(equipment),
       title: equipment.name ?? trimmed,
       subtitle: trimmed,
@@ -265,7 +278,9 @@ export function buildGeneratorPreview(generatorTypeId, target) {
     return {
       generatorTypeId,
       target: trimmed,
-      scanValue: buildLotScanValue(trimmed),
+      scanValue: buildLotQrBrowserUrl(trimmed),
+      smartAccessId: buildLotScanValue(trimmed),
+      browserUrl: buildLotQrBrowserUrl(trimmed),
       payload: buildLotQrLabelPayload(trimmed),
       title: trimmed,
       subtitle: "LOT QR",

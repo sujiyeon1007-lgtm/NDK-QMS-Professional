@@ -11,7 +11,7 @@ function sanitizeFilename(value) {
     .slice(0, 80);
 }
 
-export async function downloadQrSvgAsPng(svgElement, filename = "qr.png") {
+export async function downloadQrSvgAsPng(svgElement, filename = "qr.png", registryIds = []) {
   if (!svgElement) return { ok: false, message: "QR Preview가 없습니다." };
 
   const serializer = new XMLSerializer();
@@ -27,7 +27,7 @@ export async function downloadQrSvgAsPng(svgElement, filename = "qr.png") {
       img.src = url;
     });
 
-    const size = Math.max(image.width || 320, image.height || 320, 320);
+    const size = 1024;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -45,6 +45,7 @@ export async function downloadQrSvgAsPng(svgElement, filename = "qr.png") {
     anchor.download = sanitizeFilename(filename);
     anchor.click();
     URL.revokeObjectURL(anchor.href);
+    if (registryIds.length) markQrEnginePrinted(registryIds);
     return { ok: true };
   } finally {
     URL.revokeObjectURL(url);

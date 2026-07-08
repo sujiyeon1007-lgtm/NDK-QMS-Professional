@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Download, FolderOpen, RefreshCw, RotateCcw, Upload } from "lucide-react";
 
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import TitanDataTable from "../../foundation/components/DataTable";
+import { PrimaryButton, SecondaryButton, TitanDataTable } from "../../foundation/uiKit";
 import TitanComingSoonPlaceholder from "../../foundation/pages/TitanComingSoonPlaceholder";
 import {
   APP_NAME,

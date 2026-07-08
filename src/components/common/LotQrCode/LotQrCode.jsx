@@ -1,9 +1,10 @@
 import { QRCodeSVG } from "qrcode.react";
+import { resolveQrBrowserPayload } from "../../../config/qrBrowserUrlConfig";
 import { getLotQrValue } from "../../../utils/ndkWorkflow";
 import "./LotQrCode.css";
 
 function LotQrCode({ lotNo, size = 88, className = "", title }) {
-  const value = getLotQrValue(lotNo);
+  const value = resolveQrBrowserPayload({ qrType: "lot", lotNo, scanValue: getLotQrValue(lotNo) });
   if (!value) {
     return (
       <div className={`lot-qr-code lot-qr-code--empty ${className}`.trim()} aria-hidden="true">

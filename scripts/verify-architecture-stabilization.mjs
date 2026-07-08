@@ -118,9 +118,10 @@ for (const path of [...sidebarRoutes, ...workflowRoutes, ...restoredRoutes]) {
 const menuFreeze = read("src/config/menuFreezeV1.js");
 const orderMatch = menuFreeze.match(/MENU_FREEZE_SIDEBAR_ORDER = \[([\s\S]*?)\]/);
 const menuCount = orderMatch ? (orderMatch[1].match(/"/g)?.length ?? 0) / 2 : 0;
-// V2.0 Blueprint — 9 sidebar menus (회사정보 추가 · 설비현황 HOME 다음)
-if (menuCount !== 9) {
-  errors.push(`Sidebar menu count expected 9, got ${menuCount}`);
+// V1.0 Access Lock — PM menu exposure includes 경리관리 · 회계관리 · QR Engine.
+const expectedSidebarMenuCount = 12;
+if (menuCount !== expectedSidebarMenuCount) {
+  errors.push(`Sidebar menu count expected ${expectedSidebarMenuCount}, got ${menuCount}`);
 }
 
 if (errors.length) {

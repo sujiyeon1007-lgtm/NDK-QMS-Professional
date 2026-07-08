@@ -1,0 +1,139 @@
+.accounting-workspace .titan-workspace__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-spacing-4, 16px);
+}
+
+.accounting-lite-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-spacing-4, 16px);
+}
+
+.accounting-lite-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: var(--titan-spacing-3, 12px);
+}
+
+.accounting-lite-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accounting-lite-scope span {
+  border: 1px solid var(--titan-border-subtle, #dde6f0);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--titan-bg-soft, #f8fafc);
+  color: var(--titan-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.accounting-launcher-grid {
+  grid-template-columns: repeat(4, minmax(210px, 1fr));
+}
+
+.accounting-lite-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--titan-border-subtle, #dde6f0);
+  border-radius: var(--titan-radius-lg, 16px);
+  background: var(--titan-surface, #ffffff);
+}
+
+.accounting-lite-title-row h2 {
+  margin: 4px 0 6px;
+  font-size: 20px;
+}
+
+.accounting-lite-title-row p {
+  margin: 0;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.accounting-lite-eyebrow {
+  color: var(--titan-primary, #2563eb);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.accounting-lite-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--titan-bg-soft, #f8fafc);
+  color: var(--titan-primary, #2563eb);
+}
+
+.accounting-lite-search {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.accounting-lite-search label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 320px;
+  color: var(--titan-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.accounting-lite-search input {
+  height: 36px;
+  border: 1px solid var(--titan-border, #d5dee8);
+  border-radius: 10px;
+  padding: 0 12px;
+  color: var(--titan-text-primary, #1e293b);
+}
+
+.accounting-lite-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--titan-spacing-4, 16px);
+  align-items: start;
+}
+
+.accounting-lite-detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.accounting-lite-detail-list div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--titan-border-subtle, #dde6f0);
+}
+
+.accounting-lite-detail-list dt {
+  color: var(--titan-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.accounting-lite-detail-list dd {
+  margin: 0;
+  color: var(--titan-text-primary, #1e293b);
+  font-size: 12px;
+  word-break: keep-all;
+}
+
+.accounting-lite-back {
+  margin: 0;
+}

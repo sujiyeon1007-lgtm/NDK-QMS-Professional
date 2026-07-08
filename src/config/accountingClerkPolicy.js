@@ -1,34 +1,76 @@
 /**
- * Project TITAN — 경리관리 / 세금계산서 정책 (V1.0 PM Final)
+ * Project TITAN — 경리관리 Lite 정책 (Sprint 14 PM Final)
  * SSoT: UI labels · workflow · feature scope
  */
 
-/** TITAN은 ERP/홈택스 대체 ❌ — 발행 여부·이력 관리만 */
+/** TITAN은 ERP 회계 대체 ❌ — 출고/거래명세서 문서 업무 지원만 */
 export const ACCOUNTING_CLERK_PHILOSOPHY = {
-  headline: "TITAN은 ERP를 대체하지 않습니다.",
+  headline: "경리관리 Lite는 ERP 회계 시스템이 아닙니다.",
   body:
-    "기존 운영(홈택스 전자세금계산서 발행)을 유지하고, TITAN에서는 거래명세서·마감·미수금·매출·세금계산서 발행 여부를 관리·조회합니다.",
+    "V1.0에서는 출고 데이터와 거래명세서 문서를 중심으로 경리팀이 바로 조회·출력·재출력할 수 있는 Lite 업무를 지원합니다.",
   taxInvoiceNotice:
-    "전자세금계산서는 국세청 홈택스에서 발행 · TITAN은 발행 여부·이력만 관리",
+    "세금계산서·입금·채권·금융 연동은 V1.0에서 Coming Soon으로만 표시합니다.",
+  statementNotice:
+    "출고관리 → 거래명세서 → 거래처 Master → PDF 출력 흐름만 경리관리 Lite에서 조회·재출력합니다.",
 };
 
 /** V1.0 포함 기능 */
 export const ACCOUNTING_CLERK_V1_FEATURES = [
-  { id: "invoiceMgmt", label: "거래명세서 관리", status: "planned" },
-  { id: "invoiceReprint", label: "거래명세서 재출력", status: "planned", link: "outbound" },
-  { id: "invoiceHistory", label: "거래명세서 발행이력", status: "planned" },
-  { id: "outboundClosing", label: "출고 마감", status: "planned" },
-  { id: "monthlyClose", label: "월 마감", status: "planned" },
-  { id: "receivables", label: "미수금 관리", status: "planned" },
-  { id: "salesByCompany", label: "거래처별 매출 조회", status: "planned" },
   {
-    id: "taxInvoiceStatus",
-    label: "세금계산서 발행 여부 관리",
+    id: "statementManagement",
+    label: "거래명세서 관리",
     status: "active",
-    path: "/accounting-clerk/tax-invoices",
-    note: "홈택스 발행 후 TITAN에 발행여부·발행일·담당자 등록",
+    path: "/accounting-clerk/statementManagement",
+    note: "거래명세서 조회 · 출력 · 발행 이력",
   },
-  { id: "salesStatistics", label: "매출 통계", status: "planned" },
+  {
+    id: "outboundLink",
+    label: "출고 연계",
+    status: "active",
+    path: "/accounting-clerk/statementManagement?view=outbound",
+    note: "출고 데이터 자동 조회 · 거래명세서 자동 작성",
+  },
+  {
+    id: "companyLookup",
+    label: "거래처 조회",
+    status: "active",
+    path: "/accounting-clerk/companyLookup",
+    note: "거래처 정보 · 사업자 정보 · 담당자 정보",
+  },
+  {
+    id: "documentLookup",
+    label: "발행 문서 조회",
+    status: "active",
+    path: "/accounting-clerk/documentLookup",
+    note: "거래명세서 · 출고 관련 문서 · PDF 재출력",
+  },
+  {
+    id: "statementReprint",
+    label: "PDF 재출력",
+    status: "active",
+    path: "/accounting-clerk/statementManagement?view=reprint",
+    note: "기존 거래명세서 PDF 재출력",
+  },
+  {
+    id: "shipmentStatistics",
+    label: "출고 통계",
+    status: "active",
+    path: "/accounting-clerk/shipmentStatistics",
+    note: "월별 · 거래처별 · 품목별 출고 요약",
+  },
+  { id: "todayReceipts", label: "오늘 입금 예정", status: "comingSoon" },
+  { id: "receivables", label: "미수금 관리", status: "comingSoon" },
+  { id: "paymentConfirm", label: "입금 확인", status: "comingSoon" },
+  { id: "creditManagement", label: "채권 관리", status: "comingSoon" },
+  {
+    id: "taxInvoice",
+    label: "세금계산서 연동",
+    status: "comingSoon",
+    path: "/accounting-clerk/tax-invoices",
+    note: "V1.0에서는 직접 발행·홈택스 연동을 제공하지 않습니다.",
+  },
+  { id: "financeIntegration", label: "금융 연동", status: "comingSoon" },
+  { id: "bankAccounts", label: "계좌 관리", status: "comingSoon" },
 ];
 
 /** V2.0+ 제외 — 구현 금지 */
@@ -39,14 +81,13 @@ export const ACCOUNTING_CLERK_V2_EXCLUDED_FEATURES = [
   { id: "ntsAutoSend", label: "국세청 자동 전송", reason: "V1.0 범위 외" },
 ];
 
-/** Workflow: 출고완료 → 거래명세서 → (HomeTax) → TITAN 발행여부 → 이력 → 매출통계 */
+/** Workflow: 출고완료 → 거래명세서 → 거래처 Master → PDF 출력 → 향후 TDE */
 export const ACCOUNTING_CLERK_WORKFLOW_STEPS = [
   { order: 1, id: "outboundDone", label: "출고완료" },
-  { order: 2, id: "statement", label: "거래명세서 출력" },
-  { order: 3, id: "hometax", label: "홈택스 발행", external: true },
-  { order: 4, id: "titanStatus", label: "TITAN 발행여부 등록" },
-  { order: 5, id: "history", label: "발행 이력 조회" },
-  { order: 6, id: "salesStats", label: "매출 통계" },
+  { order: 2, id: "statement", label: "거래명세서" },
+  { order: 3, id: "companyMaster", label: "거래처 Master" },
+  { order: 4, id: "pdfOutput", label: "PDF 출력" },
+  { order: 5, id: "futureTde", label: "향후 TDE", future: true },
 ];
 
 export const TAX_INVOICE_STATUS = {
@@ -86,7 +127,7 @@ export const TAX_INVOICE_DETAIL_FIELDS = [
 
 export const TAX_INVOICE_STATUS_OPTIONS = Object.values(TAX_INVOICE_STATUS);
 
-export const ACCOUNTING_CLERK_STUB_MESSAGE = "준비 중입니다.";
+export const ACCOUNTING_CLERK_STUB_MESSAGE = "준비 중 (Coming Soon)";
 
 export function createEmptyTaxInvoiceSearch() {
   return {

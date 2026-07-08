@@ -77,5 +77,17 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
       heatRunning: dashboardKpi?.equipmentRunning ?? counts.HT_RUNNING ?? 0,
       inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
     },
+    accountingClerk: {
+      activeFeatures: 6,
+      comingSoon: 7,
+    },
+    accounting: {
+      referenceViews: 4,
+      comingSoon: 6,
+    },
+    qrEngine: {
+      registry: 0,
+      scanRoutes: 2,
+    },
   };
 }

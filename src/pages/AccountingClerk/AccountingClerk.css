@@ -1,3 +1,19 @@
+.accounting-clerk-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-space-3, 24px);
+}
+
+.accounting-clerk-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: var(--titan-space-2, 16px);
+}
+
+.accounting-clerk-launcher-grid {
+  margin-top: 0;
+}
+
 .accounting-clerk-page__back {
   font-size: 13px;
   font-weight: 700;
@@ -63,6 +79,83 @@
 .accounting-clerk-hub__workflow-arrow {
   color: #94a3b8;
   font-weight: 400;
+}
+
+.accounting-lite-search {
+  display: flex;
+  min-width: 420px;
+  align-items: center;
+  gap: var(--titan-space-1, 8px);
+}
+
+.accounting-lite-search .titan-input {
+  min-width: 280px;
+}
+
+.accounting-lite-detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: var(--titan-space-2, 16px);
+  margin: 0 0 var(--titan-space-2, 16px);
+}
+
+.accounting-lite-detail div {
+  padding: 10px 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.accounting-lite-detail dt {
+  margin: 0 0 4px;
+  color: var(--titan-text-muted, #64748b);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.accounting-lite-detail dd {
+  margin: 0;
+  color: var(--titan-text-primary, #0f172a);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.accounting-lite-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: var(--titan-space-2, 16px);
+}
+
+.accounting-lite-stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.accounting-lite-stat-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--titan-space-2, 16px);
+  padding: 10px 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.accounting-lite-stat-list span {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--titan-text-primary, #0f172a);
+}
+
+.accounting-lite-stat-list strong {
+  color: var(--titan-primary, #1d4ed8);
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .titan-hub-card__badge {

@@ -411,6 +411,29 @@ export const TITAN_MENU_CATALOG = {
     },
     breadcrumb: ["회계관리"],
   },
+  qrEngine: {
+    id: "qrEngine",
+    label: "QR Engine",
+    path: "/qr",
+    icon: QrCode,
+    end: true,
+    section: {
+      pathPrefix: "/qr",
+      defaultTab: "dashboard",
+      tabs: [
+        { id: "dashboard", label: "Dashboard", path: "/qr/dashboard" },
+        { id: "generator", label: "QR Generator", path: "/qr/generator" },
+        { id: "registry", label: "QR Registry", path: "/qr/registry" },
+        { id: "scan", label: "QR Scan", path: "/qr/scan" },
+      ],
+    },
+    pageMeta: {
+      kicker: "QR Engine",
+      title: "QR Engine",
+      description: "TITAN 공통 QR — 생성 · Registry · Scan · 업무 연결",
+    },
+    breadcrumb: ["QR Engine"],
+  },
   qrManagement: {
     id: "qrManagement",
     label: "QR관리",
@@ -503,13 +526,19 @@ export const TITAN_MENU_CATALOG = {
     end: true,
     section: {
       pathPrefix: "/company",
-      defaultTab: "profile",
-      tabs: [{ id: "profile", label: "회사정보", path: "/company" }],
+      defaultTab: "dashboard",
+      tabs: [
+        { id: "dashboard", label: "Dashboard", path: "/company/dashboard" },
+        { id: "information", label: "회사 기본정보", path: "/company/information" },
+        { id: "sites", label: "사업장", path: "/company/sites" },
+        { id: "departments", label: "부서", path: "/company/departments" },
+        { id: "employees", label: "직원", path: "/company/employees" },
+      ],
     },
     pageMeta: {
       kicker: "Company Master",
-      title: "회사정보",
-      description: "Company Store — 출력물 공통 Header · Branding · 인증",
+      title: "Company Workspace",
+      description: "TITAN 전체 Company Master — 성적서 · 거래명세서 · QR · TDE 공통 Source of Truth",
     },
     breadcrumb: ["회사정보"],
   },
@@ -524,7 +553,10 @@ export const SIDEBAR_ACTIVE_PATH_PREFIXES = {
   productionManagement: ["/production"],
   qualityManagement: ["/quality", "/documents"],
   statisticsInquiry: ["/statistics"],
-  companyInfo: ["/company", "/environment/company"],
+  accountingClerk: ["/accounting-clerk"],
+  accounting: ["/accounting"],
+  qrEngine: ["/qr"],
+  companyInfo: ["/company"],
 };
 
 export function isSidebarMenuActive(menuId, pathname = "") {

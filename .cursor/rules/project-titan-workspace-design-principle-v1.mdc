@@ -1,0 +1,115 @@
+---
+description: Project TITAN Workspace Design Principle V1.0 (Sprint 11 Final)
+alwaysApply: false
+---
+
+# Project TITAN Workspace Design Principle V1.0
+
+**Status:** PM Final Approval 2026-07-08 Sprint 11
+
+**Code SSoT:** `src/config/titanWorkspaceDesignPrinciple.js` `TITAN_WORKSPACE_HOME_PRINCIPLE`
+
+**Reference:** `src/config/companyWorkspaceArchitecture.js` `src/pages/Company/CompanyDashboardPage.jsx`
+
+---
+
+## Core Principle
+
+**Workspace Home = Launcher-only entrance.** Users pick a task card and go directly to work.
+
+---
+
+## Official Structure (all Workspaces)
+
+```text
+Workspace Home -> Quick Launcher -> Section Page -> Dashboard -> KPI -> Search -> List -> CRUD
+```
+
+| Layer | Role |
+|---|---|
+| **Workspace Home** | Big Launcher cards only |
+| **Quick Launcher** | Task area cards (4x2 or 2x4 grid) |
+| **Section Page** | Route shell with title |
+| **Dashboard** | Section content / summary |
+| **KPI** | Section metrics (same data as list) |
+| **Search** | TitanSearchPanel Live Search |
+| **List** | TitanDataTable list-first |
+| **CRUD** | Register Edit Delete |
+
+---
+
+## Workspace Home Rules
+
+### Home must ONLY have
+
+- Minimal header (kicker + title)
+- Workspace Nav
+- Big Launcher cards (equal size, strong hover, icon scale)
+
+### Home must NOT have
+
+- Charts Tables Long descriptions
+- CRUD KPI Summary Company Summary
+- Business Site cards Recent Activity
+- Dashboard widgets Search List
+
+**Long intro:** Hide `workspaceIntro` on Home route only. Show on section routes.
+
+---
+
+## Section Page Shell (Sprint 11 placeholder only)
+
+```text
+Page Title -> KPI -> Content/Dashboard -> Search -> List -> CRUD
+```
+
+- Pattern: `CompanySectionPage.jsx`
+- Placeholder = dashed border + label badge + future Sprint note
+- No real CRUD KPI Search List data connection in Sprint 11
+
+---
+
+## Workspace Roadmap
+
+| Workspace | Sprint | Base Path |
+|---|---|---|
+| Company Master | 11 | `/company` |
+| Environment | 12 | `/environment` |
+| QR Engine | 13 | `/qr` |
+| Accounting Clerk | 14 | `/accounting-clerk` |
+| Accounting | 15 | `/accounting` |
+| TDE | 16 | `/tde` |
+
+Update `TITAN_WORKSPACE_HOME_PRINCIPLE.workspaceRoadmap` when adding workspaces.
+
+---
+
+## Launcher Card UX
+
+- Grid 4x2 or 2x4 equal-size cards
+- Card: icon badge title concise description
+- Hover shadow translateY icon scale
+- No separate go button - whole card clickable
+
+---
+
+## Cursor Do
+
+- Check this rule and `TITAN_WORKSPACE_HOME_PRINCIPLE` before Workspace Home changes
+- Keep Home launcher-only
+- Section pages use shell placeholders until Sprint CRUD
+- Use Company Workspace as reference for new workspaces
+
+## Cursor Do Not
+
+- Put KPI Summary Activity Table on Workspace Home
+- Show long intro on Home
+- Implement CRUD before section Sprint
+- Design different Home layouts per workspace
+
+---
+
+## Companion
+
+- `.cursor/rules/project-titan-v1.5-launcher-architecture-final.mdc`
+- `.cursor/rules/project-titan-company-master.mdc`

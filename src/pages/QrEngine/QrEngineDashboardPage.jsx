@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 
 import { QR_ENGINE_COPY, QR_ENGINE_ROUTES } from "../../config/qrEngineArchitecture";
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton, SecondaryButton, TitanDashboardCard, TitanEmptyState } from "../../foundation/uiKit";
 import { buildQrEngineDashboard } from "../../utils/qrEngineService";
 
 function formatScanTime(iso) {
@@ -50,8 +50,7 @@ export default function QrEngineDashboardPage() {
         </div>
       </div>
 
-      <section aria-label="최근 Scan">
-        <h2 className="titan-section-page__subtitle">최근 Scan</h2>
+      <TitanDashboardCard title="최근 Scan" aria-label="최근 Scan">
         {dashboard.recentScans.length ? (
           <div className="qr-engine-list">
             {dashboard.recentScans.map((row) => (
@@ -69,14 +68,11 @@ export default function QrEngineDashboardPage() {
             ))}
           </div>
         ) : (
-          <p className="home-empty" role="status">
-            아직 Scan 이력이 없습니다. QR Scan으로 시작하세요.
-          </p>
+          <TitanEmptyState title="아직 Scan 이력이 없습니다." description="QR Scan으로 시작하세요." />
         )}
-      </section>
+      </TitanDashboardCard>
 
-      <section aria-label="최근 작업">
-        <h2 className="titan-section-page__subtitle">최근 작업</h2>
+      <TitanDashboardCard title="최근 작업" aria-label="최근 작업">
         {dashboard.recentWork.length ? (
           <div className="qr-engine-list">
             {dashboard.recentWork.map((row) => (
@@ -87,11 +83,9 @@ export default function QrEngineDashboardPage() {
             ))}
           </div>
         ) : (
-          <p className="home-empty" role="status">
-            설비 QR Scan 후 현재 작업 화면이 여기에 표시됩니다.
-          </p>
+          <TitanEmptyState title="표시할 작업이 없습니다." description="설비 QR Scan 후 현재 작업 화면이 여기에 표시됩니다." />
         )}
-      </section>
+      </TitanDashboardCard>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { QRCodeSVG } from "qrcode.react";
+import { resolveQrBrowserPayload } from "../../config/qrBrowserUrlConfig";
 
 /**
  * QR 출력 · PDF용 시트 (titanPrintEngine 호환)
@@ -16,9 +17,9 @@ export default function QrPrintSheet({ rows = [], title = "QR 라벨" }) {
           </header>
           <div className="qr-print-sheet__body">
             <div className="qr-print-sheet__qr">
-              <QRCodeSVG value={row.qrPayload} size={160} level="M" includeMargin />
+              <QRCodeSVG value={resolveQrBrowserPayload(row)} size={160} level="M" includeMargin />
             </div>
-            <pre className="qr-print-sheet__payload">{row.qrPayload}</pre>
+            <pre className="qr-print-sheet__payload">{resolveQrBrowserPayload(row)}</pre>
           </div>
         </article>
       ))}

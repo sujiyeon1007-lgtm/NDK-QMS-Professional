@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { FolderTree, HardDrive, RefreshCw } from "lucide-react";
 
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton, SecondaryButton } from "../../foundation/uiKit";
 import {
   STORAGE_ARCHITECTURE,
   STORAGE_MANAGER,

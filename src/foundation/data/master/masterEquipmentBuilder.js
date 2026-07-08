@@ -23,14 +23,20 @@ export function buildEquipmentRecordsFromMasterRows(masterRows = [], existingRec
     .map((row) => {
       const code = String(row.code ?? row.name ?? "").trim();
       const existing = existingById.get(code) ?? null;
-      const runningSession = EQUIPMENT_RUNNING_LOTS[code] ?? null;
-      const chargeableLots = (EQUIPMENT_CHARGEABLE_LOTS[code] ?? []).map((item) => ({ ...item }));
+      const runningSession =
+        existing && "runningSession" in existing
+          ? existing.runningSession ?? null
+          : EQUIPMENT_RUNNING_LOTS[code] ?? null;
+      const chargeableLots =
+        existing && Array.isArray(existing.chargeableLots)
+          ? existing.chargeableLots.map((item) => ({ ...item }))
+          : (EQUIPMENT_CHARGEABLE_LOTS[code] ?? []).map((item) => ({ ...item }));
       const maintenance = EQUIPMENT_MAINTENANCE_IDS.has(code) || row.active === false;
 
-      let status = "idle";
+      let status = existing?.status ?? "idle";
       if (maintenance) status = "maintenance";
       else if (runningSession) status = "running";
-      else if (chargeableLots.length > 0) status = "ready";
+      else if (!existing && chargeableLots.length > 0) status = "ready";
 
       return masterRowToEquipmentRecord(row, existing, {
         runningSession,

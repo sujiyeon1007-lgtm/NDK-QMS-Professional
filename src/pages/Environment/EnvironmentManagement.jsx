@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Activity, Archive, Bell, Users } from "lucide-react";
 
-import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
-import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { TitanKpiBarSlot, TitanWorkflowStatusChipBar } from "../../foundation/uiKit";
 import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import { resolveEnvironmentTab } from "../../config/environmentSettings";
 import {

@@ -18,6 +18,8 @@ import { MASTER_DATA_SESSION_KEY } from "./master/masterConstants";
 
 import { buildEquipmentRecordsFromMasterRows } from "./master/masterEquipmentBuilder";
 
+import { EQUIPMENT_RAW_LIST } from "../../config/equipmentConfig";
+
 
 
 function readMasterEquipmentRowsFromSession() {
@@ -30,7 +32,17 @@ function readMasterEquipmentRowsFromSession() {
 
   }
 
-  return [];
+  return buildEquipmentRecordsFromMasterRows(
+    EQUIPMENT_RAW_LIST.map((row) => ({
+      code: row.id,
+      name: row.name,
+      processName: row.process,
+      process: row.process,
+      active: !row.maintenance,
+      smartAccessId: row.smartAccessId,
+    })),
+    []
+  );
 
 }
 

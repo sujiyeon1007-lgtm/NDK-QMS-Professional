@@ -7,6 +7,7 @@ import {
   QR_ENGINE_SCAN_STATS_KEY,
   QR_ENGINE_SCAN_TYPES,
 } from "../config/qrEngineArchitecture";
+import { resolveQrBrowserUrlPayload } from "../config/qrBrowserUrlConfig";
 import { parseEquipmentFromQrPayload } from "./equipmentQr";
 import { processEquipmentQrScan } from "./equipmentQrWorkflow";
 import { getEquipmentList } from "./equipmentWorkflowService";
@@ -46,9 +47,13 @@ function writeJson(key, value) {
 }
 
 function resolveLotQr(payload) {
-  const lotNo = parseLotFromQrPayload(payload);
+  const text = String(payload ?? "").trim();
+  const lotNo = parseLotFromQrPayload(text);
   if (!hasText(lotNo)) return null;
-  if (LOT_PATTERN.test(lotNo) || lotNo.toUpperCase().startsWith("NDK|LOT|")) {
+  if (text.toUpperCase().startsWith("NDK|LOT|")) {
+    return lotNo;
+  }
+  if (LOT_PATTERN.test(lotNo)) {
     return lotNo;
   }
   return null;
@@ -57,6 +62,26 @@ function resolveLotQr(payload) {
 export function resolveQrScanType(payload) {
   const text = String(payload ?? "").trim();
   if (!text) return { type: "unknown", payload: text };
+
+  const browserUrl = resolveQrBrowserUrlPayload(text);
+  if (browserUrl?.type === "equipment" && browserUrl.equipmentId) {
+    const equipmentResult = processEquipmentQrScan(browserUrl.equipmentId);
+    if (equipmentResult.ok) {
+      return {
+        type: QR_ENGINE_SCAN_TYPES.equipment.id,
+        payload: text,
+        equipmentCode: equipmentResult.equipmentId,
+        equipmentResult,
+      };
+    }
+  }
+  if (browserUrl?.type === "lot" && browserUrl.lotNo) {
+    return {
+      type: QR_ENGINE_SCAN_TYPES.lot.id,
+      payload: text,
+      lotNo: browserUrl.lotNo,
+    };
+  }
 
   const equipmentCode = parseEquipmentFromQrPayload(text);
   if (equipmentCode) {
@@ -170,6 +195,10 @@ export function getQrEngineScanStats() {
     return { today: todayKey(), totalToday: 0, byType: {} };
   }
   return stats;
+}
+
+function countUniqueLots() {
+  return countEngineRegistryByType().lot;
 }
 
 export function buildQrEngineDashboard() {

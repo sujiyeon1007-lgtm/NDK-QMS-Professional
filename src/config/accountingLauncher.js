@@ -1,4 +1,5 @@
 import {
+  Building2,
   FilePenLine,
   Search,
   CheckCircle2,
@@ -16,6 +17,7 @@ const ICONS = {
   journalApproval: CheckCircle2,
   chartOfAccounts: ListTree,
   monthlyStatus: CalendarRange,
+  companyStatus: Building2,
   costStatus: Factory,
   vatStatus: Percent,
 };
@@ -24,10 +26,14 @@ const ICONS = {
 export const ACCOUNTING_LAUNCHER_ITEMS = ACCOUNTING_MODULE.functions.map((fn) => ({
   id: fn.id,
   label: fn.label,
-  path: `/accounting/${fn.id}`,
+  path: fn.path ?? `/accounting/${fn.id}`,
   icon: ICONS[fn.id] ?? FilePenLine,
-  description: fn.label,
+  description: fn.description ?? fn.label,
   status: fn.status,
+  badge: fn.badge ?? (fn.status === "active" ? "조회" : "Coming Soon"),
+  badgeColor: fn.badgeColor ?? (fn.status === "active" ? "blue" : "gray"),
+  tone: fn.tone ?? (fn.status === "active" ? "blue" : "gray"),
+  placeholder: fn.status !== "active",
 }));
 
 export function getAccountingLauncherItem(id) {

@@ -4,7 +4,13 @@ import {
   QR_ENGINE_COPY,
   QR_ENGINE_GENERATOR_TYPES,
 } from "../../config/qrEngineArchitecture";
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import {
+  PrimaryButton,
+  SecondaryButton,
+  TitanDashboardCard,
+  TitanEmptyState,
+  TitanStatusBadge,
+} from "../../foundation/uiKit";
 import {
   buildGeneratorPreview,
   generateOrReissueFromGenerator,
@@ -16,7 +22,6 @@ import {
 import {
   downloadQrSvgAsPng,
   exportQrEnginePdf,
-  notifyLabelPrintPlaceholder,
   printQrEngineSheet,
 } from "../../utils/qrEnginePrintService";
 import QrEnginePreview from "./components/QrEnginePreview";
@@ -27,6 +32,7 @@ export default function QrEngineGeneratorPage() {
   const [target, setTarget] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [printMode, setPrintMode] = useState("a4");
   const [registryRefresh, setRegistryRefresh] = useState(0);
   const printRef = useRef(null);
   const previewRef = useRef(null);
@@ -88,8 +94,18 @@ export default function QrEngineGeneratorPage() {
 
   const handlePng = async () => {
     const svg = previewRef.current?.querySelector("svg");
-    const result = await downloadQrSvgAsPng(svg, `${target || "qr"}.png`);
-    if (!result.ok) setMessage(result.message ?? "PNG 저장 실패");
+    setBusy(true);
+    try {
+      const result = await downloadQrSvgAsPng(svg, `${target || "qr"}.png`, registryRow ? [registryRow.id] : []);
+      if (!result.ok) {
+        setMessage(result.message ?? "PNG 저장 실패");
+        return;
+      }
+      setRegistryRefresh((v) => v + 1);
+      setMessage("PNG 저장이 완료되었습니다.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const runPrint = async (kind) => {
@@ -97,13 +113,11 @@ export default function QrEngineGeneratorPage() {
       setMessage("먼저 QR을 생성하거나 대상을 선택하세요.");
       return;
     }
-    if (kind === "label") {
-      notifyLabelPrintPlaceholder();
-      return;
-    }
+    const nextMode = kind === "label" ? "label" : "a4";
+    setPrintMode(nextMode);
     setBusy(true);
     try {
-      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const root = printRef.current;
       if (!root) return;
       if (kind === "pdf") {
@@ -111,6 +125,8 @@ export default function QrEngineGeneratorPage() {
       } else {
         await printQrEngineSheet(root, registryRow ? [registryRow.id] : []);
       }
+      setRegistryRefresh((v) => v + 1);
+      setMessage(kind === "pdf" ? "PDF 출력이 완료되었습니다." : kind === "label" ? "라벨 출력이 완료되었습니다." : "A4 출력이 완료되었습니다.");
     } finally {
       setBusy(false);
     }
@@ -120,9 +136,7 @@ export default function QrEngineGeneratorPage() {
     <div className="qr-engine-page">
       <p className="qr-engine-hint">{QR_ENGINE_COPY.autoGenerateHint}</p>
 
-      <section className="qr-engine-generator-panel" aria-label="QR Generator">
-        <h2 className="titan-section-page__subtitle">{QR_ENGINE_COPY.generatorTitle}</h2>
-
+      <TitanDashboardCard title={QR_ENGINE_COPY.generatorTitle} className="qr-engine-generator-panel" aria-label="QR Generator">
         <div className="qr-engine-generator-type" role="radiogroup" aria-label="QR 종류">
           {Object.values(QR_ENGINE_GENERATOR_TYPES).map((type) => (
             <label key={type.id} className="qr-engine-generator-type__option">
@@ -159,20 +173,32 @@ export default function QrEngineGeneratorPage() {
           </select>
         </label>
 
-        <div ref={previewRef}>
-          <QrEnginePreview
-            scanValue={preview?.scanValue ?? ""}
-            payload={preview?.payload ?? ""}
-            title={preview?.title ?? ""}
-            subtitle={preview?.subtitle ?? ""}
+        {options.length ? (
+          <div ref={previewRef}>
+            <QrEnginePreview
+              scanValue={preview?.scanValue ?? ""}
+              payload={preview?.payload ?? ""}
+              title={preview?.title ?? ""}
+              subtitle={preview?.subtitle ?? ""}
+            />
+          </div>
+        ) : (
+          <TitanEmptyState
+            title="생성 가능한 QR 대상이 없습니다."
+            description="설비 Master 또는 LOT 데이터가 준비되면 QR Registry가 자동 생성됩니다."
           />
-        </div>
+        )}
 
         {registryRow ? (
-          <p className="qr-engine-status" role="status">
-            Registry: {registryRow.displayQrId} · 재발행 {registryRow.reissueCount}회 · 출력{" "}
-            {registryRow.printCount}회
-          </p>
+          <div className="qr-engine-registry-summary" role="status">
+            <div>
+              <strong>{registryRow.displayQrId}</strong>
+              <span>{registryRow.qrTypeLabel} · {registryRow.target}</span>
+            </div>
+            <TitanStatusBadge status={registryRow.statusKey === "regenerated" ? "processing" : "success"} text={registryRow.status} />
+            <span>재발행 {registryRow.reissueCount}회</span>
+            <span>출력 {registryRow.printCount}회</span>
+          </div>
         ) : null}
         {message ? <p className="home-empty" role="status">{message}</p> : null}
 
@@ -196,11 +222,11 @@ export default function QrEngineGeneratorPage() {
             라벨 출력
           </SecondaryButton>
         </div>
-      </section>
+      </TitanDashboardCard>
 
       <div className="qr-engine-print-host" aria-hidden="true">
         <div ref={printRef}>
-          <QrEnginePrintSheet rows={printRow ? [printRow] : []} title="QR Engine Label" />
+          <QrEnginePrintSheet rows={printRow ? [printRow] : []} title="QR Engine Label" mode={printMode} />
         </div>
       </div>
     </div>

@@ -1,29 +1,64 @@
-import { Link } from "react-router-dom";
+import { ArrowRight, Calculator } from "lucide-react";
 
 import { ACCOUNTING_LAUNCHER_ITEMS } from "../../config/accountingLauncher";
+import TitanDashboardCard from "../../foundation/components/TitanDashboardCard";
+import TitanLauncherCard from "../../foundation/components/TitanLauncherCard";
+import TitanWorkspaceShell from "../../foundation/components/TitanWorkspaceShell";
+import { AccountingDashboardLite } from "./AccountingLitePage";
 
-import "../../foundation/styles/titan-hub-page.css";
+import "./Accounting.css";
 
 export default function AccountingHubPage() {
-  return (
-    <div className="titan-hub-page">
-      <p className="titan-hub-page__intro">
-        ERP를 대체하지 않습니다. 회계전표 · 계정과목 · 월별/원가/부가세 현황 등 회계 업무를
-        지원하는 수준으로 제공합니다. 사용하지 않는 경우 환경설정에서 모듈 OFF가 가능합니다.
-      </p>
+  const activeItems = ACCOUNTING_LAUNCHER_ITEMS.filter((item) => item.status === "active");
+  const comingSoonItems = ACCOUNTING_LAUNCHER_ITEMS.filter((item) => item.status !== "active");
 
-      <div className="titan-hub-page__cards">
-        {ACCOUNTING_LAUNCHER_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.id} to={item.path} className="titan-hub-card">
-              <Icon size={22} aria-hidden="true" />
-              <span className="titan-hub-card__label">{item.label}</span>
-              <span className="titan-hub-card__desc">{item.description}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+  return (
+    <TitanWorkspaceShell
+      kicker="Accounting Management"
+      title="회계관리"
+      intro="TITAN에서 생성된 거래명세서 · 출고자료 · 발행 문서를 회계 관점으로 조회합니다."
+      note="조회 전용 · ERP/결산/금융연동 제외"
+      isHome
+      ariaLabel="회계관리"
+      className="accounting-workspace"
+    >
+      <AccountingDashboardLite />
+
+      <TitanDashboardCard title="Accounting Management Launcher" icon={ArrowRight}>
+        <div className="titan-launcher-grid company-launcher-grid accounting-launcher-grid">
+          {activeItems.map((item) => (
+            <TitanLauncherCard
+              key={item.id}
+              to={item.path}
+              icon={item.icon}
+              title={item.label}
+              description={item.description}
+              badge={item.badge}
+              badgeColor={item.badgeColor}
+              tone={item.tone}
+            />
+          ))}
+        </div>
+      </TitanDashboardCard>
+
+      <TitanDashboardCard title="Coming Soon" icon={Calculator}>
+        <div className="titan-launcher-grid company-launcher-grid accounting-launcher-grid">
+          {comingSoonItems.map((item) => (
+            <TitanLauncherCard
+              key={item.id}
+              to={item.path}
+              icon={item.icon}
+              title={item.label}
+              description={item.description}
+              badge="Coming Soon"
+              badgeColor="gray"
+              tone="gray"
+              placeholder
+              placeholderText="Coming Soon"
+            />
+          ))}
+        </div>
+      </TitanDashboardCard>
+    </TitanWorkspaceShell>
   );
 }

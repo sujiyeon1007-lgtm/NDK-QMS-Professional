@@ -119,6 +119,35 @@
   font-size: 15px;
 }
 
+.qr-engine-registry-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--titan-space-2);
+  padding: var(--titan-space-2) var(--titan-space-3);
+  border: 1px solid var(--titan-badge-blue-border);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-badge-blue-bg);
+  color: var(--titan-text-primary);
+}
+
+.qr-engine-registry-summary div {
+  display: flex;
+  min-width: 180px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qr-engine-registry-summary strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.qr-engine-registry-summary span {
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .qr-engine-list {
   display: flex;
   flex-direction: column;
@@ -235,7 +264,31 @@
 
 .qr-engine-registry-toolbar {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--titan-space-2);
+}
+
+.qr-engine-registry-field {
+  display: flex;
+  min-width: 180px;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qr-engine-registry-field span {
+  color: var(--titan-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.qr-engine-registry-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: var(--titan-space-1);
 }
 
 .qr-engine-print-host {
@@ -248,11 +301,63 @@
 }
 
 .qr-engine-print-sheet__card {
+  display: flex;
+  min-height: 120mm;
+  flex-direction: column;
+  align-items: center;
+  gap: 8mm;
   padding: 12mm;
+}
+
+.qr-engine-print-sheet--label .qr-engine-print-sheet__card {
+  width: 70mm;
+  min-height: 90mm;
+  padding: 6mm;
+}
+
+.qr-engine-print-sheet--label .qr-engine-print-sheet__qr svg {
+  width: 48mm;
+  height: 48mm;
+}
+
+.qr-engine-print-sheet__head,
+.qr-engine-print-sheet__body {
+  width: 100%;
+  text-align: center;
+}
+
+.qr-engine-print-sheet__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+}
+
+.qr-engine-print-sheet__head strong {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.qr-engine-print-sheet__head span {
+  color: var(--titan-text-secondary);
+  font-size: 12px;
+}
+
+.qr-engine-print-sheet__qr svg {
+  width: 54mm;
+  height: 54mm;
 }
 
 .qr-engine-print-sheet__scan {
   display: block;
   margin-top: 8px;
   font-size: 12px;
+}
+
+.qr-engine-print-sheet__payload {
+  max-width: 100%;
+  margin: 4mm 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 10px;
+  text-align: left;
 }

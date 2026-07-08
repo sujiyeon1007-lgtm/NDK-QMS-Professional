@@ -353,9 +353,12 @@ export function pipelineStartCharging(dataEngine, eventBus, input) {
       progress: Number(input.progress) || 0,
       runningSession: {
         lotNo,
+        productionId,
         startTime: input.startTime ?? now,
         expectedEndTime: input.expectedEndTime ?? null,
         progress: Number(input.progress) || 0,
+        operator: input.operator ?? null,
+        statusLabel: "운전중",
       },
     }
   );
@@ -422,6 +425,7 @@ export function pipelineFinishCharging(dataEngine, eventBus, input) {
       progress: 100,
       expectedEndTime: input.endTime ?? now,
       runningSession: null,
+      currentLot: null,
     }
   );
 

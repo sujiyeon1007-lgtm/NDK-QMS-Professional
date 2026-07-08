@@ -1,4 +1,5 @@
 import { QRCodeSVG } from "qrcode.react";
+import { resolveQrBrowserPayload } from "../../../config/qrBrowserUrlConfig";
 
 export default function QrEnginePrintSheet({ rows = [], title = "QR Label", mode = "a4" }) {
   if (!rows.length) return null;
@@ -15,9 +16,9 @@ export default function QrEnginePrintSheet({ rows = [], title = "QR Label", mode
           </header>
           <div className="qr-engine-print-sheet__body">
             <div className="qr-engine-print-sheet__qr">
-              <QRCodeSVG value={row.scanValue ?? row.payload ?? ""} size={180} level="M" includeMargin />
+              <QRCodeSVG value={resolveQrBrowserPayload(row)} size={180} level="M" includeMargin />
             </div>
-            <code className="qr-engine-print-sheet__scan">{row.scanValue ?? ""}</code>
+            <code className="qr-engine-print-sheet__scan">{resolveQrBrowserPayload(row)}</code>
             <pre className="qr-engine-print-sheet__payload">{row.payload ?? ""}</pre>
           </div>
         </article>

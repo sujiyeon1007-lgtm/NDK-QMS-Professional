@@ -81,6 +81,66 @@
   --titan-main-py: 12px;
   --titan-gap: 16px;
 
+  /* Sprint 12.5 Design System — 8pt grid */
+  --titan-space-1: 8px;
+  --titan-space-2: 16px;
+  --titan-space-3: 24px;
+  --titan-space-4: 32px;
+  --titan-space-5: 40px;
+
+  /* Sprint 12.5 Design System — Workspace shell */
+  --titan-workspace-gap: var(--titan-space-3);
+  --titan-workspace-header-padding: 24px 28px;
+  --titan-workspace-header-padding-compact: 18px 24px;
+  --titan-workspace-header-radius: 16px;
+  --titan-workspace-header-bg: linear-gradient(135deg, #f8fbff 0%, #ffffff 55%, #f6f9fc 100%);
+  --titan-workspace-header-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
+  --titan-workspace-nav-h: 44px;
+
+  /* Sprint 12.5 Design System — Launcher */
+  --titan-launcher-card-min-h: 150px;
+  --titan-launcher-card-padding: 22px;
+  --titan-launcher-card-radius: 18px;
+  --titan-launcher-card-icon-size: 48px;
+  --titan-launcher-card-title-size: 16px;
+  --titan-launcher-card-desc-size: 13px;
+  --titan-launcher-card-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  --titan-launcher-card-hover-shadow: 0 16px 34px rgba(37, 99, 235, 0.13);
+
+  /* Sprint 12.5 Design System — Cards */
+  --titan-dashboard-card-radius: 16px;
+  --titan-dashboard-card-padding: 20px;
+  --titan-dashboard-card-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  --titan-kpi-card-radius: 16px;
+  --titan-kpi-card-padding: 18px;
+  --titan-kpi-card-gradient: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+
+  /* Sprint 12.5 Design System — Motion */
+  --titan-motion-duration: 220ms;
+  --titan-motion-duration-fast: 180ms;
+  --titan-motion-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Sprint 12.5 Design System — Badge / Status */
+  --titan-info: #2563eb;
+  --titan-pending: #d97706;
+  --titan-processing: #2563eb;
+  --titan-inactive: #6b7280;
+  --titan-badge-blue-bg: #eff6ff;
+  --titan-badge-blue-text: #1d4ed8;
+  --titan-badge-blue-border: #bfdbfe;
+  --titan-badge-green-bg: #ecfdf5;
+  --titan-badge-green-text: #047857;
+  --titan-badge-green-border: #bbf7d0;
+  --titan-badge-orange-bg: #fff7ed;
+  --titan-badge-orange-text: #c2410c;
+  --titan-badge-orange-border: #fed7aa;
+  --titan-badge-red-bg: #fef2f2;
+  --titan-badge-red-text: #b91c1c;
+  --titan-badge-red-border: #fecaca;
+  --titan-badge-gray-bg: #f8fafc;
+  --titan-badge-gray-text: #64748b;
+  --titan-badge-gray-border: #e2e8f0;
+
   /* 12 Column Grid (Project TITAN V1.0 공통) */
   --titan-grid-columns: 12;
   --titan-grid-gap: 16px;

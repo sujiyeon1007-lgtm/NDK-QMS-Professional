@@ -1,0 +1,410 @@
+﻿/**
+ * Project TITAN Sprint 12.5 — Foundation Design System
+ * SSoT for Workspace shell, launcher cards, dashboard cards, badges,
+ * empty/loading states, and shared motion.
+ */
+
+.titan-workspace,
+.company-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-workspace-gap);
+  min-height: 0;
+  padding-bottom: var(--titan-space-4);
+}
+
+.titan-workspace--home .titan-workspace__body,
+.company-workspace--home .company-workspace-shell {
+  margin-top: 0;
+}
+
+.titan-workspace__body,
+.company-workspace-shell {
+  min-width: 0;
+}
+
+.titan-workspace-header,
+.company-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--titan-space-3);
+  padding: var(--titan-workspace-header-padding);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-workspace-header-radius);
+  background: var(--titan-workspace-header-bg);
+  box-shadow: var(--titan-workspace-header-shadow);
+}
+
+.titan-workspace-header--home,
+.company-workspace-header--home {
+  padding: var(--titan-workspace-header-padding-compact);
+  gap: 0;
+}
+
+.titan-workspace-header__main,
+.company-workspace-header__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-space-1);
+  min-width: 0;
+}
+
+.titan-workspace-header__kicker,
+.company-workspace-header__kicker {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--titan-badge-blue-bg);
+  color: var(--titan-badge-blue-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.titan-workspace-header__title,
+.company-workspace-header__title {
+  margin: 0;
+  color: var(--titan-text-primary);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.titan-workspace-header--home .titan-workspace-header__title,
+.company-workspace-header--home .company-workspace-header__title {
+  font-size: 22px;
+}
+
+.titan-workspace-header__intro,
+.company-workspace-header__intro {
+  max-width: 880px;
+  margin: 0;
+  color: var(--titan-text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.titan-workspace-header__note,
+.company-workspace-header__note {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px dashed var(--titan-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--titan-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.titan-workspace-nav,
+.company-workspace-nav {
+  display: flex;
+  min-height: var(--titan-workspace-nav-h);
+  flex-wrap: wrap;
+  gap: var(--titan-space-1);
+  padding: 6px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius, 12px);
+  background: var(--titan-surface);
+}
+
+.titan-workspace-nav__link,
+.company-workspace-nav__link {
+  display: inline-flex;
+  min-width: 120px;
+  min-height: var(--titan-workspace-nav-h);
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--titan-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background var(--titan-motion-duration-fast) var(--titan-motion-ease),
+    border-color var(--titan-motion-duration-fast) var(--titan-motion-ease),
+    color var(--titan-motion-duration-fast) var(--titan-motion-ease);
+  white-space: nowrap;
+}
+
+.titan-workspace-nav__link:hover,
+.company-workspace-nav__link:hover {
+  border-color: var(--titan-badge-blue-border);
+  background: var(--titan-surface-muted, #f8fafc);
+  color: var(--titan-primary);
+}
+
+.titan-workspace-nav__link--active,
+.company-workspace-nav__link--active {
+  border-color: var(--titan-primary);
+  background: #edf4fd;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.08);
+  color: var(--titan-primary);
+}
+
+.titan-dashboard-card,
+.company-dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--titan-dashboard-card-padding);
+  border: 1px solid var(--titan-card-border);
+  border-radius: var(--titan-dashboard-card-radius);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-dashboard-card-shadow);
+}
+
+.titan-dashboard-card__head,
+.company-dashboard-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--titan-space-2);
+}
+
+.titan-dashboard-card__head h3,
+.company-dashboard-panel__head h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--titan-space-1);
+  margin: 0;
+  color: var(--titan-text-primary);
+  font-size: var(--titan-font-section-title);
+  font-weight: 900;
+}
+
+.titan-dashboard-card__body {
+  min-width: 0;
+}
+
+.titan-launcher-grid,
+.company-launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--titan-space-2);
+  width: 100%;
+}
+
+.titan-launcher-card,
+.company-launcher-card {
+  position: relative;
+  display: flex;
+  min-height: var(--titan-launcher-card-min-h);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: var(--titan-launcher-card-padding);
+  overflow: hidden;
+  border: 1px solid var(--titan-card-border);
+  border-radius: var(--titan-launcher-card-radius);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-launcher-card-shadow);
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transform: translateY(0) scale(1);
+  transition: transform var(--titan-motion-duration) var(--titan-motion-ease),
+    border-color var(--titan-motion-duration) var(--titan-motion-ease),
+    box-shadow var(--titan-motion-duration) var(--titan-motion-ease);
+}
+
+.titan-launcher-card:hover,
+.company-launcher-card:hover {
+  border-color: #93c5fd;
+  box-shadow: var(--titan-launcher-card-hover-shadow);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.titan-launcher-card:active,
+.company-launcher-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.titan-launcher-card__icon,
+.company-launcher-card__icon {
+  display: inline-flex;
+  width: var(--titan-launcher-card-icon-size);
+  height: var(--titan-launcher-card-icon-size);
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--titan-badge-blue-bg);
+  color: var(--titan-badge-blue-text);
+}
+
+.titan-launcher-card__icon svg,
+.company-launcher-card__icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.titan-launcher-card__title,
+.company-launcher-card__title {
+  color: var(--titan-text-primary);
+  font-size: var(--titan-launcher-card-title-size);
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.titan-launcher-card__desc,
+.company-launcher-card__desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--titan-text-secondary);
+  font-size: var(--titan-launcher-card-desc-size);
+  font-weight: 650;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: keep-all;
+}
+
+.titan-launcher-card__placeholder,
+.company-launcher-card__placeholder {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.titan-badge,
+.titan-status-badge,
+.company-workspace-preview-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--titan-badge-gray-border);
+  border-radius: 999px;
+  background: var(--titan-badge-gray-bg);
+  color: var(--titan-badge-gray-text);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.titan-badge--blue,
+.titan-status-badge--info,
+.titan-status-badge--processing {
+  border-color: var(--titan-badge-blue-border);
+  background: var(--titan-badge-blue-bg);
+  color: var(--titan-badge-blue-text);
+}
+
+.titan-badge--green,
+.titan-status-badge--success {
+  border-color: var(--titan-badge-green-border);
+  background: var(--titan-badge-green-bg);
+  color: var(--titan-badge-green-text);
+}
+
+.titan-badge--orange,
+.titan-status-badge--warning,
+.titan-status-badge--pending {
+  border-color: var(--titan-badge-orange-border);
+  background: var(--titan-badge-orange-bg);
+  color: var(--titan-badge-orange-text);
+}
+
+.titan-badge--red,
+.titan-status-badge--danger,
+.titan-status-badge--error {
+  border-color: var(--titan-badge-red-border);
+  background: var(--titan-badge-red-bg);
+  color: var(--titan-badge-red-text);
+}
+
+.titan-badge--gray,
+.titan-status-badge--disabled,
+.titan-status-badge--inactive {
+  border-color: var(--titan-badge-gray-border);
+  background: var(--titan-badge-gray-bg);
+  color: var(--titan-badge-gray-text);
+}
+
+.titan-empty-state {
+  display: flex;
+  min-height: 160px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--titan-space-1);
+  padding: var(--titan-space-3);
+  border: 1px dashed var(--titan-border);
+  border-radius: var(--titan-dashboard-card-radius);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  text-align: center;
+}
+
+.titan-empty-state__icon {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--titan-badge-gray-bg);
+  color: var(--titan-badge-gray-text);
+}
+
+.titan-empty-state__title {
+  margin: 0;
+  color: var(--titan-text-primary);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.titan-empty-state__desc {
+  max-width: 520px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.titan-loading-skeleton {
+  position: relative;
+  min-height: 16px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e8eef7;
+}
+
+.titan-loading-skeleton::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.65) 50%, transparent 100%);
+  content: "";
+  transform: translateX(-100%);
+  animation: titan-skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes titan-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-launcher-card,
+  .company-launcher-card,
+  .titan-workspace-nav__link,
+  .company-workspace-nav__link,
+  .titan-loading-skeleton::after {
+    animation: none;
+    transition: none;
+  }
+}

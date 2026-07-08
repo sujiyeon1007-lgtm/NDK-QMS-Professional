@@ -77,6 +77,8 @@ import ProductInspectionManagement from "../pages/Settings/ProductInspectionMana
 import EnvironmentLayout from "../pages/Environment/EnvironmentLayout";
 
 import EnvironmentManagement from "../pages/Environment/EnvironmentManagement";
+import EnvironmentDashboardPage from "../pages/Environment/EnvironmentDashboardPage";
+import EnvironmentSectionPage from "../pages/Environment/EnvironmentSectionPage";
 
 import DocumentsLayout from "../pages/Documents/DocumentsLayout";
 
@@ -103,7 +105,6 @@ import LoginPage from "../pages/Login/LoginPage";
 
 import AccountingClerkHubPage from "../pages/AccountingClerk/AccountingClerkHubPage";
 import AccountingClerkFeaturePage from "../pages/AccountingClerk/AccountingClerkFeaturePage";
-import TaxInvoiceStatusPage from "../pages/AccountingClerk/TaxInvoiceStatusPage";
 import AccountingHubPage from "../pages/Accounting/AccountingHubPage";
 import AccountingFeaturePage from "../pages/Accounting/AccountingFeaturePage";
 import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
@@ -121,6 +122,16 @@ import QrEngineGeneratorPage from "../pages/QrEngine/QrEngineGeneratorPage";
 import QrEngineRegistryPage from "../pages/QrEngine/QrEngineRegistryPage";
 import QrEngineScanPage from "../pages/QrEngine/QrEngineScanPage";
 import QrEngineEquipmentWorkPage from "../pages/QrEngine/QrEngineEquipmentWorkPage";
+import CompanyLayout from "../pages/Company/CompanyLayout";
+import CompanyDashboardPage from "../pages/Company/CompanyDashboardPage";
+import CompanyInformationPage from "../pages/Company/CompanyInformationPage";
+import CompanyBusinessSitesPage from "../pages/Company/CompanyBusinessSitesPage";
+import CompanyOrganizationPage from "../pages/Company/CompanyOrganizationPage";
+import CompanyDepartmentsPage from "../pages/Company/CompanyDepartmentsPage";
+import CompanyEmployeesPage from "../pages/Company/CompanyEmployeesPage";
+import CompanyPositionsPage from "../pages/Company/CompanyPositionsPage";
+import CompanyBrandingPage from "../pages/Company/CompanyBrandingPage";
+import CompanyDocumentFooterPage from "../pages/Company/CompanyDocumentFooterPage";
 
 import { LEGACY_ROUTE_REDIRECTS } from "../config/menuStructure";
 
@@ -306,7 +317,7 @@ function AppRoutes() {
 
             <Route path="/accounting-clerk" element={<AccountingClerkHubPage />} />
 
-            <Route path="/accounting-clerk/tax-invoices" element={<TaxInvoiceStatusPage />} />
+            <Route path="/accounting-clerk/tax-invoices" element={<AccountingClerkFeaturePage featureIdOverride="taxInvoice" />} />
 
             <Route path="/accounting-clerk/:featureId" element={<AccountingClerkFeaturePage />} />
 
@@ -326,7 +337,19 @@ function AppRoutes() {
             <Route path="/qr-workflow" element={<Navigate to="/production/charging" replace />} />
             <Route path="/qr-workflow/charging" element={<Navigate to="/production/charging" replace />} />
             <Route path="/equipment-status" element={<EquipmentStatusPage />} />
-            <Route path="/company" element={<Navigate to="/environment/company" replace />} />
+            <Route path="/company" element={<CompanyLayout />}>
+              <Route index element={<Navigate to="/company/dashboard" replace />} />
+              <Route path="dashboard" element={<CompanyDashboardPage />} />
+              <Route path="information" element={<CompanyInformationPage />} />
+              <Route path="sites" element={<CompanyBusinessSitesPage />} />
+              <Route path="organization" element={<CompanyOrganizationPage />} />
+              <Route path="departments" element={<CompanyDepartmentsPage />} />
+              <Route path="employees" element={<CompanyEmployeesPage />} />
+              <Route path="positions" element={<CompanyPositionsPage />} />
+              <Route path="branding" element={<CompanyBrandingPage />} />
+              <Route path="document-footer" element={<CompanyDocumentFooterPage />} />
+            </Route>
+            <Route path="/environment/company" element={<Navigate to="/company/dashboard" replace />} />
             {/* Sprint 3E — 제품현황 독립 메뉴 제거 · Control Room Product View로 흡수 */}
             <Route
               path="/product-status"
@@ -382,7 +405,27 @@ function AppRoutes() {
 
             <Route path="/environment" element={<EnvironmentLayout />}>
 
-              <Route index element={<Navigate to="users" replace />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+
+              <Route path="dashboard" element={<EnvironmentDashboardPage />} />
+
+              <Route path="users" element={<EnvironmentSectionPage sectionId="users" />} />
+
+              <Route path="permissions" element={<EnvironmentSectionPage sectionId="permissions" />} />
+
+              <Route path="menus" element={<EnvironmentSectionPage sectionId="menus" />} />
+
+              <Route path="menu-toggle" element={<EnvironmentSectionPage sectionId="menuToggle" />} />
+
+              <Route path="numbering" element={<EnvironmentSectionPage sectionId="numbering" />} />
+
+              <Route path="qr-settings" element={<EnvironmentSectionPage sectionId="qrSettings" />} />
+
+              <Route path="backup" element={<EnvironmentSectionPage sectionId="backup" />} />
+
+              <Route path="notifications" element={<EnvironmentSectionPage sectionId="notifications" />} />
+
+              <Route path="system" element={<EnvironmentSectionPage sectionId="system" />} />
 
               <Route path="employees" element={<MasterDataManagement forcedTabId="employees" />} />
 

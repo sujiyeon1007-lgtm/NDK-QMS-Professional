@@ -1,11 +1,25 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+
+import {
+  ENVIRONMENT_WORKSPACE_COPY,
+  ENVIRONMENT_WORKSPACE_NAV,
+  ENVIRONMENT_WORKSPACE_ROUTES,
+  isEnvironmentWorkspaceShellPath,
+} from "../../config/environmentWorkspaceArchitecture";
 import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
-import { getEnvironmentTabGroups, isEnvironmentAdminTab, getEnvironmentDefaultTab } from "../../config/environmentSettings";
+import {
+  getEnvironmentDefaultTab,
+  getEnvironmentTabGroups,
+  isEnvironmentAdminTab,
+} from "../../config/environmentSettings";
+import { TitanWorkspaceShell } from "../../foundation/uiKit";
 import { SectionPageActionsProvider } from "../../foundation/layout/SectionPageActionsContext";
 import { useSectionPageActionsContext } from "../../foundation/layout/SectionPageActionsContext";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import EnvironmentGroupedTabs from "./EnvironmentGroupedTabs";
 import "../../foundation/layout/SectionPageLayout.css";
+import "../../foundation/styles/titan-hub-page.css";
+import "../Company/Company.css";
 import "./Environment.css";
 
 function EnvironmentMenuToolbar() {
@@ -27,19 +41,30 @@ function EnvironmentMenuToolbar() {
   );
 }
 
-export default function EnvironmentLayout() {
+function EnvironmentWorkspaceShell() {
+  const location = useLocation();
+  const isWorkspaceHome = location.pathname === ENVIRONMENT_WORKSPACE_ROUTES.dashboard;
+
+  return (
+    <TitanWorkspaceShell
+      kicker={ENVIRONMENT_WORKSPACE_COPY.workspaceKicker}
+      title={ENVIRONMENT_WORKSPACE_COPY.workspaceTitle}
+      intro={ENVIRONMENT_WORKSPACE_COPY.workspaceIntro}
+      note={ENVIRONMENT_WORKSPACE_COPY.companySeparationNote}
+      navItems={ENVIRONMENT_WORKSPACE_NAV}
+      homePath={ENVIRONMENT_WORKSPACE_ROUTES.dashboard}
+      isHome={isWorkspaceHome}
+      ariaLabel="Environment Workspace"
+    >
+      <Outlet />
+    </TitanWorkspaceShell>
+  );
+}
+
+function EnvironmentLegacyShell() {
   const location = useLocation();
   const section = getSectionByPathname(location.pathname) ?? getSectionById("environment");
   if (!section) return null;
-
-  if (location.pathname === "/environment" || location.pathname === "/environment/") {
-    return <Navigate to={`/environment/${getEnvironmentDefaultTab(isTitanAdminUser())}`} replace />;
-  }
-
-  const tabParam = location.pathname.split("/").pop();
-  if (isEnvironmentAdminTab(tabParam) && !isTitanAdminUser()) {
-    return <Navigate to="/environment/program" replace />;
-  }
 
   return (
     <SectionPageActionsProvider>
@@ -54,4 +79,24 @@ export default function EnvironmentLayout() {
       </div>
     </SectionPageActionsProvider>
   );
+}
+
+export default function EnvironmentLayout() {
+  const location = useLocation();
+  const isAdmin = isTitanAdminUser();
+
+  if (location.pathname === "/environment" || location.pathname === "/environment/") {
+    return <Navigate to={ENVIRONMENT_WORKSPACE_ROUTES.dashboard} replace />;
+  }
+
+  const tabParam = location.pathname.split("/").pop();
+  if (isEnvironmentAdminTab(tabParam) && !isAdmin) {
+    return <Navigate to={`/environment/${getEnvironmentDefaultTab(isAdmin)}`} replace />;
+  }
+
+  if (isEnvironmentWorkspaceShellPath(location.pathname)) {
+    return <EnvironmentWorkspaceShell />;
+  }
+
+  return <EnvironmentLegacyShell />;
 }

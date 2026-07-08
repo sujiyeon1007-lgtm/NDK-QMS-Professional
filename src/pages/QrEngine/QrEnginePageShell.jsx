@@ -1,4 +1,4 @@
-import TitanBreadcrumb from "../../foundation/components/TitanBreadcrumb";
+import { TitanBreadcrumb } from "../../foundation/uiKit";
 import { QR_ENGINE_COPY } from "../../config/qrEngineArchitecture";
 import "../../foundation/styles/titan-hub-page.css";
 import "./QrEngine.css";
