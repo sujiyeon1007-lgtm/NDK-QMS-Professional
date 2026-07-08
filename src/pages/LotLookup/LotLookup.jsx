@@ -1,5 +1,9 @@
-import PagePlaceholder from "../../foundation/pages/PagePlaceholder";
+import { Navigate, useSearchParams } from "react-router-dom";
 
+/** Legacy LOT 조회 → Sprint 9 Phase 5 LOT Lifecycle */
 export default function LotLookup() {
-  return <PagePlaceholder title="LOT 조회" />;
+  const [searchParams] = useSearchParams();
+  const lot = searchParams.get("lot");
+  const target = lot ? `/quality/lot-lifecycle?lot=${encodeURIComponent(lot)}` : "/quality/lot-lifecycle";
+  return <Navigate to={target} replace />;
 }

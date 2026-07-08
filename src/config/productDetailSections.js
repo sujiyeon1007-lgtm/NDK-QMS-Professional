@@ -55,6 +55,7 @@ export const PRODUCT_DETAIL_TABS = [
   { id: "profile", label: "기본정보" },
   { id: "material", label: "재질" },
   { id: "process", label: "공정" },
+  { id: "spec", label: "품질 Specification" },
   { id: "production", label: "생산" },
   { id: "quality", label: "품질" },
   { id: "certificate", label: "성적서" },

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  ClipboardCheck,
   ClipboardList,
   Factory,
   Printer,
@@ -49,6 +50,15 @@ export const PRODUCTION_MANAGEMENT_LAUNCHER_ITEMS = [
     icon: BarChart3,
     description: "생산량 · 완료 · 불량 · 가동률 조회",
     metricKeys: ["resultsToday"],
+  },
+  {
+    id: "actual-work-record",
+    label: "실제 작업 조건",
+    badge: "실작업",
+    badgeColor: "cyan",
+    path: "/production/actual-work",
+    icon: ClipboardCheck,
+    description: "표준 Recipe 참조 · 실제 사용 조건 기록 (Actual Work Record)",
   },
   {
     id: "print-management",

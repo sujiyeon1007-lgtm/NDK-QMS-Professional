@@ -1,4 +1,4 @@
-import { Building2, Cog, HardHat, Layers, Package, Wrench } from "lucide-react";
+import { Building2, Cog, FlaskConical, HardHat, Layers, Package, Wrench } from "lucide-react";
 
 /** 기준정보관리 Launcher — V1.6 (Category Badge 공통) */
 export const MASTER_DATA_LAUNCHER_ITEMS = [
@@ -55,6 +55,15 @@ export const MASTER_DATA_LAUNCHER_ITEMS = [
     path: "/settings/workers",
     icon: HardHat,
     description: "작업자 코드 · 작업자명 · 부서 · 사용 여부",
+  },
+  {
+    id: "recipes",
+    label: "열처리 Recipe 관리",
+    badge: "레시피",
+    badgeColor: "orange",
+    path: "/settings/recipes",
+    icon: FlaskConical,
+    description: "표준 열처리 조건 · Status · Version · Approval Metadata",
   },
 ];
 

@@ -1,0 +1,188 @@
+/* Sprint 9 Phase 5 — LOT Lifecycle (Technology Summary · Document JSON Interface) */
+
+.lot-lifecycle-page {
+  gap: 16px;
+}
+
+.lot-lifecycle-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.lot-lifecycle-search input {
+  flex: 1;
+  min-width: 280px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.lot-lifecycle-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--titan-text-muted, #64748b);
+  background: var(--titan-surface, #fff);
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 12px;
+}
+
+.lot-lifecycle-empty p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--titan-text, #334155);
+}
+
+.lot-lifecycle-empty span {
+  font-size: 13px;
+}
+
+.lot-lifecycle-workspace {
+  background: var(--titan-surface, #fff);
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lot-lifecycle-workspace__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--titan-border, #e2e8f0);
+  background: var(--titan-surface-muted, #f8fafc);
+}
+
+.lot-lifecycle-workspace__head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lot-lifecycle-workspace__head span {
+  font-size: 13px;
+  color: var(--titan-text-muted, #64748b);
+}
+
+.lot-lifecycle-workspace__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lot-lifecycle-deviation,
+.lot-lifecycle-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lot-lifecycle-deviation.is-normal {
+  background: var(--titan-status-success-bg, #e6f4ea);
+  color: var(--titan-status-success-text, #1e7e34);
+}
+
+.lot-lifecycle-deviation.is-check {
+  background: var(--titan-status-warning-bg, #fff4e5);
+  color: var(--titan-status-warning-text, #b26a00);
+}
+
+.lot-lifecycle-deviation.is-review {
+  background: var(--titan-status-danger-bg, #fdecec);
+  color: var(--titan-status-danger-text, #c0392b);
+}
+
+.lot-lifecycle-badge.is-knowledge {
+  background: var(--titan-status-info-bg, #e6effc);
+  color: var(--titan-status-info-text, #1d4ed8);
+}
+
+.lot-lifecycle-badge.is-actual {
+  background: var(--titan-surface-muted, #eef2f7);
+  color: var(--titan-text-muted, #475569);
+}
+
+.lot-lifecycle-workspace__body {
+  padding: 16px 20px 20px;
+}
+
+.lot-lifecycle-table {
+  margin-top: 16px;
+}
+
+.lot-lifecycle-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.lot-lifecycle-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-primary, #2563eb);
+  text-decoration: none;
+  background: var(--titan-surface, #fff);
+}
+
+.lot-lifecycle-link:hover {
+  background: var(--titan-surface-muted, #f6f8fb);
+}
+
+.lot-lifecycle-doc-slots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.lot-lifecycle-doc-slots__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+  margin-right: 4px;
+}
+
+.lot-lifecycle-doc-slot {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--titan-surface-muted, #eef2f7);
+  color: var(--titan-text, #475569);
+  text-transform: uppercase;
+}
+
+.lot-lifecycle-knowledge-block {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--titan-surface-muted, #f8fafc);
+}
+
+.lot-lifecycle-doc-message {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--titan-primary, #2563eb);
+}

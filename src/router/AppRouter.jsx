@@ -23,6 +23,10 @@ import ProductionPlanWorkspace from "../pages/Production/ProductionPlanWorkspace
 
 import ProductionResultsManagement from "../pages/Production/ProductionResultsManagement";
 
+import ActualWorkRecordPage from "../pages/Production/ActualWorkRecordPage";
+import KnowledgeRecordPage from "../pages/Quality/KnowledgeRecordPage";
+import LotLifecyclePage from "../pages/LotLifecycle/LotLifecyclePage";
+
 import DefectHistoryManagement from "../pages/Production/DefectHistoryManagement";
 
 import QualityLayout from "../pages/Quality/QualityLayout";
@@ -61,6 +65,8 @@ import ProcessManagementPage from "../pages/Settings/ProcessManagementPage";
 import EquipmentManagementPage from "../pages/Settings/EquipmentManagementPage";
 
 import WorkerManagementPage from "../pages/Settings/WorkerManagementPage";
+
+import RecipeManagementPage from "../pages/Settings/RecipeManagementPage";
 
 import MasterEntityManagementPage from "../pages/Settings/MasterEntityManagementPage";
 
@@ -192,6 +198,8 @@ function AppRoutes() {
 
               <Route path="results" element={<ProductionResultsManagement />} />
 
+              <Route path="actual-work" element={<ActualWorkRecordPage />} />
+
               <Route path="defect-history" element={<Navigate to="/quality/defect-history" replace />} />
 
               <Route path="plan" element={<ProductionPlanWorkspace />} />
@@ -227,6 +235,10 @@ function AppRoutes() {
               <Route path="certificate" element={<CertificateManagement />} />
 
               <Route path="defect-history" element={<DefectHistoryManagement />} />
+
+              <Route path="knowledge" element={<KnowledgeRecordPage />} />
+
+              <Route path="lot-lifecycle" element={<LotLifecyclePage />} />
 
               <Route path="work-journal" element={<WorkJournal />} />
 
@@ -338,6 +350,8 @@ function AppRoutes() {
               <Route path="equipment" element={<EquipmentManagementPage />} />
 
               <Route path="workers" element={<WorkerManagementPage />} />
+
+              <Route path="recipes" element={<RecipeManagementPage />} />
 
               <Route path="company" element={<Navigate to="/settings/companies" replace />} />
 

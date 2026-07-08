@@ -1,0 +1,72 @@
+/**
+ * Sprint 9 Phase 1 — Product Specification 탭 전용 보조 스타일 (Additive)
+ * 기존 Sprint 8 company-detail-section 패턴을 확장하며 기존 규칙을 덮어쓰지 않는다.
+ */
+
+.company-detail-section__notice {
+  margin: 0 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-left: 3px solid var(--titan-primary, #2563eb);
+  border-radius: 8px;
+  background: var(--titan-surface-muted, #f8fafc);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--titan-text, #1e293b);
+}
+
+.company-detail-section__notice-sub {
+  color: var(--titan-text-muted, #64748b);
+  font-weight: 600;
+}
+
+.company-detail-section__muted {
+  color: var(--titan-text-muted, #94a3b8);
+  font-weight: 600;
+}
+
+.company-detail-section__unit {
+  color: var(--titan-text-muted, #64748b);
+  font-size: 12px;
+}
+
+.company-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text, #1e293b);
+  background: var(--titan-surface, #ffffff);
+}
+
+.company-detail-tag.is-off {
+  color: var(--titan-text-muted, #94a3b8);
+  background: var(--titan-surface-muted, #f8fafc);
+}
+
+.company-detail-tag__state {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--titan-primary-soft, #dbeafe);
+  color: var(--titan-primary, #2563eb);
+}
+
+.company-detail-tag.is-off .company-detail-tag__state {
+  background: var(--titan-border, #e2e8f0);
+  color: var(--titan-text-muted, #64748b);
+}

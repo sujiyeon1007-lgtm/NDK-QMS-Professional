@@ -1,0 +1,130 @@
+/* Sprint 9 Phase 3 — Actual Work Record (실제 작업 조건) 보조 스타일 */
+
+.awr-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.awr-status-badge.is-draft {
+  background: var(--titan-surface-muted, #eef2f7);
+  color: var(--titan-text-muted, #64748b);
+}
+
+.awr-status-badge.is-in-progress {
+  background: var(--titan-status-warning-bg, #fff4e5);
+  color: var(--titan-status-warning-text, #b26a00);
+}
+
+.awr-status-badge.is-completed {
+  background: var(--titan-status-success-bg, #e6f4ea);
+  color: var(--titan-status-success-text, #1e7e34);
+}
+
+.awr-status-badge.is-inspected {
+  background: var(--titan-status-info-bg, #e6effc);
+  color: var(--titan-status-info-text, #1d4ed8);
+}
+
+.awr-condition-group {
+  margin-bottom: 18px;
+}
+
+.awr-condition-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.awr-condition-table th,
+.awr-condition-table td {
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.awr-condition-table thead th {
+  background: var(--titan-table-header, #e3e9f0);
+  color: var(--titan-table-header-text, #1e293b);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.awr-condition-table__std {
+  color: var(--titan-text-muted, #64748b);
+}
+
+.awr-condition-table__act {
+  font-weight: 600;
+}
+
+.awr-condition-table__dev {
+  color: var(--titan-text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.awr-condition-table__dev.is-diff {
+  color: var(--titan-status-warning-text, #b26a00);
+  font-weight: 600;
+}
+
+.awr-knowledge-preview {
+  background: var(--titan-surface-muted, #f6f8fb);
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow: auto;
+  max-height: 360px;
+  white-space: pre;
+}
+
+/* 등록/수정 모달 */
+.awr-modal__section {
+  margin-bottom: 18px;
+}
+
+.awr-modal__subtitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--titan-text, #1e293b);
+}
+
+.awr-modal__param-group {
+  margin-bottom: 12px;
+}
+
+.awr-modal__param-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--titan-text-muted, #475569);
+}
+
+.awr-modal__ref {
+  font-size: 13px;
+  color: var(--titan-text-muted, #475569);
+  background: var(--titan-surface-muted, #f6f8fb);
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.awr-modal__ref em {
+  color: var(--titan-primary, #2563eb);
+  font-style: normal;
+}
+
+.awr-modal__hint {
+  font-size: 13px;
+  color: var(--titan-text-muted, #64748b);
+  padding: 8px 0;
+}

@@ -24,6 +24,11 @@ import {
 } from "../foundation/data/master/masterDataSync";
 import { MASTER_STORE_CATEGORIES } from "../foundation/data/master/masterConstants";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
+import {
+  normalizeRecipeParameters,
+  normalizeRecipeRecord,
+  resolveRecipeTemplateId,
+} from "../config/recipeTemplateEngine";
 
 const STORAGE_KEY = "project-titan-master-data-v3";
 
@@ -36,6 +41,7 @@ export const MASTER_CATEGORIES = [
   { key: "employees", label: "직원", desc: "NDK 내부 직원 · 권한 · 재직 상태 (거래처 담당자 ❌)" },
   { key: "materials", label: "재질", desc: "제품 재질 코드" },
   { key: "heatTreatment", label: "공정", desc: "열처리 · 가공 공정" },
+  { key: "recipes", label: "열처리 Recipe", desc: "회사 표준 열처리 조건 · Status · Version" },
   { key: "equipment", label: "설비", desc: "열처리 설비" },
   { key: "inspectionCriteria", label: "검사기준", desc: "제품별 검사기준 · 도면 (별도 Session)" },
   { key: "customCodes", label: "사용자정의코드", desc: "상태 · 단위 · 부서 등 공통 코드" },
@@ -358,6 +364,174 @@ export const MASTER_DATA = {
     { id: "h3", code: "HT-SB", name: "염욕질화", description: "염욕 질화", active: true },
     { id: "h4", code: "HT-CP", name: "침탄", description: "침탄 열처리", active: true },
     { id: "h5", code: "HT-HF", name: "고주파", description: "고주파 열처리", active: true },
+  ],
+  recipes: [
+    {
+      id: "rcp1",
+      code: "RCP-ION-SCM415-001",
+      name: "SCM415 이온질화 표준",
+      status: "Approved",
+      versionNo: "V1",
+      templateId: "ion-nitriding",
+      materialId: "m1",
+      materialName: "SCM415",
+      processId: "h2",
+      processName: "이온질화",
+      equipmentIds: ["e3"],
+      equipmentNames: ["3S-3"],
+      parameters: {
+        dischargeCurrent: "45",
+        dischargeVoltage: "380",
+        processPressure: "2.0",
+        treatmentTemp: "520",
+        treatmentTime: "1200",
+        nitrogen: "24",
+        hydrogen: "2",
+        argon: "0",
+        x2: "",
+      },
+      coolingMethod: "Oil",
+      workMemo: "NH₃ 유량 24 L/min 유지",
+      cautionNote: "장입 전 예열 30분 필수",
+      approvedBy: "W001",
+      approvedByName: "김작업",
+      approvedDate: "2026-06-15",
+      reviewComment: "1공장 SCM415 이온질화 표준 조건 승인",
+      description: "서암기계공업 SCM415 이온질화",
+      active: true,
+      isDeleted: false,
+    },
+    {
+      id: "rcp2",
+      code: "RCP-ION-SNCM439-001",
+      name: "SNCM439 이온질화 표준",
+      status: "Approved",
+      versionNo: "V1",
+      templateId: "ion-nitriding",
+      materialId: "m8",
+      materialName: "SNCM439",
+      processId: "h2",
+      processName: "이온질화",
+      equipmentIds: ["e1", "e2"],
+      equipmentNames: ["3S-1", "3S-2"],
+      parameters: {
+        dischargeCurrent: "42",
+        dischargeVoltage: "375",
+        processPressure: "2.0",
+        treatmentTemp: "520",
+        treatmentTime: "1080",
+        nitrogen: "22",
+        hydrogen: "2",
+        argon: "0",
+        x2: "",
+      },
+      coolingMethod: "Oil",
+      workMemo: "NH₃ 유량 22 L/min",
+      cautionNote: "장입 전 예열 30분 필수",
+      approvedBy: "W001",
+      approvedByName: "김작업",
+      approvedDate: "2026-06-20",
+      reviewComment: "SNCM439 이온질화 표준 승인",
+      description: "",
+      active: true,
+      isDeleted: false,
+    },
+    {
+      id: "rcp3",
+      code: "RCP-GN-S45C-002",
+      name: "S45C 가스질화 표준",
+      status: "Approved",
+      versionNo: "V2",
+      templateId: "gas-nitriding",
+      materialId: "m3",
+      materialName: "S45C",
+      processId: "h1",
+      processName: "가스질화",
+      equipmentIds: ["e15"],
+      equipmentNames: ["61"],
+      parameters: {
+        treatmentTemp: "580",
+        treatmentTime: "240",
+        endogas: "0.4",
+        ammonia: "18",
+      },
+      coolingMethod: "Oil",
+      workMemo: "Endogas CO₂ 0.4% 유지",
+      cautionNote: "냉각 Oil 온도 60℃ 이하",
+      approvedBy: "W002",
+      approvedByName: "이작업",
+      approvedDate: "2026-07-01",
+      reviewComment: "V2 — 처리시간 240min 조정 승인",
+      description: "V1 Obsolete 후 V2 Approved",
+      active: true,
+      isDeleted: false,
+    },
+    {
+      id: "rcp4",
+      code: "RCP-ION-SCM440-001",
+      name: "SCM440 이온질화 (초안)",
+      status: "Draft",
+      versionNo: "V1",
+      templateId: "ion-nitriding",
+      materialId: "m9",
+      materialName: "SCM440H",
+      processId: "h2",
+      processName: "이온질화",
+      equipmentIds: [],
+      equipmentNames: [],
+      parameters: {
+        dischargeCurrent: "40",
+        dischargeVoltage: "",
+        processPressure: "",
+        treatmentTemp: "",
+        treatmentTime: "",
+        nitrogen: "",
+        hydrogen: "",
+        argon: "",
+        x2: "",
+      },
+      coolingMethod: "Oil",
+      workMemo: "",
+      cautionNote: "",
+      approvedBy: "",
+      approvedByName: "",
+      approvedDate: "",
+      reviewComment: "",
+      description: "조건 작성 중",
+      active: true,
+      isDeleted: false,
+    },
+    {
+      id: "rcp5",
+      code: "RCP-SOFT-SACM645-001",
+      name: "SACM645 연질화 검토",
+      status: "Review",
+      versionNo: "V1",
+      templateId: "soft-nitriding",
+      materialId: "m5",
+      materialName: "SACM645",
+      processId: "h2b",
+      processName: "연질화",
+      equipmentIds: ["e16"],
+      equipmentNames: ["62"],
+      parameters: {
+        treatmentTemp: "620",
+        treatmentTime: "480",
+        co2: "0.4",
+        nitrogen: "12",
+        ammonia: "8",
+      },
+      coolingMethod: "Air",
+      workMemo: "연질화 후 Air 냉각",
+      cautionNote: "검토 중 — 승인 전 Production 선택 불가",
+      approvedBy: "",
+      approvedByName: "",
+      approvedDate: "",
+      reviewComment: "품질부 검토 요청",
+      description: "",
+      active: true,
+      isDeleted: false,
+    },
   ],
   inspectionCriteria: [],
   customCodes: [
@@ -841,6 +1015,32 @@ function normalizePayload(categoryKey, payload) {
       description: payload.description?.trim() ?? payload.note?.trim() ?? "",
     };
   }
+  if (categoryKey === "recipes") {
+    const validStatuses = ["Draft", "Review", "Approved", "Obsolete"];
+    const status = validStatuses.includes(payload.status) ? payload.status : "Draft";
+    const templateId = payload.templateId?.trim() || resolveRecipeTemplateId(payload);
+    return normalizeRecipeRecord({
+      ...base,
+      status,
+      versionNo: payload.versionNo?.trim() || "V1",
+      templateId,
+      materialId: payload.materialId?.trim() ?? "",
+      materialName: payload.materialName?.trim() ?? "",
+      processId: payload.processId?.trim() ?? "",
+      processName: payload.processName?.trim() ?? "",
+      equipmentIds: Array.isArray(payload.equipmentIds) ? payload.equipmentIds : [],
+      equipmentNames: Array.isArray(payload.equipmentNames) ? payload.equipmentNames : [],
+      parameters: normalizeRecipeParameters(payload),
+      coolingMethod: payload.coolingMethod?.trim() ?? "",
+      workMemo: payload.workMemo?.trim() ?? "",
+      cautionNote: payload.cautionNote?.trim() ?? "",
+      approvedBy: payload.approvedBy?.trim() ?? "",
+      approvedByName: payload.approvedByName?.trim() ?? "",
+      approvedDate: payload.approvedDate?.trim() ?? "",
+      reviewComment: payload.reviewComment?.trim() ?? "",
+      isDeleted: Boolean(payload.isDeleted),
+    });
+  }
   if (categoryKey === "equipment") {
     return {
       ...base,
@@ -1056,6 +1256,19 @@ export function stageMasterDelete(categoryKey, rowId) {
     const updated = { ...target, active: false };
     sessionMasterData[storageKey] = rows.map((row) => (row.id === rowId ? updated : row));
     persistMasterData("workers");
+    return { ok: true, row: updated, soft: true };
+  }
+
+  if (resolveCategoryKey(categoryKey) === "recipes") {
+    const updated = {
+      ...target,
+      active: false,
+      isDeleted: true,
+      deletedAt: new Date().toISOString(),
+      status: "Obsolete",
+    };
+    sessionMasterData[storageKey] = rows.map((row) => (row.id === rowId ? updated : row));
+    persistMasterData("recipes");
     return { ok: true, row: updated, soft: true };
   }
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, FileText, FlaskConical, ShieldCheck } from "lucide-react";
+import { AlertTriangle, BookMarked, BookOpen, FileText, FlaskConical, Layers, ShieldCheck } from "lucide-react";
 
 /** 품질관리 Launcher — V1.5 (Category Badge 전 카드 공통) */
 export const QUALITY_MANAGEMENT_LAUNCHER_ITEMS = [
@@ -32,6 +32,26 @@ export const QUALITY_MANAGEMENT_LAUNCHER_ITEMS = [
     description: "불량 · NCR · 재처리 · 향후 CAPA 확장",
     metricKeys: ["defectToday"],
     emphasis: true,
+  },
+  {
+    id: "knowledge-record",
+    label: "Knowledge Record",
+    badge: "기술",
+    badgeColor: "cyan",
+    path: "/quality/knowledge",
+    icon: BookMarked,
+    description: "실제 작업 + 검사 결과 기술 데이터 (Sprint 9)",
+    metricKeys: [],
+  },
+  {
+    id: "lot-lifecycle",
+    label: "LOT Lifecycle",
+    badge: "LOT",
+    badgeColor: "purple",
+    path: "/quality/lot-lifecycle",
+    icon: Layers,
+    description: "Technology Summary · Document JSON (TDE Interface)",
+    metricKeys: [],
   },
   {
     id: "documents",

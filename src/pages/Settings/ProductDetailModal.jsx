@@ -19,6 +19,7 @@ import {
   PRODUCT_SHIPMENT_COLUMNS,
 } from "../../config/productDetailSections";
 import { buildProductMasterDetail } from "../../utils/productMasterDetail";
+import ProductSpecificationTab from "./ProductSpecificationTab";
 
 import "./CompanyManagement.css";
 import "./ProductManagement.css";
@@ -209,6 +210,8 @@ export default function ProductDetailModal({ open, product, onClose }) {
             <FieldGrid fields={PRODUCT_PROCESS_FIELDS} source={detail.process} variant="trade" />
           </section>
         ) : null}
+
+        {activeTab === "spec" ? <ProductSpecificationTab product={product} /> : null}
 
         {activeTab === "production" ? (
           <section className="company-detail-section" aria-label="생산">
