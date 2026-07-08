@@ -161,12 +161,12 @@ export const EQUIPMENT_RUNNING_LOTS = {
     operator: "홍길동",
   },
   "3S-3": {
-    lotNo: "LOT240615",
-    startTime: "07:10",
-    expectedEndTime: "16:40",
+    lotNo: "LOT-20260707-001",
+    startTime: "08:30",
+    expectedEndTime: "14:30",
     progress: 82,
     statusLabel: "진행중",
-    operator: "김철수",
+    operator: "김작업",
   },
   "10S-02": {
     lotNo: "LOT240628",
@@ -189,6 +189,14 @@ export const EQUIPMENT_RUNNING_LOTS = {
 /** @type {Record<string, EquipmentChargeableLotRow[]>} — Master 설비 코드 */
 export const EQUIPMENT_CHARGEABLE_LOTS = {
   "3S-2": [
+    {
+      id: "lot-s9-demo",
+      lotNo: "LOT-20260707-001",
+      partName: "샤프트",
+      qty: 120,
+      unit: "EA",
+      statusLabel: "장입대기",
+    },
     {
       id: "lot-240701",
       lotNo: "LOT240701",
@@ -262,6 +270,7 @@ export const EQUIPMENT_LOT_PRODUCTS = {
   LOT240701: [{ partName: "BULL GEAR" }, { partName: "SPACER" }],
   LOT240702: [{ partName: "#2 PINION GEAR" }],
   LOT240615: [{ partName: "CAM SHAFT" }, { partName: "WASHER" }],
+  "LOT-20260707-001": [{ partName: "샤프트", partNo: "SA-4032" }],
   LOT240628: [{ partName: "GEAR BLANK" }, { partName: "SPACER" }, { partName: "KEY" }],
   LOT240620: [{ partName: "INDUCTION RING" }],
   LOT240703: [{ partName: "DRIVE SHAFT" }],
