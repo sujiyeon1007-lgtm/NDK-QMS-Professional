@@ -170,17 +170,6 @@ export default function KnowledgeRecordPage() {
   return (
     <>
       <div className="company-management-page">
-        <div className="company-management-page__head">
-          <div>
-            <h2>Knowledge Record (기술 데이터)</h2>
-            <p className="company-management-page__intro">
-              실제 작업 조건(Actual Work Record)과 검사 결과(Inspection)를 <strong>하나의 기술 데이터</strong>로
-              LOT에 귀속합니다. 표준 Recipe · 실제 조건은 <strong>Snapshot으로 재사용</strong>됩니다.
-              (Sprint 9 Phase 4 · 저장·조회만 · Engine 미구현)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="기술 데이터 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = CATEGORY_ICON[kpi.id] ?? Layers;
@@ -305,7 +294,6 @@ export default function KnowledgeRecordPage() {
                     <section className="company-detail-section" aria-label="기술 요약">
                       <p className="company-detail-section__notice company-detail-section__notice--recipe" role="note">
                         Production(실제 작업) + Inspection(검사) 결과를 하나의 기술 데이터로 저장합니다.
-                        분석·추천은 향후 Knowledge Engine 영역입니다.
                       </p>
                       <dl className="company-detail-section__grid company-detail-section__grid--profile">
                         {KR_SUMMARY_FIELDS.map((field) => {

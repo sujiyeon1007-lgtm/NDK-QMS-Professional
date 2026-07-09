@@ -37,7 +37,6 @@ export const AWR_DETAIL_TABS = [
   { id: "conditions", label: "실제 작업 조건" },
   { id: "reference", label: "표준 Recipe 참조" },
   { id: "work", label: "작업 정보" },
-  { id: "knowledge", label: "Knowledge 연계" },
 ];
 
 /** 작업 정보 (Master 참조 · 작업자 입력) */

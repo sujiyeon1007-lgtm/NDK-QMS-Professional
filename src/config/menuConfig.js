@@ -34,6 +34,7 @@ import {
   MENU_FREEZE_SIDEBAR_GROUPS,
   buildSidebarGroups,
 } from "./menuFreezeV1";
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 /** @typedef {{ id: string, label: string, path: string }} MenuTab */
 /** @typedef {{ id: string, label: string, icon: import("react").ComponentType, path: string, end?: boolean }} SidebarItem */
@@ -82,8 +83,10 @@ export const TITAN_MENU_CATALOG = {
       defaultTab: "hub",
       tabs: [
         { id: "hub", label: "운영관리", path: "/inout" },
-        { id: "incoming", label: "입고등록", path: "/inout/incoming" },
-        { id: "shipment", label: "출고등록", path: "/inout/shipment" },
+        { id: "inbound-pending", label: "입고 대기", path: OPERATION_ROUTES.inboundPending },
+        { id: "inbound-history", label: "입고 이력", path: OPERATION_ROUTES.inboundHistory },
+        { id: "shipment-register", label: "출고 등록", path: OPERATION_ROUTES.shipmentRegister },
+        { id: "shipment-history", label: "출고 이력", path: OPERATION_ROUTES.shipmentHistory },
         { id: "print", label: "출력관리", path: "/inout/print" },
       ],
     },
@@ -105,9 +108,10 @@ export const TITAN_MENU_CATALOG = {
       defaultTab: "hub",
       tabs: [
         { id: "hub", label: "생산관리", path: "/production" },
-        { id: "plan", label: "생산계획", path: "/production/plan" },
-        { id: "charging", label: "설비장입", path: "/production/charging" },
-        { id: "daily-report", label: "생산일보", path: "/production/daily-report" },
+        { id: "production-pending", label: "생산 대기", path: OPERATION_ROUTES.productionPending },
+        { id: "equipment-status", label: "설비 가동 현황", path: OPERATION_ROUTES.equipmentStatus },
+        { id: "daily-work", label: "작업일보", path: OPERATION_ROUTES.dailyWork },
+        { id: "shot-status", label: "쇼트 작업현황", path: OPERATION_ROUTES.shotStatus },
         { id: "results", label: "생산실적관리", path: "/production/results" },
         { id: "print", label: "출력관리", path: "/production/print" },
       ],
@@ -115,7 +119,7 @@ export const TITAN_MENU_CATALOG = {
     pageMeta: {
       kicker: "Production",
       title: "생산관리",
-      description: "생산계획 · 설비장입 · 생산일보 · 실적 · 출력 — Launcher Hub",
+      description: "입고 완료된 작업을 생산 대기 → 설비 가동 → 작업일보 순으로 관리합니다.",
     },
     breadcrumb: ["생산관리"],
   },
@@ -145,12 +149,12 @@ export const TITAN_MENU_CATALOG = {
   inboundStatus: {
     id: "inboundStatus",
     label: "입고관리",
-    path: "/inout/incoming",
+    path: OPERATION_ROUTES.inboundPending,
     icon: ClipboardList,
     section: {
-      pathPrefix: "/inout/incoming",
+      pathPrefix: OPERATION_ROUTES.inboundPending,
       defaultTab: "status",
-      tabs: [{ id: "status", label: "입고관리", path: "/inout/incoming" }],
+      tabs: [{ id: "status", label: "입고관리", path: OPERATION_ROUTES.inboundPending }],
     },
     pageMeta: {
       kicker: "PQMS Workflow",
@@ -182,12 +186,12 @@ export const TITAN_MENU_CATALOG = {
   workDaily: {
     id: "workDaily",
     label: "열처리관리",
-    path: "/production/daily-report",
+    path: OPERATION_ROUTES.dailyWork,
     icon: NotebookPen,
     section: {
-      pathPrefix: "/production/daily-report",
+      pathPrefix: OPERATION_ROUTES.dailyWork,
       defaultTab: "daily-report",
-      tabs: [{ id: "daily-report", label: "열처리일보", path: "/production/daily-report" }],
+      tabs: [{ id: "daily-report", label: "열처리일보", path: OPERATION_ROUTES.dailyWork }],
     },
     pageMeta: {
       kicker: "품질 Workflow",
@@ -292,12 +296,12 @@ export const TITAN_MENU_CATALOG = {
   outboundStatus: {
     id: "outboundStatus",
     label: "출고관리",
-    path: "/inout/shipment",
+    path: OPERATION_ROUTES.shipmentRegister,
     icon: Truck,
     section: {
-      pathPrefix: "/inout/shipment",
+      pathPrefix: OPERATION_ROUTES.shipmentRegister,
       defaultTab: "shipment",
-      tabs: [{ id: "shipment", label: "출고관리", path: "/inout/shipment" }],
+      tabs: [{ id: "shipment", label: "출고관리", path: OPERATION_ROUTES.shipmentRegister }],
     },
     pageMeta: {
       kicker: "Shipment",
@@ -335,6 +339,7 @@ export const TITAN_MENU_CATALOG = {
       tabs: [
         { id: "dashboard", label: "Dashboard", path: "/statistics/dashboard" },
         { id: "production", label: "생산통계", path: "/statistics/production" },
+        { id: "shot", label: "쇼트현황", path: "/statistics/shot" },
         { id: "quality", label: "품질통계", path: "/statistics/quality" },
         { id: "sales", label: "영업통계", path: "/statistics/sales" },
       ],
@@ -413,7 +418,7 @@ export const TITAN_MENU_CATALOG = {
   },
   qrEngine: {
     id: "qrEngine",
-    label: "QR Engine",
+    label: "QR 정보관리",
     path: "/qr",
     icon: QrCode,
     end: true,
@@ -421,18 +426,18 @@ export const TITAN_MENU_CATALOG = {
       pathPrefix: "/qr",
       defaultTab: "dashboard",
       tabs: [
-        { id: "dashboard", label: "Dashboard", path: "/qr/dashboard" },
-        { id: "generator", label: "QR Generator", path: "/qr/generator" },
-        { id: "registry", label: "QR Registry", path: "/qr/registry" },
-        { id: "scan", label: "QR Scan", path: "/qr/scan" },
+        { id: "dashboard", label: "대시보드", path: "/qr/dashboard" },
+        { id: "generator", label: "QR 생성", path: "/qr/generator" },
+        { id: "registry", label: "QR 목록", path: "/qr/registry" },
+        { id: "scan", label: "QR 스캔", path: "/qr/scan" },
       ],
     },
     pageMeta: {
-      kicker: "QR Engine",
-      title: "QR Engine",
-      description: "TITAN 공통 QR — 생성 · Registry · Scan · 업무 연결",
+      kicker: "QR 정보관리",
+      title: "QR 정보관리",
+      description: "설비, LOT, 제품 등의 QR를 생성하고 조회 및 스캔하여 업무와 연결합니다.",
     },
-    breadcrumb: ["QR Engine"],
+    breadcrumb: ["QR 정보관리"],
   },
   qrManagement: {
     id: "qrManagement",
@@ -457,48 +462,47 @@ export const TITAN_MENU_CATALOG = {
   },
   qrCharging: {
     id: "qrCharging",
-    label: "설비장입",
-    path: "/production/charging",
+    label: "설비 가동 현황",
+    path: OPERATION_ROUTES.equipmentStatus,
     icon: Factory,
     end: true,
     section: {
-      pathPrefix: "/production/charging",
+      pathPrefix: OPERATION_ROUTES.equipmentStatus,
       defaultTab: "hub",
       tabs: [
-        { id: "hub", label: "설비장입", path: "/production/charging" },
-        { id: "overview", label: "전체 설비 현황", path: "/production/charging/overview" },
+        { id: "hub", label: "설비 가동 현황", path: OPERATION_ROUTES.equipmentStatus },
       ],
     },
     pageMeta: {
       kicker: "Production",
-      title: "설비장입",
-      description: "LOT↔설비 연결 · 장입 · 열처리 완료 — 생산관리 내부 Hub",
+      title: "설비 가동 현황",
+      description: "장입 준비 · 작업 시작 · 작업 종료 · LOT 확인 통합 화면",
     },
-    breadcrumb: ["생산관리", "설비장입"],
+    breadcrumb: ["생산관리", "설비 가동 현황"],
   },
   equipmentStatus: {
     id: "equipmentStatus",
-    label: "설비현황",
-    path: "/equipment-status",
+    label: "설비 가동 현황",
+    path: OPERATION_ROUTES.equipmentStatus,
     icon: Monitor,
     end: true,
     section: {
-      pathPrefix: "/equipment-status",
+      pathPrefix: OPERATION_ROUTES.equipmentStatus,
       defaultTab: "main",
-      tabs: [{ id: "main", label: "설비현황", path: "/equipment-status" }],
+      tabs: [{ id: "main", label: "설비 가동 현황", path: OPERATION_ROUTES.equipmentStatus }],
     },
     pageMeta: {
       kicker: "Control Room",
-      title: "설비현황",
+      title: "설비 가동 현황",
       description: "LOT 중심 Control Room — 설비 · LOT · 제품 View 관제",
     },
-    breadcrumb: ["설비현황"],
+    breadcrumb: ["생산관리", "설비 가동 현황"],
   },
   /**
    * Sprint 3E — 제품현황 Sidebar 독립 메뉴 제거 · Control Room Product View로 흡수.
    * Sidebar order(MENU_FREEZE_SIDEBAR_ORDER)에서 제외되어 Sidebar에는 표시되지 않으나,
    * 권한(catalogId) · /product-status 리다이렉트 경로 정합성을 위해 catalog 항목은 유지한다.
-   * @deprecated 진입은 /equipment-status?view=product (Control Room)
+   * @deprecated 진입은 /production/equipment-status?view=product (Control Room)
    */
   productStatus: {
     id: "productStatus",
@@ -516,7 +520,7 @@ export const TITAN_MENU_CATALOG = {
       title: "제품 현황",
       description: "Control Room Product View로 통합되었습니다.",
     },
-    breadcrumb: ["설비현황", "제품 View"],
+    breadcrumb: ["생산관리", "설비 가동 현황", "제품 View"],
   },
   companyInfo: {
     id: "companyInfo",

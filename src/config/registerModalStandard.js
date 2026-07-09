@@ -5,7 +5,7 @@
 
 export const INBOUND_REGISTER_LABEL = "입고 등록";
 export const INBOUND_EDIT_LABEL = "입고 수정";
-export const INBOUND_PRINT_LIST_LABEL = "입고 리스트 (열처리 작업 요청 리스트)";
+export const INBOUND_PRINT_LIST_LABEL = "입고 리스트";
 /** Toolbar · SectionPageActions — Presentation PDF 출력 */
 export const INBOUND_LIST_PRINT_TOOLBAR_LABEL = "입고리스트 출력";
 

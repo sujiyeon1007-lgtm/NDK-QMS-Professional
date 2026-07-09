@@ -14,6 +14,7 @@ import { getRecordWorkDate, isWithinAnalysisPeriod } from "./productionAnalytics
 import { normalizeProductUnit } from "./productUnits";
 import { shiftReferenceDate } from "./statisticsAnalytics";
 import { buildTabStatistics } from "./statisticsTabAnalytics";
+import { isShotWorkType, normalizeShotWorkStatus, SHOT_WORK_STATUS } from "../config/workTypeWorkflow";
 
 function matchesUnitFilter(recordUnit, unitFilter) {
   if (!unitFilter) return true;
@@ -347,6 +348,53 @@ function buildQualityDashboard(period, referenceDate, unitFilter = "") {
   };
 }
 
+function buildShotDashboard(period, referenceDate, unitFilter = "") {
+  const keys = buildMonthKeys(referenceDate);
+  const records = getSessionProductionRecords();
+  const shotRows = records
+    .filter((record) => {
+      const date = record.shotWorkDate || record.shotCompletedAt || record.incomingDate;
+      return isShotWorkType(record) && isInPeriod(date, period, referenceDate) && matchesUnitFilter(record.unit, unitFilter);
+    })
+    .map((record) => ({
+      company: record.company || "—",
+      partName: record.partName || "—",
+      partNo: record.partNo || "—",
+      material: record.material || "—",
+      worker: record.shotWorker || record.registrar || "—",
+      shotQty: Number(record.qty) || 0,
+      shotWorkDate: record.shotWorkDate || record.shotCompletedAt || record.incomingDate,
+      status: normalizeShotWorkStatus(record.shotStatus),
+    }));
+
+  const completedCount = shotRows.filter((row) => row.status === SHOT_WORK_STATUS.COMPLETE).length;
+  const waitingCount = shotRows.filter((row) => row.status === SHOT_WORK_STATUS.WAITING).length;
+  const shotQty = shotRows.reduce((sum, row) => sum + row.shotQty, 0);
+  const workerCount = new Set(shotRows.map((row) => row.worker).filter((worker) => worker && worker !== "—")).size;
+
+  return {
+    kpi: {
+      shotCount: shotRows.length,
+      shotQty: shotQty.toLocaleString("ko-KR"),
+      completedCount,
+      waitingCount,
+      completionRate: shotRows.length ? Math.round((completedCount / shotRows.length) * 1000) / 10 : 0,
+      workerCount,
+    },
+    mainCharts: [
+      { id: "shot-trend", title: "월별 쇼트 처리 EA", type: "line", items: aggregateMonthlyQty(shotRows, "shotWorkDate", "shotQty", keys) },
+      { id: "shot-company", title: "업체별 쇼트 처리량", type: "bar", items: topByField(shotRows, "company", "shotQty", 8) },
+      { id: "shot-worker", title: "작업자별 처리량", type: "bar", items: topByField(shotRows, "worker", "shotQty", 8) },
+    ],
+    topLists: [
+      { id: "shot-company-top", title: "업체별 쇼트 TOP", items: topByField(shotRows, "company", "shotQty", 10) },
+      { id: "shot-worker-top", title: "작업자별 처리 TOP", items: topByField(shotRows, "worker", "shotQty", 10) },
+      { id: "shot-product-top", title: "품목별 처리 TOP", items: topByField(shotRows, "partName", "shotQty", 10) },
+    ],
+    bottomCharts: [],
+  };
+}
+
 function buildSalesDashboard(period, referenceDate, unitFilter = "") {
   const keys = buildMonthKeys(referenceDate);
   const records = getSessionProductionRecords();
@@ -418,7 +466,7 @@ function createEmptyExecutiveDashboard(tabId) {
   };
 }
 
-const BUILDERS = { production: buildProductionDashboard, quality: buildQualityDashboard, sales: buildSalesDashboard };
+const BUILDERS = { production: buildProductionDashboard, shot: buildShotDashboard, quality: buildQualityDashboard, sales: buildSalesDashboard };
 
 export function buildExecutiveStatisticsDashboard(tabId, options = {}) {
   const { period = "month", referenceDate = new Date(), unitFilter = "" } = options;

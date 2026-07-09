@@ -118,7 +118,7 @@ function buildPrintColumns(viewMode = "byItem") {
 export function buildInventoryPrintLayout(rows = [], viewMode = "byItem") {
   const columns = buildPrintColumns(viewMode);
   const numbered = rows.map((row, index) => ({ ...row, no: index + 1 }));
-  const columnWidths = computePrintColumnWidths(columns, TITAN_LIST_PRINT_ORIENTATION);
+  const columnWidths = computePrintColumnWidths(columns, numbered);
   const pages = paginateRowsByLayout(numbered, columns, columnWidths, buildListPrintPaginationOptions());
 
   return {

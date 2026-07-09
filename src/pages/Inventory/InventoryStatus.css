@@ -7,12 +7,23 @@
 
 .inventory-status-page__notice {
   margin: 0;
+  flex: 1 1 auto;
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--titan-surface-muted, #f8fafc);
   border: 1px solid var(--titan-border, #dde6f0);
   font-size: var(--titan-font-sm, 13px);
   color: var(--titan-text-muted, #64748b);
+}
+
+.inventory-status-page__notice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inventory-status-page__notice-row .titan-btn {
+  flex: 0 0 auto;
 }
 
 .inventory-status-page__view-modes {

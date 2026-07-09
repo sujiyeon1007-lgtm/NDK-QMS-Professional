@@ -66,6 +66,13 @@ const CATEGORY_ALIASES = {
   items: "products",
 };
 
+const QR_UUID_PREFIX_BY_CATEGORY = {
+  products: "PRD",
+  equipment: "EQP",
+  materials: "MAT",
+  workers: "WRK",
+};
+
 function resolveCategoryKey(categoryKey) {
   return CATEGORY_ALIASES[categoryKey] ?? categoryKey;
 }
@@ -566,6 +573,30 @@ export const MASTER_DATA = {
   ],
 };
 
+/** V1.0 운영 초기 Master — 거래처·제품 0건 */
+export const TITAN_OPERATIONAL_MASTER_SEED = {
+  companies: [],
+  products: [],
+  workers: MASTER_DATA.workers.filter((row) => ["w1", "w2"].includes(row.id)),
+  employees: [],
+  materials: [
+    ...MASTER_DATA.materials.filter((row) =>
+      ["SCM440", "SNCM439", "SACM645", "SNACM220"].includes(row.code)
+    ),
+    { id: "m-op-5", code: "F22-CL3", name: "F22 Cl.3", spec: "합금강", note: "", active: true },
+    { id: "m-op-6", code: "42CrMo4", name: "42CrMo4", spec: "합금강", note: "", active: true },
+  ],
+  equipment: MASTER_DATA.equipment.filter((row) => ["e1", "e2", "e5", "e15"].includes(row.id)),
+  heatTreatment: MASTER_DATA.heatTreatment,
+  recipes: [],
+  inspectionCriteria: [],
+  customCodes: MASTER_DATA.customCodes.filter((row) => row.id === "u1"),
+  productCategory: [],
+  status: [],
+  units: [],
+  other: MASTER_DATA.other,
+};
+
 function cloneMasterData(source) {
   return Object.fromEntries(
     Object.entries(source).map(([key, rows]) => [key, rows.map((row) => ({ ...row }))])
@@ -740,8 +771,10 @@ function loadMasterDataFromStorage() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const data = cloneMasterData(MASTER_DATA);
-      data.companies = migrateCompanyMaster(data.companies);
+      const data = cloneMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+      data.companies = migrateCompanyMaster(data.companies ?? []);
+      data.products = migrateLegacyProducts(data.products ?? []);
+      data.workers = migrateWorkerMaster(data.workers ?? []);
       return data;
     }
     const parsed = JSON.parse(raw);
@@ -781,8 +814,10 @@ function loadMasterDataFromStorage() {
     delete merged.items;
     return merged;
   } catch {
-    const data = cloneMasterData(MASTER_DATA);
-    data.companies = migrateCompanyMaster(data.companies);
+    const data = cloneMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+    data.companies = migrateCompanyMaster(data.companies ?? []);
+    data.products = migrateLegacyProducts(data.products ?? []);
+    data.workers = migrateWorkerMaster(data.workers ?? []);
     return data;
   }
 }
@@ -955,12 +990,32 @@ function nextMasterRowId(categoryKey) {
   return `${prefix}${maxNum + 1}`;
 }
 
+function nextMasterQrUuid(categoryKey) {
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  const prefix = QR_UUID_PREFIX_BY_CATEGORY[resolvedKey];
+  if (!prefix) return "";
+  const rows = getMasterDataByCategory(resolvedKey);
+  const maxNum = rows.reduce((max, row) => {
+    const match = String(row.qrUuid ?? "").match(new RegExp(`^${prefix}-(\\d+)$`, "i"));
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `${prefix}-${String(maxNum + 1).padStart(6, "0")}`;
+}
+
+function ensureMasterQrUuid(categoryKey, row) {
+  const resolvedKey = resolveCategoryKey(categoryKey);
+  if (!QR_UUID_PREFIX_BY_CATEGORY[resolvedKey]) return row;
+  if (String(row.qrUuid ?? "").trim()) return row;
+  return { ...row, qrUuid: nextMasterQrUuid(resolvedKey) };
+}
+
 function normalizePayload(categoryKey, payload) {
   const base = {
     code: payload.code?.trim() ?? "",
     name: payload.name?.trim() ?? "",
     note: payload.note?.trim() ?? "",
     active: payload.active !== false,
+    qrUuid: payload.qrUuid?.trim() ?? "",
   };
 
   if (categoryKey === "companies") {
@@ -1188,10 +1243,10 @@ export function stageMasterAdd(categoryKey, payload, { skipValidation = false } 
     return { ok: false, message: validation.message };
   }
 
-  const newRow = {
+  const newRow = ensureMasterQrUuid(resolvedKey, {
     id: payload.id ?? nextMasterRowId(validation.categoryKey),
     ...validation.normalized,
-  };
+  });
 
   const storageKey = validation.storageKey;
   sessionMasterData[storageKey] = [...(sessionMasterData[storageKey] ?? []), newRow];
@@ -1213,7 +1268,11 @@ export function stageMasterUpdate(categoryKey, rowId, payload) {
     return { ok: false, message: "수정 대상을 찾을 수 없습니다." };
   }
 
-  const updated = { ...rows[index], ...validation.normalized };
+  const updated = ensureMasterQrUuid(resolvedKey, {
+    ...rows[index],
+    ...validation.normalized,
+    qrUuid: rows[index].qrUuid ?? validation.normalized.qrUuid,
+  });
   sessionMasterData[storageKey] = rows.map((row, i) => (i === index ? updated : row));
   persistMasterData(resolvedKey);
   return { ok: true, row: updated };
@@ -1564,6 +1623,16 @@ export function getMasterSuggestions(categoryKey, query, limit = 8) {
         .some((value) => String(value).toLowerCase().includes(q))
     )
     .slice(0, limit);
+}
+
+export function replaceSessionMasterData(nextData) {
+  sessionMasterData = cloneMasterData(nextData);
+  sessionMasterData.companies = migrateCompanyMaster(sessionMasterData.companies ?? []);
+  sessionMasterData.products = migrateLegacyProducts(sessionMasterData.products ?? []);
+  sessionMasterData.workers = migrateWorkerMaster(sessionMasterData.workers ?? []);
+  sessionMasterData.employees = migrateLegacyWorkers(sessionMasterData.employees ?? []);
+  persistMasterData();
+  return sessionMasterData;
 }
 
 export const MASTER_FIELD_LINKS = {

@@ -4,17 +4,18 @@
  * @see .cursor/rules/project-titan-production-architecture-v15.mdc
  */
 
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
+
 export const PRODUCTION_ARCHITECTURE_VERSION = "V1.5";
 export const PRODUCTION_ARCHITECTURE_LOCKED = true;
 export const PRODUCTION_ARCHITECTURE_DATE = "2026-07-07";
 
 /** PM 공식 생산 Workflow — QR 시작점 · 생산일보 자동 생성(단계적) */
 export const PRODUCTION_WORKFLOW_V15 = [
-  "생산계획",
-  "설비장입",
+  "생산 대기",
+  "설비 가동 현황",
   "생산일보",
-  "생산실적관리",
-  "출력관리",
+  "쇼트 작업현황",
 ];
 
 /** @deprecated V1.5 이전 세분화 구조 — 참고용 */
@@ -52,28 +53,29 @@ export const QUALITY_WORKFLOW_V15 = [
   "품질 업무일지",
 ];
 
-/** 설비 장입관리 Hub — 생산관리 Launcher 내부 (Sidebar ❌) */
+/** 설비 가동 현황 통합 — 생산관리 Navigation 내부 */
 export const PRODUCTION_CHARGING_HUB_WORKFLOW_V15 = [
-  "전체 설비 현황",
-  "이온질화",
-  "가스질화",
-  "가스연질화",
+  "장입 준비",
+  "작업 시작",
+  "작업 종료",
+  "LOT 확인",
 ];
 
 /** @deprecated PRODUCTION_CHARGING_HUB_WORKFLOW_V15 */
 export const QR_CHARGING_HUB_WORKFLOW = PRODUCTION_CHARGING_HUB_WORKFLOW_V15;
 
-export const PRODUCTION_CHARGING_HUB_ROUTE = "/production/charging";
+export const PRODUCTION_CHARGING_HUB_ROUTE = OPERATION_ROUTES.equipmentStatus;
 
 export const PRODUCTION_ARCHITECTURE_PRINCIPLE =
   "QR를 시작점으로 LOT · 생산일보 · Timeline · 제품 추적이 하나의 흐름으로 자동 연결";
 
 export const MES_ROLE_SEPARATION = {
-  equipmentStatus: "공장 전체 설비 관제 (작업 수행 ❌)",
+  equipmentStatus: "공장 전체 설비 관제 + 장입 준비 · 작업 시작/종료 · LOT 확인",
   productStatus: "제품 진행현황 · LOT 추적",
-  productionCharging: "설비 장입 작업 — 생산관리 Launcher 내부 Hub",
-  productionManagement: "생산 수행 허브 (계획 → 장입 → 일보 → 실적)",
+  shotWork: "쇼트 전용 작업현황 · 생산 대기/설비 가동/작업일보 우회",
+  productionCharging: "설비 가동 현황으로 통합",
+  productionManagement: "생산 수행 허브 (생산 대기 → 설비 가동 현황 → 작업일보 → 실적)",
 };
 
-/** PM FINAL — 설비 장입관리·생산일보 동등 핵심 강조 */
-export const PRODUCTION_LAUNCHER_CORE_CARD_IDS = ["qr-charging", "daily-report"];
+/** PM UX — LOT 생성은 생산 대기 내부 Action, 설비 가동 현황·생산일보 핵심 강조 */
+export const PRODUCTION_LAUNCHER_CORE_CARD_IDS = ["production-plan", "equipment-status", "daily-report"];

@@ -1,10 +1,14 @@
-import { Link, useParams } from "react-router-dom";
+import { useMemo } from "react";
+import { useParams } from "react-router-dom";
 
-import { getAccountingLauncherItem } from "../../config/accountingLauncher";
-import TitanWorkspaceShell from "../../foundation/components/TitanWorkspaceShell";
-import TitanComingSoonPlaceholder from "../../foundation/pages/TitanComingSoonPlaceholder";
+import { ACCOUNTING_LAUNCHER_ITEMS, getAccountingLauncherItem } from "../../config/accountingLauncher";
+import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbPolicy";
+import TitanBreadcrumb from "../../foundation/components/TitanBreadcrumb";
+import TitanEmptyState from "../../foundation/components/TitanEmptyState";
+import { WorkspaceNavigationTabs } from "../../foundation/layout/SectionTabs";
 import AccountingLitePage from "./AccountingLitePage";
 
+import "../../foundation/layout/SectionPageLayout.css";
 import "./Accounting.css";
 
 export default function AccountingFeaturePage() {
@@ -12,24 +16,49 @@ export default function AccountingFeaturePage() {
   const item = getAccountingLauncherItem(featureId);
   const isActive = item?.status === "active";
 
-  return (
-    <TitanWorkspaceShell
-      kicker="Accounting Management"
-      title={item?.label ?? "회계관리"}
-      intro={item?.description ?? "TITAN 회계관리 Lite 조회 화면입니다."}
-      note={isActive ? "조회 전용" : "Coming Soon"}
-      ariaLabel="회계관리"
-      className="accounting-workspace"
-    >
-      <p className="accounting-lite-back">
-        <Link to="/accounting">← 회계관리</Link>
-      </p>
+  const workspaceNav = useMemo(
+    () => ({
+      ariaLabel: "회계관리 Workspace Navigation",
+      homePath: "/accounting",
+      items: [
+        { to: "/accounting", label: "홈" },
+        ...ACCOUNTING_LAUNCHER_ITEMS.map((entry) => ({
+          to: entry.path,
+          label: entry.label,
+        })),
+      ],
+    }),
+    []
+  );
 
-      {isActive ? (
-        <AccountingLitePage featureId={featureId} />
-      ) : (
-        <TitanComingSoonPlaceholder title={item?.label ?? featureId} subtitle="회계관리 · V1.0 범위 제외" />
-      )}
-    </TitanWorkspaceShell>
+  const breadcrumbItems = useMemo(
+    () =>
+      buildWorkspaceDrilldownBreadcrumb({
+        hubLabel: "회계관리",
+        hubPath: "/accounting",
+        items: ACCOUNTING_LAUNCHER_ITEMS.map((entry) => ({
+          to: entry.path,
+          label: entry.label,
+        })),
+        pathname: item?.path ?? `/accounting/${featureId}`,
+      }),
+    [featureId, item?.path]
+  );
+
+  return (
+    <div className="titan-section-page accounting-workspace">
+      <WorkspaceNavigationTabs nav={workspaceNav} />
+      <TitanBreadcrumb items={breadcrumbItems} />
+      <div className="titan-section-page__body">
+        {isActive ? (
+          <AccountingLitePage featureId={featureId} />
+        ) : (
+          <TitanEmptyState
+            title={item?.label ?? "회계관리"}
+            description="현재 V1.0 범위에서 비활성화된 기능입니다."
+          />
+        )}
+      </div>
+    </div>
   );
 }

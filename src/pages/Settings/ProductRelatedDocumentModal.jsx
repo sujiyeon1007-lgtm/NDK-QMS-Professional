@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { Upload } from "lucide-react";
-
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import { FoundationFileUploader } from "../../foundation/components/FoundationAttachment";
 
 import {
 
   RELATED_DOCUMENT_TYPES,
 
   addRelatedDocument,
-
-  readDrawingFile,
 
   replaceRelatedDocument,
 
@@ -51,8 +48,6 @@ export default function ProductRelatedDocumentModal({
   });
 
   const [error, setError] = useState("");
-
-  const [dragOver, setDragOver] = useState(false);
 
 
 
@@ -104,38 +99,17 @@ export default function ProductRelatedDocumentModal({
 
 
 
-  const attachFile = async (file) => {
-
+  const handleFilesReady = (files = []) => {
+    const file = files[0];
     if (!file) return;
-
-    try {
-
-      const payload = await readDrawingFile(file);
-
-      if (!payload) return;
-
-      setForm((prev) => ({
-
-        ...prev,
-
-        fileName: payload.fileName,
-
-        mimeType: payload.mimeType,
-
-        dataUrl: payload.dataUrl,
-
-        title: prev.title || payload.fileName.replace(/\.[^.]+$/, ""),
-
-      }));
-
-      setError("");
-
-    } catch (attachError) {
-
-      setError(attachError.message || "파일을 등록할 수 없습니다.");
-
-    }
-
+    setForm((prev) => ({
+      ...prev,
+      fileName: file.name,
+      mimeType: file.mimeType,
+      dataUrl: file.dataUrl,
+      title: prev.title || file.name.replace(/\.[^.]+$/, ""),
+    }));
+    setError("");
   };
 
 
@@ -272,56 +246,9 @@ export default function ProductRelatedDocumentModal({
 
 
 
-      <div
-
-        className={`product-drawing-modal__dropzone${dragOver ? " is-over" : ""}`}
-
-        onDragOver={(event) => {
-
-          event.preventDefault();
-
-          setDragOver(true);
-
-        }}
-
-        onDragLeave={() => setDragOver(false)}
-
-        onDrop={(event) => {
-
-          event.preventDefault();
-
-          setDragOver(false);
-
-          attachFile(event.dataTransfer.files?.[0]);
-
-        }}
-
-      >
-
-        <Upload size={18} aria-hidden="true" />
-
-        <p>문서를 Drag &amp; Drop 하거나 파일을 선택하세요</p>
-
-        <span>PDF · JPG · PNG</span>
-
-        <label className="product-drawing-modal__file-btn">
-
-          파일 선택
-
-          <input
-
-            type="file"
-
-            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-
-            onChange={(event) => attachFile(event.target.files?.[0])}
-
-          />
-
-        </label>
-
+      <div className="product-drawing-modal__dropzone">
+        <FoundationFileUploader onFilesReady={handleFilesReady} />
         {form.fileName ? <strong>{form.fileName}</strong> : null}
-
       </div>
 
     </TitanRegisterModal>

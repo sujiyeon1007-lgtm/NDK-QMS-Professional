@@ -10,9 +10,15 @@ import {
 import { resolveQrBrowserUrlPayload } from "../config/qrBrowserUrlConfig";
 import { parseEquipmentFromQrPayload } from "./equipmentQr";
 import { processEquipmentQrScan } from "./equipmentQrWorkflow";
-import { getEquipmentList } from "./equipmentWorkflowService";
-import { countEngineRegistryByType, syncQrEngineAutoRegistry } from "./qrEngineRegistryService";
-import { parseLotFromQrPayload } from "./ndkWorkflow";
+import { getEquipmentDetailSnapshot } from "./equipmentWorkflowService";
+import { getMasterDataByCategory } from "./masterData";
+import {
+  countEngineRegistryByType,
+  listQrEngineRegistryRows,
+  syncQrEngineAutoRegistry,
+} from "./qrEngineRegistryService";
+import { getCurrentTitanUser } from "./titanHistorySession";
+import { countEquipmentTodayWorkFinishes } from "./productionPlanLot";
 
 const LOT_PATTERN = /^LOT[-\dA-Z]/i;
 
@@ -59,13 +65,50 @@ function resolveLotQr(payload) {
   return null;
 }
 
+function resolveEquipmentCodeFromQrTarget(target) {
+  const key = String(target ?? "").trim();
+  if (!key) return "";
+  const master =
+    getMasterDataByCategory("equipment").find((row) =>
+      [row.qrUuid, row.code, row.id].some((value) => String(value ?? "").trim() === key)
+    ) ?? null;
+  return String(master?.code ?? key).trim();
+}
+
+function resolveSmartEntryQr(payload) {
+  const text = String(payload ?? "").trim();
+  const match = text.match(/^NDK:\/\/(INCOMING|OUTGOING|PRODUCT|MATERIAL|DOCUMENT|WORKER)(?:\/(.+))?$/i);
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  const target = decodeURIComponent(String(match[2] ?? "").trim());
+  if (type === "incoming") return { type: QR_ENGINE_SCAN_TYPES.inbound.id, target: "inbound-entry" };
+  if (type === "outgoing") return { type: QR_ENGINE_SCAN_TYPES.outbound.id, target: "outbound-entry" };
+  if (type === "product") return { type: QR_ENGINE_SCAN_TYPES.product.id, target };
+  if (type === "material") return { type: QR_ENGINE_SCAN_TYPES.material.id, target };
+  if (type === "document") return { type: QR_ENGINE_SCAN_TYPES.document.id, target: target || "quality-documents" };
+  if (type === "worker") return { type: QR_ENGINE_SCAN_TYPES.worker.id, target };
+  return null;
+}
+
+function getEntryNavigationPath(type, target, browserPath = "") {
+  if (browserPath) return browserPath;
+  if (type === QR_ENGINE_SCAN_TYPES.inbound.id) return QR_ENGINE_ROUTES.inboundEntry;
+  if (type === QR_ENGINE_SCAN_TYPES.outbound.id) return QR_ENGINE_ROUTES.outboundEntry;
+  if (type === QR_ENGINE_SCAN_TYPES.product.id) return QR_ENGINE_ROUTES.productEntry(target);
+  if (type === QR_ENGINE_SCAN_TYPES.material.id) return QR_ENGINE_ROUTES.materialEntry(target);
+  if (type === QR_ENGINE_SCAN_TYPES.document.id) return QR_ENGINE_ROUTES.documentEntry;
+  if (type === QR_ENGINE_SCAN_TYPES.worker.id) return QR_ENGINE_ROUTES.workerEntry(target);
+  return QR_ENGINE_ROUTES.dashboard;
+}
+
 export function resolveQrScanType(payload) {
   const text = String(payload ?? "").trim();
   if (!text) return { type: "unknown", payload: text };
 
   const browserUrl = resolveQrBrowserUrlPayload(text);
   if (browserUrl?.type === "equipment" && browserUrl.equipmentId) {
-    const equipmentResult = processEquipmentQrScan(browserUrl.equipmentId);
+    const equipmentCode = resolveEquipmentCodeFromQrTarget(browserUrl.equipmentId);
+    const equipmentResult = processEquipmentQrScan(equipmentCode);
     if (equipmentResult.ok) {
       return {
         type: QR_ENGINE_SCAN_TYPES.equipment.id,
@@ -82,10 +125,19 @@ export function resolveQrScanType(payload) {
       lotNo: browserUrl.lotNo,
     };
   }
+  if (browserUrl && QR_ENGINE_SCAN_TYPES[browserUrl.type]) {
+    return {
+      type: browserUrl.type,
+      payload: text,
+      target: browserUrl.target ?? "",
+      navigationPath: getEntryNavigationPath(browserUrl.type, browserUrl.target, browserUrl.path),
+    };
+  }
 
   const equipmentCode = parseEquipmentFromQrPayload(text);
   if (equipmentCode) {
-    const equipmentResult = processEquipmentQrScan(text);
+    const resolvedEquipmentCode = resolveEquipmentCodeFromQrTarget(equipmentCode);
+    const equipmentResult = processEquipmentQrScan(resolvedEquipmentCode);
     if (equipmentResult.ok) {
       return {
         type: QR_ENGINE_SCAN_TYPES.equipment.id,
@@ -102,6 +154,15 @@ export function resolveQrScanType(payload) {
       type: QR_ENGINE_SCAN_TYPES.lot.id,
       payload: text,
       lotNo,
+    };
+  }
+
+  const smartEntry = resolveSmartEntryQr(text);
+  if (smartEntry) {
+    return {
+      ...smartEntry,
+      payload: text,
+      navigationPath: getEntryNavigationPath(smartEntry.type, smartEntry.target),
     };
   }
 
@@ -131,6 +192,107 @@ function bumpScanStats(type) {
   return stats;
 }
 
+export function getEquipmentScanLotChoices(equipmentId) {
+  const detail = getEquipmentDetailSnapshot(equipmentId);
+  if (!detail) return [];
+
+  const choices = [];
+  const seen = new Set();
+
+  const pushChoice = (lotNo, meta = {}) => {
+    const key = String(lotNo ?? "").trim();
+    if (!key) return;
+    const normalized = key.toUpperCase();
+    if (seen.has(normalized)) return;
+    seen.add(normalized);
+    choices.push({
+      lotNo: key,
+      label: key,
+      isActive: Boolean(meta.isActive),
+      isChargeable: Boolean(meta.isChargeable),
+      partName: meta.partName ?? "",
+      companyName: meta.companyName ?? "",
+    });
+  };
+
+  if (detail.currentLotNo) {
+    pushChoice(detail.currentLotNo, { isActive: true });
+  }
+
+  (detail.chargeableLots ?? []).forEach((row) => {
+    pushChoice(row?.lotNo ?? row, {
+      isChargeable: true,
+      partName: row?.partName ?? row?.itemName ?? "",
+      companyName: row?.companyName ?? row?.company ?? "",
+    });
+  });
+
+  (detail.displayLots ?? []).forEach((row) => {
+    if (typeof row === "string") {
+      pushChoice(row);
+      return;
+    }
+    pushChoice(row?.lotNo, {
+      partName: row?.partName ?? row?.itemName ?? "",
+      companyName: row?.companyName ?? row?.company ?? "",
+    });
+  });
+
+  return choices.sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return a.lotNo.localeCompare(b.lotNo, "ko");
+  });
+}
+
+export function completeEquipmentLotScan(equipmentId, lotNo, equipmentName = "") {
+  const resolvedLot = String(lotNo ?? "").trim();
+  if (!resolvedLot) {
+    return { ok: false, message: "LOT.NO를 선택하세요." };
+  }
+
+  bumpScanStats("equipment");
+  appendRecentScan({
+    id: `eq-lot-${resolvedLot}-${Date.now()}`,
+    type: "lot",
+    label: resolvedLot,
+    target: resolvedLot,
+    equipmentId,
+    equipmentName,
+    navigationPath: QR_ENGINE_ROUTES.lotLifecycle(resolvedLot),
+  });
+
+  return {
+    ok: true,
+    type: "lot",
+    typeLabel: QR_ENGINE_SCAN_TYPES.lot.labelKo,
+    lotNo: resolvedLot,
+    equipmentId,
+    navigationPath: QR_ENGINE_ROUTES.lotLifecycle(resolvedLot),
+  };
+}
+
+export function buildEquipmentWorkPanelSummary({ equipmentId, detail, activeSession } = {}) {
+  const equipmentName =
+    String(detail?.equipmentName ?? "").trim() ||
+    String(equipmentId ?? "").trim() ||
+    "-";
+  const worker =
+    String(activeSession?.operator ?? detail?.operator ?? getCurrentTitanUser() ?? "").trim() || "-";
+  const startTime =
+    String(activeSession?.startTime ?? detail?.startTime ?? "").trim() || "-";
+  const expectedEndTime =
+    String(activeSession?.expectedEndTime ?? detail?.expectedEndTime ?? "").trim() || "-";
+  const todayWorkCount = countEquipmentTodayWorkFinishes(equipmentId);
+
+  return {
+    equipmentName,
+    worker,
+    startTime,
+    expectedEndTime,
+    todayWorkCount,
+  };
+}
+
 export function processQrEngineScan(payload) {
   const text = String(payload ?? "").trim();
   if (!text) {
@@ -141,21 +303,25 @@ export function processQrEngineScan(payload) {
 
   if (resolved.type === QR_ENGINE_SCAN_TYPES.equipment.id && resolved.equipmentResult?.ok) {
     const equipmentId = resolved.equipmentResult.equipmentId;
+    const equipment = resolved.equipmentResult.equipment;
+    const navigationPath = QR_ENGINE_ROUTES.equipmentWork(equipmentId);
+
     bumpScanStats("equipment");
     appendRecentScan({
       id: `eq-${equipmentId}-${Date.now()}`,
       type: "equipment",
-      label: resolved.equipmentResult.equipment?.name ?? equipmentId,
+      label: equipment?.name ?? equipmentId,
       target: equipmentId,
-      navigationPath: QR_ENGINE_ROUTES.equipmentWork(equipmentId),
+      navigationPath,
     });
+
     return {
       ok: true,
       type: "equipment",
       typeLabel: QR_ENGINE_SCAN_TYPES.equipment.labelKo,
       equipmentId,
-      equipment: resolved.equipmentResult.equipment,
-      navigationPath: QR_ENGINE_ROUTES.equipmentWork(equipmentId),
+      equipment,
+      navigationPath,
       chargingPath: QR_ENGINE_ROUTES.chargingEquipment(equipmentId),
     };
   }
@@ -178,10 +344,28 @@ export function processQrEngineScan(payload) {
     };
   }
 
+  if (QR_ENGINE_SCAN_TYPES[resolved.type]?.labelKo && resolved.navigationPath) {
+    bumpScanStats(resolved.type);
+    appendRecentScan({
+      id: `${resolved.type}-${resolved.target || "entry"}-${Date.now()}`,
+      type: resolved.type,
+      label: QR_ENGINE_SCAN_TYPES[resolved.type].labelKo,
+      target: resolved.target || resolved.navigationPath,
+      navigationPath: resolved.navigationPath,
+    });
+    return {
+      ok: true,
+      type: resolved.type,
+      typeLabel: QR_ENGINE_SCAN_TYPES[resolved.type].labelKo,
+      target: resolved.target,
+      navigationPath: resolved.navigationPath,
+    };
+  }
+
   return {
     ok: false,
     message:
-      "지원하지 않는 QR입니다.\n설비 QR (NDK://EQ/코드) 또는 LOT QR (LOT-...)을 입력하세요.",
+      "지원하지 않는 QR입니다.\n설비, LOT, 입고등록, 출고등록, 제품, 재질, 문서, 작업자 QR을 입력하세요.",
   };
 }
 
@@ -197,30 +381,116 @@ export function getQrEngineScanStats() {
   return stats;
 }
 
-function countUniqueLots() {
-  return countEngineRegistryByType().lot;
+function resolveRegistryNavigationPath(row) {
+  if (!row) return QR_ENGINE_ROUTES.dashboard;
+  if (row.qrType === "lot") return QR_ENGINE_ROUTES.lotLifecycle(row.target);
+  if (row.qrType === "equipment") return QR_ENGINE_ROUTES.equipmentWork(row.target);
+  if (row.qrType === "inbound") return QR_ENGINE_ROUTES.inboundEntry;
+  if (row.qrType === "outbound") return QR_ENGINE_ROUTES.outboundEntry;
+  if (row.qrType === "product") return QR_ENGINE_ROUTES.productEntry(row.target);
+  if (row.qrType === "material") return QR_ENGINE_ROUTES.materialEntry(row.target);
+  if (row.qrType === "document") return QR_ENGINE_ROUTES.documentEntry;
+  if (row.qrType === "worker") return QR_ENGINE_ROUTES.workerEntry(row.target);
+  return QR_ENGINE_ROUTES.registry;
 }
 
 export function buildQrEngineDashboard() {
+  syncQrEngineAutoRegistry();
   const stats = getQrEngineScanStats();
   const recentScans = getQrEngineRecentScans();
-  const equipmentList = getEquipmentList();
+  const counts = countEngineRegistryByType({ autoSync: false });
+  const registryRows = listQrEngineRegistryRows({ autoSync: false });
+
+  const recentGenerated = registryRows
+    .slice()
+    .sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")))
+    .slice(0, 7)
+    .map((row) => ({
+      id: `gen-${row.id}`,
+      label: `${row.displayQrId} · ${row.connectionLabel || row.target}`,
+      qrType: row.qrType,
+      target: row.target,
+      at: row.createdAt,
+      navigationPath: resolveRegistryNavigationPath(row),
+    }));
+
+  const recentPrinted = registryRows
+    .filter((row) => row.lastPrintedAt)
+    .sort((a, b) => String(b.lastPrintedAt ?? "").localeCompare(String(a.lastPrintedAt ?? "")))
+    .slice(0, 7)
+    .map((row) => ({
+      id: `print-${row.id}`,
+      label: `${row.displayQrId} · ${row.connectionLabel || row.target}`,
+      qrType: row.qrType,
+      target: row.target,
+      at: row.lastPrintedAt,
+      printCount: row.printCount,
+      navigationPath: QR_ENGINE_ROUTES.generator,
+    }));
 
   return {
+    totalQrCount: counts.total ?? 0,
     todayScanCount: stats.totalToday ?? 0,
-    activeEquipmentCount: equipmentList.filter(
-      (row) => row.status === "running" || row.status === "ready"
-    ).length,
-    equipmentQrCount: equipmentList.length,
-    lotQrCount: countUniqueLots(),
+    equipmentQrCount: counts.equipment ?? 0,
+    lotQrCount: counts.lot ?? 0,
     recentScans: recentScans.slice(0, 7),
-    recentWork: recentScans
-      .filter((row) => row.type === "equipment")
-      .slice(0, 5)
-      .map((row) => ({
-        label: row.label,
-        path: row.navigationPath,
-        at: row.at,
-      })),
+    recentGenerated,
+    recentPrinted,
   };
+}
+
+export function resolveEquipmentWorkEntry(codeOrPayload, { recordScan = false } = {}) {
+  const text = String(codeOrPayload ?? "").trim();
+  if (!text) {
+    return { ok: false, message: "\uC124\uBE44 \uCF54\uB4DC\uB97C \uC785\uB825\uD558\uC138\uC694." };
+  }
+
+  const resolved = resolveQrScanType(text);
+  if (resolved.type === QR_ENGINE_SCAN_TYPES.equipment.id && resolved.equipmentResult?.ok) {
+    const equipmentId = resolved.equipmentResult.equipmentId;
+    const navigationPath = QR_ENGINE_ROUTES.equipmentWork(equipmentId);
+    if (recordScan) {
+      appendRecentScan({
+        id: `test-eq-${equipmentId}-${Date.now()}`,
+        type: "equipment",
+        label: `${resolved.equipmentResult.equipment?.name ?? equipmentId} (Test Mode)`,
+        target: equipmentId,
+        navigationPath,
+        source: "test-mode",
+      });
+    }
+    return {
+      ok: true,
+      equipmentId,
+      equipment: resolved.equipmentResult.equipment,
+      navigationPath,
+      availableLots: resolved.equipmentResult.availableLots ?? [],
+      detail: resolved.equipmentResult.detail,
+    };
+  }
+
+  const direct = processEquipmentQrScan(text);
+  if (direct.ok) {
+    const navigationPath = QR_ENGINE_ROUTES.equipmentWork(direct.equipmentId);
+    if (recordScan) {
+      appendRecentScan({
+        id: `test-eq-${direct.equipmentId}-${Date.now()}`,
+        type: "equipment",
+        label: `${direct.equipment?.name ?? direct.equipmentId} (Test Mode)`,
+        target: direct.equipmentId,
+        navigationPath,
+        source: "test-mode",
+      });
+    }
+    return {
+      ok: true,
+      equipmentId: direct.equipmentId,
+      equipment: direct.equipment,
+      navigationPath,
+      availableLots: direct.availableLots ?? [],
+      detail: direct.detail,
+    };
+  }
+
+  return { ok: false, message: direct.message ?? "\uC124\uBE44\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4." };
 }

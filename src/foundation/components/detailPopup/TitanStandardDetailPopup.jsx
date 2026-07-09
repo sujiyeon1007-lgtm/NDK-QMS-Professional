@@ -7,7 +7,8 @@ import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 
 import { SecondaryButton } from "../Button";
-import { titanDialogTransitionProps } from "../titanPopupTransition";
+import { FoundationDocumentAction } from "../FoundationActionBar";
+import { mergeTitanDialogSlotProps, titanDialogTransitionSlots } from "../titanPopupTransition";
 import TitanStandardDetailPopupProductHeader from "./TitanStandardDetailPopupProductHeader";
 import {
   TITAN_STANDARD_DETAIL_POPUP_HEIGHT,
@@ -45,10 +46,27 @@ export default function TitanStandardDetailPopup({
   tabs = TITAN_STANDARD_DETAIL_POPUP_TABS,
   summary,
   renderTabContent,
+  footerActions,
   initialTabId,
   ariaLabel = "상세보기",
 }) {
   const [activeTab, setActiveTab] = useState(0);
+  const paperSlotProps = {
+    className: "titan-detail-popup__paper titan-standard-detail-popup__paper",
+    sx: {
+      width: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+      minWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+      maxWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
+      height: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+      minHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+      maxHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
+      overflow: "hidden",
+      boxSizing: "border-box",
+      flexShrink: 0,
+      flexGrow: 0,
+      margin: 0,
+    },
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -71,8 +89,8 @@ export default function TitanStandardDetailPopup({
       scroll="paper"
       className="titan-detail-popup titan-standard-detail-popup"
       aria-labelledby="titan-standard-detail-popup-summary"
-      {...titanDialogTransitionProps}
-      slotProps={{
+      slots={titanDialogTransitionSlots}
+      slotProps={mergeTitanDialogSlotProps({
         container: {
           sx: {
             display: "flex",
@@ -84,23 +102,8 @@ export default function TitanStandardDetailPopup({
             padding: 0,
           },
         },
-      }}
-      PaperProps={{
-        className: "titan-detail-popup__paper titan-standard-detail-popup__paper",
-        sx: {
-          width: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
-          minWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
-          maxWidth: `${TITAN_STANDARD_DETAIL_POPUP_WIDTH}px`,
-          height: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
-          minHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
-          maxHeight: `${TITAN_STANDARD_DETAIL_POPUP_HEIGHT}px`,
-          overflow: "hidden",
-          boxSizing: "border-box",
-          flexShrink: 0,
-          flexGrow: 0,
-          margin: 0,
-        },
-      }}
+        paper: paperSlotProps,
+      })}
     >
       <div className="titan-standard-detail-popup__shell">
         <TitanStandardDetailPopupProductHeader summary={summary} />
@@ -140,9 +143,13 @@ export default function TitanStandardDetailPopup({
         </DialogContent>
 
         <div className="titan-detail-popup__footer titan-standard-detail-popup__footer">
-          <SecondaryButton type="button" onClick={onClose}>
-            닫기
-          </SecondaryButton>
+          {footerActions?.length ? (
+            <FoundationDocumentAction actions={footerActions} ariaLabel={`${ariaLabel} 문서 작업`} />
+          ) : (
+            <SecondaryButton type="button" onClick={onClose}>
+              닫기
+            </SecondaryButton>
+          )}
         </div>
       </div>
     </Dialog>

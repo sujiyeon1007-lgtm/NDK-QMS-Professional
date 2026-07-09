@@ -10,6 +10,7 @@ import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import Input from "../../foundation/components/Input";
 import StatusChip from "../../foundation/components/StatusChip";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { FoundationAttachmentBadge } from "../../foundation/components/FoundationAttachment";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import {
   DOCUMENT_CATEGORY_TABS,
@@ -33,11 +34,20 @@ import { getDocumentManagementActionPermissions } from "../../utils/documentMana
 import { addRecentDocument } from "../../utils/documentRecentSession";
 import { getAuthSession } from "../../utils/titanAuthSession";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
+import { getDocumentFoundationAttachmentCount } from "../../utils/documentFoundationAttachments";
 import DocumentRegisterModal from "./DocumentRegisterModal";
 import DocumentDetailPopup from "./DocumentDetailPopup";
 import "./DocumentCompanyPopup.css";
 
-export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefresh }) {
+export default function DocumentCompanyPopup({
+  open,
+  companyRow,
+  onClose,
+  onRefresh,
+  onOpenDocumentDetail,
+  openRegisterOnOpen = false,
+  onRegisterOpenConsumed,
+}) {
   const userId = getAuthSession()?.userId;
   const [categoryTab, setCategoryTab] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -136,6 +146,12 @@ export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefr
   }, [open, companyName]);
 
   useEffect(() => {
+    if (!open || !openRegisterOnOpen || !permissions.canRegister) return;
+    setRegisterOpen(true);
+    onRegisterOpenConsumed?.();
+  }, [onRegisterOpenConsumed, open, openRegisterOnOpen, permissions.canRegister]);
+
+  useEffect(() => {
     setSelectedProduct(null);
     setActiveProductId(null);
     setActiveListRowId(null);
@@ -150,11 +166,6 @@ export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefr
   const openDocumentDetailPopup = useCallback(
     (documentRow) => {
       if (!documentRow?.id) return;
-      openRowDetailPopup(documentRow, {
-        setActiveId: setActiveListRowId,
-        setDetailPopupRow: setSelectedDocument,
-        getRowId: (row) => row.id,
-      });
       addRecentDocument(
         {
           documentId: documentRow.id,
@@ -166,8 +177,21 @@ export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefr
       );
       appendDocumentChangeLog(documentRow.id, "문서 열람", documentRow.title);
       bumpUi();
+      if (typeof onOpenDocumentDetail === "function") {
+        onOpenDocumentDetail({
+          row: documentRow,
+          companyName,
+          sourceRows,
+        });
+        return;
+      }
+      openRowDetailPopup(documentRow, {
+        setActiveId: setActiveListRowId,
+        setDetailPopupRow: setSelectedDocument,
+        getRowId: (row) => row.id,
+      });
     },
-    [userId, bumpUi]
+    [bumpUi, companyName, onOpenDocumentDetail, sourceRows, userId]
   );
 
   const resolveSummaryDocuments = useCallback(
@@ -240,9 +264,27 @@ export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefr
     []
   );
 
+  const renderAttachmentBadge = useCallback(
+    (row) => (
+      <FoundationAttachmentBadge
+        count={getDocumentFoundationAttachmentCount(row)}
+        showUnit={false}
+        onClick={(event) => {
+          event.stopPropagation();
+          openDocumentDetailPopup(row);
+        }}
+      />
+    ),
+    [openDocumentDetailPopup]
+  );
+
   const documentColumns = useMemo(
-    () => buildDocumentRegistryListColumns({ renderStatus: renderStatusChip }),
-    [renderStatusChip]
+    () =>
+      buildDocumentRegistryListColumns({
+        renderStatus: renderStatusChip,
+        renderAttachments: renderAttachmentBadge,
+      }),
+    [renderAttachmentBadge, renderStatusChip]
   );
 
   const productColumns = useMemo(
@@ -285,7 +327,7 @@ export default function DocumentCompanyPopup({ open, companyRow, onClose, onRefr
               {permissions.canRegister ? (
                 <PrimaryButton type="button" onClick={() => setRegisterOpen(true)}>
                   <Plus size={12} aria-hidden="true" />
-                  등록
+                  + 등록
                 </PrimaryButton>
               ) : null}
               {!isProductTab ? (

@@ -11,6 +11,8 @@
  * @see src/utils/environmentSettingsSession.js — Runtime settings (향후 moduleFlags 연동)
  */
 
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
+
 export const V12_MODULE_EXPANSION_LOCK_DATE = "2026-07-04";
 
 /** 개발 원칙 — 사용할 수도 있고 사용하지 않을 수도 있는 선택형 모듈 */
@@ -439,12 +441,22 @@ export const MODULE_ROUTE_GUARDS = [
   { pathPrefix: "/qr", moduleId: "qrSystem" },
   { pathPrefix: "/qr-workflow", moduleId: "qrSystem" },
   { pathPrefix: "/qr-management", moduleId: "qrSystem" },
+  { pathPrefix: "/production/equipment-status", moduleId: "qrSystem" },
   { pathPrefix: "/equipment-status", moduleId: "qrSystem" },
   { pathPrefix: "/product-status", moduleId: "qrSystem" },
   { pathPrefix: "/documents", moduleId: "documents" },
   { pathPrefix: "/statistics", moduleId: "statistics" },
   { pathPrefix: "/inventory", moduleId: "inventoryManagement" },
   { pathPrefix: "/inout/incoming", moduleId: "inbound" },
+  // RC1 Route Registry — canonical /operations/* module guard coverage
+  { pathPrefix: OPERATION_ROUTES.inboundPending, moduleId: "inbound" },
+  { pathPrefix: OPERATION_ROUTES.inboundHistory, moduleId: "inbound" },
+  { pathPrefix: OPERATION_ROUTES.shipmentRegister, moduleId: "outbound" },
+  { pathPrefix: OPERATION_ROUTES.shipmentHistory, moduleId: "outbound" },
+  { pathPrefix: OPERATION_ROUTES.equipmentStatus, moduleId: "qrSystem" },
+  { pathPrefix: OPERATION_ROUTES.productionPending, moduleId: "production" },
+  { pathPrefix: OPERATION_ROUTES.dailyWork, moduleId: "production" },
+  { pathPrefix: OPERATION_ROUTES.shotStatus, moduleId: "production" },
   { pathPrefix: "/production", moduleId: "production" },
   { pathPrefix: "/quality/inspection", moduleId: "quality" },
   { pathPrefix: "/quality/certificate", moduleId: "certificate" },

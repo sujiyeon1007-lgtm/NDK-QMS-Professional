@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { Navigate, useParams } from "react-router-dom";
 
+import { OPERATION_ROUTES } from "../../../config/operationsRouteRegistry";
 import ProductionChargingPageShell from "./ProductionChargingPageShell";
 import TitanListInteractionHint from "../../../foundation/components/TitanListInteractionHint";
 import { QR_CHARGING_PAGE_COPY } from "../../../config/equipmentConfig";
-import { getProductionChargingProcessSlug } from "../../../config/productionChargingProcessSlugs";
 import { buildProductionChargingBreadcrumb, breadcrumbTrailEnd } from "../../../config/titanBreadcrumbPolicy";
 import { getEquipmentDetailSnapshot } from "../../../utils/equipmentWorkflowService";
 import { buildQrWorkflowTechnologyView } from "../../../utils/qrWorkflowTechnologyBridge";
@@ -57,11 +57,10 @@ export default function ProductionChargingEquipmentPage() {
     "";
 
   if (!detail || !selectedEquipment) {
-    return <Navigate to="/production/charging" replace />;
+    return <Navigate to={OPERATION_ROUTES.equipmentStatus} replace />;
   }
 
-  const processSlug = getProductionChargingProcessSlug(detail.process);
-  const processPath = processSlug ? `/production/charging/process/${processSlug}` : "/production/charging";
+  const processPath = OPERATION_ROUTES.equipmentStatus;
 
   return (
     <ProductionChargingPageShell

@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 
-import {
-  PRODUCTION_CHARGING_LAUNCHER_ITEMS,
-  PRODUCTION_CHARGING_HUB_WORKFLOW,
-} from "../../../config/productionChargingLauncher";
-import { formatLauncherWorkflowLine } from "../../../config/titanLauncherArchitectureV15";
+import { PRODUCTION_CHARGING_LAUNCHER_ITEMS } from "../../../config/productionChargingLauncher";
 import TitanLauncherHubPage from "../../../foundation/components/TitanLauncherHubPage";
 import { getSessionProductionRecords } from "../../../utils/productionRecords";
 import { buildProductionChargingLauncherMetrics } from "../../../utils/operationsLauncherMetrics";
@@ -28,8 +24,6 @@ export default function ProductionChargingHubPage() {
         <EquipmentQrScanBar onScan={scan} error={error} disabled={processing} />
       </div>
       <TitanLauncherHubPage
-        intro="설비 장입 Hub — 공정별 설비 선택 후 장입 · 열처리 완료를 수행합니다."
-        workflow={formatLauncherWorkflowLine(PRODUCTION_CHARGING_HUB_WORKFLOW)}
         items={PRODUCTION_CHARGING_LAUNCHER_ITEMS}
         metrics={metrics}
         cardsClassName="master-data-hub__cards"

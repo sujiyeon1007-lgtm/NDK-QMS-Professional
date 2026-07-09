@@ -8,6 +8,7 @@ import { buildInoutHistoryWorkspaceRecords } from "./operationsWorkspaceData";
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 import {
   formatOutboundTimeLabel,
   getOutboundManager,
@@ -17,10 +18,10 @@ import {
 
 /** 이력조회 Traceability 단계 — 입고 → 작업일보 → 품질 → 출고 */
 export const QUALITY_TRACEABILITY_STEPS = [
-  { id: "inbound", label: "입고현황", path: "/inout/incoming" },
-  { id: "dailyReport", label: "작업일보", path: "/production/daily-report" },
+  { id: "inbound", label: "입고현황", path: OPERATION_ROUTES.inboundHistory },
+  { id: "dailyReport", label: "작업일보", path: OPERATION_ROUTES.dailyWork },
   { id: "quality", label: "품질관리", path: "/quality/inspection" },
-  { id: "outbound", label: "출고현황", path: "/inout/shipment" },
+  { id: "outbound", label: "출고현황", path: OPERATION_ROUTES.shipmentHistory },
 ];
 
 export function createEmptyHistoryInquirySearch() {

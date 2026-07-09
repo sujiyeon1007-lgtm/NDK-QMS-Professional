@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
-import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, {
   useSearchSuggestionHelpers,
@@ -10,6 +10,7 @@ import TitanStandardProductAdvancedSearch from "../../foundation/components/Tita
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
 import InboundRowActions from "./InboundRowActions";
 import InboundDetailPopup from "./InboundDetailPopup";
@@ -28,7 +29,6 @@ import { addSessionProductionRecord, deleteSessionProductionRecord, getSessionPr
 import {
   INBOUND_EDIT_LABEL,
   INBOUND_REGISTER_LABEL,
-  INBOUND_PRINT_LIST_LABEL,
   INBOUND_LIST_PRINT_TOOLBAR_LABEL,
 } from "../../config/registerModalStandard";
 import { parseQtyWithUnit } from "../../utils/productUnits";
@@ -38,28 +38,203 @@ import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
 import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
+import { DEFAULT_WORK_TYPE_ID } from "../../config/workTypeWorkflow";
 import {
   INBOUND_STATUS_LABELS,
   getInboundManagementStatus,
   isInboundShipOutComplete,
 } from "../../utils/inboundManagementStatus";
-import { buildIncomingTaskWorkspaceRecords, getOperationsRecords } from "../../utils/operationsWorkspaceData";
+import {
+  buildInboundHistoryWorkspaceRecords,
+  buildIncomingTaskWorkspaceRecords,
+} from "../../utils/operationsWorkspaceData";
 import { mapV13ProductListRow } from "../../utils/processFlow";
-import { isHtlFirstPrintTarget } from "../../utils/htlPrintEligibility";
+import { isHeatTreatmentNotStarted, isHtlFirstPrintTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import { OperationsWorkflowNextDialog } from "./OutboundStatementPromptDialog";
+import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
+import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
 import {
   applyInboundListPrinted,
-  confirmInboundListReprint,
-  hasInboundCheckboxSelection,
-  INBOUND_PRINT_NO_SELECTION_MESSAGE,
   resolveInboundCheckboxPrintRows,
   resolveInboundPrintMode,
-  selectedInboundRowsHaveLotNumber,
 } from "./inboundListPrintActions";
 import "./InboundManagement.css";
 
-const INBOUND_STATUS_OPTIONS = Object.values(INBOUND_STATUS_LABELS);
+const PRODUCTION_WAITING_OUTPUT_SHORTCUT = "production-waiting-output";
+const INBOUND_PRINT_CRITERIA = {
+  TODAY: "today",
+  COMPANY: "company",
+  PART_NAME: "partName",
+  MATERIAL: "material",
+  PERIOD: "period",
+};
+
+function createInboundPrintCriteria() {
+  const referenceDate = getJournalReferenceDate();
+  return {
+    type: INBOUND_PRINT_CRITERIA.TODAY,
+    company: "",
+    partName: "",
+    material: "",
+    dateFrom: referenceDate,
+    dateTo: referenceDate,
+  };
+}
+
+function getUniqueOptions(records = [], key) {
+  return [...new Set(records.map((record) => String(record?.[key] ?? "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "ko"));
+}
+
+function matchesInboundPrintCriteria(record, criteria) {
+  if (!record?.incomingRegistered) return false;
+  const incomingDate = record.incomingDate || "";
+  switch (criteria.type) {
+    case INBOUND_PRINT_CRITERIA.COMPANY:
+      return Boolean(criteria.company) && record.company === criteria.company;
+    case INBOUND_PRINT_CRITERIA.PART_NAME:
+      return Boolean(criteria.partName) && record.partName === criteria.partName;
+    case INBOUND_PRINT_CRITERIA.MATERIAL:
+      return Boolean(criteria.material) && record.material === criteria.material;
+    case INBOUND_PRINT_CRITERIA.PERIOD:
+      return (
+        Boolean(criteria.dateFrom) &&
+        Boolean(criteria.dateTo) &&
+        incomingDate >= criteria.dateFrom &&
+        incomingDate <= criteria.dateTo
+      );
+    case INBOUND_PRINT_CRITERIA.TODAY:
+    default:
+      return incomingDate === getJournalReferenceDate();
+  }
+}
+
+function InboundPrintCriteriaModal({
+  open,
+  criteria,
+  onCriteriaChange,
+  onClose,
+  onSubmit,
+  companyOptions,
+  partNameOptions,
+  materialOptions,
+}) {
+  const updateCriteria = (patch) => onCriteriaChange((prev) => ({ ...prev, ...patch }));
+
+  return (
+    <TitanRegisterModal
+      open={open}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      title="입고리스트 출력"
+      kicker="입고 현황 문서"
+      submitLabel="출력"
+      size="wide"
+    >
+      <div className="titan-modal__grid inbound-print-criteria">
+        <label className="titan-modal__field titan-modal__field--full">
+          <span>출력 기준</span>
+          <select
+            value={criteria.type}
+            onChange={(event) => updateCriteria({ type: event.target.value })}
+          >
+            <option value={INBOUND_PRINT_CRITERIA.TODAY}>금일 입고</option>
+            <option value={INBOUND_PRINT_CRITERIA.COMPANY}>업체별</option>
+            <option value={INBOUND_PRINT_CRITERIA.PART_NAME}>품명별</option>
+            <option value={INBOUND_PRINT_CRITERIA.MATERIAL}>재질별</option>
+            <option value={INBOUND_PRINT_CRITERIA.PERIOD}>기간 설정</option>
+          </select>
+        </label>
+
+        <label className="titan-modal__field">
+          <span>업체</span>
+          <select
+            value={criteria.company}
+            onChange={(event) => updateCriteria({ company: event.target.value })}
+            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.COMPANY}
+          >
+            <option value="">업체 선택</option>
+            {companyOptions.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="titan-modal__field">
+          <span>품명</span>
+          <select
+            value={criteria.partName}
+            onChange={(event) => updateCriteria({ partName: event.target.value })}
+            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PART_NAME}
+          >
+            <option value="">품명 선택</option>
+            {partNameOptions.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="titan-modal__field">
+          <span>재질</span>
+          <select
+            value={criteria.material}
+            onChange={(event) => updateCriteria({ material: event.target.value })}
+            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.MATERIAL}
+          >
+            <option value="">재질 선택</option>
+            {materialOptions.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="titan-modal__field">
+          <span>시작일</span>
+          <input
+            type="date"
+            value={criteria.dateFrom}
+            onChange={(event) => updateCriteria({ dateFrom: event.target.value })}
+            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PERIOD}
+          />
+        </label>
+
+        <label className="titan-modal__field">
+          <span>종료일</span>
+          <input
+            type="date"
+            value={criteria.dateTo}
+            onChange={(event) => updateCriteria({ dateTo: event.target.value })}
+            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PERIOD}
+          />
+        </label>
+      </div>
+    </TitanRegisterModal>
+  );
+}
+
+function isProductionWaitingOutputShortcut(searchParams) {
+  return searchParams.get("shortcut") === PRODUCTION_WAITING_OUTPUT_SHORTCUT;
+}
+
+function createProductionWaitingOutputSearch() {
+  return {
+    ...createEmptyInboundSearch(),
+    incomingDateFrom: "",
+    incomingDateTo: "",
+    status: "생산 대기",
+    lotNo: "미생성",
+    shipmentStatus: "미완료",
+    __productionWaitingOutput: "1",
+  };
+}
 
 function mapInboundListRow(record) {
   const status = isInboundShipOutComplete(record)
@@ -87,6 +262,7 @@ function recordToRegisterForm(record) {
     lotNo: record.lotNo || "",
     customerLotNo: record.customerLotNo || "",
     purchaseOrderNo: record.purchaseOrderNo || "",
+    workType: record.workType || DEFAULT_WORK_TYPE_ID,
     incomingDate: record.incomingDate || "",
     qty: record.qty != null ? String(record.qty) : "",
     unit: record.unit || "EA",
@@ -96,14 +272,21 @@ function recordToRegisterForm(record) {
   };
 }
 
-function resolveInboundListRecords() {
-  // 입고등록 Task Workspace — RECEIVED · 생산 미투입 Stage만 (생산계획 투입 시 자동 제거)
-  return buildIncomingTaskWorkspaceRecords();
+function resolveInboundListRecords(mode) {
+  if (mode === "register") {
+    // 입고등록 Task Workspace — RECEIVED · 생산 미투입 Stage만 (생산 대기 투입 시 자동 제거)
+    return buildIncomingTaskWorkspaceRecords();
+  }
+  // 입고이력 — 입고등록 완료 전체 (생산/출고 여부와 무관)
+  return buildInboundHistoryWorkspaceRecords();
 }
 
 function matchesInboundSearch(record, row, search) {
-  if (!matchesBasicSearch(search, record)) return false;
-  if (!matchesInboundDataSearch(search, record)) return false;
+  const productionWaitingOutput = search.__productionWaitingOutput === "1";
+  const dataSearch = productionWaitingOutput ? { ...search, lotNo: "" } : search;
+  if (!matchesBasicSearch(dataSearch, record)) return false;
+  if (!matchesInboundDataSearch(dataSearch, record)) return false;
+  if (productionWaitingOutput && !isProductionWaitingOutputTarget(record)) return false;
   if (search.productionDateFrom) {
     const prodDate = record.workDate || record.productionCompleteDate || "";
     if (prodDate && prodDate < search.productionDateFrom) return false;
@@ -120,7 +303,13 @@ function matchesInboundSearch(record, row, search) {
   if (search.process && getProductionProcessName(record) !== search.process) return false;
   const manager = record.registrar ?? record.manager ?? "";
   if (search.manager && !manager.includes(search.manager)) return false;
-  if (search.status && row.statusLabel !== search.status) return false;
+  if (
+    !productionWaitingOutput &&
+    search.status &&
+    !matchesInboundStatusSearch(row.statusLabel, search.status)
+  ) {
+    return false;
+  }
   if (search.__chipProductHtlNotPrinted && !isHtlFirstPrintTarget(record)) {
     return false;
   }
@@ -134,7 +323,40 @@ function matchesInboundSearch(record, row, search) {
   return true;
 }
 
-export default function InboundManagement() {
+function normalizeInboundStatusText(value) {
+  return String(value ?? "").replace(/\s+/g, "");
+}
+
+function matchesInboundStatusSearch(statusLabel, searchStatus) {
+  const normalizedLabel = normalizeInboundStatusText(statusLabel);
+  const normalizedSearch = normalizeInboundStatusText(searchStatus);
+  if (!normalizedSearch) return true;
+  if (normalizedLabel === normalizedSearch) return true;
+
+  const productionWaitingAliases = new Set(["생산대기", "열처리대기"]);
+  if (productionWaitingAliases.has(normalizedLabel) && productionWaitingAliases.has(normalizedSearch)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isProductionWaitingOutputTarget(record) {
+  if (!record) return false;
+  if (isInboundShipOutComplete(record)) return false;
+  if (record.lotNo?.trim()) return false;
+  return isHeatTreatmentNotStarted(record);
+}
+
+export default function InboundManagement({ forcedMode } = {}) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryMode = searchParams.get("mode") === "register" ? "register" : "history";
+  // RC1 Route Registry — canonical /operations/inbound-pending · /operations/inbound-history
+  // 는 forcedMode로 화면 역할을 고정한다. legacy ?mode= query는 redirect 단계에서만 사용.
+  const viewMode = forcedMode ?? queryMode;
+  const isHistoryMode = viewMode === "history";
+  const productionWaitingOutputShortcut = isProductionWaitingOutputShortcut(searchParams);
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMode, setRegisterMode] = useState("create");
@@ -146,7 +368,10 @@ export default function InboundManagement() {
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
-  const chipRecords = useMemo(() => getOperationsRecords(), [refreshKey]);
+  const [printCriteriaOpen, setPrintCriteriaOpen] = useState(false);
+  const [printCriteria, setPrintCriteria] = useState(createInboundPrintCriteria);
+  const [workflowNextStep, setWorkflowNextStep] = useState(null);
+  const chipRecords = useMemo(() => resolveInboundListRecords(viewMode), [refreshKey, viewMode]);
   const { activeChipId, handleChipClick } = useStatusChipFilter({
     draft,
     onDraftChange,
@@ -156,8 +381,8 @@ export default function InboundManagement() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(
-    () => buildIncomingTaskWorkspaceRecords(),
-    [refreshKey]
+    () => resolveInboundListRecords(viewMode),
+    [refreshKey, viewMode]
   );
   const masterProducts = useMemo(() => getMasterDataByCategory("products"), [refreshKey]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
@@ -170,12 +395,12 @@ export default function InboundManagement() {
   });
 
   const rows = useMemo(() => {
-    const records = resolveInboundListRecords();
+    const records = resolveInboundListRecords(viewMode);
     return records
       .map((record) => mapInboundListRow(record))
       .filter((row) => matchesInboundSearch(row.record, row, search))
       .sort((a, b) => b.managementId.localeCompare(a.managementId));
-  }, [search, refreshKey]);
+  }, [search, refreshKey, viewMode]);
 
   const {
     page,
@@ -186,6 +411,17 @@ export default function InboundManagement() {
     setPage,
     setPageSize,
   } = useListPagination(rows);
+
+  useEffect(() => {
+    if (!productionWaitingOutputShortcut) return;
+    onDraftChange(createProductionWaitingOutputSearch());
+    setPage(1);
+  }, [onDraftChange, productionWaitingOutputShortcut, setPage]);
+
+  useEffect(() => {
+    if (!productionWaitingOutputShortcut) return;
+    setSelectedIds(rows.map((row) => row.id));
+  }, [productionWaitingOutputShortcut, rows]);
 
   const activeRow = pagedRows.find((row) => row.id === activeId) ?? null;
 
@@ -198,38 +434,68 @@ export default function InboundManagement() {
   const selectedQty = selectedRows.reduce((sum, row) => sum + (Number(row.record.qty) || 0), 0);
 
   const firstSelectedRow = selectedRows[0] ?? null;
+  const inboundPrintRecords = useMemo(
+    () => buildInboundHistoryWorkspaceRecords(),
+    [refreshKey]
+  );
+  const inboundPrintRows = useMemo(
+    () => inboundPrintRecords.map((record) => mapInboundListRow(record)),
+    [inboundPrintRecords]
+  );
+  const inboundPrintOptions = useMemo(
+    () => ({
+      companies: getUniqueOptions(inboundPrintRecords, "company"),
+      partNames: getUniqueOptions(inboundPrintRecords, "partName"),
+      materials: getUniqueOptions(inboundPrintRecords, "material"),
+    }),
+    [inboundPrintRecords]
+  );
 
-  const handleInOutPrinted = useCallback((printProps) => {
-    if (!printProps?.listNo || !printProps?.rows?.length) return;
-    applyInboundListPrinted(printProps.rows, printProps.listNo);
-    setRefreshKey((key) => key + 1);
-  }, []);
+  const handleInOutPrinted = useCallback(
+    (printProps) => {
+      if (!printProps?.listNo || !printProps?.rows?.length) return;
+      applyInboundListPrinted(printProps.rows, printProps.listNo);
 
-  const openInOutPrintPreview = () => {
-    if (!hasInboundCheckboxSelection(selectedIds)) {
-      window.alert(INBOUND_PRINT_NO_SELECTION_MESSAGE);
-      return;
-    }
+      const listNo = String(printProps.listNo).trim();
+      if (!isHistoryMode && listNo.startsWith("HTL")) {
+        const managementIds = printProps.rows
+          .map((row) => String(row.managementId ?? row.id ?? "").trim())
+          .filter(Boolean);
+        applyHtlWorkListPrinted(managementIds, listNo, {
+          isReprint: printProps.printMode === "reprint",
+        });
+      }
 
-    const printRows = resolveInboundCheckboxPrintRows(selectedIds, rows);
+      setRefreshKey((key) => key + 1);
+      if (!isHistoryMode) {
+        setWorkflowNextStep(getOperationsWorkflowNextStep("inboundListPrinted"));
+      }
+    },
+    [isHistoryMode]
+  );
+
+  const openInboundPrintCriteria = () => {
+    setPrintCriteria(createInboundPrintCriteria());
+    setPrintCriteriaOpen(true);
+  };
+
+  const handleInboundCriteriaPrint = () => {
+    const printRows = inboundPrintRows.filter((row) => matchesInboundPrintCriteria(row.record, printCriteria));
     if (printRows.length === 0) {
-      window.alert("출력할 입고 등록 제품이 없습니다.");
-      return;
-    }
-
-    if (selectedInboundRowsHaveLotNumber(printRows) && !confirmInboundListReprint()) {
+      window.alert("선택한 기준에 해당하는 입고 제품이 없습니다.");
       return;
     }
 
     setInOutPrintSession({
       open: true,
       props: buildInOutListPrintProps(printRows, {
-        listNoPrefix: "HTL",
+        listNoPrefix: isHistoryMode ? "IN" : "HTL",
         outputDate: getPrintOutputDate(),
         records: getSessionProductionRecords(),
         printMode: resolveInboundPrintMode(printRows),
       }),
     });
+    setPrintCriteriaOpen(false);
   };
 
   const toggleRow = (id) => {
@@ -266,14 +532,17 @@ export default function InboundManagement() {
     () =>
       buildInboundListColumns({
         renderProcess: renderProcessChip,
-        renderActions: (row) => (
-          <InboundRowActions
-            onEdit={() => openEditModal(row)}
-            onDelete={() => handleInboundDelete(row)}
-          />
-        ),
+        // 입고 이력(history) — 순수 조회 + 출력 화면 (등록/수정/삭제 ❌)
+        renderActions: isHistoryMode
+          ? undefined
+          : (row) => (
+              <InboundRowActions
+                onEdit={() => openEditModal(row)}
+                onDelete={() => handleInboundDelete(row)}
+              />
+            ),
       }),
-    []
+    [isHistoryMode]
   );
 
   const openRegisterModal = () => {
@@ -320,6 +589,7 @@ export default function InboundManagement() {
       customerLotNo: form.customerLotNo?.trim() || "",
       purchaseOrderNo: form.purchaseOrderNo?.trim() || "",
       heatTreatment: form.heatTreatment,
+      workType: form.workType || DEFAULT_WORK_TYPE_ID,
       note: form.note,
       urgent: form.urgent,
       registrar: form.manager?.trim() || "",
@@ -328,7 +598,7 @@ export default function InboundManagement() {
   };
 
   const handleInboundRegister = (form, managementId) => {
-    addSessionProductionRecord({
+    const result = addSessionProductionRecord({
       id: managementId,
       ...buildRecordPatchFromForm(form),
       htlNo: "",
@@ -344,6 +614,11 @@ export default function InboundManagement() {
       shippedQty: 0,
     });
 
+    if (result?.ok === false) {
+      window.alert(result.message || "입고 등록에 실패했습니다.");
+      return;
+    }
+
     appendWorkJournalAutoEntry({
       actionType: WORK_JOURNAL_ACTION_TYPES.INBOUND_REGISTER,
       assignee: form.manager,
@@ -357,6 +632,9 @@ export default function InboundManagement() {
     setActiveId(managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
+    if (!isHistoryMode) {
+      setWorkflowNextStep(getOperationsWorkflowNextStep("inboundRegisterComplete"));
+    }
   };
 
   const handleInboundUpdate = (form, managementId) => {
@@ -368,18 +646,22 @@ export default function InboundManagement() {
   return (
     <div className="inbound-page">
       <SectionPageActions>
-        <PrimaryButton type="button" onClick={openRegisterModal}>
-          <Plus size={14} aria-hidden="true" />
-          {INBOUND_REGISTER_LABEL}
-        </PrimaryButton>
-        <SecondaryButton type="button" onClick={() => openEditModal(firstSelectedRow)} disabled={!hasCheckboxSelection}>
-          {INBOUND_EDIT_LABEL}
-        </SecondaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!hasCheckboxSelection}>
+        {!isHistoryMode ? (
+          <>
+            <PrimaryButton type="button" onClick={openRegisterModal}>
+              <Plus size={14} aria-hidden="true" />
+              {INBOUND_REGISTER_LABEL}
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={() => openEditModal(firstSelectedRow)} disabled={!hasCheckboxSelection}>
+              {INBOUND_EDIT_LABEL}
+            </SecondaryButton>
+          </>
+        ) : null}
+        <SecondaryButton type="button" onClick={openInboundPrintCriteria}>
           <Printer size={14} aria-hidden="true" />
           {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={openInOutPrintPreview} disabled={!hasCheckboxSelection}>
+        <SecondaryButton type="button" onClick={openInboundPrintCriteria}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>
@@ -419,6 +701,10 @@ export default function InboundManagement() {
         }
       />
 
+      <div className="inbound-page__history-heading" role="heading" aria-level="2">
+        {viewMode === "register" ? "입고 대기" : "입고 이력"}
+      </div>
+
       <div className="inbound-page__list quality-page__list">
         {selectedIds.length > 0 ? (
           <div className="inbound-page__selection-bar">
@@ -427,7 +713,7 @@ export default function InboundManagement() {
               <strong>{selectedQty} EA</strong>
             </span>
             <div>
-              <SecondaryButton type="button" onClick={openInOutPrintPreview}>
+              <SecondaryButton type="button" onClick={openInboundPrintCriteria}>
                 {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
               </SecondaryButton>
               <SecondaryButton type="button" onClick={() => setSelectedIds([])}>
@@ -448,7 +734,11 @@ export default function InboundManagement() {
           activeRowId={activeRow?.id}
           onRowClick={(row) => setActiveId(row.id)}
           onRowDoubleClick={handleRowDoubleClick}
-          emptyMessage="생산 미투입 입고 제품이 없습니다. (생산계획 투입 제품은 생산관리에서 확인)"
+          emptyMessage={
+            viewMode === "register"
+              ? "생산 미투입 입고 제품이 없습니다. (생산 대기 투입 제품은 생산관리에서 확인)"
+              : "입고등록 완료 이력이 없습니다."
+          }
         />
 
         <TitanTableFooter
@@ -478,6 +768,17 @@ export default function InboundManagement() {
         />
       ) : null}
 
+      <InboundPrintCriteriaModal
+        open={printCriteriaOpen}
+        criteria={printCriteria}
+        onCriteriaChange={setPrintCriteria}
+        onClose={() => setPrintCriteriaOpen(false)}
+        onSubmit={handleInboundCriteriaPrint}
+        companyOptions={inboundPrintOptions.companies}
+        partNameOptions={inboundPrintOptions.partNames}
+        materialOptions={inboundPrintOptions.materials}
+      />
+
       <InOutListPrintPreviewModal
         open={inOutPrintSession.open}
         onClose={() => setInOutPrintSession({ open: false, props: null })}
@@ -497,6 +798,17 @@ export default function InboundManagement() {
             setDetailPopupRow(target);
           }
         }}
+      />
+
+      <OperationsWorkflowNextDialog
+        open={Boolean(workflowNextStep)}
+        step={workflowNextStep}
+        onNavigate={(path) => {
+          navigate(path);
+          setWorkflowNextStep(null);
+        }}
+        onStay={() => setWorkflowNextStep(null)}
+        onClose={() => setWorkflowNextStep(null)}
       />
     </div>
   );

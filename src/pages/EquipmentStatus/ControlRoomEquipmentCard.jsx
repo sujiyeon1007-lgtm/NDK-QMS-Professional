@@ -48,7 +48,7 @@ export default function ControlRoomEquipmentCard({ equipment, selected, onSelect
         </div>
         <div>
           <dt>현재 제품</dt>
-          <dd>{equipment.currentProductName ?? "—"}</dd>
+          <dd title={equipment.currentProductName ?? "—"}>{equipment.currentProductName ?? "—"}</dd>
         </div>
         <div>
           <dt>작업 시작</dt>

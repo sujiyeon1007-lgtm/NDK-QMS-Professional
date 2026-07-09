@@ -45,8 +45,8 @@ function buildCompanyProfileSeed() {
       },
     ],
     organization: {
-      placeholder: true,
-      note: "조직도 Tree Editor — 향후 Sprint 확장",
+      rootLabel: "주식회사 NDK",
+      note: "회사 조직 구조",
     },
     departments: [
       { id: "DEPT-Q", code: "Q", name: "품질", status: "active" },

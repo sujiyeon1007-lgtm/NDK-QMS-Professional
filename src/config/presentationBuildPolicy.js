@@ -164,3 +164,14 @@ export function isArchitectureOnlyFeature(featureId) {
 
 }
 
+/** V1.0 운영 / QA Demo 데이터 분리 (P0) */
+export const OPERATIONS_DATA_MODE_STORAGE_KEY = "titan-operations-data-mode-v1";
+
+export const OPERATIONS_DATA_MODES = Object.freeze({
+  OPERATIONAL: "operational",
+  QA_DEMO: "qa-demo",
+});
+
+export const TITAN_QA_DEMO_SEED_VERSION = "V1.0-P0";
+export const TITAN_QA_DEMO_SEED_LABEL = "TITAN QA Demo Seed";
+

@@ -64,6 +64,18 @@ import {
 } from "../../utils/titanAuthDataSession";
 import { isTitanAdminUser, getTitanUserRole, isDemoAdminModeActive } from "../../utils/titanAdminAccess";
 import {
+  getOperationsDataMode,
+  getOperationsRecordCount,
+  loadQaDemoSeed,
+  resetOperationsToEmpty,
+  restoreOperationalFromQaDemo,
+} from "../../utils/productionRecords";
+import {
+  OPERATIONS_DATA_MODES,
+  TITAN_QA_DEMO_SEED_LABEL,
+  TITAN_QA_DEMO_SEED_VERSION,
+} from "../../config/presentationBuildPolicy";
+import {
   getTitanEditionState,
   setTitanEdition,
   getTitanEditionDisplayLabel,
@@ -1180,6 +1192,39 @@ export function DebugSection() {
     }
   }, []);
 
+  const [opsMessage, setOpsMessage] = useState("");
+  const [opsMode, setOpsMode] = useState(() => getOperationsDataMode());
+  const [opsRecordCount, setOpsRecordCount] = useState(() => getOperationsRecordCount());
+
+  const refreshOpsStatus = () => {
+    setOpsMode(getOperationsDataMode());
+    setOpsRecordCount(getOperationsRecordCount());
+  };
+
+  const handleResetOperational = () => {
+    const result = resetOperationsToEmpty();
+    refreshOpsStatus();
+    setOpsMessage(
+      `\uC6B4\uC601 \uCD08\uAE30\uD654 \uC644\uB8CC \u00B7 \uC785\uCD9C\uACE0 ${result.recordCount}\uAC74 \u00B7 Master(\uAC70\uB798\uCC98\u00B7\uC81C\uD488 0\uAC74 \uC2DC\uC791)`
+    );
+  };
+
+  const handleLoadQaDemo = () => {
+    const result = loadQaDemoSeed();
+    refreshOpsStatus();
+    setOpsMessage(
+      `QA Demo Seed \uB85C\uB4DC \u00B7 ${result.version} \u00B7 ${result.recordCount}\uAC74`
+    );
+  };
+
+  const handleRestoreOperational = () => {
+    const result = restoreOperationalFromQaDemo();
+    refreshOpsStatus();
+    setOpsMessage(
+      `QA Demo \uC81C\uAC70 \u00B7 \uC6B4\uC601 \uBCF5\uAD6C \u00B7 \uC785\uCD9C\uACE0 ${result.recordCount}\uAC74`
+    );
+  };
+
   return (
     <AdminOnlySection title="Debug" desc="Demo · 개발 디버그 정보 (관리자 · UI 전용)">
       <dl className="environment-info-list">
@@ -1207,7 +1252,34 @@ export function DebugSection() {
           <dt>App Version</dt>
           <dd>{APP_VERSION}</dd>
         </div>
+        <div>
+          <dt>Operations Data Mode</dt>
+          <dd>
+            {opsMode === OPERATIONS_DATA_MODES.QA_DEMO
+              ? `QA Demo (${TITAN_QA_DEMO_SEED_VERSION})`
+              : "Operational"}
+          </dd>
+        </div>
+        <div>
+          <dt>Operations Records</dt>
+          <dd>{opsRecordCount}건</dd>
+        </div>
       </dl>
+
+      <p className="environment-form-note">{TITAN_QA_DEMO_SEED_LABEL}</p>
+      <div className="environment-backup-actions">
+        <PrimaryButton type="button" onClick={handleResetOperational}>
+          운영 초기화
+        </PrimaryButton>
+        <SecondaryButton type="button" onClick={handleLoadQaDemo}>
+          QA Demo Seed 로드
+        </SecondaryButton>
+        <SecondaryButton type="button" onClick={handleRestoreOperational}>
+          QA Demo 제거 · 운영 복원
+        </SecondaryButton>
+      </div>
+      <ActionMessage message={opsMessage} />
+
       <p className="environment-form-note">
         Demo Admin은 UI 접근만 제어합니다. Business Logic은 권한과 독립적으로 동작합니다.
       </p>

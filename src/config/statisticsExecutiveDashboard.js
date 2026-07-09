@@ -22,7 +22,7 @@ import {
   Users,
 } from "lucide-react";
 
-export const STATISTICS_EXECUTIVE_TABS = ["production", "quality", "sales"];
+export const STATISTICS_EXECUTIVE_TABS = ["production", "shot", "quality", "sales"];
 
 export const STATISTICS_LEGACY_TAB_REDIRECTS = {
   inquiry: "production",
@@ -51,6 +51,15 @@ const QUALITY_EXEC_KPI = [
   { id: "claimCount", label: "고객클레임", unit: "건", icon: Users, tone: "orange" },
 ];
 
+const SHOT_EXEC_KPI = [
+  { id: "shotCount", label: "쇼트 작업", unit: "건", icon: ClipboardCheck, tone: "blue" },
+  { id: "shotQty", label: "처리 EA", unit: "EA", icon: Package, tone: "sky" },
+  { id: "completedCount", label: "작업 완료", unit: "건", icon: CircleCheck, tone: "green" },
+  { id: "waitingCount", label: "작업 대기", unit: "건", icon: Layers, tone: "orange" },
+  { id: "completionRate", label: "완료율", unit: "%", icon: Percent, tone: "green" },
+  { id: "workerCount", label: "작업자 수", unit: "명", icon: Users, tone: "purple" },
+];
+
 const SALES_EXEC_KPI = [
   { id: "totalShipmentQty", label: "총 출고", quantity: true, icon: Truck, tone: "orange" },
   { id: "completedCount", label: "출고 완료", unit: "건", icon: CircleCheck, tone: "green" },
@@ -74,6 +83,13 @@ export const STATISTICS_EXECUTIVE_SCOPES = {
     pageTitle: "품질통계",
     accentClass: "statistics-accent--green",
     kpiItems: QUALITY_EXEC_KPI,
+  },
+  shot: {
+    id: "shot",
+    label: "쇼트현황",
+    pageTitle: "쇼트현황",
+    accentClass: "statistics-accent--blue",
+    kpiItems: SHOT_EXEC_KPI,
   },
   sales: {
     id: "sales",

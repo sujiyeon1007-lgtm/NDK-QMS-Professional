@@ -59,7 +59,7 @@ export function buildInboundListColumns({ renderProcess, renderActions }) {
 }
 
 /** 출고관리 — V1.3 (입고일 · 출고일 · LOT.NO …) */
-export function buildOutboundV13ListColumns({ renderCurrentProcess, renderActions } = {}) {
+export function buildOutboundV13ListColumns({ renderCurrentProcess, renderStatementStatus, renderActions } = {}) {
   const columns = [
     titanColumn("incomingDate", { key: "incomingDate", label: "입고일" }),
     titanColumn("outboundDate", { key: "outboundDate", label: "출고일" }),
@@ -74,6 +74,12 @@ export function buildOutboundV13ListColumns({ renderCurrentProcess, renderAction
       label: "현재공정",
       render: renderCurrentProcess,
     }),
+    titanColumn("statementStatus", {
+      key: "statementStatusLabel",
+      label: "거래명세서",
+      render: renderStatementStatus,
+      widthPercent: 8,
+    }),
     titanColumn("note", { key: "remark", label: "비고" }),
   ];
   if (renderActions) {
@@ -83,8 +89,8 @@ export function buildOutboundV13ListColumns({ renderCurrentProcess, renderAction
 }
 
 /** 출고관리 — V1.3 출고일 컬럼 */
-export function buildOutboundListColumns({ renderProcess, renderActions }) {
-  return buildOutboundV13ListColumns({ renderCurrentProcess: renderProcess, renderActions });
+export function buildOutboundListColumns({ renderProcess, renderStatementStatus, renderActions }) {
+  return buildOutboundV13ListColumns({ renderCurrentProcess: renderProcess, renderStatementStatus, renderActions });
 }
 
 /** 검사일지 — V1.3 공통 컬럼 */
@@ -109,13 +115,19 @@ export function buildDocumentCompanyListColumns({ renderActions }) {
 }
 
 /** 문서관리 Popup — 문서 리스트 (PM V1.3 간결 컬럼) */
-export function buildDocumentRegistryListColumns({ renderStatus }) {
+export function buildDocumentRegistryListColumns({ renderStatus, renderAttachments } = {}) {
   return [
     titanColumn("partName", { key: "title", label: "문서명", widthPercent: 24 }),
     titanColumn("managementId", { key: "documentNo", label: "문서번호", widthPercent: 14 }),
     titanColumn("revision", { key: "revision", label: "Rev", widthPercent: 6 }),
     titanColumn("incomingDate", { key: "registeredDate", label: "등록일", widthPercent: 10 }),
     titanColumn("manager", { key: "registeredBy", label: "등록자", widthPercent: 9 }),
+    titanColumn("attachments", {
+      key: "attachments",
+      label: "첨부파일",
+      widthPercent: 8,
+      render: renderAttachments,
+    }),
     titanColumn("status", {
       key: "approvalStatus",
       label: "상태",
@@ -240,9 +252,24 @@ export function buildDefectHistoryListColumns({ renderProcess, renderHandlingSta
   ];
 }
 
-/** 양산검사 — V1.3 공통 컬럼 */
-export function buildMassInspectionListColumns({ renderProcess, renderActions }) {
-  return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+/** 양산검사 — 비고 대신 증빙 첨부파일 상태 표시 */
+export function buildMassInspectionListColumns({ renderProcess, renderActions, renderAttachments }) {
+  const columns = buildV13ProductListColumns({ renderCurrentProcess: renderProcess });
+  const attachmentColumn = titanColumn("attachments", {
+    key: "attachments",
+    label: "첨부파일",
+    render: renderAttachments,
+  });
+  const noteIndex = columns.findIndex((column) => column.key === "remark");
+  if (noteIndex >= 0) {
+    columns.splice(noteIndex, 1, attachmentColumn);
+  } else {
+    columns.push(attachmentColumn);
+  }
+  if (renderActions) {
+    columns.push(titanColumn("tableActions", { key: "actions", render: renderActions }));
+  }
+  return columns;
 }
 
 /** 개발검사 */
@@ -322,6 +349,20 @@ export function buildProductionStatisticsListColumns() {
     titanColumn("statProductionQty", { key: "productionQtyLabel", label: "생산량" }),
     titanColumn("statUnit", { key: "unitLabel", label: "단위" }),
     titanColumn("workDate"),
+  ];
+}
+
+export function buildShotStatisticsListColumns() {
+  return [
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("spec"),
+    titanColumn("worker", { label: "작업자" }),
+    titanColumn("statProductionQty", { key: "shotQtyLabel", label: "처리 EA" }),
+    titanColumn("workDate", { key: "shotWorkDate", label: "작업일" }),
+    titanColumn("status", { key: "statusLabel", label: "상태" }),
   ];
 }
 

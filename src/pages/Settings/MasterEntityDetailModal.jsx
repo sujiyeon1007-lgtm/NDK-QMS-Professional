@@ -1,5 +1,4 @@
-import { SecondaryButton } from "../../foundation/components/Button";
-import TitanWorkspaceModal from "../../foundation/components/TitanWorkspaceModal";
+import TitanStandardDetailPopup from "../../foundation/components/detailPopup/TitanStandardDetailPopup";
 
 import "./CompanyManagement.css";
 
@@ -17,34 +16,40 @@ export default function MasterEntityDetailModal({ open, row, onClose, screen, pa
   if (!row || !screen) return null;
 
   const title = row.name || row.code || pageTitle || screen.title;
-  const kicker = row.code && row.name && row.code !== row.name ? row.code : pageTitle || screen.title;
+  const statusLabel = row.activeLabel ?? (row.active === false ? "미사용" : "사용");
+  const tabs = [{ id: "detail", label: "상세정보" }];
+  const summary = {
+    company: pageTitle || screen.title,
+    partName: title,
+    partNo: row.code || row.id || "-",
+    lotNo: row.id || "-",
+    currentProcess: "기준정보",
+    statusLabel,
+    statusVariant: row.active === false ? "danger" : "done",
+  };
 
   return (
-    <TitanWorkspaceModal
+    <TitanStandardDetailPopup
       open={open}
       onClose={onClose}
-      size="standard"
-      title={title}
-      kicker={kicker}
-      footer={
-        <SecondaryButton type="button" onClick={onClose}>
-          닫기
-        </SecondaryButton>
-      }
-    >
-      <div className="company-detail-modal">
-        <section className="company-detail-section" aria-label={`${pageTitle} 정보`}>
-          <h3 className="company-detail-section__title">① {pageTitle} 정보</h3>
-          <dl className="company-detail-section__grid">
-            {(screen.detailFields ?? []).map((field) => (
-              <div key={field.key}>
-                <dt>{field.label}</dt>
-                <dd>{renderDetailFieldValue(row, field)}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </div>
-    </TitanWorkspaceModal>
+      tabs={tabs}
+      summary={summary}
+      ariaLabel={`${pageTitle} 상세정보`}
+      renderTabContent={() => (
+        <div className="company-detail-modal">
+          <section className="company-detail-section" aria-label={`${pageTitle} 정보`}>
+            <h3 className="company-detail-section__title">① {pageTitle} 정보</h3>
+            <dl className="company-detail-section__grid">
+              {(screen.detailFields ?? []).map((field) => (
+                <div key={field.key}>
+                  <dt>{field.label}</dt>
+                  <dd>{renderDetailFieldValue(row, field)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </div>
+      )}
+    />
   );
 }

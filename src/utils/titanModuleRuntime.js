@@ -2,6 +2,7 @@
  * Project TITAN — Module runtime (Sidebar · Route · HOME filter)
  */
 
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 import { TITAN_MENU_CATALOG } from "../config/menuConfig";
 import {
   MODULE_ROUTE_GUARDS,
@@ -69,7 +70,7 @@ export function isRouteAllowedByModules(pathname, flags = getModuleFlags()) {
 }
 
 export function getModuleRedirectPath(flags = getModuleFlags()) {
-  return isModuleEnabled("inbound", flags) ? "/inout/incoming" : "/home";
+  return isModuleEnabled("inbound", flags) ? OPERATION_ROUTES.inboundPending : "/home";
 }
 
 export function isHomeWidgetVisible(widgetId, flags = getModuleFlags()) {

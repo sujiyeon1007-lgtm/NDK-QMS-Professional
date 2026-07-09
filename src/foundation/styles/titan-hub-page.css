@@ -1,8 +1,31 @@
+.titan-hub-page__kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 0 0 20px;
+  width: 100%;
+}
+
+.titan-hub-page__kpi-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.titan-hub-page__kpi-link:hover .titan-hub-page__kpi-card {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.08);
+}
+
+.titan-hub-page__kpi-card {
+  height: 100%;
+  cursor: pointer;
+}
+
 .titan-hub-page {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 24px 8px 32px;
+  padding: 4px 8px 32px;
 }
 
 .titan-hub-page__intro {

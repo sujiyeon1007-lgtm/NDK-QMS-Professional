@@ -196,6 +196,9 @@ export const BETA_SITE_VERIFICATION_CHECKLIST = [
   "Console Error = 0",
 ];
 
+/** RC1.1 Official Freeze — Browser QA gate SSoT @see src/config/rc11OfficialFreeze.js */
+export { RC1_BROWSER_QA_GATE, RC11_BROWSER_QA_SCRIPT } from "./rc11OfficialFreeze.js";
+
 /**
  * 공식 개발 → Beta 배포 Flow (V1.3)
  * Build 성공 · Regression 통과 후에만 beta-demo push

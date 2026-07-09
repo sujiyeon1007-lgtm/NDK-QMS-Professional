@@ -58,7 +58,7 @@ export const DOCUMENT_ENGINE_CATEGORIES = [
     id: DOCUMENT_ENGINE_CATEGORY_IDS.INBOUND_LIST,
     label: "입고리스트",
     docCode: "DOC-01",
-    description: "열처리 작업 요청 리스트 (입고 · 생산 미투입)",
+    description: "입고 현황 리스트 (입고 완료 기준)",
     previewKind: DOCUMENT_PREVIEW_KIND.IN_OUT_LIST,
   },
   {
@@ -124,7 +124,7 @@ function mapIncomingListDocuments() {
     toDocumentRow(DOCUMENT_ENGINE_CATEGORY_IDS.INBOUND_LIST, {
       id: record.id,
       docNo: record.htlNo || record.inboundListLastPrintedAt ? record.htlNo || "재출력 가능" : "미출력",
-      title: "열처리 작업 요청 리스트",
+      title: "입고 리스트",
       managementId: record.mesManagementNo || record.id,
       company: record.company,
       partName: record.partName,

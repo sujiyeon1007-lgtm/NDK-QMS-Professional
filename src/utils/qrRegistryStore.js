@@ -11,6 +11,12 @@ export const QR_REGISTRY_TYPES = {
   INOUT: "inout",
   EQUIPMENT: "equipment",
   LOT: "lot",
+  INBOUND: "inbound",
+  OUTBOUND: "outbound",
+  PRODUCT: "product",
+  MATERIAL: "material",
+  DOCUMENT: "document",
+  WORKER: "worker",
 };
 
 const STORAGE_KEY = "project-titan-qr-registry-v1";

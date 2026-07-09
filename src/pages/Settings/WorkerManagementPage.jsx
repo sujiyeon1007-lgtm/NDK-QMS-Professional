@@ -37,7 +37,7 @@ import {
   buildWorkerMasterDetail,
   buildWorkerMasterSummary,
 } from "../../utils/workerMasterDetail";
-import MasterDataBackLink from "./MasterDataBackLink";
+import { QRService } from "../../utils/qrEngineRegistryService";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -218,6 +218,7 @@ export default function WorkerManagementPage() {
         ? stageMasterUpdate(CATEGORY_KEY, selectedRow.id, form)
         : stageMasterAdd(CATEGORY_KEY, form);
     if (!result.ok) return;
+    QRService.createIfNotExists(CATEGORY_KEY, result.row);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) setSelectedId(result.row.id);
@@ -250,19 +251,6 @@ export default function WorkerManagementPage() {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>작업자관리</h2>
-            <p className="company-management-page__intro">
-              생산 · 검사 · 성적서 공통 작업자 Master 입니다. 좌측 목록에서 작업자를 선택하면 우측에서
-              담당 공정 · 생산 실적 · 품질 실적 · 최근 작업 · 자격 정보를 확인할 수 있습니다. (Domain
-              Master Workspace)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="작업자 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = WORKER_KPI_ICON[kpi.id] ?? HardHat;
@@ -448,7 +436,7 @@ export default function WorkerManagementPage() {
                     <section className="company-detail-section" aria-label="자격 정보">
                       <FieldGrid fields={WORKER_QUALIFICATION_FIELDS} source={detail.qualification} />
                       <p className="company-detail-section__empty">
-                        자격 정보는 조회 전용입니다. (향후 교육관리 · 자격관리 연결 준비)
+                        자격 정보는 조회 전용입니다.
                       </p>
                     </section>
                   ) : null}

@@ -25,6 +25,11 @@ import { getSessionProductionRecords, isIncomingRegistered } from "../../utils/p
 import { formatQtyWithUnit } from "../../utils/productUnits";
 
 import { mapV13ProductListRow } from "../../utils/processFlow";
+import { getActiveWorkers } from "../../utils/masterData";
+import {
+  formatFoundationAttachmentTypeLabel,
+  normalizeFoundationAttachment,
+} from "../../utils/foundationAttachmentEngine";
 
 import {
   inferScreenKeyFromListRow,
@@ -231,6 +236,42 @@ const EMPTY_HISTORY_CELL = {
   completed: false,
 
 };
+
+function resolveProcessAssigneeDisplay(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "—") {
+    return { assignee: "—", assigneeDetail: "—" };
+  }
+
+  const worker = getActiveWorkers().find((item) => raw.includes(item.name));
+  if (worker?.name) {
+    return {
+      assignee: worker.name,
+      assigneeDetail: [worker.department, worker.name, worker.position].filter(Boolean).join(" · "),
+    };
+  }
+
+  const normalized = raw
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const parts = normalized.split(/[\s·/|>-]+/).filter(Boolean);
+  const isOrgToken = (part) =>
+    /(부|팀|파트|센터|관리부|품질관리부|생산관리부|경영지원|담당|주임|대리|과장|차장|부장|관리자권한)$/u.test(part);
+  if (parts.length > 0 && parts.every(isOrgToken)) {
+    return { assignee: "—", assigneeDetail: raw };
+  }
+  const nameLike = [...parts]
+    .reverse()
+    .find((part) => !isOrgToken(part));
+  const fallback = nameLike || parts.at(-1) || raw;
+
+  return { assignee: fallback, assigneeDetail: raw };
+}
+
+function formatAttachmentCategory(typeId) {
+  return formatFoundationAttachmentTypeLabel({ attachmentType: typeId });
+}
 
 
 
@@ -504,15 +545,26 @@ function buildProcessHistoryStep(record, stepKey) {
 
 export function buildInboundProcessHistoryRows(record) {
 
-  return INBOUND_PROCESS_HISTORY_STEPS.map((step) => ({
+  return INBOUND_PROCESS_HISTORY_STEPS.map((step) => {
 
-    key: step.key,
+    const history = buildProcessHistoryStep(record, step.key);
+    const assigneeMeta = resolveProcessAssigneeDisplay(history.assignee);
 
-    label: step.label,
+    return {
 
-    ...buildProcessHistoryStep(record, step.key),
+      key: step.key,
 
-  }));
+      label: step.label,
+
+      ...history,
+
+      assignee: assigneeMeta.assignee,
+
+      assigneeDetail: assigneeMeta.assigneeDetail,
+
+    };
+
+  });
 
 }
 
@@ -610,7 +662,7 @@ export function buildInboundAttachmentRows(record) {
 
       key: "drawing",
 
-      category: "도면",
+      category: formatAttachmentCategory("drawing"),
 
       name: drawing?.fileName || drawing?.drawingNo || record.drawingNo,
 
@@ -628,7 +680,7 @@ export function buildInboundAttachmentRows(record) {
 
       key: "worksheet",
 
-      category: "작업지시서",
+      category: formatAttachmentCategory("workOrder"),
 
       name: record.htlNo?.trim() || "열처리 작업 요청 리스트",
 
@@ -646,7 +698,7 @@ export function buildInboundAttachmentRows(record) {
 
       key: `inspection-${log.id}`,
 
-      category: "검사리포트",
+      category: formatAttachmentCategory("inspectionCertificate"),
 
       name: log.inspectionItem?.trim() || `${log.partName || "검사"} 리포트`,
 
@@ -666,7 +718,7 @@ export function buildInboundAttachmentRows(record) {
 
       key: "certificate",
 
-      category: "성적서 PDF",
+      category: formatAttachmentCategory("certificate"),
 
       name: certEntry?.pdfFileName || certEntry?.excelFileName || `${record.partNo || record.id} 성적서`,
 
@@ -681,16 +733,21 @@ export function buildInboundAttachmentRows(record) {
   const extraFiles = Array.isArray(record.attachments) ? record.attachments : [];
 
   extraFiles.forEach((file, index) => {
+    const normalizedFile = normalizeFoundationAttachment({
+      ...file,
+      attachmentType: file.attachmentType ?? file.typeId ?? "etc",
+    }, index);
+    if (!normalizedFile) return;
 
     rows.push({
 
       key: `extra-${index}`,
 
-      category: file.category?.trim() || "기타 첨부파일",
+      category: formatFoundationAttachmentTypeLabel(normalizedFile),
 
-      name: file.name?.trim() || file.fileName?.trim() || "첨부파일",
+      name: normalizedFile?.name || "첨부파일",
 
-      detail: file.registeredDate?.slice(0, 10) || "—",
+      detail: normalizedFile?.uploadedAt?.slice(0, 10) || file.registeredDate?.slice(0, 10) || "—",
 
     });
 

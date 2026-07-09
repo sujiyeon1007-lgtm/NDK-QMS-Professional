@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import {
@@ -6,6 +7,7 @@ import {
   ENVIRONMENT_WORKSPACE_ROUTES,
   isEnvironmentWorkspaceShellPath,
 } from "../../config/environmentWorkspaceArchitecture";
+import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbPolicy";
 import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
 import {
   getEnvironmentDefaultTab,
@@ -14,7 +16,6 @@ import {
 } from "../../config/environmentSettings";
 import { TitanWorkspaceShell } from "../../foundation/uiKit";
 import { SectionPageActionsProvider } from "../../foundation/layout/SectionPageActionsContext";
-import { useSectionPageActionsContext } from "../../foundation/layout/SectionPageActionsContext";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import EnvironmentGroupedTabs from "./EnvironmentGroupedTabs";
 import "../../foundation/layout/SectionPageLayout.css";
@@ -23,20 +24,11 @@ import "../Company/Company.css";
 import "./Environment.css";
 
 function EnvironmentMenuToolbar() {
-  const ctx = useSectionPageActionsContext();
-  const actions = ctx?.actions ?? null;
   const groups = getEnvironmentTabGroups(isTitanAdminUser());
 
   return (
     <div className="titan-menu-toolbar environment-menu-toolbar" role="region" aria-label="환경설정 메뉴">
       <EnvironmentGroupedTabs groups={groups} />
-      {actions ? (
-        <div className="titan-menu-toolbar__actions" role="toolbar" aria-label="화면 기능">
-          {actions}
-        </div>
-      ) : (
-        <div className="titan-menu-toolbar__actions titan-menu-toolbar__actions--empty" aria-hidden="true" />
-      )}
     </div>
   );
 }
@@ -45,15 +37,28 @@ function EnvironmentWorkspaceShell() {
   const location = useLocation();
   const isWorkspaceHome = location.pathname === ENVIRONMENT_WORKSPACE_ROUTES.dashboard;
 
+  const breadcrumbItems = useMemo(
+    () =>
+      isWorkspaceHome
+        ? []
+        : buildWorkspaceDrilldownBreadcrumb({
+            hubLabel: "환경설정",
+            hubPath: ENVIRONMENT_WORKSPACE_ROUTES.dashboard,
+            items: ENVIRONMENT_WORKSPACE_NAV,
+            pathname: location.pathname,
+          }),
+    [isWorkspaceHome, location.pathname]
+  );
+
   return (
     <TitanWorkspaceShell
       kicker={ENVIRONMENT_WORKSPACE_COPY.workspaceKicker}
       title={ENVIRONMENT_WORKSPACE_COPY.workspaceTitle}
       intro={ENVIRONMENT_WORKSPACE_COPY.workspaceIntro}
-      note={ENVIRONMENT_WORKSPACE_COPY.companySeparationNote}
       navItems={ENVIRONMENT_WORKSPACE_NAV}
       homePath={ENVIRONMENT_WORKSPACE_ROUTES.dashboard}
       isHome={isWorkspaceHome}
+      breadcrumbItems={breadcrumbItems}
       ariaLabel="Environment Workspace"
     >
       <Outlet />

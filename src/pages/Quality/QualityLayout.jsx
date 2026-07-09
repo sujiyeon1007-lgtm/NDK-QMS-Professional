@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
-import { QUALITY_MANAGEMENT_HUB_BREADCRUMB } from "../../config/titanBreadcrumbPolicy";
+import { getSectionById, getSectionByPathname, getWorkspaceNavigation } from "../../config/menuStructure";
+import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbPolicy";
 import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
-import TitanBreadcrumb from "../../foundation/components/TitanBreadcrumb";
-import TitanHubBackLink from "../../foundation/components/TitanHubBackLink";
+import { WorkspaceNavigationTabs } from "../../foundation/layout/SectionTabs";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 import "../../foundation/styles/titan-hub-page.css";
+
+const QUALITY_HOME_DESCRIPTION = "검사 · 성적서 · 부적합 · 품질 문서 업무를 관리합니다.";
 
 function isQualityHubPath(pathname) {
   return pathname === "/quality" || pathname === "/quality/";
@@ -30,6 +31,7 @@ export default function QualityLayout() {
   const isHub = isQualityHubPath(location.pathname);
   const hubSection = getSectionById("qualityManagement");
   const section = isHub ? hubSection : getSectionByPathname(location.pathname);
+  const workspaceNav = getWorkspaceNavigation("quality");
 
   const filteredSection = useMemo(
     () => {
@@ -39,6 +41,19 @@ export default function QualityLayout() {
     [hubSection, isHub, isModuleEnabled, section]
   );
 
+  const breadcrumbItems = useMemo(
+    () =>
+      isHub
+        ? []
+        : buildWorkspaceDrilldownBreadcrumb({
+            hubLabel: "품질관리",
+            hubPath: "/quality",
+            items: workspaceNav.items,
+            pathname: location.pathname,
+          }),
+    [isHub, location.pathname, workspaceNav.items]
+  );
+
   if (!section || !filteredSection) return null;
 
   if (isHub) {
@@ -46,8 +61,9 @@ export default function QualityLayout() {
       <div className="titan-section-page">
         <header className="titan-section-page__header">
           <h1 className="titan-section-page__title">{hubSection?.label ?? "품질관리"}</h1>
+          <p className="titan-section-page__desc">{QUALITY_HOME_DESCRIPTION}</p>
         </header>
-        <TitanBreadcrumb items={QUALITY_MANAGEMENT_HUB_BREADCRUMB} />
+        <WorkspaceNavigationTabs nav={workspaceNav} />
         <div className="titan-section-page__body">
           <Outlet />
         </div>
@@ -56,8 +72,13 @@ export default function QualityLayout() {
   }
 
   return (
-    <SectionPageLayout section={filteredSection} description={null}>
-      <TitanHubBackLink to="/quality" label="품질관리" />
+    <SectionPageLayout
+      section={filteredSection}
+      description={null}
+      workspaceNav={workspaceNav}
+      breadcrumbItems={breadcrumbItems}
+      hidePageHeader
+    >
       <Outlet />
     </SectionPageLayout>
   );

@@ -12,6 +12,7 @@ import {
   CircleCheck,
   ClipboardCheck,
 } from "lucide-react";
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 /** @typedef {'blue' | 'orange' | 'green' | 'purple'} KpiTone */
 /** @typedef {{ id: string, label: string, subLabel: string, icon: import("react").ComponentType, to: string, tone: KpiTone }} HomeKpiCardDef */
@@ -24,14 +25,14 @@ export const HOME_STATUS_GROUPS = [
     title: "입출고 현황",
     titleIcon: Truck,
     footerLabel: "입고현황 바로가기",
-    footerTo: "/inout/incoming",
+    footerTo: OPERATION_ROUTES.inboundPending,
     cards: [
       {
         id: "incomingDone",
         label: "입고 완료",
         subLabel: "입고 완료 건",
         icon: Package,
-        to: "/inout/incoming",
+        to: OPERATION_ROUTES.inboundHistory,
         tone: "blue",
       },
       {
@@ -39,7 +40,7 @@ export const HOME_STATUS_GROUPS = [
         label: "출고대기",
         subLabel: "출고 대기 건",
         icon: ShoppingCart,
-        to: "/inout/shipment",
+        to: OPERATION_ROUTES.shipmentRegister,
         tone: "orange",
       },
       {
@@ -47,7 +48,7 @@ export const HOME_STATUS_GROUPS = [
         label: "출고 완료",
         subLabel: "출고 완료 건",
         icon: Truck,
-        to: "/inout/shipment",
+        to: OPERATION_ROUTES.shipmentHistory,
         tone: "green",
       },
     ],
@@ -57,14 +58,14 @@ export const HOME_STATUS_GROUPS = [
     title: "열처리 현황",
     titleIcon: Factory,
     footerLabel: "열처리일보 바로가기",
-    footerTo: "/production/daily-report",
+    footerTo: OPERATION_ROUTES.dailyWork,
     cards: [
       {
         id: "prodProgress",
         label: "열처리 진행",
         subLabel: "작업 진행 중",
         icon: Cog,
-        to: "/production/daily-report",
+        to: OPERATION_ROUTES.dailyWork,
         tone: "green",
       },
       {
@@ -72,7 +73,7 @@ export const HOME_STATUS_GROUPS = [
         label: "열처리 완료",
         subLabel: "열처리 완료 건",
         icon: CircleCheck,
-        to: "/production/daily-report",
+        to: OPERATION_ROUTES.dailyWork,
         tone: "purple",
       },
     ],
@@ -125,7 +126,7 @@ export const HOME_TODAY_WORK_CARDS = [
     label: "입고등록",
     subLabel: "입고 등록",
     icon: Package,
-    to: "/inout/incoming",
+    to: OPERATION_ROUTES.inboundPending,
     tone: "incoming",
   },
   {
@@ -133,7 +134,7 @@ export const HOME_TODAY_WORK_CARDS = [
     label: "열처리 대기",
     subLabel: "열처리 대기",
     icon: Cog,
-    to: "/production/daily-report",
+    to: OPERATION_ROUTES.productionPending,
     tone: "production",
   },
   {
@@ -141,7 +142,7 @@ export const HOME_TODAY_WORK_CARDS = [
     label: "열처리 중",
     subLabel: "열처리 진행",
     icon: Cog,
-    to: "/production/daily-report",
+    to: OPERATION_ROUTES.dailyWork,
     tone: "production",
   },
   {
@@ -165,7 +166,7 @@ export const HOME_TODAY_WORK_CARDS = [
     label: "출고 대기",
     subLabel: "출고 대기",
     icon: Truck,
-    to: "/inout/shipment",
+    to: OPERATION_ROUTES.shipmentRegister,
     tone: "shipment",
   },
 ];
@@ -177,7 +178,7 @@ export const HOME_TOP_KPI_CARDS = [
     label: "금일 입고",
     subLabel: "금일 신규 등록",
     icon: Package,
-    to: "/inout/incoming",
+    to: OPERATION_ROUTES.inboundPending,
     tone: "blue",
     countSuffix: "건",
   },
@@ -195,7 +196,7 @@ export const HOME_TOP_KPI_CARDS = [
     label: "작업 진행",
     subLabel: "작업 중 LOT",
     icon: Cog,
-    to: "/production/daily-report",
+    to: OPERATION_ROUTES.dailyWork,
     tone: "orange",
     countSuffix: "건",
   },
@@ -213,7 +214,7 @@ export const HOME_TOP_KPI_CARDS = [
     label: "금일 출고",
     subLabel: "금일 출고 완료",
     icon: Truck,
-    to: "/inout/shipment",
+    to: OPERATION_ROUTES.shipmentRegister,
     tone: "purple",
     countSuffix: "건",
   },
@@ -235,14 +236,14 @@ export const HOME_WORKFLOW_PHASES = [
 export const HOME_WORKFLOW_PREVIEW_LIMIT = 12;
 
 /** HOME 진행현황 — 전체 보기 → Control Room Product View (Sprint 3E) */
-export const HOME_WORKFLOW_FULL_VIEW_PATH = "/equipment-status?view=product";
+export const HOME_WORKFLOW_FULL_VIEW_PATH = `${OPERATION_ROUTES.equipmentStatus}?view=product`;
 
 /** @deprecated HomeWorkLauncherPanel + homeWorkLauncher.js 사용 */
 export const HOME_HUB_SHORTCUTS = [
   {
     id: "equipmentStatus",
     label: "설비 현황",
-    to: "/equipment-status",
+    to: OPERATION_ROUTES.equipmentStatus,
     actionLabel: "전체 보기 →",
     summary: ({ equipmentRunning, equipmentReady, equipmentMaintenance }) =>
       `운전중 ${equipmentRunning} · 준비 ${equipmentReady} · 점검 ${equipmentMaintenance}`,
@@ -304,11 +305,11 @@ export const HOME_PRODUCTION_PERIODS = [
 ];
 
 export const HOME_QUICK_MENUS = [
-  { id: "incoming", label: "입고등록", to: "/inout/incoming" },
-  { id: "daily", label: "열처리일보", to: "/production/daily-report" },
+  { id: "incoming", label: "입고등록", to: OPERATION_ROUTES.inboundPending },
+  { id: "daily", label: "열처리일보", to: OPERATION_ROUTES.dailyWork },
   { id: "inspection", label: "검사등록", to: "/quality/inspection/register" },
   { id: "certificate", label: "성적서관리", to: "/quality/certificate" },
-  { id: "shipment", label: "출고등록", to: "/inout/shipment" },
+  { id: "shipment", label: "출고등록", to: OPERATION_ROUTES.shipmentRegister },
 ];
 
 /** HOME 오늘 해야 할 일 — Workflow 기반 액션 미리보기 */
@@ -324,6 +325,6 @@ export const HOME_ADMIN_SHORTCUTS = [
 ];
 
 export const HOME_RECENT_LIST_TITLE = "최근 작업";
-export const HOME_RECENT_PREVIEW_LIMIT = 7;
+export const HOME_RECENT_PREVIEW_LIMIT = 5;
 export const HOME_RECENT_FULL_VIEW_PATH = "/history";
 export const HOME_PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];

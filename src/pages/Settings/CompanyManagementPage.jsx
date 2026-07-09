@@ -18,7 +18,6 @@ import {
 import { buildCompanyMasterSummary } from "../../utils/companyMasterDetail";
 import CompanyDetailModal from "./CompanyDetailModal";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
-import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -172,18 +171,6 @@ export default function CompanyManagementPage() {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>거래처관리</h2>
-            <p className="company-management-page__intro">
-              Project TITAN 전체가 참조하는 거래처 Master 입니다. 행을 더블클릭하면 상세 Popup에서
-              기본정보 · 담당자 · 거래이력 · 관련 제품 · LOT · 출고 · 품질까지 확인할 수 있습니다.
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="거래처 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = COMPANY_KPI_ICON[kpi.id] ?? Building2;

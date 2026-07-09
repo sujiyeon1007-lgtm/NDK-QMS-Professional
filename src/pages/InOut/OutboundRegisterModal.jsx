@@ -5,7 +5,6 @@ import { OUTBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getActiveWorkers } from "../../utils/masterData";
 import { getStockQty } from "../../utils/inventory";
 import {
-  applyOutboundRegister,
   getOutboundEligibleRecords,
   mapRecordToOutboundRegisterForm,
   validateOutboundRegisterForm,
@@ -66,17 +65,27 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
   };
 
   const handleSubmit = () => {
-    const validation = validateOutboundRegisterForm(form);
-    if (!validation.ok) {
-      window.alert(validation.message);
-      return;
+    try {
+      const validation = validateOutboundRegisterForm(form);
+      if (!validation.ok) {
+        window.alert(validation.message || "출고 등록 정보를 확인하세요.");
+        return;
+      }
+
+      onRegister?.({
+        ok: true,
+        form: { ...form },
+        managementId: validation.record.id,
+        record: validation.record,
+        shipQty: validation.shipQty,
+        stockBefore: validation.stock,
+        stockAfter: validation.stock - validation.shipQty,
+      });
+      onClose?.();
+    } catch (error) {
+      console.error("[OutboundRegisterModal] submit failed", error);
+      window.alert(error?.message || "출고 등록 중 오류가 발생했습니다.");
     }
-
-    const result = applyOutboundRegister(form);
-    if (!result.ok) return;
-
-    onRegister(result);
-    onClose();
   };
 
   return (
@@ -190,5 +199,3 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
     </TitanRegisterModal>
   );
 }
-
-export { applyOutboundRegister };

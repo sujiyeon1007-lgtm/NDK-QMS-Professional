@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import {
   COMPANY_WORKSPACE_COPY,
   COMPANY_WORKSPACE_ROUTES,
 } from "../../config/companyWorkspaceArchitecture";
+import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbPolicy";
 import { TitanWorkspaceShell } from "../../foundation/uiKit";
 import { ensureCompanyWorkspaceSeeded } from "../../utils/companyWorkspaceService";
 import "../../foundation/styles/titan-hub-page.css";
@@ -34,6 +35,19 @@ export default function CompanyLayout() {
     ensureCompanyWorkspaceSeeded();
   }, [location.pathname]);
 
+  const breadcrumbItems = useMemo(
+    () =>
+      isWorkspaceHome
+        ? []
+        : buildWorkspaceDrilldownBreadcrumb({
+            hubLabel: "회사정보",
+            hubPath: COMPANY_WORKSPACE_ROUTES.dashboard,
+            items: MAIN_NAV,
+            pathname: location.pathname,
+          }),
+    [isWorkspaceHome, location.pathname]
+  );
+
   if (!isCompanyWorkspaceShellPath(location.pathname)) {
     return <Outlet />;
   }
@@ -43,10 +57,10 @@ export default function CompanyLayout() {
       kicker={COMPANY_WORKSPACE_COPY.workspaceKicker}
       title={COMPANY_WORKSPACE_COPY.workspaceTitle}
       intro={COMPANY_WORKSPACE_COPY.workspaceIntro}
-      note={COMPANY_WORKSPACE_COPY.environmentSeparationNote}
       navItems={MAIN_NAV}
       homePath={COMPANY_WORKSPACE_ROUTES.dashboard}
       isHome={isWorkspaceHome}
+      breadcrumbItems={breadcrumbItems}
       ariaLabel="Company Workspace"
     >
       <Outlet />

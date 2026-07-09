@@ -66,6 +66,15 @@
     border: 1px solid #dbeafe;
   }
 
+  .qr-mobile-work-mode__waiting.is-highlight {
+    border-color: var(--titan-primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .qr-mobile-work-mode__waiting.is-highlight .qr-mobile-work-mode__waiting-head strong {
+    color: var(--titan-primary, #2563eb);
+  }
+
   .qr-mobile-work-mode__waiting-head {
     display: flex;
     align-items: center;

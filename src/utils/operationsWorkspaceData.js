@@ -15,16 +15,15 @@
  *   - 입고등록 = RECEIVED · 생산 미투입 (생산계획 투입 시 자동 제거)
  *   - 동일 관리번호 중복 표시 없음
  *
- * ※ Engine Store 통합은 후속 단계 (Blueprint: "구현 시 Engine 전환 · UI 불변").
- *   현재 등록·수정 CRUD는 운영 SSOT(getSessionProductionRecords)에 반영되므로
- *   Workspace 소스도 동일 SSOT를 사용한다 (등록 즉시 반영 · 자동 제거 보장).
+ * ※ P0 운영 SSOT: getSessionProductionRecords() = 단일 Write Path (sessionStorage 영속).
+ *   productionStore(TitanDataEngine)는 관제·대시보드용 — 운영 CRUD와 분리 유지.
  */
 
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
-import { getInboundManagementStatus } from "./inboundManagementStatus";
 import { isOutboundShipComplete } from "./outboundManagementStatus";
 import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "./workflowProcessStatus";
 import { getStockQty } from "./inventory";
+import { isShotWorkType } from "../config/workTypeWorkflow";
 
 /** 입고등록 Task Workspace Stage — RECEIVED · 생산 미투입 */
 export const INCOMING_TASK_STAGE = "RECEIVED";
@@ -48,7 +47,11 @@ export function getOperationsRecords() {
  * @returns {boolean}
  */
 export function isIncomingTaskStageRecord(record) {
-  return getInboundManagementStatus(record)?.variant === "incoming";
+  return (
+    isIncomingRegistered(record) &&
+    !isShotWorkType(record) &&
+    resolveRecordCurrentProcess(record).key === CURRENT_PROCESS_KEYS.RECEIVED
+  );
 }
 
 /**
@@ -58,6 +61,16 @@ export function isIncomingTaskStageRecord(record) {
  */
 export function buildIncomingTaskWorkspaceRecords(records = getOperationsRecords()) {
   return dedupeOperationsRecords(records, isIncomingTaskStageRecord);
+}
+
+/**
+ * 입고이력 Workspace records — 입고 등록 완료 전체
+ * 생산·출고 진행 여부와 무관하게 입고가 완료된 모든 제품을 조회한다.
+ * @param {object[]} [records]
+ * @returns {object[]}
+ */
+export function buildInboundHistoryWorkspaceRecords(records = getOperationsRecords()) {
+  return dedupeOperationsRecords(records, isIncomingRegistered);
 }
 
 /**

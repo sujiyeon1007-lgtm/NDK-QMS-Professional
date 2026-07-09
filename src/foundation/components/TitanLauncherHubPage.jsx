@@ -6,19 +6,18 @@ import "../../foundation/styles/titan-hub-page.css";
 /**
  * Project TITAN — 공통 Launcher(Hub) 페이지
  * V1.5 FINAL — 기준정보관리 Launcher UX 기준 (titan-hub-page.css)
+ * V1.0.1 Home UI Standard — Header → Navigation → KPI(필요 시) → Launcher Cards.
+ * 개발용 Workflow/범위/Coming Soon 요약 패널은 Home에서 렌더링하지 않는다.
  */
 export default function TitanLauncherHubPage({
-  intro,
-  workflow,
   items,
   metrics = {},
   cardsClassName = "",
+  header = null,
 }) {
   return (
     <div className="titan-hub-page">
-      {intro ? <p className="titan-hub-page__intro">{intro}</p> : null}
-      {workflow ? <p className="titan-hub-page__workflow-line">{workflow}</p> : null}
-
+      {header}
       <div className={`titan-hub-page__cards ${cardsClassName}`.trim()}>
         {items.map((item) => {
           const Icon = item.icon;

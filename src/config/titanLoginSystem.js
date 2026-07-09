@@ -7,6 +7,8 @@
  * 5회 로그인 실패 → 임시 잠금 · Login → Loading → HOME
  */
 
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
+
 export const TITAN_LOGIN_VERSION = "V1.1 Presentation Build";
 
 /** Footer — 좌 · 가운데 · 우 (Login UI V1.1) */
@@ -82,9 +84,9 @@ export const TITAN_MENU_PERMISSIONS = [
   { key: "accountingClerk", label: "경리관리", catalogId: "accountingClerk" },
   { key: "accounting", label: "회계관리", catalogId: "accounting" },
   { key: "qrManagement", label: "QR 관리", catalogId: "qrManagement" },
-  { key: "equipmentStatus", label: "설비 현황", catalogId: "equipmentStatus" },
+  { key: "equipmentStatus", label: "설비 가동 현황", catalogId: "equipmentStatus" },
   { key: "productStatus", label: "제품 현황", catalogId: "productStatus" },
-  { key: "qrCharging", label: "설비 장입관리", catalogId: "qrCharging" },
+  { key: "qrCharging", label: "설비 가동 현황", catalogId: "equipmentStatus" },
   { key: "admin", label: "환경설정", catalogId: "environment" },
 ];
 
@@ -106,6 +108,15 @@ export const TITAN_ROUTE_PERMISSION_GUARDS = [
   { pathPrefix: "/home", permissionKey: "home" },
   { pathPrefix: "/settings", permissionKey: "masterData" },
   { pathPrefix: "/inout/incoming", permissionKey: "inbound" },
+  // RC1 Route Registry — canonical /operations/* (입고/출고는 legacy /inout/* 와 동일 permissionKey)
+  { pathPrefix: OPERATION_ROUTES.inboundPending, permissionKey: "inbound" },
+  { pathPrefix: OPERATION_ROUTES.inboundHistory, permissionKey: "inbound" },
+  { pathPrefix: OPERATION_ROUTES.shipmentRegister, permissionKey: "outbound" },
+  { pathPrefix: OPERATION_ROUTES.shipmentHistory, permissionKey: "outbound" },
+  { pathPrefix: OPERATION_ROUTES.productionPending, permissionKey: "production" },
+  { pathPrefix: OPERATION_ROUTES.equipmentStatus, permissionKey: "productionManagement" },
+  { pathPrefix: OPERATION_ROUTES.dailyWork, permissionKey: "production" },
+  { pathPrefix: OPERATION_ROUTES.shotStatus, permissionKey: "production" },
   { pathPrefix: "/production", permissionKey: "production" },
   { pathPrefix: "/quality/inspection", permissionKey: "inspection" },
   { pathPrefix: "/quality/certificate", permissionKey: "certificate" },
@@ -116,7 +127,8 @@ export const TITAN_ROUTE_PERMISSION_GUARDS = [
   { pathPrefix: "/accounting-clerk", permissionKey: "accountingClerk" },
   { pathPrefix: "/accounting", permissionKey: "accounting" },
   { pathPrefix: "/qr-management", permissionKey: "qrManagement" },
-  { pathPrefix: "/equipment-status", permissionKey: "equipmentStatus" },
+  { pathPrefix: "/production/equipment-status", permissionKey: "productionManagement" },
+  { pathPrefix: "/equipment-status", permissionKey: "productionManagement" },
   { pathPrefix: "/product-status", permissionKey: "productStatus" },
   { pathPrefix: "/production/charging", permissionKey: "productionManagement" },
   { pathPrefix: "/qr-workflow/charging", permissionKey: "qrCharging" },

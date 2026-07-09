@@ -1,8 +1,8 @@
 /**
  * Project TITAN — Detail Popup Layout Policy (UI Freeze)
  *
- * Standard popup: TitanStandardDetailPopup (880×660, 6 tabs)
- * Legacy popup: TitanDetailPopup (documents · QR · masterData 등)
+ * Foundation popup: common 880×660 layout shell.
+ * Tabs are workspace-specific; do not force a common tab set.
  *
  * @see src/foundation/components/detailPopup/TitanStandardDetailPopup.jsx
  * @see src/config/masterDetailLayoutPolicy.js
@@ -12,6 +12,12 @@ import {
   TITAN_STANDARD_DETAIL_POPUP_TABS,
   pickStandardDetailPopupTabs,
 } from "../foundation/components/detailPopup/standardDetailPopupTabs";
+import { QUALITY_DOCUMENT_DETAIL_TABS } from "./detailTabs/documentDetailTabs";
+import { LOT_DETAIL_TABS } from "./detailTabs/lotDetailTabs";
+import { EQUIPMENT_DETAIL_TABS } from "./detailTabs/equipmentDetailTabs";
+import { COMPANY_WORKSPACE_DETAIL_TABS } from "./detailTabs/companyDetailTabs";
+import { PRODUCT_DETAIL_TABS, MATERIAL_DETAIL_TABS } from "./detailTabs/productDetailTabs";
+import { INSPECTION_DETAIL_TABS } from "./detailTabs/inspectionDetailTabs";
 
 export const DETAIL_POPUP_LAYOUT_POLICY = {
   version: "standard-detail-popup-v1.4",
@@ -27,10 +33,10 @@ export const DETAIL_POPUP_LAYOUT_POLICY = {
     animation: "fade-scale-180ms",
   },
   documentDialog: {
-    widthPx: 1120,
-    heightPx: 720,
+    widthPx: 880,
+    heightPx: 660,
   },
-  sizeExceptions: ["documents", "environmentWizard", "login"],
+  sizeExceptions: ["environmentWizard", "login"],
   listHintMessage: "💡 리스트를 더블클릭하면 상세정보를 확인할 수 있습니다.",
   rowInteraction: {
     singleClick: "select",
@@ -44,10 +50,10 @@ export const DETAIL_POPUP_LAYOUT_POLICY = {
 /** @deprecated use DETAIL_POPUP_LAYOUT_POLICY */
 export const ROW_SUMMARY_LAYOUT_POLICY = DETAIL_POPUP_LAYOUT_POLICY;
 
-/** @deprecated use TITAN_STANDARD_DETAIL_POPUP_TABS */
+/** @deprecated tab composition is workspace-specific */
 export const V13_COMMON_DETAIL_POPUP_TABS = TITAN_STANDARD_DETAIL_POPUP_TABS;
 
-/** 표준 Detail Popup 적용 화면 (문서관리 제외) */
+/** 표준 Detail Popup 적용 화면 */
 export const STANDARD_DETAIL_POPUP_SCREENS = [
   "inbound",
   "outbound",
@@ -56,11 +62,11 @@ export const STANDARD_DETAIL_POPUP_SCREENS = [
   "inspectionLog",
   "certificate",
   "inventory",
+  "documents",
 ];
 
-/** Legacy TitanDetailPopup 유지 화면 (문서관리 · QR · 기준정보) */
+/** Legacy TitanDetailPopup 유지 화면 (QR · 기준정보) */
 export const LEGACY_DETAIL_POPUP_SCREENS = [
-  "documents",
   "qr",
   "qrInout",
   "qrEquipment",
@@ -108,14 +114,8 @@ export const DETAIL_POPUP_SCREENS = {
   },
   documents: {
     title: "문서관리 상세정보",
-    useStandardPopup: false,
-    tabs: [
-      { id: "basicInfo", label: "기본정보" },
-      { id: "documentHistory", label: "문서이력" },
-      { id: "revision", label: "Revision" },
-      { id: "attachments", label: "첨부파일" },
-      { id: "memo", label: "메모" },
-    ],
+    useStandardPopup: true,
+    tabs: QUALITY_DOCUMENT_DETAIL_TABS,
   },
   inventory: {
     title: "재고관리 상세정보",
@@ -148,8 +148,41 @@ export const DETAIL_POPUP_SCREENS = {
   },
   masterData: {
     title: "기준정보 상세조회",
-    useStandardPopup: false,
-    tabs: [{ id: "detail", label: "상세정보" }],
+    useStandardPopup: true,
+    tabs: [
+      { id: "detail", label: "상세정보" },
+      { id: "attachments", label: "첨부파일" },
+    ],
+  },
+  lot: {
+    title: "LOT 상세정보",
+    useStandardPopup: true,
+    tabs: LOT_DETAIL_TABS,
+  },
+  equipment: {
+    title: "설비 상세정보",
+    useStandardPopup: true,
+    tabs: EQUIPMENT_DETAIL_TABS,
+  },
+  companyWorkspace: {
+    title: "회사정보 상세정보",
+    useStandardPopup: true,
+    tabs: COMPANY_WORKSPACE_DETAIL_TABS,
+  },
+  product: {
+    title: "제품 상세정보",
+    useStandardPopup: true,
+    tabs: PRODUCT_DETAIL_TABS,
+  },
+  material: {
+    title: "재질 상세정보",
+    useStandardPopup: true,
+    tabs: MATERIAL_DETAIL_TABS,
+  },
+  inspectionV101: {
+    title: "검사 상세정보",
+    useStandardPopup: true,
+    tabs: INSPECTION_DETAIL_TABS,
   },
 };
 

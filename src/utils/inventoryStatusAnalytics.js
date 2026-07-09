@@ -7,6 +7,7 @@
  */
 
 import { INVENTORY_VIEW_MODES } from "../config/inventoryManagementPolicy";
+import { getTitanStandardDefaultDateRange } from "../config/listSearchStandard";
 import { getIncomingQty, getShippedQty, getStockQty } from "./inventory";
 import { mapV13ProductListRow } from "./processFlow";
 import { getSessionProductionRecords } from "./productionRecords";
@@ -253,11 +254,15 @@ export function matchesInventoryStatusSearch(row, search) {
   if (!includes(row.company, search.company)) return false;
   if (!includes(row.spec, search.spec)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
+  const incomingDate = row.lastIncomingDate ?? row.incomingDate ?? "";
+  if (search.incomingDateFrom && incomingDate && incomingDate < search.incomingDateFrom) return false;
+  if (search.incomingDateTo && incomingDate && incomingDate > search.incomingDateTo) return false;
 
   return true;
 }
 
 export function createEmptyInventoryStatusSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     company: "",
     partName: "",
@@ -267,8 +272,8 @@ export function createEmptyInventoryStatusSearch() {
     lotNo: "",
     spec: "",
     status: "",
-    incomingDateFrom: "",
-    incomingDateTo: "",
+    incomingDateFrom: standardDateRange.from,
+    incomingDateTo: standardDateRange.to,
     productionDateFrom: "",
     productionDateTo: "",
     manager: "",

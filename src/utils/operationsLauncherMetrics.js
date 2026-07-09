@@ -9,9 +9,11 @@ import {
   buildProductionDailyReportWorkspaceRecords,
   buildProductionPlanWorkspaceRecords,
   buildProductionResultWorkspaceRecords,
+  buildShotWorkspaceRecords,
   countProductionChargingWorkspace,
   countProductionDailyReportWorkspace,
   countProductionPlanWorkspace,
+  countShotWorkspace,
   getProductionChargingScreenData,
 } from "./productionWorkspaceData";
 
@@ -68,6 +70,7 @@ export function buildProductionLauncherMetrics(records = getSessionProductionRec
     (sum, row) => sum + (Number(row.qty) || 0),
     0
   );
+  const shotCounts = countShotWorkspace(buildShotWorkspaceRecords(records));
 
   return {
     planToday: `열처리 대기 ${planCounts.htWait}건`,
@@ -77,6 +80,8 @@ export function buildProductionLauncherMetrics(records = getSessionProductionRec
     dailyReportPending: `진행중 ${dailyCounts.prodProgress}건`,
     htRunning: `열처리중 ${dailyCounts.htRunning}건`,
     resultsToday: `완료 ${todayQty}EA`,
+    shotWaiting: `작업 대기 ${shotCounts.waiting}건`,
+    shotCompleted: `완료 ${shotCounts.completed}건`,
     dailyReportPrint: `생산일보 ${dailyCounts.prodProgress}건`,
     htlPrint: `작업지시 ${printPending}건`,
   };
@@ -145,5 +150,19 @@ export function buildQualityLauncherMetrics(records = getSessionProductionRecord
     documentStandards: "도면 · 절차 · 공차",
     documentQuality: "품질문서 · Revision",
     qualityJournalToday: `금일 작성 ${counts.qualityJournalToday}건`,
+  };
+}
+
+/** 운영관리 Hub Dashboard KPI — HOME/Workspace와 동일 records 기준 */
+export function buildOperationsDashboardKpiCounts(records = getSessionProductionRecords()) {
+  const { counts } = getHomeScreenData(records);
+  const planCounts = countProductionPlanWorkspace(buildProductionPlanWorkspaceRecords(records));
+  const shotCounts = countShotWorkspace(buildShotWorkspaceRecords(records));
+
+  return {
+    inboundPending: counts.RECEIVED ?? 0,
+    productionPending: planCounts.htWait ?? 0,
+    shotWaiting: shotCounts.waiting ?? 0,
+    shipmentWaiting: counts.SHIP_WAIT ?? 0,
   };
 }

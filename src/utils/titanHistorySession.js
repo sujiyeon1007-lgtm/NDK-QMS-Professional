@@ -1,20 +1,34 @@
 /**
- * Project TITAN V1.0 — 거래명세서 · 출고 · 불량 이력 (세션)
+ * Project TITAN P0 — 거래명세서 · 출고 · 불량 이력 (sessionStorage 영속)
  */
 
+import { readJson, writeJson } from "../foundation/data/sessionStorageAdapter";
 import { getAuthUserLabelForAudit } from "./titanAuthSession";
-import {
-  getTitanDemoShipmentEvents,
-  getTitanDemoTransactionStatements,
-} from "../data/titanDemoSampleData";
+export const SHIPMENT_EVENTS_STORAGE_KEY = "titan-operations-shipment-events-v1";
+export const TRANSACTION_STATEMENTS_STORAGE_KEY = "titan-operations-transaction-statements-v1";
+export const DEFECT_RECORDS_STORAGE_KEY = "titan-operations-defect-records-v1";
 
 const FALLBACK_USER = "품질관리부 / 정반이 사원";
 
-let transactionStatements = getTitanDemoTransactionStatements();
+function loadPersistedArray(storageKey) {
+  const stored = readJson(storageKey, null);
+  if (Array.isArray(stored)) {
+    return stored.map((row) => ({ ...row }));
+  }
+  const empty = [];
+  writeJson(storageKey, empty);
+  return empty;
+}
 
-let shipmentEvents = getTitanDemoShipmentEvents();
+function persistArray(storageKey, rows) {
+  writeJson(storageKey, rows);
+}
 
-let defectRecords = [];
+let transactionStatements = loadPersistedArray(TRANSACTION_STATEMENTS_STORAGE_KEY);
+
+let shipmentEvents = loadPersistedArray(SHIPMENT_EVENTS_STORAGE_KEY);
+
+let defectRecords = loadPersistedArray(DEFECT_RECORDS_STORAGE_KEY);
 
 export function getCurrentTitanUser() {
   const label = getAuthUserLabelForAudit();
@@ -31,9 +45,11 @@ export function getTransactionStatements(managementId) {
 export function saveTransactionStatement(payload) {
   const row = {
     id: `TS-${Date.now()}`,
+    issuedAt: payload.issuedAt ?? new Date().toISOString(),
     printedAt: payload.printedAt ?? new Date().toISOString().slice(0, 10),
     printedBy: payload.printedBy ?? getCurrentTitanUser(),
     managementId: payload.managementId,
+    lotNo: payload.lotNo ?? "",
     company: payload.company,
     partName: payload.partName,
     partNo: payload.partNo,
@@ -45,9 +61,27 @@ export function saveTransactionStatement(payload) {
     supplyAmount: Number(payload.supplyAmount) || 0,
     vat: Number(payload.vat) || 0,
     totalAmount: Number(payload.totalAmount) || 0,
+    pdfSaved: Boolean(payload.pdfSaved),
+    outputType: payload.outputType ?? "print",
+    outputStatus: payload.outputStatus ?? "출력 완료",
+    reprint: Boolean(payload.reprint),
   };
   transactionStatements = [row, ...transactionStatements];
+  persistArray(TRANSACTION_STATEMENTS_STORAGE_KEY, transactionStatements);
   return row;
+}
+
+export function updateTransactionStatement(statementId, patch = {}) {
+  let updated = null;
+  transactionStatements = transactionStatements.map((row) => {
+    if (row.id !== statementId) return row;
+    updated = { ...row, ...patch };
+    return updated;
+  });
+  if (updated) {
+    persistArray(TRANSACTION_STATEMENTS_STORAGE_KEY, transactionStatements);
+  }
+  return updated;
 }
 
 export function getShipmentEvents(managementId) {
@@ -72,13 +106,18 @@ export function saveShipmentEvent(payload) {
     stockAfter: Number(payload.stockAfter) || 0,
   };
   shipmentEvents = [row, ...shipmentEvents];
+  persistArray(SHIPMENT_EVENTS_STORAGE_KEY, shipmentEvents);
   return row;
 }
 
 export function removeShipmentEventById(eventId) {
   const before = shipmentEvents.length;
   shipmentEvents = shipmentEvents.filter((row) => row.id !== eventId);
-  return before !== shipmentEvents.length;
+  const removed = before !== shipmentEvents.length;
+  if (removed) {
+    persistArray(SHIPMENT_EVENTS_STORAGE_KEY, shipmentEvents);
+  }
+  return removed;
 }
 
 export function getDefectRecords(managementId) {
@@ -86,6 +125,34 @@ export function getDefectRecords(managementId) {
     ? defectRecords.filter((row) => row.managementId === managementId)
     : defectRecords;
   return [...rows].sort((a, b) => b.defectDate.localeCompare(a.defectDate));
+}
+
+export function resetOperationsHistory() {
+  transactionStatements = [];
+  shipmentEvents = [];
+  defectRecords = [];
+  persistArray(TRANSACTION_STATEMENTS_STORAGE_KEY, transactionStatements);
+  persistArray(SHIPMENT_EVENTS_STORAGE_KEY, shipmentEvents);
+  persistArray(DEFECT_RECORDS_STORAGE_KEY, defectRecords);
+}
+
+export function replaceOperationsHistory({
+  transactionStatements: nextStatements = [],
+  shipmentEvents: nextShipmentEvents = [],
+  defectRecords: nextDefectRecords = [],
+} = {}) {
+  transactionStatements = (Array.isArray(nextStatements) ? nextStatements : []).map((row) => ({
+    ...row,
+  }));
+  shipmentEvents = (Array.isArray(nextShipmentEvents) ? nextShipmentEvents : []).map((row) => ({
+    ...row,
+  }));
+  defectRecords = (Array.isArray(nextDefectRecords) ? nextDefectRecords : []).map((row) => ({
+    ...row,
+  }));
+  persistArray(TRANSACTION_STATEMENTS_STORAGE_KEY, transactionStatements);
+  persistArray(SHIPMENT_EVENTS_STORAGE_KEY, shipmentEvents);
+  persistArray(DEFECT_RECORDS_STORAGE_KEY, defectRecords);
 }
 
 export function saveDefectRecord(payload) {
@@ -108,5 +175,6 @@ export function saveDefectRecord(payload) {
     attachments: payload.attachments ?? [],
   };
   defectRecords = [row, ...defectRecords];
+  persistArray(DEFECT_RECORDS_STORAGE_KEY, defectRecords);
   return row;
 }

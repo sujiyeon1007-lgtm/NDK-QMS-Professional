@@ -38,6 +38,13 @@
   min-height: 0;
 }
 
+.inbound-page__history-heading {
+  margin: 10px 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--titan-text);
+}
+
 .inbound-page__selection-bar {
   display: flex;
   align-items: center;
@@ -59,6 +66,21 @@
 .inbound-page__table {
   flex: 0 0 auto;
   align-self: stretch;
+}
+
+.inbound-print-criteria .titan-modal__field input {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  font-size: 13px;
+}
+
+.inbound-print-criteria .titan-modal__field input:disabled,
+.inbound-print-criteria .titan-modal__field select:disabled {
+  background: var(--titan-bg);
+  color: var(--titan-text-muted);
 }
 
 .inbound-page__detail {

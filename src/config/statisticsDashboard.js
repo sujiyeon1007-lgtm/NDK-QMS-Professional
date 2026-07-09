@@ -84,6 +84,15 @@ const QUALITY_KPI = [
   { id: "customerClaimCount", label: "고객클레임", unit: "건", icon: Users, tone: "rework" },
 ];
 
+const SHOT_KPI = [
+  { id: "shotCount", label: "쇼트 작업", unit: "건", icon: ClipboardCheck, tone: "production" },
+  { id: "shotQty", label: "처리 EA", unit: "EA", icon: PackageCheck, tone: "incoming" },
+  { id: "completedCount", label: "작업 완료", unit: "건", icon: CircleCheck, tone: "inspection" },
+  { id: "waitingCount", label: "작업 대기", unit: "건", icon: Clock, tone: "hold" },
+  { id: "completionRate", label: "완료율", unit: "%", icon: Percent, tone: "inspection" },
+  { id: "workerCount", label: "작업자 수", unit: "명", icon: Users, tone: "certificate" },
+];
+
 /** @deprecated V1.3 — consolidated into sales executive dashboard */
 const SHIPMENT_KPI = [];
 
@@ -152,6 +161,25 @@ export const STATISTICS_TAB_SCOPES = {
       { id: "pie2", title: "재질별 불량률", type: "pie", groupField: "material", valueKey: "defectQty" },
     ],
     advancedFields: ["assignee", "process", "judgment"],
+  },
+  shot: {
+    id: "shot",
+    label: "쇼트현황",
+    pageTitle: "쇼트현황",
+    accentClass: "statistics-accent--blue",
+    executiveDashboard: true,
+    kpiItems: SHOT_KPI,
+    dimensions: [
+      { id: "company", label: "업체별", field: "company" },
+      { id: "worker", label: "작업자별", field: "worker" },
+      { id: "material", label: "재질별", field: "material" },
+    ],
+    charts: [
+      { id: "line", title: "월별 쇼트 작업량", type: "line", valueKey: "shotQty" },
+      { id: "bar1", title: "업체별 쇼트 처리량", type: "bar", groupField: "company", valueKey: "shotQty" },
+      { id: "bar2", title: "작업자별 처리량", type: "bar", groupField: "worker", valueKey: "shotQty" },
+    ],
+    advancedFields: ["worker", "unit"],
   },
   shipment: {
     id: "shipment",

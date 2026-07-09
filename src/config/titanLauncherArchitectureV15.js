@@ -58,7 +58,7 @@ export const INOUT_MANAGEMENT_WORKFLOW = [
 
 export const PRODUCTION_MANAGEMENT_WORKFLOW = [
   "생산계획",
-  "설비장입",
+  "설비 가동 현황",
   "생산일보",
   "생산실적관리",
   "출력관리",

@@ -4,6 +4,7 @@
 
 import { isIncomingRegistered } from "./productionRecords";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { isHeatTreatmentWorkType } from "../config/workTypeWorkflow";
 
 export const HTL_PRINT_STATUS = {
   NOT_PRINTED: "미출력",
@@ -13,6 +14,7 @@ export const HTL_PRINT_STATUS = {
 /** 입고완료 + 열처리(생산) 미진행 — LOT·생산일보 등록 전 */
 export function isHeatTreatmentNotStarted(record) {
   if (!record) return false;
+  if (!isHeatTreatmentWorkType(record)) return false;
   if (record.registered && record.lotNo?.trim()) return false;
 
   const status = getWorkflowStatus(record);
@@ -66,7 +68,10 @@ export function resolveHtlPrintRows(rowOrRows) {
   if (firstPrint.length > 0) return { rows: firstPrint, mode: "first" };
   const reprint = rows.filter((row) => isHtlReprintTarget(row.record ?? row));
   if (reprint.length > 0) return { rows: reprint, mode: "reprint" };
-  const presentation = rows.filter((row) => isIncomingRegistered(row.record ?? row));
+  const presentation = rows.filter((row) => {
+    const record = row.record ?? row;
+    return isIncomingRegistered(record) && isHeatTreatmentWorkType(record);
+  });
   if (presentation.length > 0) return { rows: presentation, mode: "presentation" };
   if (rows.length > 0) return { rows, mode: "presentation" };
   return { rows: [], mode: "none" };

@@ -90,7 +90,7 @@
 .equipment-status-page__groups {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   min-height: 0;
   overflow: auto;
   padding-right: 4px;
@@ -108,6 +108,9 @@
 .equipment-status-page__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-auto-flow: row dense;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
   gap: 10px;
 }
 
@@ -183,11 +186,17 @@
   grid-template-columns: 1fr;
 }
 
+.equipment-status-page__workspace--single .equipment-status-page__cards {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
 /* Control Room — Equipment Card (Sprint 3B · Blueprint ②) */
 .control-room-equipment-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 178px;
+  height: 178px;
   padding: 10px 12px;
   border: 1px solid var(--titan-table-border, #dde6f0);
   border-radius: 10px;
@@ -215,10 +224,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-height: 24px;
+  min-width: 0;
 }
 
 .control-room-equipment-card__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   font-weight: 700;
   word-break: keep-all;
@@ -258,6 +274,7 @@
 }
 
 .control-room-equipment-card__alarm {
+  flex: 0 0 auto;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 10px;
@@ -278,14 +295,18 @@
 .control-room-equipment-card__meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 8px;
+  gap: 5px 8px;
   margin: 0;
+  flex: 1 1 auto;
+  align-content: start;
 }
 
 .control-room-equipment-card__meta > div {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
+  min-height: 28px;
 }
 
 .control-room-equipment-card__meta dt {
@@ -299,6 +320,10 @@
   margin: 0;
   font-size: 11px;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   word-break: keep-all;
 }
 
@@ -306,6 +331,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-top: auto;
+  flex: 0 0 auto;
 }
 
 .control-room-equipment-card__util-head {
@@ -448,6 +475,56 @@
   gap: 10px;
   min-height: 0;
   flex: 1 1 auto;
+}
+
+.control-room-lot-view__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: var(--titan-card-radius, 12px);
+  background: var(--titan-surface, #fff);
+}
+
+.control-room-lot-view__search label {
+  flex: 0 0 auto;
+  color: var(--titan-text-primary, #0f172a);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.control-room-lot-view__search input {
+  flex: 1 1 520px;
+  min-width: 280px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  color: var(--titan-text-primary, #0f172a);
+  font-size: 13px;
+}
+
+.control-room-lot-view__search button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--titan-text-secondary, #64748b);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.control-room-lot-view__search span {
+  flex: 0 0 auto;
+  color: var(--titan-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .control-room-lot-view__workspace {

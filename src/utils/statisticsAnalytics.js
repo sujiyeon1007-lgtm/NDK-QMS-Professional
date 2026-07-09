@@ -3,6 +3,7 @@
  */
 
 import { matchesBasicSearch } from "../config/listSearchStandard";
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getSessionProductionRecords } from "./productionRecords";
@@ -724,7 +725,7 @@ function buildInquiryRecentShipmentItems(selectedRow, unitFilter, limit = 5) {
     qtyLabel: formatStatisticsRowQty(row.qty, row.unit),
     statusLabel: row.statusLabel,
     date: row.date,
-    linkTo: "/inout/shipment",
+    linkTo: OPERATION_ROUTES.shipmentRegister,
   }));
 }
 

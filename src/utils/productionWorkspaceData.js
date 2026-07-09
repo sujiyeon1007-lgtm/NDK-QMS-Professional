@@ -51,6 +51,14 @@ import { getEquipmentList, getEquipmentSummary } from "./equipmentWorkflowServic
 import { getWorkJournalEntries } from "./workJournalSession";
 
 import { getJournalReferenceDate } from "./workJournalData";
+import { getTitanDataEngine } from "../foundation/data";
+import {
+  SHOT_WORK_STATUS,
+  isHeatTreatmentWorkType,
+  isShotWorkComplete,
+  isShotWorkType,
+  normalizeShotWorkStatus,
+} from "../config/workTypeWorkflow";
 
 
 
@@ -87,8 +95,46 @@ export const PRODUCTION_RESULT_STAGE = CURRENT_PROCESS_KEYS.INSPECTION_WAIT;
  */
 
 export function getProductionRecords() {
+  const sessionRecords = getSessionProductionRecords();
+  const sessionLotKeys = new Set(
+    sessionRecords.map((record) => String(record?.lotNo ?? "").trim().toUpperCase()).filter(Boolean)
+  );
+  let manualLotRecords = [];
 
-  return getSessionProductionRecords();
+  try {
+    manualLotRecords = getTitanDataEngine()
+      .lot
+      .list()
+      .filter((row) => row?.source === "manual-lot")
+      .filter((row) => {
+        const lotKey = String(row?.lotNo ?? "").trim().toUpperCase();
+        return lotKey && !sessionLotKeys.has(lotKey);
+      })
+      .map((row) => ({
+        id: `MANUAL-${row.lotNo}`,
+        mesManagementNo: `MANUAL-${row.lotNo}`,
+        company: row.company || "수기 LOT",
+        partName: row.productName || "수기 LOT",
+        productName: row.productName || "수기 LOT",
+        material: row.material || "",
+        qty: Number(row.quantity) || 0,
+        quantity: Number(row.quantity) || 0,
+        lotNo: row.lotNo,
+        equipment: row.equipmentId || "",
+        workDate: row.workDate || "",
+        registrar: row.operator || "생산부",
+        note: row.note || "",
+        registered: row.status !== "장입대기",
+        incomingRegistered: true,
+        workflowStatus: row.status === "검사대기" ? "INSPECTION_WAIT" : "HT_RUNNING",
+        currentProcess: row.status === "검사대기" ? "검사 대기" : "열처리 중",
+        source: "manual-lot",
+      }));
+  } catch {
+    manualLotRecords = [];
+  }
+
+  return [...manualLotRecords, ...sessionRecords];
 
 }
 
@@ -147,6 +193,8 @@ function dedupeProductionRecords(records, predicate) {
 export function isProductionPlanStageRecord(record) {
 
   return (
+
+    isHeatTreatmentWorkType(record) &&
 
     resolveRecordCurrentProcess(record).key === PRODUCTION_PLAN_STAGE &&
 
@@ -235,6 +283,7 @@ export function getProductionPlanScreenData(records = getProductionRecords()) {
 export function isProductionChargingStageRecord(record) {
 
   if (!isIncomingRegistered(record)) return false;
+  if (!isHeatTreatmentWorkType(record)) return false;
 
   if (!record?.lotNo?.trim()) return false;
 
@@ -342,6 +391,7 @@ export function getProductionChargingScreenData(records = getProductionRecords()
  */
 
 export function isProductionDailyReportStageRecord(record) {
+  if (!isHeatTreatmentWorkType(record)) return false;
 
   if (resolveRecordCurrentProcess(record).key === PRODUCTION_DAILY_REPORT_STAGE) {
 
@@ -431,6 +481,8 @@ export function matchesProductionDailyReportWorkspaceChip(record, chipId) {
 
 export function isProductionResultStageRecord(record) {
 
+  if (!isHeatTreatmentWorkType(record)) return false;
+
   return isHeatTreatmentComplete(record);
 
 }
@@ -475,6 +527,58 @@ export function getProductionResultScreenData(records = getProductionRecords()) 
 
   };
 
+}
+
+
+
+// ─── 쇼트 작업현황 (Shot Work Type) ──────────────────────────────────────────
+
+
+
+export function isShotWorkspaceRecord(record) {
+  return isIncomingRegistered(record) && isShotWorkType(record);
+}
+
+
+
+export function buildShotWorkspaceRecords(records = getProductionRecords()) {
+  return dedupeProductionRecords(records, isShotWorkspaceRecord);
+}
+
+
+
+export function countShotWorkspace(records = buildShotWorkspaceRecords(), referenceDate = getJournalReferenceDate()) {
+  const todayRecords = records.filter(
+    (record) => (record.shotWorkDate || record.shotCompletedAt || record.incomingDate) === referenceDate
+  );
+  const completedRecords = records.filter((record) => isShotWorkComplete(record));
+  const workerTotals = new Map();
+
+  completedRecords.forEach((record) => {
+    const worker = String(record.shotWorker || record.registrar || "미지정").trim();
+    workerTotals.set(worker, (workerTotals.get(worker) || 0) + (Number(record.qty) || 0));
+  });
+
+  const topWorker = [...workerTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  return {
+    todayCount: todayRecords.length,
+    todayQty: todayRecords.reduce((sum, record) => sum + (Number(record.qty) || 0), 0),
+    waiting: records.filter((record) => normalizeShotWorkStatus(record.shotStatus) === SHOT_WORK_STATUS.WAITING).length,
+    completed: completedRecords.length,
+    workerTopQty: topWorker?.[1] ?? 0,
+    workerTopLabel: topWorker?.[0] ?? "미지정",
+  };
+}
+
+
+
+export function getShotWorkScreenData(records = getProductionRecords()) {
+  const baseRecords = buildShotWorkspaceRecords(records);
+  return {
+    baseRecords,
+    counts: countShotWorkspace(baseRecords),
+  };
 }
 
 

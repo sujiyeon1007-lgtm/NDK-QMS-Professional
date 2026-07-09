@@ -14,8 +14,10 @@ import {
   isCertificateIssued,
   MENU_TASK_STATUS,
 } from "./menuWorkflowGate";
+import { getStockQty } from "./inventory";
 import { SHIPMENT_STATUS } from "./ndkWorkflow";
 import { isIncomingRegistered } from "./productionRecords";
+import { isShotWorkComplete, isShotWorkType } from "../config/workTypeWorkflow";
 
 /** @typedef {'inbound' | 'production' | 'inspection' | 'certificate' | 'outbound' | 'inventory'} ScreenWorkflowKey */
 
@@ -140,17 +142,37 @@ export function resolveRecordCurrentProcess(record) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.RECEIVED);
   }
 
+  // 쇼트는 생산계획·설비가동·작업일보를 거치지 않는다.
+  if (isShotWorkType(record)) {
+    if (isShipmentRegistered(record)) {
+      return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIPPED);
+    }
+    if (isShotWorkComplete(record)) {
+      return buildCurrentProcess(
+        record?.shotInspectionRequired
+          ? CURRENT_PROCESS_KEYS.INSPECTION_WAIT
+          : CURRENT_PROCESS_KEYS.SHIP_WAIT
+      );
+    }
+    return buildCurrentProcess(CURRENT_PROCESS_KEYS.RECEIVED);
+  }
+
   // ⑨ 출고 완료 — 출고 등록 완료
   if (isShipmentRegistered(record)) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIPPED);
   }
 
-  // ⑧ 출고 대기 — 성적서 발행 완료 + 출고 미등록
-  if (isCertificateIssued(record)) {
+  // ⑧ 출고 대기 — 열처리 완료 + 재고 (성적서·검사와 독립 · PM P0)
+  if (isHeatTreatmentComplete(record) && getStockQty(record) > 0) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT);
   }
 
-  // ⑥ 성적서 대기 / ⑤ 검사 완료
+  // ⑧-b 성적서 발행 완료 + 출고 미등록 (품질 완료 건 — 출고 대기 동일)
+  if (isCertificateIssued(record) && getStockQty(record) > 0) {
+    return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT);
+  }
+
+  // ⑥ 성적서 대기 / ⑤ 검사 완료 (출고 전 생산 미완료 · 품질 추적)
   if (isInspectionComplete(record)) {
     if (hasCertificateFilesForManagementId(record.id)) {
       return buildCurrentProcess(CURRENT_PROCESS_KEYS.CERT_WAIT);

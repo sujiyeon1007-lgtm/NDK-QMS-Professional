@@ -5,6 +5,7 @@ import {
   getActiveMasterNames,
   stageMasterAdd,
 } from "../../utils/masterData";
+import { QRService } from "../../utils/qrEngineRegistryService";
 import "../../pages/Settings/MasterDataManagement.css";
 
 const emptyForm = {
@@ -80,6 +81,7 @@ export default function QuickProductRegisterModal({
       return;
     }
 
+    QRService.createIfNotExists("products", result.row);
     onSaved?.(result.row);
     onClose();
   };

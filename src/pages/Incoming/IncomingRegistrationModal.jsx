@@ -19,6 +19,7 @@ import {
   INBOUND_EDIT_LABEL,
   INBOUND_REGISTER_LABEL,
 } from "../../config/registerModalStandard";
+import { DEFAULT_WORK_TYPE_ID, WORK_TYPE_OPTIONS } from "../../config/workTypeWorkflow";
 import TitanRegisterSummaryText from "../../foundation/components/TitanRegisterSummaryText";
 import "./IncomingRegistrationModal.css";
 
@@ -45,6 +46,7 @@ const emptyForm = {
   lotNo: "",
   customerLotNo: "",
   purchaseOrderNo: "",
+  workType: DEFAULT_WORK_TYPE_ID,
   incomingDate: "",
   dueDate: "",
   urgent: false,
@@ -348,6 +350,17 @@ function IncomingRegistrationModal({
                 />
               </label>
 
+              <label className="form-field">
+                <span>작업유형</span>
+                <select value={form.workType} onChange={(event) => updateField("workType", event.target.value)}>
+                  {WORK_TYPE_OPTIONS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <TitanCascadeProductPicker
                 inline
                 partNameOnly
@@ -436,6 +449,16 @@ function IncomingRegistrationModal({
             <div className="summary-block">
               <p>담당자</p>
               <TitanRegisterSummaryText text={form.manager || "-"} as="strong" />
+            </div>
+
+            <div className="summary-divider" />
+
+            <div className="summary-block">
+              <p>작업유형</p>
+              <TitanRegisterSummaryText
+                text={WORK_TYPE_OPTIONS.find((item) => item.id === form.workType)?.label || "열처리"}
+                as="strong"
+              />
             </div>
 
             <div className="summary-divider" />

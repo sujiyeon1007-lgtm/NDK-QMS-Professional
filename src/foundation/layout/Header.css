@@ -10,6 +10,25 @@
   min-width: var(--titan-app-min-width);
 }
 
+.titan-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.titan-header__logo {
+  height: 36px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.titan-header__logo--fallback {
+  height: 32px;
+}
+
 .titan-header__title {
   margin: 0;
   font-size: var(--titan-font-lg);

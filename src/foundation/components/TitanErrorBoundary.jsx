@@ -9,9 +9,14 @@ function resolveScreenLabel(pathname = "") {
   if (pathname.includes("/documents/inspection")) return "검사기준서";
   if (pathname.includes("/settings/")) return "기준정보관리";
   if (pathname.includes("/documents")) return "문서관리";
-  if (pathname.includes("/inout/incoming")) return "입고현황";
-  if (pathname.includes("/inout/shipment")) return "출고현황";
-  if (pathname.includes("/production/daily-report")) return "작업일보";
+  if (pathname.includes("/operations/inbound-pending") || pathname.includes("/inout/incoming")) return "입고 대기";
+  if (pathname.includes("/operations/inbound-history")) return "입고 이력";
+  if (pathname.includes("/operations/shipment-register") || pathname.includes("/inout/shipment")) return "출고 등록";
+  if (pathname.includes("/operations/shipment-history")) return "출고 이력";
+  if (pathname.includes("/operations/daily-work") || pathname.includes("/production/daily-report")) return "작업일보";
+  if (pathname.includes("/operations/production-pending")) return "생산 대기";
+  if (pathname.includes("/operations/equipment-status") || pathname.includes("/production/equipment-status")) return "설비 가동 현황";
+  if (pathname.includes("/operations/shot-status")) return "쇼트 작업현황";
   if (pathname.includes("/production/")) return "열처리관리";
   if (pathname.includes("/quality/")) return "품질관리";
   if (pathname.includes("/statistics")) return "통계관리";

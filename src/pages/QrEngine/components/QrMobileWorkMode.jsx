@@ -24,6 +24,9 @@ export default function QrMobileWorkMode({
   availableLots = [],
   activeLotId = null,
   onSelectLot,
+  currentLotLabel = "현재 LOT",
+  waitingLotLabel = "입고 대기",
+  highlightWaitingLots = false,
 }) {
   const [conditionsOpen, setConditionsOpen] = useState(false);
   const [conditions, setConditions] = useState({});
@@ -58,14 +61,17 @@ export default function QrMobileWorkMode({
       </header>
 
       <div className="qr-mobile-work-mode__lot">
-        <span>현재 LOT</span>
+        <span>{currentLotLabel}</span>
         <strong>{lotNo || "-"}</strong>
       </div>
 
       {!lotNo ? (
-        <div className="qr-mobile-work-mode__waiting" aria-label="입고 대기">
+        <div
+          className={`qr-mobile-work-mode__waiting${highlightWaitingLots ? " is-highlight" : ""}`}
+          aria-label={waitingLotLabel}
+        >
           <div className="qr-mobile-work-mode__waiting-head">
-            <strong>입고 대기</strong>
+            <strong>{waitingLotLabel}</strong>
             <span>{availableLots.length.toLocaleString("ko-KR")}건</span>
           </div>
           {availableLots.length ? (
@@ -185,6 +191,10 @@ export default function QrMobileWorkMode({
         <div>
           <dt>작업 시작 시간</dt>
           <dd>{summary.startTime ?? "-"}</dd>
+        </div>
+        <div>
+          <dt>예상 종료시간</dt>
+          <dd>{summary.expectedEndTime ?? "-"}</dd>
         </div>
       </dl>
     </section>

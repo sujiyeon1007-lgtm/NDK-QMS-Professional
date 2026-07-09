@@ -1,0 +1,60 @@
+.ts-issue-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.ts-issue-result-dialog {
+  width: min(420px, calc(100vw - 32px));
+  border-radius: 16px;
+  border: 1px solid var(--titan-border, #d8e1ec);
+  background: var(--titan-surface, #fff);
+  box-shadow: var(--titan-shadow-xl, 0 24px 60px rgba(15, 23, 42, 0.2));
+  overflow: hidden;
+}
+
+.ts-issue-result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  color: var(--titan-text-primary, #172033);
+}
+
+.ts-issue-result-header svg {
+  color: var(--titan-success, #16a34a);
+  flex: 0 0 auto;
+}
+
+.ts-issue-result-header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ts-issue-result-header p {
+  margin: 4px 0 0;
+  color: var(--titan-text-muted, #64748b);
+  font-size: 12px;
+}
+
+.ts-issue-result-close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--titan-text-muted, #64748b);
+  cursor: pointer;
+}
+
+.ts-issue-result-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--titan-border, #d8e1ec);
+  background: var(--titan-surface-muted, #f8fafc);
+}

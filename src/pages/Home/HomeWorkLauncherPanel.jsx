@@ -4,7 +4,7 @@ import { Megaphone } from "lucide-react";
 
 import Card from "../../foundation/components/Card";
 import { TitanStatusBadge } from "../../components/common/badge";
-import { HOME_WORK_LAUNCHER_ITEMS } from "../../config/homeWorkLauncher";
+import { HOME_WORK_DASHBOARD_GROUPS } from "../../config/homeWorkLauncher";
 import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
 import { buildHomeWorkLauncherMetrics } from "../../utils/homeWorkLauncherData";
 import "./HomeWorkLauncherPanel.css";
@@ -19,7 +19,7 @@ export default function HomeWorkLauncherPanel({ records }) {
   const metricsByCard = useMemo(() => buildHomeWorkLauncherMetrics(records), [records]);
 
   const items = useMemo(
-    () => HOME_WORK_LAUNCHER_ITEMS.filter((item) => isLauncherItemVisible(item, isModuleEnabled)),
+    () => HOME_WORK_DASHBOARD_GROUPS.filter((item) => isLauncherItemVisible(item, isModuleEnabled)),
     [isModuleEnabled]
   );
 
@@ -32,9 +32,10 @@ export default function HomeWorkLauncherPanel({ records }) {
           <Megaphone size={16} aria-hidden="true" />
           업무 바로가기
         </h3>
+        <p className="home-work-launcher__subtitle">업무 영역별 금일 운영 현황</p>
       </div>
 
-      <div className="home-work-launcher__grid" aria-label="업무 바로가기">
+      <div className="home-work-launcher__grid" aria-label="업무 영역별 Dashboard">
         {items.map((item) => {
           const Icon = item.icon;
           const cardMetrics = metricsByCard[item.id] ?? {};
@@ -45,13 +46,21 @@ export default function HomeWorkLauncherPanel({ records }) {
               to={item.path}
               className={`home-work-launcher-card home-work-launcher-card--${item.tone}`}
             >
-              <span className={`home-work-launcher-card__icon home-work-launcher-card__icon--${item.tone}`}>
-                <Icon size={22} strokeWidth={2} aria-hidden="true" />
-              </span>
-              <TitanStatusBadge text={item.badge} color={item.tone} />
-              <strong className="home-work-launcher-card__title">{item.label}</strong>
+              <div className="home-work-launcher-card__head">
+                <span className={`home-work-launcher-card__icon home-work-launcher-card__icon--${item.tone}`}>
+                  <Icon size={18} strokeWidth={2} aria-hidden="true" />
+                </span>
+                <div className="home-work-launcher-card__title-block">
+                  <TitanStatusBadge text={item.badge} color={item.tone} />
+                  <strong className="home-work-launcher-card__title">{item.label}</strong>
+                </div>
+              </div>
 
-              <ul className="home-work-launcher-card__metrics">
+              <ul
+                className={`home-work-launcher-card__metrics${
+                  item.denseMetrics ? " home-work-launcher-card__metrics--dense" : ""
+                }`}
+              >
                 {item.metrics.map((metric) => (
                   <li key={metric.key}>
                     <span>{metric.label}</span>
@@ -62,6 +71,9 @@ export default function HomeWorkLauncherPanel({ records }) {
                   </li>
                 ))}
               </ul>
+              <span className="home-work-launcher-card__cta" aria-hidden="true">
+                {item.ctaLabel ?? "바로 실행"}
+              </span>
             </Link>
           );
         })}

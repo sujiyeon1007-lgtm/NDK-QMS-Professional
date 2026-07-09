@@ -13,6 +13,12 @@ import { isIncomingRegistered } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { getProcessFlowStepsByStatus } from "./processFlow";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import {
+  isShotWorkComplete,
+  isShotWorkType,
+  normalizeShotWorkStatus,
+  SHOT_WORK_STATUS,
+} from "../config/workTypeWorkflow";
 
 /** @typedef {'incoming' | 'prod-wait' | 'production' | 'inspect' | 'certificate' | 'ship-wait'} InboundStatusVariant */
 
@@ -20,6 +26,7 @@ export const INBOUND_STATUS_LABELS = {
   INCOMING_DONE: "입고 등록",
   PRODUCT_SHIP_WAIT: "제품 출고대기",
   PROD_WAIT: "열처리대기",
+  SHOT_WAIT: "쇼트 작업 대기",
   PROD_PROGRESS: "열처리진행",
   INSPECT_PROGRESS: "검사진행",
   CERT_WAIT: "성적서대기",
@@ -45,54 +52,62 @@ export function getInboundManagementStatus(record) {
   if (!isIncomingRegistered(record)) return null;
   if (isInboundShipOutComplete(record)) return null;
 
+  if (isShotWorkType(record)) {
+    if (isShotWorkComplete(record)) return null;
+    if (normalizeShotWorkStatus(record.shotStatus) === SHOT_WORK_STATUS.WAITING) {
+      return { label: INBOUND_STATUS_LABELS.SHOT_WAIT, variant: "prod-wait" };
+    }
+    return null;
+  }
+
   const workflowStatus = getWorkflowStatus(record);
 
   if (workflowStatus === WORKFLOW_STATUS.CERT_DONE && getStockQty(record) > 0) {
-    return { label: INBOUND_STATUS_LABELS.SHIP_WAIT, variant: "ship-wait" };
+    return null;
   }
 
   if (workflowStatus === WORKFLOW_STATUS.INSPECT_DONE) {
-    return { label: "검사완료", variant: "inspect" };
+    return null;
   }
 
   if (workflowStatus === WORKFLOW_STATUS.PROD_DONE) {
-    return { label: HT_TERM.DONE, variant: "production" };
+    return null;
   }
 
   if (workflowStatus === WORKFLOW_STATUS.PROD_PROGRESS) {
-    return { label: HT_TERM.PROGRESS, variant: "production" };
+    return null;
   }
 
   if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
     const printedWithoutLot =
       (record.htlNo || record.workSheetGenerated) && !Boolean(record.registered && record.lotNo?.trim());
     if (printedWithoutLot) {
-      return { label: INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT, variant: "ship-wait" };
+      return { label: "생산 대기", variant: "prod-wait" };
     }
-    return { label: "작업대기", variant: "prod-wait" };
+    return { label: "생산 대기", variant: "prod-wait" };
   }
 
   const hasLot = Boolean(record.registered && record.lotNo?.trim());
   const hasInspect = hasInspectionLogForManagementId(record.id);
 
   if (record.certificateStatus === CERTIFICATE_STATUS.ISSUED && getStockQty(record) > 0) {
-    return { label: INBOUND_STATUS_LABELS.SHIP_WAIT, variant: "ship-wait" };
+    return null;
   }
 
   if (hasLot && hasInspect && record.certificateStatus === CERTIFICATE_STATUS.PENDING) {
-    return { label: INBOUND_STATUS_LABELS.CERT_WAIT, variant: "certificate" };
+    return null;
   }
 
   if (hasLot && hasInspect) {
-    return { label: INBOUND_STATUS_LABELS.INSPECT_PROGRESS, variant: "inspect" };
+    return null;
   }
 
   if (hasLot) {
-    return { label: INBOUND_STATUS_LABELS.PROD_PROGRESS, variant: "production" };
+    return null;
   }
 
   if (record.htlNo || record.workSheetGenerated) {
-    return { label: INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT, variant: "ship-wait" };
+    return { label: "생산 대기", variant: "prod-wait" };
   }
 
   return { label: INBOUND_STATUS_LABELS.INCOMING_DONE, variant: "incoming" };

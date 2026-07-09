@@ -43,7 +43,7 @@ function HeatTreatmentWorkListPrint({
   const qrValue = useMemo(
     () =>
       buildTitanDocumentQrPayloadFromRows({
-        kind: "HTL",
+        kind: "IN",
         docNo: listNo,
         rows: rows.map((row) => ({
           managementId: row.managementId ?? row.id,
@@ -66,7 +66,7 @@ function HeatTreatmentWorkListPrint({
     <div
       className={`titan-print-document htl-work-list-print ${TITAN_LIST_PRINT_DOCUMENT_CLASS} titan-print-landscape`}
       data-print-orientation={orientation}
-      aria-label="열처리 작업 요청 리스트"
+      aria-label="입고 리스트"
     >
       {pages.map((pageRows, pageIndex) => (
         <TitanPrintPage
@@ -85,7 +85,7 @@ function HeatTreatmentWorkListPrint({
             incomingDate={incomingDate}
             outputDate={resolvedOutputDate}
             qrValue={qrValue}
-            qrLabel="열처리 작업 요청 리스트 QR"
+            qrLabel="입고 리스트 QR"
           />
 
           <TitanPrintTable
@@ -102,7 +102,13 @@ function HeatTreatmentWorkListPrint({
             </section>
           )}
 
-          <TitanPrintOfficialFooter documentCode={TITAN_LIST_DOCUMENT_CODES.HTL} />
+          <TitanPrintOfficialFooter
+            documentCode={TITAN_LIST_DOCUMENT_CODES.HTL}
+            notes={[
+              "※ 본 문서는 선택 기준에 해당하는 입고 완료 제품 현황입니다.",
+              "※ 생산 대기·쇼트 작업·출고 대상은 각 업무 Workspace에서 관리합니다.",
+            ]}
+          />
         </TitanPrintPage>
       ))}
     </div>

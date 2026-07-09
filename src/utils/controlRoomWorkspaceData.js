@@ -17,8 +17,6 @@ import {
   getEquipmentSummary,
 } from "./equipmentWorkflowService";
 import { getSessionProductionRecords } from "./productionRecords";
-import { matchesCurrentProcessKpiBucket } from "./workflowProcessStatus";
-import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 /** View Tab 구성 (Blueprint ② — 설비 / LOT / 제품) */
 export const CONTROL_ROOM_VIEWS = Object.freeze([
@@ -91,23 +89,33 @@ export function getControlRoomLots() {
   }
 }
 
-function countProductionLots(lots) {
-  return lots.filter((lot) => {
-    const status = String(lot?.status ?? "");
-    return (
-      Number(lot?.progress) > 0 ||
-      status.includes("진행") ||
-      status.includes("운전") ||
-      status.includes("열처리")
-    );
-  }).length;
+function normalizeControlRoomStatus(row) {
+  return String(row?.status ?? "").replace(/\s+/g, "");
 }
 
-function countWaitingLots(lots) {
-  return lots.filter((lot) => {
-    const status = String(lot?.status ?? "");
-    return status.includes("대기") || status.includes("장입");
-  }).length;
+export function matchesControlRoomLotKpi(row, lotFilter) {
+  const status = normalizeControlRoomStatus(row);
+  const terminalOrNextStep =
+    status.includes("완료") ||
+    status.includes("검사") ||
+    status.includes("성적서") ||
+    status.includes("출고");
+
+  switch (lotFilter) {
+    case "production":
+      return (
+        !terminalOrNextStep &&
+        (status.includes("생산중") || status.includes("진행") || status.includes("운전") || status.includes("열처리"))
+      );
+    case "waiting":
+      return !terminalOrNextStep && (status.includes("장입") || status === "대기" || status.includes("대기LOT"));
+    case "done":
+      return status.includes("생산완료");
+    case "inspectionWait":
+      return status.includes("검사대기") && !status.includes("검사완료");
+    default:
+      return true;
+  }
 }
 
 /**
@@ -118,6 +126,7 @@ function countWaitingLots(lots) {
 export function buildControlRoomKpis(records = getControlRoomRecords()) {
   const equipment = getEquipmentSummary();
   const lots = getControlRoomLots();
+  const lotRows = buildControlRoomLotMonitorRows(lots, records);
 
   const runningEquipment = Number(equipment?.running ?? 0);
   const totalEquipment = Number(equipment?.total ?? 0);
@@ -125,17 +134,10 @@ export function buildControlRoomKpis(records = getControlRoomRecords()) {
     totalEquipment > 0 ? Math.round((runningEquipment / totalEquipment) * 100) : 0;
   const alarms = Number(equipment?.maintenance ?? 0);
 
-  const productionLots = countProductionLots(lots);
-  const waitingLots = countWaitingLots(lots);
-
-  const productionDone = records.filter((record) => {
-    const status = String(record?.completionStatus ?? record?.workflowStatus ?? "");
-    return status === WORKFLOW_STATUS.PROD_DONE;
-  }).length;
-
-  const inspectionWait = records.filter((record) =>
-    matchesCurrentProcessKpiBucket(record, "INSPECTION_WAIT")
-  ).length;
+  const productionLots = lotRows.filter((row) => matchesControlRoomLotKpi(row, "production")).length;
+  const waitingLots = lotRows.filter((row) => matchesControlRoomLotKpi(row, "waiting")).length;
+  const productionDone = lotRows.filter((row) => matchesControlRoomLotKpi(row, "done")).length;
+  const inspectionWait = lotRows.filter((row) => matchesControlRoomLotKpi(row, "inspectionWait")).length;
 
   return {
     runningEquipment,
@@ -154,7 +156,7 @@ export function buildControlRoomKpiCards(records = getControlRoomRecords()) {
   return CONTROL_ROOM_KPI_CARDS.map((card) => ({
     ...card,
     value: values[card.id] ?? 0,
-    filterable: false,
+    filterable: true,
   }));
 }
 
@@ -181,21 +183,21 @@ export function getControlRoomSnapshot() {
 }
 
 /**
- * Blueprint ② LOT View — Monitor Grid 11 Column (SSOT)
- * LOT · 관리번호 · 제품 · 고객사 · 현재 설비 · 현재 공정 · 작업자 · 진행률 · 상태 · 작업 시작 · 예상 종료
+ * Blueprint ② LOT View — Monitor Grid (SSOT)
+ * LOT · 고객사 · 제품 · 설비 · 공정 · 상태 · 작업자 · 시작시간 · 예상 종료 · 진행률
+ * 관리번호 · 품번은 검색/상세 전용으로 row에 유지하고 Grid 컬럼에는 표시하지 않는다.
  */
 export const CONTROL_ROOM_LOT_COLUMNS = Object.freeze([
   { id: "lotNo", label: "LOT" },
-  { id: "managementId", label: "관리번호" },
-  { id: "productName", label: "제품" },
   { id: "company", label: "고객사" },
-  { id: "equipmentName", label: "현재 설비" },
-  { id: "process", label: "현재 공정" },
-  { id: "operator", label: "작업자" },
-  { id: "progress", label: "진행률" },
+  { id: "productName", label: "제품" },
+  { id: "equipmentName", label: "설비" },
+  { id: "process", label: "공정" },
   { id: "status", label: "상태" },
-  { id: "startTime", label: "작업 시작" },
+  { id: "operator", label: "작업자" },
+  { id: "startTime", label: "시작시간" },
   { id: "expectedEndTime", label: "예상 종료" },
+  { id: "progress", label: "진행률" },
 ]);
 
 /** Equipment View — Engine → WorkspaceData (Sprint 3C Architecture) */
@@ -250,7 +252,7 @@ function readEquipmentStoreIndex() {
 }
 
 function buildRecordIndexByLot(records = getControlRoomRecords()) {
-  /** @type {Map<string, { company?: string, managementId?: string }>} */
+  /** @type {Map<string, { company?: string, managementId?: string, partNo?: string, productName?: string }>} */
   const index = new Map();
   records.forEach((record) => {
     const lotNo = String(record.lotNo ?? "").trim();
@@ -259,6 +261,8 @@ function buildRecordIndexByLot(records = getControlRoomRecords()) {
     index.set(lotNo, {
       company: record.company ?? existing.company,
       managementId: record.id ?? record.mesManagementNo ?? existing.managementId,
+      partNo: record.partNo ?? record.productNo ?? existing.partNo,
+      productName: record.partName ?? record.productName ?? existing.productName,
     });
   });
   return index;
@@ -287,7 +291,8 @@ export function buildControlRoomLotMonitorRows(
     return {
       lotNo,
       managementId: lot.managementId || recordMeta.managementId || "—",
-      productName: lot.productName || "—",
+      productName: lot.productName || recordMeta.productName || "—",
+      partNo: recordMeta.partNo || lot.partNo || "—",
       company: recordMeta.company || "—",
       equipmentName: equipment?.equipmentName ?? equipmentId ?? "—",
       equipmentId: equipmentId ?? "",

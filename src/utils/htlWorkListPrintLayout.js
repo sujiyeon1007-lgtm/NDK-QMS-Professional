@@ -5,23 +5,12 @@ import {
 import { formatQtyWithUnit } from "./productUnits";
 import { computePrintColumnWidths, paginateRowsByLayout } from "./titanPrintLayout";
 
-/** DOC-01 PM Official — 열처리 작업 요청 리스트 (A4 Landscape) */
-export const HTL_PRINT_TITLE = "열처리 작업 요청 리스트";
+/** DOC-01 PM Official — 입고 리스트 (A4 Landscape) */
+export const HTL_PRINT_TITLE = "입고 리스트";
 
-/** Project TITAN HTL 출력 컬럼 (DOC-01 PM Final) */
+/** Project TITAN 입고 리스트 출력 컬럼 (DOC-01 PM Final) */
 export function buildHtlPrintColumns() {
   return [
-    {
-      id: "check",
-      header: "□",
-      baseRatio: 3,
-      narrow: true,
-      checkbox: true,
-      handwriting: true,
-      singleLine: true,
-      align: "center",
-      getValue: () => "",
-    },
     {
       id: "no",
       header: "No",
@@ -65,44 +54,32 @@ export function buildHtlPrintColumns() {
     },
     {
       id: "stockQty",
-      header: "실재고(EA)",
-      baseRatio: 7,
+      header: "입고수량",
+      baseRatio: 8,
       singleLine: true,
       align: "right",
       getValue: (row) => formatQtyWithUnit(row.qty, row.unit || "EA"),
     },
     {
-      id: "workQty",
-      header: "작업수량(EA)",
-      baseRatio: 7,
-      handwriting: true,
+      id: "incomingDate",
+      header: "입고일",
+      baseRatio: 8,
       singleLine: true,
       align: "center",
-      getValue: () => "",
-    },
-    {
-      id: "workDate",
-      header: "작업일",
-      baseRatio: 7,
-      handwriting: true,
-      singleLine: true,
-      align: "center",
-      getValue: () => "",
+      getValue: (row) => row.incomingDate ?? "",
     },
     {
       id: "lot",
       header: "LOT No.",
       baseRatio: 9,
-      handwriting: true,
       singleLine: true,
       align: "center",
-      getValue: () => "",
+      getValue: (row) => row.lotNo ?? "",
     },
     {
       id: "note",
       header: "비고",
-      baseRatio: 14,
-      handwriting: true,
+      baseRatio: 18,
       wrap: true,
       align: "left",
       getValue: (row) => row.note ?? "",

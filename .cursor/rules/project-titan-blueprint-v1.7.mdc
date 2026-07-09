@@ -63,6 +63,16 @@ Architecture → Blueprint → PM 승인 → 구현 → QA → Freeze
 **진행:** B안 — 전체 개정 후 화면별 Review (HOME 단독 Freeze ❌)
 **SSoT (docs):** `docs/blueprints/V2.0/INDEX.md` · V1.7 docs는 List 중심 초안 (대체됨)
 
+### Supporting Blueprint — Phase 5
+
+| ID | 화면 | Doc | Status |
+|----|------|-----|--------|
+| `mobileQrPortal` | Mobile QR Portal | `V2.0/mobile-qr-portal.md` | Blueprint Proposed · Architecture Only |
+| `qrMenuShortcut` | QR Menu Shortcut | `V2.0/qr-menu-shortcut.md` | Blueprint Proposed · Architecture Only |
+
+Mobile QR Portal은 Desktop 관리 UI와 분리된 QR 기반 현장 작업 Portal이다. QR URL은 `/mobile/qr/{type}/{UUID}` 정책을 사용하며, UI/Router/Foundation 구현은 PM 승인 후 진행한다.
+QR Menu Shortcut은 Data QR와 분리된 고정 메뉴 진입 QR이다. `/mobile/qr/menu/{shortcutId}` 또는 직접 Mobile route로 현장 작업 화면을 즉시 연다.
+
 ---
 
 ## Freeze 정책 (V1.7 공식)

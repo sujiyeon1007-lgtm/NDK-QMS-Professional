@@ -2,75 +2,95 @@
  * Project TITAN — 경리관리 Lite 정책 (Sprint 14 PM Final)
  * SSoT: UI labels · workflow · feature scope
  */
+import { getTitanStandardDefaultDateRange } from "./listSearchStandard";
 
 /** TITAN은 ERP 회계 대체 ❌ — 출고/거래명세서 문서 업무 지원만 */
 export const ACCOUNTING_CLERK_PHILOSOPHY = {
-  headline: "경리관리 Lite는 ERP 회계 시스템이 아닙니다.",
+  headline: "Accounting Lite는 회사 운영을 지원하는 관리 시스템입니다.",
   body:
-    "V1.0에서는 출고 데이터와 거래명세서 문서를 중심으로 경리팀이 바로 조회·출력·재출력할 수 있는 Lite 업무를 지원합니다.",
+    "V1.0에서는 거래처 조회, 출고 통계, 사내 물품 관리, 마감관리처럼 실제 회사에서 바로 쓰는 업무를 우선 제공합니다.",
   taxInvoiceNotice:
-    "세금계산서·입금·채권·금융 연동은 V1.0에서 Coming Soon으로만 표시합니다.",
+    "확장 예정 기능은 V1.1 이후 단계적으로 활성화하며 V1.0 Launcher에서는 숨김 처리합니다.",
   statementNotice:
-    "출고관리 → 거래명세서 → 거래처 Master → PDF 출력 흐름만 경리관리 Lite에서 조회·재출력합니다.",
+    "거래명세서와 출고 데이터는 하나의 출고 통계 Workspace에서 조회·출력·재출력합니다.",
 };
 
 /** V1.0 포함 기능 */
 export const ACCOUNTING_CLERK_V1_FEATURES = [
   {
-    id: "statementManagement",
-    label: "거래명세서 관리",
-    status: "active",
-    path: "/accounting-clerk/statementManagement",
-    note: "거래명세서 조회 · 출력 · 발행 이력",
-  },
-  {
-    id: "outboundLink",
-    label: "출고 연계",
-    status: "active",
-    path: "/accounting-clerk/statementManagement?view=outbound",
-    note: "출고 데이터 자동 조회 · 거래명세서 자동 작성",
-  },
-  {
     id: "companyLookup",
     label: "거래처 조회",
     status: "active",
     path: "/accounting-clerk/companyLookup",
-    note: "거래처 정보 · 사업자 정보 · 담당자 정보",
-  },
-  {
-    id: "documentLookup",
-    label: "발행 문서 조회",
-    status: "active",
-    path: "/accounting-clerk/documentLookup",
-    note: "거래명세서 · 출고 관련 문서 · PDF 재출력",
-  },
-  {
-    id: "statementReprint",
-    label: "PDF 재출력",
-    status: "active",
-    path: "/accounting-clerk/statementManagement?view=reprint",
-    note: "기존 거래명세서 PDF 재출력",
+    note: "거래처 정보 · 사업자 정보 · 담당자 · 최근 거래 · 출고 이력",
   },
   {
     id: "shipmentStatistics",
     label: "출고 통계",
     status: "active",
     path: "/accounting-clerk/shipmentStatistics",
-    note: "월별 · 거래처별 · 품목별 출고 요약",
+    note: "거래명세서 발행 이력 · 업체별/품목별/월별/LOT별 출고",
   },
-  { id: "todayReceipts", label: "오늘 입금 예정", status: "comingSoon" },
-  { id: "receivables", label: "미수금 관리", status: "comingSoon" },
-  { id: "paymentConfirm", label: "입금 확인", status: "comingSoon" },
-  { id: "creditManagement", label: "채권 관리", status: "comingSoon" },
+  {
+    id: "internalItems",
+    label: "사내 물품 관리",
+    status: "active",
+    path: "/accounting-clerk/internalItems",
+    note: "회사 구매 이력 · 자산 · 거래명세서/세금계산서 첨부 관리",
+  },
+  {
+    id: "closingManagement",
+    label: "마감관리",
+    status: "active",
+    path: "/accounting-clerk/closingManagement",
+    note: "월 마감 · 거래처별 마감 · 미결제/지급/미처리 확인",
+  },
+  {
+    id: "statementManagement",
+    label: "거래명세서 관리",
+    status: "active",
+    path: "/accounting-clerk/shipmentStatistics",
+    note: "출고 통계 Workspace로 통합",
+    launcherVisible: false,
+  },
+  {
+    id: "outboundLink",
+    label: "출고 연계",
+    status: "active",
+    path: "/accounting-clerk/shipmentStatistics",
+    note: "출고 통계 Workspace로 통합",
+    launcherVisible: false,
+  },
+  {
+    id: "documentLookup",
+    label: "발행 문서 조회",
+    status: "active",
+    path: "/accounting-clerk/shipmentStatistics",
+    note: "출고 통계 Workspace로 통합",
+    launcherVisible: false,
+  },
+  {
+    id: "statementReprint",
+    label: "PDF 재출력",
+    status: "active",
+    path: "/accounting-clerk/shipmentStatistics",
+    note: "출고 통계 Workspace로 통합",
+    launcherVisible: false,
+  },
+  { id: "todayReceipts", label: "오늘 입금 예정", status: "comingSoon", launcherVisible: false },
+  { id: "receivables", label: "미수금 관리", status: "comingSoon", launcherVisible: false },
+  { id: "paymentConfirm", label: "입금 확인", status: "comingSoon", launcherVisible: false },
+  { id: "creditManagement", label: "채권 관리", status: "comingSoon", launcherVisible: false },
   {
     id: "taxInvoice",
     label: "세금계산서 연동",
     status: "comingSoon",
     path: "/accounting-clerk/tax-invoices",
     note: "V1.0에서는 직접 발행·홈택스 연동을 제공하지 않습니다.",
+    launcherVisible: false,
   },
-  { id: "financeIntegration", label: "금융 연동", status: "comingSoon" },
-  { id: "bankAccounts", label: "계좌 관리", status: "comingSoon" },
+  { id: "financeIntegration", label: "금융 연동", status: "comingSoon", launcherVisible: false },
+  { id: "bankAccounts", label: "계좌 관리", status: "comingSoon", launcherVisible: false },
 ];
 
 /** V2.0+ 제외 — 구현 금지 */
@@ -130,6 +150,7 @@ export const TAX_INVOICE_STATUS_OPTIONS = Object.values(TAX_INVOICE_STATUS);
 export const ACCOUNTING_CLERK_STUB_MESSAGE = "준비 중 (Coming Soon)";
 
 export function createEmptyTaxInvoiceSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     company: "",
     partName: "",
@@ -138,8 +159,8 @@ export function createEmptyTaxInvoiceSearch() {
     managementId: "",
     issueStatus: "",
     manager: "",
-    shippedAtFrom: "",
-    shippedAtTo: "",
+    shippedAtFrom: standardDateRange.from,
+    shippedAtTo: standardDateRange.to,
   };
 }
 

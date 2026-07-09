@@ -1,6 +1,7 @@
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
 import { OPERATION_MODE_WELCOME_ENABLED } from "../config/titanV1DevelopmentDirection";
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 
 import MainLayout from "../layouts/MainLayout";
 
@@ -20,6 +21,7 @@ import ProductionLayout from "../pages/Production/ProductionLayout";
 import ProductionManagementHubPage from "../pages/Production/ProductionManagementHubPage";
 import DailyProductionReport from "../pages/Production/DailyProductionReport";
 import ProductionPlanWorkspace from "../pages/Production/ProductionPlanWorkspace";
+import ShotWorkStatusPage from "../pages/Production/ShotWorkStatusPage";
 
 import ProductionResultsManagement from "../pages/Production/ProductionResultsManagement";
 
@@ -58,14 +60,6 @@ import CompanyManagementPage from "../pages/Settings/CompanyManagementPage";
 
 import ProductManagementPage from "../pages/Settings/ProductManagementPage";
 
-import MaterialManagementPage from "../pages/Settings/MaterialManagementPage";
-
-import ProcessManagementPage from "../pages/Settings/ProcessManagementPage";
-
-import EquipmentManagementPage from "../pages/Settings/EquipmentManagementPage";
-
-import WorkerManagementPage from "../pages/Settings/WorkerManagementPage";
-
 import RecipeManagementPage from "../pages/Settings/RecipeManagementPage";
 
 import MasterEntityManagementPage from "../pages/Settings/MasterEntityManagementPage";
@@ -83,6 +77,7 @@ import EnvironmentSectionPage from "../pages/Environment/EnvironmentSectionPage"
 import DocumentsLayout from "../pages/Documents/DocumentsLayout";
 
 import DocumentManagementPage from "../pages/Documents/DocumentManagementPage";
+import IncomingDocumentArchivePage from "../pages/Documents/IncomingDocumentArchivePage";
 
 import HistoryLayout from "../pages/History/HistoryLayout";
 
@@ -110,10 +105,6 @@ import AccountingFeaturePage from "../pages/Accounting/AccountingFeaturePage";
 import QrManagementLayout from "../pages/QrManagement/QrManagementLayout";
 import QrInoutScreen from "../pages/QrManagement/QrInoutScreen";
 import QrEquipmentScreen from "../pages/QrManagement/QrEquipmentScreen";
-import ProductionChargingLayout from "../pages/Production/charging/ProductionChargingLayout";
-import ProductionChargingHubPage from "../pages/Production/charging/ProductionChargingHubPage";
-import ProductionChargingOverviewPage from "../pages/Production/charging/ProductionChargingOverviewPage";
-import ProductionChargingProcessPage from "../pages/Production/charging/ProductionChargingProcessPage";
 import ProductionChargingEquipmentPage from "../pages/Production/charging/ProductionChargingEquipmentPage";
 import EquipmentStatusPage from "../pages/EquipmentStatus/EquipmentStatusPage";
 import QrEngineLayout from "../pages/QrEngine/QrEngineLayout";
@@ -121,6 +112,8 @@ import QrEngineDashboardPage from "../pages/QrEngine/QrEngineDashboardPage";
 import QrEngineGeneratorPage from "../pages/QrEngine/QrEngineGeneratorPage";
 import QrEngineRegistryPage from "../pages/QrEngine/QrEngineRegistryPage";
 import QrEngineScanPage from "../pages/QrEngine/QrEngineScanPage";
+import QrEngineTestModePage from "../pages/QrEngine/QrEngineTestModePage";
+import QrEngineDiagnosticsPage from "../pages/QrEngine/QrEngineDiagnosticsPage";
 import QrEngineEquipmentWorkPage from "../pages/QrEngine/QrEngineEquipmentWorkPage";
 import CompanyLayout from "../pages/Company/CompanyLayout";
 import CompanyDashboardPage from "../pages/Company/CompanyDashboardPage";
@@ -141,6 +134,31 @@ function LegacyRedirect({ to }) {
 
   return <Navigate to={to} replace />;
 
+}
+
+/**
+ * RC1 Route Registry — legacy 단일 목적지 경로(생산관리 4종) → canonical /operations/* redirect.
+ * 기존 query string(예: ?view=product)은 canonical 경로로 그대로 이전한다.
+ */
+function LegacyOperationsRedirect({ to }) {
+  const location = useLocation();
+  const target = location.search ? `${to}${location.search}` : to;
+  return <Navigate to={target} replace />;
+}
+
+/**
+ * RC1 Route Registry — legacy 이중 목적지 경로(/inout/incoming · /inout/shipment) →
+ * canonical /operations/* redirect. ?mode=register 여부로 등록/이력 화면을 분기하고,
+ * mode를 제외한 나머지 query string(예: ?shortcut=...)은 canonical 경로로 이전한다.
+ */
+function LegacyOperationsModeRedirect({ registerTo, historyTo }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isRegister = params.get("mode") === "register";
+  params.delete("mode");
+  const remaining = params.toString();
+  const target = isRegister ? registerTo : historyTo;
+  return <Navigate to={remaining ? `${target}?${remaining}` : target} replace />;
 }
 
 const BASELINE_LEGACY_PATHS = {
@@ -183,14 +201,40 @@ function AppRoutes() {
 
               <Route index element={<InoutManagementHubPage />} />
 
-              <Route path="incoming" element={<InboundManagement />} />
+              {/* RC1 Route Registry — legacy dual-mode path → canonical /operations/inbound-* */}
+              <Route
+                path="incoming"
+                element={
+                  <LegacyOperationsModeRedirect
+                    registerTo={OPERATION_ROUTES.inboundPending}
+                    historyTo={OPERATION_ROUTES.inboundHistory}
+                  />
+                }
+              />
 
-              <Route path="shipment" element={<OutboundManagement />} />
+              {/* RC1 Route Registry — legacy dual-mode path → canonical /operations/shipment-* */}
+              <Route
+                path="shipment"
+                element={
+                  <LegacyOperationsModeRedirect
+                    registerTo={OPERATION_ROUTES.shipmentRegister}
+                    historyTo={OPERATION_ROUTES.shipmentHistory}
+                  />
+                }
+              />
 
               <Route path="print" element={<PrintManagementWorkspace />} />
 
               <Route path="work-journal" element={<WorkJournal />} />
 
+            </Route>
+
+            {/* RC1 Route Registry — canonical 운영관리 화면 (입고/출고) — InOutLayout 재사용 */}
+            <Route element={<InOutLayout />}>
+              <Route path={OPERATION_ROUTES.inboundPending} element={<InboundManagement forcedMode="register" />} />
+              <Route path={OPERATION_ROUTES.inboundHistory} element={<InboundManagement forcedMode="history" />} />
+              <Route path={OPERATION_ROUTES.shipmentRegister} element={<OutboundManagement forcedMode="register" />} />
+              <Route path={OPERATION_ROUTES.shipmentHistory} element={<OutboundManagement forcedMode="history" />} />
             </Route>
 
 
@@ -216,24 +260,37 @@ function AppRoutes() {
               <Route path="results" element={<ProductionResultsManagement />} />
 
               <Route path="actual-work" element={<ActualWorkRecordPage />} />
+              <Route path="lot" element={<LotLifecyclePage />} />
 
               <Route path="defect-history" element={<Navigate to="/quality/defect-history" replace />} />
 
-              <Route path="plan" element={<ProductionPlanWorkspace />} />
+              {/* RC1 Route Registry — legacy single-target 경로 → canonical /operations/* (기존 query 유지) */}
+              <Route path="plan" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.productionPending} />} />
+              <Route path="shot" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.shotStatus} />} />
+              <Route path="equipment-status" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.equipmentStatus} />} />
 
-              <Route path="daily-report" element={<DailyProductionReport />} />
+              <Route path="daily-report" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.dailyWork} />} />
+              <Route path="manual-lot" element={<Navigate to={OPERATION_ROUTES.productionPending} replace />} />
 
               <Route path="print" element={<PrintManagementWorkspace />} />
 
               <Route path="work-journal" element={<WorkJournal />} />
 
-              <Route path="charging" element={<ProductionChargingLayout />}>
-                <Route index element={<ProductionChargingHubPage />} />
-                <Route path="overview" element={<ProductionChargingOverviewPage />} />
-                <Route path="process/:processSlug" element={<ProductionChargingProcessPage />} />
+              <Route path="charging">
+                <Route index element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
+                <Route path="overview" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
+                <Route path="process/:processSlug" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
                 <Route path="equipment/:equipmentId" element={<ProductionChargingEquipmentPage />} />
               </Route>
 
+            </Route>
+
+            {/* RC1 Route Registry — canonical 생산관리 화면 (생산 대기/설비 가동 현황/작업일보/쇼트 작업현황) — ProductionLayout 재사용 */}
+            <Route element={<ProductionLayout />}>
+              <Route path={OPERATION_ROUTES.productionPending} element={<ProductionPlanWorkspace />} />
+              <Route path={OPERATION_ROUTES.equipmentStatus} element={<EquipmentStatusPage embedded />} />
+              <Route path={OPERATION_ROUTES.dailyWork} element={<DailyProductionReport />} />
+              <Route path={OPERATION_ROUTES.shotStatus} element={<ShotWorkStatusPage />} />
             </Route>
 
 
@@ -300,6 +357,7 @@ function AppRoutes() {
             <Route path="/documents" element={<DocumentsLayout />}>
 
               <Route index element={<DocumentManagementPage />} />
+              <Route path="incoming-archive" element={<IncomingDocumentArchivePage />} />
 
               <Route path="inspection" element={<ProductInspectionManagement />} />
 
@@ -331,12 +389,14 @@ function AppRoutes() {
               <Route path="generator" element={<QrEngineGeneratorPage />} />
               <Route path="registry" element={<QrEngineRegistryPage />} />
               <Route path="scan" element={<QrEngineScanPage />} />
+              <Route path="test-mode" element={<QrEngineTestModePage />} />
+              <Route path="diagnostics" element={<QrEngineDiagnosticsPage />} />
               <Route path="equipment/:equipmentId" element={<QrEngineEquipmentWorkPage />} />
             </Route>
 
-            <Route path="/qr-workflow" element={<Navigate to="/production/charging" replace />} />
-            <Route path="/qr-workflow/charging" element={<Navigate to="/production/charging" replace />} />
-            <Route path="/equipment-status" element={<EquipmentStatusPage />} />
+            <Route path="/qr-workflow" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
+            <Route path="/qr-workflow/charging" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
+            <Route path="/equipment-status" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
             <Route path="/company" element={<CompanyLayout />}>
               <Route index element={<Navigate to="/company/dashboard" replace />} />
               <Route path="dashboard" element={<CompanyDashboardPage />} />
@@ -353,7 +413,7 @@ function AppRoutes() {
             {/* Sprint 3E — 제품현황 독립 메뉴 제거 · Control Room Product View로 흡수 */}
             <Route
               path="/product-status"
-              element={<Navigate to="/equipment-status?view=product" replace />}
+              element={<Navigate to={`${OPERATION_ROUTES.equipmentStatus}?view=product`} replace />}
             />
 
             <Route path="/qr-management" element={<QrManagementLayout />}>
@@ -371,7 +431,7 @@ function AppRoutes() {
 
             <Route path="/settings" element={<SettingsLayout />}>
 
-              <Route index element={<Navigate to="/settings/dashboard" replace />} />
+              <Route index element={<Navigate to="/settings/hub" replace />} />
 
               <Route path="dashboard" element={<MasterDashboard />} />
 
@@ -381,13 +441,13 @@ function AppRoutes() {
 
               <Route path="products" element={<ProductManagementPage />} />
 
-              <Route path="materials" element={<MaterialManagementPage />} />
+              <Route path="materials" element={<MasterEntityManagementPage tabId="materials" />} />
 
-              <Route path="processes" element={<ProcessManagementPage />} />
+              <Route path="processes" element={<MasterEntityManagementPage tabId="processes" />} />
 
-              <Route path="equipment" element={<EquipmentManagementPage />} />
+              <Route path="equipment" element={<MasterEntityManagementPage tabId="equipment" />} />
 
-              <Route path="workers" element={<WorkerManagementPage />} />
+              <Route path="workers" element={<MasterEntityManagementPage tabId="workers" />} />
 
               <Route path="recipes" element={<RecipeManagementPage />} />
 

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   QR_ENGINE_COPY,
+  QR_ENGINE_GENERATOR_GROUPS,
   QR_ENGINE_GENERATOR_TYPES,
+  QR_ENGINE_WORKFLOWS,
 } from "../../config/qrEngineArchitecture";
 import {
   PrimaryButton,
@@ -14,10 +16,9 @@ import {
 import {
   buildGeneratorPreview,
   generateOrReissueFromGenerator,
-  getEquipmentGeneratorOptions,
-  getLotGeneratorOptions,
+  getGeneratorOptions,
   getQrEngineRegistryRowByTarget,
-  syncQrEngineAutoRegistry,
+  scheduleQrEngineAutoRegistrySync,
 } from "../../utils/qrEngineRegistryService";
 import {
   downloadQrSvgAsPng,
@@ -38,14 +39,21 @@ export default function QrEngineGeneratorPage() {
   const previewRef = useRef(null);
 
   useEffect(() => {
-    syncQrEngineAutoRegistry();
+    let cancelled = false;
+    scheduleQrEngineAutoRegistrySync().then(() => {
+      if (!cancelled) setRegistryRefresh((value) => value + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const equipmentOptions = useMemo(() => getEquipmentGeneratorOptions(), [registryRefresh]);
-  const lotOptions = useMemo(() => getLotGeneratorOptions(), [registryRefresh]);
-
-  const options =
-    generatorTypeId === QR_ENGINE_GENERATOR_TYPES.lot.id ? lotOptions : equipmentOptions;
+  const options = useMemo(
+    () => getGeneratorOptions(generatorTypeId),
+    [generatorTypeId, registryRefresh]
+  );
+  const selectedType = QR_ENGINE_GENERATOR_TYPES[generatorTypeId] ?? QR_ENGINE_GENERATOR_TYPES.equipment;
+  const workflowSteps = QR_ENGINE_WORKFLOWS[generatorTypeId] ?? [];
 
   useEffect(() => {
     if (!target && options.length) setTarget(options[0].value);
@@ -57,7 +65,7 @@ export default function QrEngineGeneratorPage() {
   );
 
   const registryRow = useMemo(
-    () => getQrEngineRegistryRowByTarget(generatorTypeId, target),
+    () => getQrEngineRegistryRowByTarget(generatorTypeId, target, { autoSync: false }),
     [generatorTypeId, target, registryRefresh]
   );
 
@@ -86,7 +94,7 @@ export default function QrEngineGeneratorPage() {
         return;
       }
       setRegistryRefresh((v) => v + 1);
-      setMessage(reissue ? "QR 재발행이 완료되었습니다." : "QR Registry에 등록되었습니다.");
+      setMessage(reissue ? "QR 재발행이 완료되었습니다." : "QR Registry 등록 상태를 확인했습니다.");
     } finally {
       setBusy(false);
     }
@@ -136,29 +144,43 @@ export default function QrEngineGeneratorPage() {
     <div className="qr-engine-page">
       <p className="qr-engine-hint">{QR_ENGINE_COPY.autoGenerateHint}</p>
 
-      <TitanDashboardCard title={QR_ENGINE_COPY.generatorTitle} className="qr-engine-generator-panel" aria-label="QR Generator">
-        <div className="qr-engine-generator-type" role="radiogroup" aria-label="QR 종류">
-          {Object.values(QR_ENGINE_GENERATOR_TYPES).map((type) => (
-            <label key={type.id} className="qr-engine-generator-type__option">
-              <input
-                type="radio"
-                name="qr-generator-type"
-                value={type.id}
-                checked={generatorTypeId === type.id}
-                onChange={() => {
-                  setGeneratorTypeId(type.id);
-                  setTarget("");
-                  setMessage("");
-                }}
-              />
-              <span>{type.labelKo}</span>
-            </label>
+      <TitanDashboardCard title={QR_ENGINE_COPY.generatorTitle} className="qr-engine-generator-panel" aria-label="QR 생성">
+        <div className="qr-engine-generator-groups" role="radiogroup" aria-label="업무 영역별 QR 종류">
+          {QR_ENGINE_GENERATOR_GROUPS.map((group) => (
+            <section key={group.id} className="qr-engine-generator-group" aria-label={group.label}>
+              <div className="qr-engine-generator-group__head">
+                <strong>{group.label}</strong>
+                <span>{group.description}</span>
+              </div>
+              <div className="qr-engine-generator-type">
+                {group.typeIds.map((typeId) => {
+                  const type = QR_ENGINE_GENERATOR_TYPES[typeId];
+                  if (!type) return null;
+                  return (
+                    <label key={type.id} className="qr-engine-generator-type__option">
+                      <input
+                        type="radio"
+                        name="qr-generator-type"
+                        value={type.id}
+                        checked={generatorTypeId === type.id}
+                        onChange={() => {
+                          setGeneratorTypeId(type.id);
+                          setTarget("");
+                          setMessage("");
+                        }}
+                      />
+                      <span>{type.labelKo}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
           ))}
         </div>
 
         <label className="qr-engine-generator-field">
           <span>
-            {generatorTypeId === QR_ENGINE_GENERATOR_TYPES.lot.id ? "LOT 선택" : "Equipment 선택"}
+            {selectedType.labelKo} 대상 선택
           </span>
           <select
             className="qr-engine-generator-select"
@@ -173,6 +195,17 @@ export default function QrEngineGeneratorPage() {
           </select>
         </label>
 
+        {workflowSteps.length ? (
+          <div className="qr-engine-workflow-preview" aria-label={`${selectedType.labelKo} Workflow`}>
+            <strong>{selectedType.labelKo} Workflow</strong>
+            <ol>
+              {workflowSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
+
         {options.length ? (
           <div ref={previewRef}>
             <QrEnginePreview
@@ -185,7 +218,7 @@ export default function QrEngineGeneratorPage() {
         ) : (
           <TitanEmptyState
             title="생성 가능한 QR 대상이 없습니다."
-            description="설비 Master 또는 LOT 데이터가 준비되면 QR Registry가 자동 생성됩니다."
+            description="설비 Master 또는 LOT 데이터가 준비되면 QR 목록이 자동 생성됩니다."
           />
         )}
 
@@ -204,7 +237,7 @@ export default function QrEngineGeneratorPage() {
 
         <div className="qr-engine-scan-actions">
           <PrimaryButton type="button" disabled={busy || !target} onClick={() => handleGenerate(false)}>
-            QR 생성
+            QR 등록 확인
           </PrimaryButton>
           <SecondaryButton type="button" disabled={busy || !registryRow} onClick={() => handleGenerate(true)}>
             재발행
@@ -226,7 +259,7 @@ export default function QrEngineGeneratorPage() {
 
       <div className="qr-engine-print-host" aria-hidden="true">
         <div ref={printRef}>
-          <QrEnginePrintSheet rows={printRow ? [printRow] : []} title="QR Engine Label" mode={printMode} />
+          <QrEnginePrintSheet rows={printRow ? [printRow] : []} title="QR 라벨" mode={printMode} />
         </div>
       </div>
     </div>

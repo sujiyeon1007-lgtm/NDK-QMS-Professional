@@ -15,8 +15,30 @@ import {
   resolveEquipmentChargingButtons,
 } from "../config/equipmentConfig";
 import { getTitanDataEngine } from "../foundation/data";
+import { addSessionProductionRecord, updateSessionProductionRecord } from "./productionRecords";
+import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 
 export { resolveEquipmentChargingButtons };
+
+function normalizeEquipmentKey(value) {
+  return String(value ?? "").trim();
+}
+
+function upsertLotStoreRecord(lotNo, patch) {
+  const key = String(lotNo ?? "").trim();
+  if (!key) return null;
+  const dataEngine = getTitanDataEngine();
+  const existing = dataEngine.lot.getByLotNo(key);
+  if (existing) {
+    return dataEngine.lot.update(key, { ...existing, ...patch, lotNo: key });
+  }
+  return dataEngine.lot.create({ lotNo: key, ...patch });
+}
+
+function buildManualProductionId(lotNo) {
+  const safeLot = String(lotNo ?? "").replace(/[^A-Za-z0-9-]/g, "");
+  return `MANUAL-${safeLot || Date.now()}`;
+}
 
 function readEquipmentStoreList() {
   try {
@@ -147,6 +169,145 @@ export function getChargeableLots(equipmentId) {
     return [];
   }
   return equipment.chargeableLots.map((row) => ({ ...row }));
+}
+
+/**
+ * 수기 LOT 등록 → 설비 장입 준비 연결.
+ * LOT 번호는 호출자가 NDK 규칙으로 생성한 값을 전달하며, 이 함수는 버튼 클릭 이후에만 Store에 반영한다.
+ * @param {{
+ *   equipmentId: string,
+ *   lotNo: string,
+ *   workDate: string,
+ *   company?: string,
+ *   productName?: string,
+ *   material?: string,
+ *   qty?: number|string,
+ *   operator?: string,
+ *   note?: string,
+ *   sourceRecordId?: string,
+ *   managementId?: string,
+ *   partNo?: string,
+ * }} input
+ */
+export function createManualChargeableLot(input) {
+  const equipmentId = normalizeEquipmentKey(input?.equipmentId);
+  const lotNo = String(input?.lotNo ?? "").trim();
+  if (!equipmentId) return { ok: false, message: "설비를 선택하세요." };
+  if (!lotNo) return { ok: false, message: "LOT 번호를 생성할 수 없습니다." };
+
+  const dataEngine = getTitanDataEngine();
+  const equipment = dataEngine.equipment.getById(equipmentId);
+  if (!equipment) return { ok: false, message: "설비 정보를 찾을 수 없습니다." };
+  if (equipment.maintenance || equipment.status === "maintenance") {
+    return { ok: false, message: "점검중 설비에는 LOT를 연결할 수 없습니다." };
+  }
+  if (equipment.runningSession || equipment.status === "running") {
+    return { ok: false, message: "작업중 설비에는 새 LOT를 연결할 수 없습니다." };
+  }
+
+  const qty = Number(input?.qty) || 0;
+  const chargeableRow = {
+    id: lotNo,
+    lotNo,
+    company: String(input?.company ?? "").trim(),
+    partName: String(input?.productName ?? "").trim() || "수기 LOT",
+    partNo: String(input?.partNo ?? "").trim(),
+    material: String(input?.material ?? "").trim(),
+    qty,
+    operator: String(input?.operator ?? "").trim(),
+    workDate: String(input?.workDate ?? "").trim(),
+    statusLabel: "장입대기",
+    source: "manual-lot",
+    note: String(input?.note ?? "").trim(),
+  };
+
+  const currentLots = Array.isArray(equipment.chargeableLots) ? equipment.chargeableLots : [];
+  if (currentLots.some((row) => String(row?.lotNo ?? "").trim().toUpperCase() === lotNo.toUpperCase())) {
+    return { ok: false, message: "이미 해당 설비에 연결된 LOT입니다." };
+  }
+
+  const nextLots = [...currentLots, chargeableRow];
+  dataEngine.equipment.update(equipmentId, {
+    chargeableLots: nextLots,
+    status: "ready",
+    currentLot: lotNo,
+  });
+
+  const lotRecord = upsertLotStoreRecord(lotNo, {
+    productName: chargeableRow.partName,
+    partNo: chargeableRow.partNo,
+    quantity: qty,
+    process: equipment.process ?? "",
+    equipmentId,
+    status: "장입대기",
+    progress: 0,
+    source: "manual-lot",
+    workDate: chargeableRow.workDate,
+    company: chargeableRow.company,
+    material: chargeableRow.material,
+    operator: chargeableRow.operator,
+    note: chargeableRow.note,
+  });
+
+  const sourceRecordId = String(input?.sourceRecordId ?? "").trim();
+  const productionId = sourceRecordId || buildManualProductionId(lotNo);
+  if (sourceRecordId) {
+    updateSessionProductionRecord(sourceRecordId, {
+      lotNo,
+      equipment: equipment.equipmentName ?? equipmentId,
+      equipmentId,
+      workDate: chargeableRow.workDate,
+      registrar: chargeableRow.operator || "생산부",
+      registered: false,
+      incomingRegistered: true,
+      workflowStatus: "HT_WAIT",
+      currentProcess: "열처리 대기",
+      qrGenerated: true,
+      source: "manual-lot",
+      manualLotCreatedAt: new Date().toISOString(),
+    });
+  } else {
+    addSessionProductionRecord({
+      id: productionId,
+      mesManagementNo: input?.managementId || productionId,
+      company: chargeableRow.company || "수기 LOT",
+      partName: chargeableRow.partName,
+      productName: chargeableRow.partName,
+      partNo: chargeableRow.partNo,
+      material: chargeableRow.material,
+      qty,
+      quantity: qty,
+      lotNo,
+      equipment: equipment.equipmentName ?? equipmentId,
+      workDate: chargeableRow.workDate,
+      registrar: chargeableRow.operator || "생산부",
+      note: chargeableRow.note,
+      registered: false,
+      incomingRegistered: true,
+      workflowStatus: "HT_WAIT",
+      currentProcess: "열처리 대기",
+      source: "manual-lot",
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  notifyWorkflowDataRefresh({
+    action: "manualLotCreated",
+    equipmentId,
+    lotNo,
+    productionId,
+  });
+
+  return {
+    ok: true,
+    message: `${lotNo} LOT가 생성되어 ${equipment.equipmentName ?? equipmentId} 설비에 연결되었습니다.`,
+    lotNo,
+    equipmentId,
+    equipmentName: equipment.equipmentName ?? equipmentId,
+    chargeableRow,
+    lotRecord,
+    productionId,
+  };
 }
 
 /** @deprecated getChargeableLots */

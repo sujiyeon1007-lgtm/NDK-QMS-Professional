@@ -16,6 +16,7 @@ import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanCommonExpandRow from "../../foundation/components/TitanCommonExpandRow";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
@@ -62,6 +63,7 @@ import { exportMasterExcel } from "../../utils/masterExcelImport";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
 import ProductDrawingDetailPanel from "./ProductDrawingDetailPanel";
+import { normalizeFoundationAttachments } from "../../utils/foundationAttachmentEngine";
 
 import "../InOut/InboundManagement.css";
 
@@ -74,6 +76,32 @@ import "./ProductDrawingManagement.css";
 
 
 const PRODUCT_SELECTION_KEY = "titan-product-selected-id";
+const MASTER_DETAIL_ATTACHMENT_STORAGE_KEY = "project-titan-master-detail-attachments-v1";
+
+function resolveMasterAttachmentOwnerKey(screen, row) {
+  return [screen?.id, row?.id, row?.code, row?.partNo, row?.name].filter(Boolean).join("::") || "master";
+}
+
+function readMasterDetailAttachments(ownerKey) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(MASTER_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return normalizeFoundationAttachments(parsed?.[ownerKey] ?? []);
+  } catch {
+    return [];
+  }
+}
+
+function writeMasterDetailAttachments(ownerKey, attachments) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(MASTER_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[ownerKey] = normalizeFoundationAttachments(attachments);
+    globalThis.sessionStorage?.setItem(MASTER_DETAIL_ATTACHMENT_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // SessionStorage demo repository.
+  }
+}
 
 
 
@@ -190,6 +218,7 @@ export default function MasterDataManagement({
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [detailPopupRow, setDetailPopupRow] = useState(null);
+  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
 
 
 
@@ -566,6 +595,29 @@ export default function MasterDataManagement({
     </>
   );
 
+  const detailAttachmentOwnerKey = resolveMasterAttachmentOwnerKey(screen, detailPopupRow);
+  const detailAttachments = normalizeFoundationAttachments([
+    ...(detailPopupRow?.attachments ?? []),
+    ...readMasterDetailAttachments(detailAttachmentOwnerKey),
+  ]);
+
+  const handleDetailAttachmentUpload = (files) => {
+    const next = [
+      ...readMasterDetailAttachments(detailAttachmentOwnerKey),
+      ...normalizeFoundationAttachments(files),
+    ];
+    writeMasterDetailAttachments(detailAttachmentOwnerKey, next);
+    setAttachmentRefreshKey((key) => key + 1);
+  };
+
+  const handleDetailAttachmentDelete = (attachmentId) => {
+    const next = readMasterDetailAttachments(detailAttachmentOwnerKey).filter(
+      (attachment) => attachment.id !== attachmentId
+    );
+    writeMasterDetailAttachments(detailAttachmentOwnerKey, next);
+    setAttachmentRefreshKey((key) => key + 1);
+  };
+
   return (
 
     <div
@@ -846,6 +898,15 @@ export default function MasterDataManagement({
               ))}
             </dl>
           ) : null,
+          eventLists: {
+            attachments: (
+              <FoundationAttachment
+                attachments={detailAttachments}
+                onUpload={handleDetailAttachmentUpload}
+                onDelete={handleDetailAttachmentDelete}
+              />
+            ),
+          },
         }}
       />
 

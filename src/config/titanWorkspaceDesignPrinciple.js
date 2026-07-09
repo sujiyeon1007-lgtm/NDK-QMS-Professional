@@ -29,7 +29,7 @@ export const TITAN_WORKSPACE_HOME_PRINCIPLE = {
   workspaceRoadmap: [
     { id: "company", label: "Company Master", sprint: 11, basePath: "/company" },
     { id: "environment", label: "Environment", sprint: 12, basePath: "/environment" },
-    { id: "qr", label: "QR Engine", sprint: 13, basePath: "/qr" },
+    { id: "qr", label: "QR 정보관리", sprint: 13, basePath: "/qr" },
     { id: "accounting-clerk", label: "경리", sprint: 14, basePath: "/accounting-clerk" },
     { id: "accounting", label: "회계", sprint: 15, basePath: "/accounting" },
     { id: "tde", label: "TDE", sprint: 16, basePath: "/tde" },

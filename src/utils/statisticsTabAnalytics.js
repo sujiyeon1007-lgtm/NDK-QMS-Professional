@@ -17,6 +17,12 @@ import {
 } from "./productionAnalytics";
 import { normalizeProductUnit } from "./productUnits";
 import {
+  isHeatTreatmentWorkType,
+  isShotWorkType,
+  normalizeShotWorkStatus,
+  SHOT_WORK_STATUS,
+} from "../config/workTypeWorkflow";
+import {
   buildStatisticsKpiCards,
   buildInquiryCompanySummaryRows,
   buildInquiryDashboardCharts,
@@ -168,7 +174,7 @@ function narrowForSelectedRow(rows, selectedRow) {
 function buildProductionRows(period, referenceDate, search, unitFilter) {
   const records = getSessionProductionRecords().filter((record) => {
     const date = getRecordWorkDate(record) || record.incomingDate;
-    return isInPeriod(date, period, referenceDate) && isInSearchDateRange(date, search);
+    return isHeatTreatmentWorkType(record) && isInPeriod(date, period, referenceDate) && isInSearchDateRange(date, search);
   });
 
   let rows = records.map((record) => ({
@@ -221,6 +227,35 @@ function buildQualityRows(period, referenceDate, search, unitFilter) {
     .filter((row) => matchesUnit(row.unit, unitFilter || search.unit))
     .filter((row) => matchesTabSearch(row, search, ["assignee", "process"]))
     .filter((row) => !search.judgment || row.judgment === search.judgment);
+}
+
+function buildShotRows(period, referenceDate, search, unitFilter) {
+  let rows = getSessionProductionRecords()
+    .filter((record) => isShotWorkType(record))
+    .map((record) => ({
+      id: record.id,
+      company: record.company || "—",
+      partName: record.partName || "—",
+      partNo: record.partNo || "—",
+      material: record.material || "—",
+      spec: record.spec || "—",
+      worker: record.shotWorker || record.registrar || "—",
+      shotQty: Number(record.qty) || 0,
+      unit: normalizeProductUnit(record.unit, "EA"),
+      shotWorkDate: record.shotWorkDate || record.shotCompletedAt || record.incomingDate || "—",
+      status: normalizeShotWorkStatus(record.shotStatus),
+      statusLabel: record.shotStatusLabel || "작업 대기",
+    }));
+
+  rows = rows.filter((row) => isInPeriod(row.shotWorkDate, period, referenceDate) && isInSearchDateRange(row.shotWorkDate, search));
+
+  if (rows.length === 0) {
+    return rows;
+  }
+
+  return rows
+    .filter((row) => matchesUnit(row.unit, unitFilter || search.unit))
+    .filter((row) => matchesTabSearch(row, search, ["worker"]));
 }
 
 function buildShipmentRows(period, referenceDate, search, unitFilter) {
@@ -293,6 +328,23 @@ function computeQualityKpi(rows) {
     passRate,
     defectRate,
     reprocessRate,
+  };
+}
+
+function computeShotKpi(rows) {
+  const total = rows.length;
+  const completed = rows.filter((row) => row.status === SHOT_WORK_STATUS.COMPLETE).length;
+  const waiting = rows.filter((row) => row.status === SHOT_WORK_STATUS.WAITING).length;
+  const qty = rows.reduce((sum, row) => sum + (Number(row.shotQty) || 0), 0);
+  const workerCount = new Set(rows.map((row) => row.worker).filter((worker) => worker && worker !== "—")).size;
+
+  return {
+    shotCount: total,
+    shotQty: qty.toLocaleString("ko-KR"),
+    completedCount: completed,
+    waitingCount: waiting,
+    completionRate: total ? Math.round((completed / total) * 1000) / 10 : 0,
+    workerCount,
   };
 }
 
@@ -374,7 +426,14 @@ function buildCharts(scope, rows, selectedRow, unitFilter) {
 
   return scope.charts.map((chart) => {
     if (chart.type === "line") {
-      const dateKey = scope.id === "quality" ? "inspectionDate" : scope.id === "production" ? "workDate" : "shipDate";
+      const dateKey =
+        scope.id === "quality"
+          ? "inspectionDate"
+          : scope.id === "production"
+            ? "workDate"
+            : scope.id === "shot"
+              ? "shotWorkDate"
+              : "shipDate";
       if (chart.valueKey === "count") {
         return { ...chart, items: aggregateMonthlyCount(chartRows, dateKey), unitLabel: "건" };
       }
@@ -415,6 +474,14 @@ function mapListRow(tabId, row) {
       raw: row,
     };
   }
+  if (tabId === "shot") {
+    return {
+      ...row,
+      shotQtyLabel: formatStatisticsRowQty(row.shotQty, row.unit),
+      unitLabel: row.unit === "KG" ? "kg" : row.unit,
+      raw: row,
+    };
+  }
   if (tabId === "shipment" || tabId === "sales") {
     return {
       ...row,
@@ -428,6 +495,7 @@ function mapListRow(tabId, row) {
 
 const ROW_BUILDERS = {
   production: buildProductionRows,
+  shot: buildShotRows,
   quality: buildQualityRows,
   shipment: buildShipmentRows,
   sales: buildSalesRows,
@@ -435,6 +503,7 @@ const ROW_BUILDERS = {
 
 const KPI_COMPUTERS = {
   production: computeProductionKpi,
+  shot: computeShotKpi,
   quality: computeQualityKpi,
   shipment: computeShipmentKpi,
   sales: computeSalesKpi,
@@ -443,6 +512,7 @@ const KPI_COMPUTERS = {
 export function createEmptyTabStatisticsSearch(tabId) {
   const base = { company: "", partName: "", partNo: "", material: "", unit: "", periodFrom: "", periodTo: "" };
   if (tabId === "production") return { ...base, equipment: "", process: "", worker: "" };
+  if (tabId === "shot") return { ...base, worker: "" };
   if (tabId === "quality") return { ...base, assignee: "", process: "", judgment: "" };
   if (tabId === "shipment") return { ...base, manager: "" };
   return base;

@@ -20,6 +20,7 @@ export const MATERIAL_DETAIL_TABS = [
   { id: "processes", label: "관련 공정" },
   { id: "lots", label: "관련 LOT" },
   { id: "certificate", label: "성적서 기준" },
+  { id: "attachments", label: "첨부파일" },
   { id: "updates", label: "최근 수정" },
 ];
 

@@ -9,6 +9,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 import { TITAN_WORKSPACE_HOME_PRINCIPLE } from "./titanWorkspaceDesignPrinciple";
 
@@ -45,9 +46,9 @@ export const COMPANY_WORKSPACE_NAV = [
 ];
 
 export const COMPANY_WORKSPACE_QUICK_LINKS = [
-  { id: "qr", label: "QR Engine", path: "/qr/dashboard" },
-  { id: "equipment", label: "설비 현황", path: "/equipment-status" },
-  { id: "product", label: "제품 현황", path: "/equipment-status?view=product" },
+  { id: "qr", label: "QR 정보관리", path: "/qr/dashboard" },
+  { id: "equipment", label: "설비 현황", path: OPERATION_ROUTES.equipmentStatus },
+  { id: "product", label: "제품 현황", path: `${OPERATION_ROUTES.equipmentStatus}?view=product` },
   { id: "documents", label: "문서관리", path: "/documents" },
 ];
 
@@ -78,13 +79,12 @@ export const COMPANY_WORKSPACE_SECTIONS = [
     id: "organization",
     label: "조직도",
     path: COMPANY_WORKSPACE_ROUTES.organization,
-    description: "조직 구조 (Tree 확장 예정)",
+    description: "회사 → 부서 → 직원 구조",
     badge: "조직",
     badgeColor: "purple",
     icon: Network,
     launcherTone: "purple",
     phase: 11,
-    placeholder: true,
   },
   {
     id: "departments",
@@ -129,7 +129,6 @@ export const COMPANY_WORKSPACE_SECTIONS = [
     icon: Palette,
     launcherTone: "pink",
     phase: 11,
-    placeholder: true,
   },
   {
     id: "documentFooter",
@@ -165,7 +164,7 @@ export const COMPANY_SECTION_UI = {
   },
   organization: {
     layout: "tree",
-    previewNote: "조직도 Tree Editor — 향후 Sprint 확장",
+    previewNote: "회사 조직 구조",
   },
   departments: {
     layout: "table",
@@ -188,14 +187,6 @@ export const COMPANY_SECTION_UI = {
     previewFields: ["회사명", "주소", "전화", "이메일", "Copyright"],
   },
 };
-
-export const COMPANY_RECENT_ACTIVITY_DEMO = [
-  { id: "a1", label: "직원 정보 수정", at: "2시간 전", tone: "mint", sectionId: "employees" },
-  { id: "a2", label: "부서 정보 추가", at: "4시간 전", tone: "orange", sectionId: "departments" },
-  { id: "a3", label: "회사정보 수정", at: "1일 전", tone: "blue", sectionId: "information" },
-  { id: "a4", label: "Branding 변경", at: "2일 전", tone: "purple", sectionId: "branding" },
-  { id: "a5", label: "Footer 수정", at: "3일 전", tone: "amber", sectionId: "documentFooter" },
-];
 
 export const COMPANY_WORKSPACE_COPY = {
   workspaceTitle: "Company Workspace",
@@ -220,18 +211,10 @@ export const COMPANY_WORKSPACE_COPY = {
   recentActivityTitle: "최근 변경 내역",
   recentActivityMore: "더보기",
   launcherGoLabel: "바로가기",
-  organizationPlaceholder:
-    "조직도 Tree Editor는 향후 Sprint에서 확장합니다. 현재는 Company Master 구조만 준비합니다.",
-  brandingPlaceholder:
-    "로고 · 직인 · 서명 업로드 및 TDE 연동은 향후 Sprint에서 구현합니다.",
   environmentSeparationNote:
     "회사정보는 Environment(프로그램 설정)와 분리된 Company Master Workspace입니다.",
-  uiPreviewBadge: "준비중",
-  uiPreviewTitle: "준비중인 Workspace",
-  uiPreviewNote: "UI 승인 후 데이터 입력 · CRUD가 연결됩니다.",
-  uiPreviewPlaceholder: "Placeholder",
-  uiPreviewFuture: "추후 CRUD 연결 예정",
-  uiPreviewSample: "화면 예시",
+  sectionStatusBadge: "Company Master",
+  sectionDataNote: "Company Master 데이터 기준으로 표시됩니다.",
 };
 
 export const COMPANY_BUSINESS_SITE_TYPES = [

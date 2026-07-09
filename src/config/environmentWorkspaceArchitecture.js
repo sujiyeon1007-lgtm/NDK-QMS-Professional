@@ -114,7 +114,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     id: "qrSettings",
     label: "QR 설정",
     path: ENVIRONMENT_WORKSPACE_ROUTES.qrSettings,
-    description: "QR Engine · Smart Access · 출력 정책",
+    description: "QR 정보관리 · Smart Access · 출력 정책",
     badge: "QR",
     badgeColor: "sky",
     icon: QrCode,
@@ -170,8 +170,8 @@ export const ENVIRONMENT_SECTION_UI = {
     previewColumns: ["역할", "메뉴 권한", "기능 권한", "QR 권한", "상태"],
   },
   menus: {
-    layout: "tree",
-    previewNote: "Sidebar · Launcher · Tab 메뉴 Tree — 향후 Sprint 확장",
+    layout: "table",
+    previewColumns: ["메뉴", "그룹", "경로", "상태", "비고"],
   },
   menuToggle: {
     layout: "table",

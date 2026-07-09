@@ -30,7 +30,6 @@ import {
   buildRecipeMasterDetail,
   buildRecipeMasterSummary,
 } from "../../utils/recipeMasterDetail";
-import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -267,19 +266,6 @@ export default function RecipeManagementPage() {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>열처리 Recipe 관리</h2>
-            <p className="company-management-page__intro">
-              회사 표준 열처리 조건 Master 입니다. 좌측 목록에서 Recipe를 선택하면 우측에서 공정
-              조건 · 연결 Master · 적용 이력 · Version · Approval Metadata를 확인할 수 있습니다.
-              (Domain Master Workspace · Sprint 9 Phase 2)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="Recipe 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = RECIPE_KPI_ICON[kpi.id] ?? FlaskConical;
@@ -429,9 +415,6 @@ export default function RecipeManagementPage() {
                         <>
                           <p className="company-detail-section__notice company-detail-section__notice--recipe" role="note">
                             Recipe Template: <strong>{detail.templateView.templateLabel}</strong>
-                            {detail.templateView.isPlanned ? (
-                              <> · Blueprint 준비 Template (향후 활성화)</>
-                            ) : null}
                           </p>
                           {detail.templateView.sections.map((section) => (
                             <TemplateSectionGrid key={section.id} section={section} />
@@ -491,8 +474,8 @@ export default function RecipeManagementPage() {
                     <section className="company-detail-section" aria-label="Version · Approval">
                       <FieldGrid fields={RECIPE_APPROVAL_FIELDS} source={detail.approval} />
                       <p className="company-detail-section__empty">
-                        Version 이력은 Recipe별 독립 Version(V1 · V2 · V3)으로 관리됩니다. In-place
-                        수정 ❌ · 조건 변경 시 신규 Version 생성 (Blueprint §5.3.2)
+                        Version 이력은 Recipe별 독립 Version(V1 · V2 · V3)으로 관리됩니다. 조건 변경 시
+                        신규 Version을 생성합니다.
                       </p>
                     </section>
                   ) : null}

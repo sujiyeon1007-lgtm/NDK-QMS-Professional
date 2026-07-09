@@ -21,11 +21,12 @@ import {
   getApprovedSidebarMenuDefs,
 } from "../config/menuConfig";
 import { QMS_APPROVED_SIDEBAR_MENUS } from "../config/qmsMenuWorkflow";
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 
 /** Menu Freeze V2.0 Blueprint — Sidebar id → Hub Route */
 export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   home: "/home",
-  equipmentStatus: "/equipment-status",
+  equipmentStatus: OPERATION_ROUTES.equipmentStatus,
   qrEngine: "/qr",
   inoutManagement: "/inout",
   productionManagement: "/production",
@@ -38,7 +39,7 @@ export const REQUIRED_SIDEBAR_MENU_ROUTES = {
   companyInfo: "/company",
 };
 
-const MENU_FREEZE_ITEM_COUNT = 12;
+const MENU_FREEZE_ITEM_COUNT = MENU_FREEZE_SIDEBAR_ORDER.length;
 
 const CRITICAL_MENU_IDS = [
   "inoutManagement",

@@ -100,6 +100,43 @@ Master Store (SSoT · 중복 관리 ❌)
 
 > LOT Lifecycle: Sidebar ❌ · QR Scan 또는 LOT 선택으로 진입
 
+### Phase 5 Supporting Blueprints
+
+| # | Blueprint | Doc | Status | 구현 |
+|---|-----------|-----|--------|------|
+| S-① | Mobile QR Portal | [mobile-qr-portal.md](./mobile-qr-portal.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-② | Document Management V1.0.1 Restructuring | [document-management-v101.md](./document-management-v101.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-③ | Transaction Statement Output Restore V1.0.1 | [transaction-statement-output-v101.md](./transaction-statement-output-v101.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-④ | V1.0.1 Expansion Policy | [v1-0-1-expansion-policy.md](./v1-0-1-expansion-policy.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-⑤ | Foundation Attachment Global Policy | [foundation-attachment-policy.md](./foundation-attachment-policy.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-⑥ | QR Menu Shortcut | [qr-menu-shortcut.md](./qr-menu-shortcut.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-⑦ | V1.0.2 Foundation Action / TDE Policy | [v1-0-2-foundation-action-tde-policy.md](./v1-0-2-foundation-action-tde-policy.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-⑧ | Foundation Workspace Layout Standard | [foundation-workspace-layout.md](./foundation-workspace-layout.md) | ✅ PM Approved | ❌ Architecture Only |
+
+> Mobile QR Portal: Desktop 관리 UI와 분리된 QR 기반 현장 작업 Portal. QR payload는 Desktop Workspace가 아니라 `/mobile/qr/{type}/{UUID}` Mobile Portal URL을 사용한다.
+> Document Management V1.0.1: 기존 10 Workspace 순서 변경 없이 문서관리 내부를 `Quality Document Management` / `Internal Document Management`로 분리하는 지원 Blueprint다.
+> Transaction Statement Output Restore V1.0.1: Outbound Management와 Accounting Lite의 DOC-04 출력 복원, 공통 Foundation Document Action, 향후 Email/TDE/Outgoing Documents 연계를 정의하는 Architecture-only Addendum이다.
+> V1.0.1 Expansion Policy: QR Engine split · Mobile Menu Shortcut QR · Work Type Workflow · Shot Work Status · Shot Statistics · KPI policy · Incoming Archive · Accounting Lite · Foundation reuse.
+> Foundation Attachment Global Policy: 첨부 가능 화면은 공통 `FoundationAttachment` + Foundation Detail Popup을 사용한다. 리스트 표시는 `📎 {count}개` / `○ 미등록`만 허용하며, 업로드·미리보기·다운로드·삭제는 PM 승인 후 구현 단계에서 실제 동작해야 한다.
+> QR Menu Shortcut: Data QR와 분리된 고정 메뉴 진입 QR. `/mobile/qr/menu/{shortcutId}` 또는 직접 Mobile route로 현장 작업 화면을 즉시 연다.
+> V1.0.2 Foundation Action / TDE Policy: 삭제·수정·QR·첨부·PDF·출력·메일·닫기는 공통 Foundation Action Bar로 통일하고, 성적서·거래명세서·출고증·발주서·QR·PDF 출력은 화면별 구현이 아니라 TDE 중심으로 정리한다.
+> Foundation Workspace Layout Standard: Dashboard · Business · Archive · Master · Tool 5개 Layout을 정의한다. Accounting Lite는 Dashboard가 아니라 Business Layout이며, Gallery는 문서/Reference Blueprint만 있고 Runtime UI/Router 구현은 하지 않는다.
+
+### V1.0.1 Approved Implementation Sequence
+
+```text
+Foundation unification
+→ Document Management restructure
+→ Statistics UX
+→ QR Engine
+→ Work Type
+→ Shot
+→ Accounting
+→ Browser QA
+```
+
+**Principles:** Foundation first · Additive development · Router stability · Existing feature deletion prohibited · Build → Browser QA → PM Review → Official Freeze
+
 ---
 
 ## Task Scope · Exit Condition 요약

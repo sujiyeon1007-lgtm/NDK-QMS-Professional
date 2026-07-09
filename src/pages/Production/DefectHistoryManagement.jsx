@@ -192,7 +192,7 @@ export default function DefectHistoryManagement() {
           <Plus size={14} aria-hidden="true" />
           {DEFECT_REGISTER_LABEL}
         </PrimaryButton>
-        <SecondaryButton type="button">
+        <SecondaryButton type="button" onClick={() => window.alert("엑셀 출력 기능은 V1.1에서 제공될 예정입니다.")}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>

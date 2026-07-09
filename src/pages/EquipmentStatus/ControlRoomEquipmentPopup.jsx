@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import TitanDetailPopup from "../../foundation/components/TitanDetailPopup";
 import StatusChip from "../../foundation/components/StatusChip";
 import { EQUIPMENT_RUN_STATUS_META } from "../../config/equipmentConfig";
@@ -72,6 +73,13 @@ export default function ControlRoomEquipmentPopup({ detail, open, onClose }) {
                 processKey="production"
               />
             </div>
+
+            <Link
+              className="titan-btn titan-btn--primary"
+              to={`/production/charging/equipment/${encodeURIComponent(detail.equipmentId)}`}
+            >
+              작업 시작/종료 · LOT 확인
+            </Link>
 
             {detail.sameLotProducts?.length > 0 ? (
               <div className="control-room-equipment-popup__same-lot">

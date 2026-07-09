@@ -12,6 +12,7 @@ import { getStockQty } from "./inventory";
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { HOME_WORKFLOW_PHASES, HOME_STATUS_GROUPS } from "../config/homeDashboard";
+import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
 import { matchesExtendedSearch } from "../config/listSearchStandard";
 import {
   CURRENT_PROCESS_KEYS,
@@ -276,12 +277,12 @@ export function buildTodayWorkSummary(records = getHomeWorkspaceRecords()) {
 }
 
 const TODAY_ACTION_ROUTES = {
-  RECEIVED: { to: "/inout/incoming", verb: "입고 확인", shortTitle: "입고등록" },
-  HT_WAIT: { to: "/production/daily-report", verb: "LOT 등록", shortTitle: "열처리 대기" },
-  HT_RUNNING: { to: "/production/daily-report", verb: "열처리 완료", shortTitle: "열처리 중" },
+  RECEIVED: { to: OPERATION_ROUTES.inboundPending, verb: "입고 확인", shortTitle: "입고등록" },
+  HT_WAIT: { to: OPERATION_ROUTES.productionPending, verb: "LOT 등록", shortTitle: "열처리 대기" },
+  HT_RUNNING: { to: OPERATION_ROUTES.dailyWork, verb: "열처리 완료", shortTitle: "열처리 중" },
   INSPECTION_WAIT: { to: "/quality/inspection", verb: "검사 등록", shortTitle: "검사 대기" },
   CERT_WAIT: { to: "/quality/certificate", verb: "성적서 발행", shortTitle: "성적서 대기" },
-  SHIP_WAIT: { to: "/inout/shipment", verb: "출고 처리", shortTitle: "출고 대기" },
+  SHIP_WAIT: { to: OPERATION_ROUTES.shipmentRegister, verb: "출고 처리", shortTitle: "출고 대기" },
 };
 
 /** HOME — Workflow 기반 오늘 해야 할 일 (시스템 추천 액션) */

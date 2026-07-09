@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, {
@@ -28,24 +28,25 @@ import {
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { cancelInspectionRegistration } from "../../utils/inspectionLogSession";
+import {
+  addInspectionLogAttachments,
+  removeInspectionLogAttachment,
+} from "../../utils/inspectionLogSession";
 import {
   getMassProductionInspectionRows,
   matchesMassProductionInspectionSearch,
 } from "../../utils/massProductionInspection";
-import {
-  isMassInspectionRegisterEligible,
-  navigateToInspectionRegister,
-} from "../../utils/inspectionRegisterNavigation";
 import { getInspectionMassScreenData } from "../../utils/qualityWorkspaceData";
-import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import FoundationAttachment, {
+  FoundationAttachmentBadge,
+  FoundationAttachmentPopup,
+} from "../../foundation/components/FoundationAttachment";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import "../InOut/InboundManagement.css";
 import "./QualityManagement.css";
 
 export default function MassProductionInspection() {
-  const navigate = useNavigate();
   const location = useLocation();
   const [refreshKey, setRefreshKey] = useState(0);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
@@ -53,6 +54,7 @@ export default function MassProductionInspection() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
+  const [attachmentPopupRow, setAttachmentPopupRow] = useState(null);
   const screenData = useMemo(() => getInspectionMassScreenData(), [refreshKey]);
   const chipRecords = screenData.baseRecords;
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
@@ -99,11 +101,6 @@ export default function MassProductionInspection() {
 
   const activeRow = rows.find((row) => row.rowKey === activeId) ?? null;
 
-  const handleSelectCoLotProduct = (managementId) => {
-    const target = rows.find((row) => row.managementId === managementId);
-    if (target) setActiveId(target.rowKey);
-  };
-
   const toggleRow = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
@@ -116,41 +113,43 @@ export default function MassProductionInspection() {
     }
   };
 
-  const handleRegister = useCallback(
-    (row) => {
-      const managementId = String(row?.managementId ?? row?.record?.id ?? "").trim();
-      if (!managementId || managementId === "—") {
-        window.alert("관리번호가 없어 검사등록을 진행할 수 없습니다.");
-        return;
-      }
-      if (!isMassInspectionRegisterEligible(row)) {
-        window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
-        return;
-      }
-      navigateToInspectionRegister(navigate, { managementId });
-    },
-    [navigate]
-  );
-
-  const handleEdit = useCallback(
-    (row) => {
-      if (!row?.logId) return;
-      navigate(`/quality/inspection/${row.logId}/report`);
-    },
-    [navigate]
-  );
-
-  const handleDelete = useCallback((row) => {
-    if (!row?.logId) return;
-    const confirmed = globalThis.confirm?.("검사 등록을 취소하고 검사대기 상태로 되돌리시겠습니까?");
-    if (!confirmed) return;
-    cancelInspectionRegistration(row.logId);
-    setRefreshKey((value) => value + 1);
-  }, []);
-
   const openDetailPopup = useCallback((row) => {
     openRowDetailPopup(row, { setActiveId, setDetailPopupRow, getRowId: (r) => r.rowKey });
   }, []);
+
+  const handleUploadAttachments = useCallback((files) => {
+    if (!detailPopupRow?.logId) return;
+    const updated = addInspectionLogAttachments(detailPopupRow.logId, files);
+    if (!updated) return;
+    setRefreshKey((value) => value + 1);
+    setDetailPopupRow((current) =>
+      current
+        ? {
+            ...current,
+            log: updated,
+            attachments: updated.attachments,
+            attachmentCount: updated.attachments.length,
+          }
+        : current
+    );
+  }, [detailPopupRow?.logId]);
+
+  const handleDeleteAttachment = useCallback((attachmentId) => {
+    if (!detailPopupRow?.logId) return;
+    const updated = removeInspectionLogAttachment(detailPopupRow.logId, attachmentId);
+    if (!updated) return;
+    setRefreshKey((value) => value + 1);
+    setDetailPopupRow((current) =>
+      current
+        ? {
+            ...current,
+            log: updated,
+            attachments: updated.attachments,
+            attachmentCount: updated.attachments.length,
+          }
+        : current
+    );
+  }, [detailPopupRow?.logId]);
 
   const columns = useMemo(
     () =>
@@ -159,22 +158,17 @@ export default function MassProductionInspection() {
           <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
         ),
         renderProcess: (row) => renderWorkflowProcessChip(row),
-        renderActions: (row) => {
-          const canRegister = isMassInspectionRegisterEligible(row);
-          const isDone = Boolean(row.logId);
-          return (
-            <InspectionRegisterRowActions
-              canRegister={canRegister}
-              canEdit={isDone}
-              canDelete={isDone}
-              onRegister={() => handleRegister(row)}
-              onEdit={() => handleEdit(row)}
-              onDelete={() => handleDelete(row)}
-            />
-          );
-        },
+        renderAttachments: (row) => (
+          <FoundationAttachmentBadge
+            count={row.attachmentCount}
+            onClick={(event) => {
+              event.stopPropagation();
+              setAttachmentPopupRow(row);
+            }}
+          />
+        ),
       }),
-    [handleRegister, handleEdit, handleDelete]
+    []
   );
 
   return (
@@ -217,11 +211,11 @@ export default function MassProductionInspection() {
               />
               <AssigneeField draft={draft} onDraftChange={onDraftChange} getSuggestions={getSuggestions} />
               <TitanAdvancedSearchField
-                label="비고"
-                fieldKey="note"
-                value={draft.note ?? ""}
-                onChange={(value) => onDraftChange({ ...draft, note: value })}
-                placeholder="비고"
+                label="첨부파일"
+                fieldKey="attachmentStatus"
+                value={draft.attachmentStatus ?? ""}
+                onChange={(value) => onDraftChange({ ...draft, attachmentStatus: value })}
+                placeholder="등록 / 미등록 / 파일명"
               />
             </TitanAdvancedSearchGrid>
           </div>
@@ -260,6 +254,16 @@ export default function MassProductionInspection() {
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
         context={{
+          eventLists: {
+            attachments: (
+              <FoundationAttachment
+                attachments={detailPopupRow?.attachments ?? detailPopupRow?.log?.attachments ?? []}
+                disabled={!detailPopupRow?.logId}
+                onUpload={handleUploadAttachments}
+                onDelete={handleDeleteAttachment}
+              />
+            ),
+          },
           onSelectCoLotProduct: (managementId) => {
             const target = rows.find((row) => row.managementId === managementId);
             if (target) {
@@ -268,6 +272,13 @@ export default function MassProductionInspection() {
             }
           },
         }}
+      />
+
+      <FoundationAttachmentPopup
+        open={Boolean(attachmentPopupRow)}
+        title="첨부파일"
+        attachments={attachmentPopupRow?.attachments ?? []}
+        onClose={() => setAttachmentPopupRow(null)}
       />
     </div>
   );

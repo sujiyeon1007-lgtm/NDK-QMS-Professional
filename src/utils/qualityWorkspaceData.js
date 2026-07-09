@@ -223,7 +223,9 @@ export function buildInspectionMassWorkspaceRows(records = getQualityRecords()) 
     dedupeQualityRecords(records, isQualityInspectionTaskRecord).map((record) => record.id)
   );
 
-  return getMassProductionInspectionRows().filter((row) => eligibleIds.has(row.managementId));
+  return getMassProductionInspectionRows().filter(
+    (row) => eligibleIds.has(row.managementId) || Boolean(row.logId)
+  );
 }
 
 export function countInspectionMassWorkspace(rows = buildInspectionMassWorkspaceRows()) {

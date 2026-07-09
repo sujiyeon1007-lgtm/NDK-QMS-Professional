@@ -24,6 +24,12 @@ export { default as TitanPagination } from "./TitanPagination";
 export { default as TitanPageSizeSelector } from "./TitanPageSizeSelector";
 export { default as SearchPanel } from "./SearchPanel";
 export { default as TitanSearchPanel } from "./TitanSearchPanel";
+export {
+  default as FoundationSearchPanel,
+  FoundationSearchPeriodField,
+  FOUNDATION_SEARCH_PERIOD_PRESETS,
+  getFoundationSearchPeriodRange,
+} from "./FoundationSearchPanel";
 export { default as TitanAdvancedSearch } from "./TitanAdvancedSearch";
 export { default as TitanAdvancedSearchGrid } from "./TitanAdvancedSearchGrid";
 export { default as TitanDateInput } from "./TitanDateInput";
@@ -48,6 +54,12 @@ export { renderStandardDetailPopupTabContent } from "./detailPopup/renderStandar
 export { default as TitanScreenDetailPopup } from "./TitanScreenDetailPopup";
 export { default as TitanStandardProductAdvancedSearch } from "./TitanStandardProductAdvancedSearch";
 export { default as TitanTableRowActions } from "./TitanTableRowActions";
+export {
+  default as FoundationAttachment,
+  FoundationAttachmentBadge,
+  FoundationAttachmentPopup,
+  FoundationFileUploader,
+} from "./FoundationAttachment";
 export { default as TitanListInteractionHint } from "./TitanListInteractionHint";
 export { default as TitanManagementRowSummary } from "./TitanManagementRowSummary";
 export { default as TitanProductRowSummary } from "./TitanProductRowSummary";
@@ -55,6 +67,15 @@ export { TitanRowSummary, TitanRowSummaryCard } from "./TitanRowSummary";
 export { default as TitanManagementMasterDetail } from "./TitanManagementMasterDetail";
 export { default as TitanRegisterModal } from "./TitanRegisterModal";
 export { default as TitanCommonToolbar } from "./TitanCommonToolbar";
+export {
+  default as FoundationActionBar,
+  FoundationDocumentAction,
+  FOUNDATION_ACTION_DEFINITIONS,
+  FOUNDATION_ACTION_IDS,
+  FOUNDATION_DETAIL_ACTION_ORDER,
+  FOUNDATION_DOCUMENT_ACTIONS,
+  FOUNDATION_DOCUMENT_ACTION_DEFINITIONS,
+} from "./FoundationActionBar";
 export { default as TitanCommonExpandRow } from "./TitanCommonExpandRow";
 export { default as TitanWorkspaceModal } from "./TitanWorkspaceModal";
 export { default as TitanAppDialog } from "./TitanWorkspaceModal";
@@ -62,7 +83,17 @@ export { default as TitanMultilineText } from "./TitanMultilineText";
 export { default as TitanBreadcrumb } from "./TitanBreadcrumb";
 export { default as TitanWorkspaceShell } from "./TitanWorkspaceShell";
 export { default as TitanLauncherCard } from "./TitanLauncherCard";
-export { default as TitanDashboardCard } from "./TitanDashboardCard";
+export {
+  default as TitanDashboardCard,
+  DashboardGrid,
+  DashboardRow,
+  DashboardCard,
+  DashboardChart,
+  DashboardWidget,
+  DashboardKPI,
+  DashboardSummary,
+  DashboardEmptyState,
+} from "./TitanDashboardCard";
 export { default as TitanMetricCard } from "./TitanMetricCard";
 export { default as TitanEmptyState } from "./TitanEmptyState";
 export { default as TitanLoadingSkeleton } from "./TitanLoadingSkeleton";

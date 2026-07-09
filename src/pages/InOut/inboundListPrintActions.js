@@ -5,9 +5,6 @@ import {
   isIncomingRegistered,
   updateSessionProductionRecord,
 } from "../../utils/productionRecords";
-import { getHtlPrintStatus, HTL_PRINT_STATUS } from "../../utils/htlPrintEligibility";
-import { WORKFLOW_STATUS } from "../../utils/titanWorkflowStatus";
-import { INBOUND_STATUS_LABELS, getInboundManagementStatus } from "../../utils/inboundManagementStatus";
 
 export const INBOUND_PRINT_NO_SELECTION_MESSAGE = "출력할 제품을 선택해 주세요.";
 export const INBOUND_REPRINT_CONFIRM_MESSAGE =
@@ -39,10 +36,7 @@ export function confirmInboundListReprint() {
 
 export function isInboundListAlreadyPrinted(record) {
   if (!record) return false;
-  const statusLabel = getInboundManagementStatus(record)?.label;
-  if (statusLabel === INBOUND_STATUS_LABELS.PRODUCT_SHIP_WAIT) return true;
-  if (getHtlPrintStatus(record) === HTL_PRINT_STATUS.PRINTED) return true;
-  return Boolean(record.workSheetGenerated || record.inboundListPrintCount > 0);
+  return Boolean(record.inboundListPrintCount > 0 || record.inboundListLastDocNo);
 }
 
 function resolveInboundPrintUserName() {
@@ -73,9 +67,7 @@ export function applyInboundListPrinted(printRows = [], listNo = "") {
     const wasPrinted = isInboundListAlreadyPrinted(record);
     const history = Array.isArray(record.inboundListPrintHistory)
       ? [...record.inboundListPrintHistory]
-      : Array.isArray(record.htlPrintHistory)
-        ? [...record.htlPrintHistory]
-        : [];
+      : [];
 
     const printCount = (record.inboundListPrintCount ?? history.length) + 1;
 
@@ -89,22 +81,13 @@ export function applyInboundListPrinted(printRows = [], listNo = "") {
     });
 
     const patch = {
-      htlNo: trimmedListNo,
-      workSheetGenerated: true,
-      htlPrintedAt: nowIso,
-      htlPrintStatus: "출력완료",
-      htlPrintHistory: history,
+      inboundListLastDocNo: trimmedListNo,
       inboundListPrintHistory: history,
       inboundListPrintCount: printCount,
       inboundListLastPrintedAt: nowIso,
       inboundListLastPrintDateTime: printDateTime,
       inboundListLastPrintedBy: printedBy,
     };
-
-    if (!wasPrinted) {
-      patch.workflowStatus = WORKFLOW_STATUS.PROD_PROGRESS;
-      patch.completionStatus = "작업중";
-    }
 
     updateSessionProductionRecord(id, patch);
   });

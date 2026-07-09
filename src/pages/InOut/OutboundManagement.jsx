@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import StatusChip from "../../foundation/components/StatusChip";
@@ -8,12 +9,15 @@ import TitanStandardProductAdvancedSearch from "../../foundation/components/Tita
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
+import { FOUNDATION_DOCUMENT_ACTIONS } from "../../foundation/components/FoundationActionBar";
 import { useWorkflowChipFilter } from "../../foundation/hooks/useWorkflowChipFilter";
+import { useTransactionStatementDocumentOutput } from "../../foundation/hooks/useFoundationDocumentOutput";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import OutboundRowActions from "./OutboundRowActions";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import TransactionStatementPrintDocument from "../../components/print/TransactionStatementPrintDocument";
+import { TransactionStatementIssueResultDialog } from "../../components/transactionStatement/TransactionStatementPreview";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import {
   createEmptyOutboundSearch,
@@ -61,12 +65,10 @@ import {
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { getStockQty, getIncomingQty } from "../../utils/inventory";
-import { buildTransactionStatementPrintProps } from "../../utils/titanPrintPreviewHelpers";
-import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import {
+  applyOutboundRegister,
   cancelLastOutboundShipment,
   getLastOutboundShipQty,
-  recordTransactionStatementPrint,
 } from "../../utils/outboundRegistration";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import OutboundRegisterModal from "./OutboundRegisterModal";
@@ -76,6 +78,9 @@ import "./InboundManagement.css";
 import "./OutboundManagement.css";
 import "./OutboundStatementPromptDialog.css";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import { OperationsWorkflowNextDialog } from "./OutboundStatementPromptDialog";
+import { getOperationsWorkflowNextStep, OPERATION_ROUTES } from "../../config/operationsRouteRegistry";
+import "../../foundation/components/OperationsWorkflowNextDialog.css";
 
 const OUTBOUND_STATUS_OPTIONS = Object.values(OUTBOUND_STATUS_LABELS);
 
@@ -128,8 +133,8 @@ function mapOutboundListRow(record) {
   );
 }
 
-function resolveOutboundListRecords(search) {
-  if (search.__chipShipDone || search.__chipProductShipDone) {
+function resolveOutboundListRecords(viewMode) {
+  if (viewMode === "history") {
     return buildOutgoingCompletedWorkspaceRecords();
   }
   return buildOutgoingTaskWorkspaceRecords();
@@ -163,7 +168,14 @@ function matchesOutboundSearch(record, row, search) {
   return true;
 }
 
-export default function OutboundManagement() {
+export default function OutboundManagement({ forcedMode } = {}) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryMode = searchParams.get("mode") === "register" ? "register" : "history";
+  // RC1 Route Registry — canonical /operations/shipment-register · /operations/shipment-history
+  // 는 forcedMode로 화면 역할을 고정한다. legacy ?mode= query는 redirect 단계에서만 사용.
+  const viewMode = forcedMode ?? queryMode;
+  const isHistoryMode = viewMode === "history";
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitialId, setRegisterInitialId] = useState("");
@@ -174,11 +186,12 @@ export default function OutboundManagement() {
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [outboundListPrintOpen, setOutboundListPrintOpen] = useState(false);
   const [outboundListPrintProps, setOutboundListPrintProps] = useState(null);
-  const [statementPrintOpen, setStatementPrintOpen] = useState(false);
-  const [statementPrintBusy, setStatementPrintBusy] = useState(false);
-  const [statementContext, setStatementContext] = useState(null);
   const [statementPromptOpen, setStatementPromptOpen] = useState(false);
   const [pendingRegisterResult, setPendingRegisterResult] = useState(null);
+  const [workflowNextStep, setWorkflowNextStep] = useState(null);
+  const transactionStatementOutput = useTransactionStatementDocumentOutput({
+    onAfterOutput: () => setRefreshKey((key) => key + 1),
+  });
   const chipRecords = useMemo(() => getOperationsRecords(), [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -189,22 +202,19 @@ export default function OutboundManagement() {
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(() => {
-    if (search.__chipShipDone || search.__chipProductShipDone) {
-      return buildOutgoingCompletedWorkspaceRecords();
-    }
-    return buildOutgoingTaskWorkspaceRecords();
-  }, [refreshKey, search.__chipShipDone, search.__chipProductShipDone]);
+    return resolveOutboundListRecords(viewMode);
+  }, [refreshKey, viewMode]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
   });
 
   const rows = useMemo(() => {
-    const records = resolveOutboundListRecords(search);
+    const records = resolveOutboundListRecords(viewMode);
     return records
       .map((record) => mapOutboundListRow(record))
       .filter((row) => matchesOutboundSearch(row.record, row, search))
       .sort((a, b) => b.managementId.localeCompare(a.managementId));
-  }, [search, refreshKey]);
+  }, [search, refreshKey, viewMode]);
 
   const {
     page,
@@ -340,65 +350,18 @@ export default function OutboundManagement() {
 
   const outboundListPrintPropsForModal = outboundListPrintProps;
 
-  const statementPrintProps = useMemo(() => {
-    if (statementContext?.record) {
-      return buildTransactionStatementPrintProps(statementContext.record, {
-        shipQty: statementContext.shipQty,
-      });
-    }
-    const targetRecord = printTargetRows[0]?.record ?? null;
-    if (!targetRecord) return null;
-    return buildTransactionStatementPrintProps(targetRecord, {
-      shipQty: getLastOutboundShipQty(targetRecord),
-    });
-  }, [statementContext, printTargetRows]);
+  const statementPrintProps = transactionStatementOutput.printProps;
 
   const openStatementPrintPreview = (context = null) => {
     const record = context?.record ?? printTargetRows[0]?.record ?? null;
     if (!record) return;
-    setStatementContext(
-      context ?? {
-        record,
-        shipQty: getLastOutboundShipQty(record),
-      }
-    );
-    setStatementPrintOpen(true);
+    transactionStatementOutput.openPreview(record, {
+      shipQty: context?.shipQty ?? getLastOutboundShipQty(record),
+    });
   };
 
   const closeStatementPrintPreview = () => {
-    setStatementPrintOpen(false);
-    setStatementContext(null);
-  };
-
-  const handleStatementPrinted = () => {
-    if (!statementPrintProps?.record) return;
-    recordTransactionStatementPrint(statementPrintProps.record, {
-      shipQty: statementPrintProps.shipQtyNumeric,
-      unitPrice: statementPrintProps.unitPrice,
-      amounts: statementPrintProps.amounts,
-    });
-    setRefreshKey((key) => key + 1);
-  };
-
-  const handleStatementPrint = async (documentEl) => {
-    setStatementPrintBusy(true);
-    try {
-      await printTitanDocument(documentEl);
-      handleStatementPrinted();
-    } finally {
-      setStatementPrintBusy(false);
-    }
-  };
-
-  const handleStatementPdf = async (documentEl) => {
-    setStatementPrintBusy(true);
-    try {
-      const id = statementPrintProps?.record?.id ?? "statement";
-      await exportTitanPdf(documentEl, `transaction-statement-${id}.pdf`);
-      handleStatementPrinted();
-    } finally {
-      setStatementPrintBusy(false);
-    }
+    transactionStatementOutput.closePreview();
   };
 
   const toggleRow = (id) => {
@@ -460,28 +423,62 @@ export default function OutboundManagement() {
   const handleOutboundRegister = (result) => {
     if (!result?.ok || !result.managementId) return;
     setActiveId(result.managementId);
-    setRefreshKey((k) => k + 1);
-    setPage(1);
     setPendingRegisterResult(result);
     setStatementPromptOpen(true);
   };
 
-  const handleStatementPromptConfirm = () => {
+  const applyPendingOutboundRegister = () => {
     if (!pendingRegisterResult) {
       setStatementPromptOpen(false);
-      return;
+      return null;
     }
+
+    const result = applyOutboundRegister(pendingRegisterResult.form);
+    if (!result.ok) {
+      window.alert(result.message || "출고 등록에 실패했습니다.");
+      return null;
+    }
+
+    setActiveId(result.managementId);
+    setRefreshKey((k) => k + 1);
+    setPage(1);
+    return result;
+  };
+
+  const handleStatementPromptCompleteOnly = () => {
+    const result = applyPendingOutboundRegister();
+    if (!result) return;
+    setStatementPromptOpen(false);
+    setPendingRegisterResult(null);
+    setWorkflowNextStep(getOperationsWorkflowNextStep("outboundCompleteOnly"));
+  };
+
+  const handleStatementPromptIssueAfterComplete = () => {
+    const result = applyPendingOutboundRegister();
+    if (!result) return;
     setStatementPromptOpen(false);
     openStatementPrintPreview({
-      record: pendingRegisterResult.record,
-      shipQty: pendingRegisterResult.shipQty,
+      record: result.record,
+      shipQty: result.shipQty,
     });
     setPendingRegisterResult(null);
   };
 
-  const handleStatementPromptCancel = () => {
+  const handleStatementPromptClose = () => {
     setStatementPromptOpen(false);
     setPendingRegisterResult(null);
+  };
+
+  const handleStatementPromptCancelRegistration = () => {
+    setStatementPromptOpen(false);
+    setPendingRegisterResult(null);
+  };
+
+  const handleStatementIssueDialogClose = (afterIssue = false) => {
+    transactionStatementOutput.closeIssueResult();
+    if (afterIssue) {
+      setWorkflowNextStep(getOperationsWorkflowNextStep("statementIssued"));
+    }
   };
 
   const handleOutboundCancel = (row = activeRow) => {
@@ -495,6 +492,32 @@ export default function OutboundManagement() {
     window.alert(`출고 ${cancelResult.revertedQty} EA가 취소되었습니다.\n잔여 재고: ${cancelResult.stockAfter} EA`);
     setRefreshKey((key) => key + 1);
   };
+
+  const detailFooterActions = useMemo(
+    () => {
+      const record = detailPopupRow?.record ?? detailPopupRow;
+      const statementStatus = getStatementPrintStatus(record);
+      return [
+        {
+          id: FOUNDATION_DOCUMENT_ACTIONS.TRANSACTION_STATEMENT_PRINT,
+          label: statementStatus.label === "발행완료" ? "거래명세서 재출력" : "거래명세서 발행",
+          onClick: () => {
+            if (!record) return;
+            openStatementPrintPreview({
+              record,
+              shipQty: getLastOutboundShipQty(record),
+            });
+          },
+          disabled: !detailPopupRow?.record,
+        },
+        {
+          id: FOUNDATION_DOCUMENT_ACTIONS.CLOSE,
+          onClick: () => setDetailPopupRow(null),
+        },
+      ];
+    },
+    [detailPopupRow]
+  );
 
   const handleRowShip = (row) => {
     const record = row?.record ?? row;
@@ -510,42 +533,64 @@ export default function OutboundManagement() {
   };
 
   const renderProcessChip = (row) => renderWorkflowProcessChip(row);
+  const renderStatementStatusChip = (row) => (
+    <StatusChip variant={row.statementStatusVariant}>{row.statementStatusLabel}</StatusChip>
+  );
 
   const columns = useMemo(
     () =>
       buildOutboundListColumns({
         renderProcess: renderProcessChip,
-        renderActions: (row) => {
-          const record = row.record ?? row;
-          const canShip = getStockQty(record) > 0;
-          return (
-            <OutboundRowActions
-              canShip={canShip || (record?.shippedQty ?? 0) > 0}
-              shipLabel={canShip ? "출고" : "명세서"}
-              onShip={() => handleRowShip(row)}
-              canEdit={canShip}
-              onEdit={() => handleRowShip(row)}
-              canCancel={isTitanAdminUser() && (record?.shippedQty ?? 0) > 0}
-              onCancel={() => handleOutboundCancel(row)}
-            />
-          );
-        },
+        renderStatementStatus: renderStatementStatusChip,
+        // 출고 이력(history) — 순수 조회 + 거래명세서 재출력 화면 (출고 등록/취소 ❌)
+        renderActions: isHistoryMode
+          ? (row) => {
+              const record = row.record ?? row;
+              return (
+                <OutboundRowActions
+                  canShip
+                  shipLabel="명세서"
+                  onShip={() =>
+                    openStatementPrintPreview({ record, shipQty: getLastOutboundShipQty(record) })
+                  }
+                  canEdit={false}
+                  canCancel={false}
+                />
+              );
+            }
+          : (row) => {
+              const record = row.record ?? row;
+              const canShip = getStockQty(record) > 0;
+              return (
+                <OutboundRowActions
+                  canShip={canShip || (record?.shippedQty ?? 0) > 0}
+                  shipLabel={canShip ? "출고" : "명세서"}
+                  onShip={() => handleRowShip(row)}
+                  canEdit={canShip}
+                  onEdit={() => handleRowShip(row)}
+                  canCancel={isTitanAdminUser() && (record?.shippedQty ?? 0) > 0}
+                  onCancel={() => handleOutboundCancel(row)}
+                />
+              );
+            },
       }),
-    [refreshKey]
+    [refreshKey, isHistoryMode]
   );
 
   return (
     <div className="inbound-page">
       <SectionPageActions>
-        <PrimaryButton type="button" onClick={() => openRegisterModal()}>
-          <Plus size={14} aria-hidden="true" />
-          {OUTBOUND_REGISTER_LABEL}
-        </PrimaryButton>
+        {!isHistoryMode ? (
+          <PrimaryButton type="button" onClick={() => openRegisterModal()}>
+            <Plus size={14} aria-hidden="true" />
+            {OUTBOUND_REGISTER_LABEL}
+          </PrimaryButton>
+        ) : null}
         <SecondaryButton type="button" onClick={openOutboundListPrintPreview} disabled={printTargetRows.length === 0}>
           <Printer size={14} aria-hidden="true" />
           {OUTBOUND_LIST_LABEL}
         </SecondaryButton>
-        <SecondaryButton type="button">
+        <SecondaryButton type="button" onClick={() => window.alert("엑셀 출력 기능은 V1.1에서 제공될 예정입니다.")}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>
@@ -584,6 +629,10 @@ export default function OutboundManagement() {
         }
       />
 
+      <div className="inbound-page__history-heading" role="heading" aria-level="2">
+        {viewMode === "register" ? "출고 등록 대상" : "출고 이력"}
+      </div>
+
       <div className="inbound-page__list quality-page__list">
         {selectedIds.length > 0 ? (
           <div className="inbound-page__selection-bar">
@@ -613,9 +662,9 @@ export default function OutboundManagement() {
           onRowClick={(row) => setActiveId(row.id)}
           onRowDoubleClick={handleRowDoubleClick}
           emptyMessage={
-            search.__chipShipDone || search.__chipProductShipDone
-              ? "출고 완료 제품이 없습니다."
-              : "출고 대기 제품이 없습니다. (출고 완료 제품은 출고완료 탭에서 확인)"
+            viewMode === "history"
+              ? "출고 완료 이력이 없습니다."
+              : "출고 대기 제품이 없습니다. (출고 완료 제품은 출고이력에서 확인)"
           }
         />
 
@@ -642,8 +691,10 @@ export default function OutboundManagement() {
       <OutboundStatementPromptDialog
         open={statementPromptOpen}
         result={pendingRegisterResult}
-        onConfirm={handleStatementPromptConfirm}
-        onCancel={handleStatementPromptCancel}
+        onCompleteOnly={handleStatementPromptCompleteOnly}
+        onIssueAfterComplete={handleStatementPromptIssueAfterComplete}
+        onCancelRegistration={handleStatementPromptCancelRegistration}
+        onClose={handleStatementPromptClose}
       />
 
       <InOutListPrintPreviewModal
@@ -654,21 +705,51 @@ export default function OutboundManagement() {
       />
 
       <TitanPrintPreviewModal
-        open={statementPrintOpen}
+        open={transactionStatementOutput.isOpen}
         onClose={closeStatementPrintPreview}
         title="거래명세서 출력 미리보기"
-        onPrint={handleStatementPrint}
-        onPdf={handleStatementPdf}
-        busy={statementPrintBusy}
+        onPrint={transactionStatementOutput.print}
+        onPdf={transactionStatementOutput.pdf}
+        busy={transactionStatementOutput.busy}
       >
         {statementPrintProps ? <TransactionStatementPrintDocument {...statementPrintProps} /> : null}
       </TitanPrintPreviewModal>
+
+      <TransactionStatementIssueResultDialog
+        open={Boolean(transactionStatementOutput.issueResult)}
+        result={transactionStatementOutput.issueResult}
+        onPrintComplete={() => {
+          transactionStatementOutput.confirmIssueResult("출력 완료");
+          handleStatementIssueDialogClose(true);
+        }}
+        onPdfOnly={() => {
+          transactionStatementOutput.confirmIssueResult("PDF만 저장");
+          handleStatementIssueDialogClose(true);
+        }}
+        onViewHistory={() => {
+          handleStatementIssueDialogClose(true);
+          navigate(OPERATION_ROUTES.shipmentHistory);
+        }}
+        onClose={() => handleStatementIssueDialogClose(false)}
+      />
+
+      <OperationsWorkflowNextDialog
+        open={Boolean(workflowNextStep)}
+        step={workflowNextStep}
+        onNavigate={(path) => {
+          navigate(path);
+          setWorkflowNextStep(null);
+        }}
+        onStay={() => setWorkflowNextStep(null)}
+        onClose={() => setWorkflowNextStep(null)}
+      />
 
       <TitanScreenDetailPopup
         screenKey="outbound"
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
+        footerActions={detailFooterActions}
         context={{
           onSelectCoLotProduct: (id) => {
             const target = rows.find((row) => row.managementId === id || row.id === id);

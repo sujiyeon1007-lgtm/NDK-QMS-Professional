@@ -29,7 +29,6 @@ import {
   buildProcessMasterDetail,
   buildProcessMasterSummary,
 } from "../../utils/processMasterDetail";
-import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -238,18 +237,6 @@ export default function ProcessManagementPage() {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>공정관리</h2>
-            <p className="company-management-page__intro">
-              열처리 공정 Master 입니다. 좌측 목록에서 공정을 선택하면 우측에서 연결 설비 · 적용 제품
-              · 관련 재질 · LOT · 표준정보를 확인할 수 있습니다. (Domain Master Workspace)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="공정 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = PROCESS_KPI_ICON[kpi.id] ?? Cog;
@@ -429,7 +416,7 @@ export default function ProcessManagementPage() {
                     <section className="company-detail-section" aria-label="표준정보">
                       <FieldGrid fields={PROCESS_STANDARD_FIELDS} source={detail.standard} />
                       <p className="company-detail-section__empty">
-                        표준정보는 조회 전용입니다. (향후 Recipe · 담당부서 연결 준비)
+                        표준정보는 조회 전용입니다.
                       </p>
                     </section>
                   ) : null}

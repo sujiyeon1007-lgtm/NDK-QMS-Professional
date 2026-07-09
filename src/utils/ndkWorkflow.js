@@ -9,6 +9,8 @@
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { formatQtyWithUnit } from "./productUnits";
 import { getStockQty, isIncomingRegistered } from "./productionRecords";
+import { isHeatTreatmentComplete } from "./menuWorkflowGate";
+import { isShotWorkComplete, isShotWorkType } from "../config/workTypeWorkflow";
 import { HT_TERM } from "../config/titanHeatTreatmentTerminology";
 import { getWorkflowStatus, WORKFLOW_STATUS, hasReachedWorkflowStatus } from "./titanWorkflowStatus";
 import { getShipmentEvents } from "./titanHistorySession";
@@ -58,14 +60,16 @@ export function isCertificateReady(record) {
 }
 
 /**
- * 출고 가능 — 성적서 완료 + 재고 있음 (공식 Workflow · SSOT: titanWorkflowStatus)
+ * 출고 가능 — 생산(열처리/쇼트) 완료 + 재고 있음 (성적서와 독립 · PM P0)
  */
 export function isShipmentReady(record) {
-  return (
-    isIncomingRegistered(record) &&
-    getStockQty(record) > 0 &&
-    hasReachedWorkflowStatus(record, WORKFLOW_STATUS.CERT_DONE)
-  );
+  if (!isIncomingRegistered(record) || getStockQty(record) <= 0) {
+    return false;
+  }
+  if (isShotWorkType(record)) {
+    return isShotWorkComplete(record);
+  }
+  return isHeatTreatmentComplete(record);
 }
 
 /**

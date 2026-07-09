@@ -2,16 +2,19 @@ import {
   Download,
   ExternalLink,
   FileSpreadsheet,
-  FileText,
   FileType2,
-  Image as ImageIcon,
   Plus,
 } from "lucide-react";
 import TitanDataTable from "../../foundation/components/DataTable";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import { DOCUMENT_RELATED_SECTIONS } from "../../config/documentDetailPopupTabs";
 import { formatDocumentRelativeTime, resolvePreviewKind } from "../../config/documentManagementV13";
 import { getDocumentChangeLogs } from "../../utils/documentChangeLogSession";
+import {
+  getDocumentFoundationAttachments,
+  isBaseDocumentAttachment,
+} from "../../utils/documentFoundationAttachments";
 import { formatDocumentDetailFields } from "./documentDetailActions";
 
 function DocumentPreviewFrame({ row }) {
@@ -156,65 +159,18 @@ export function DocumentRevisionHistoryPanel({
   );
 }
 
-function resolveAttachmentKindLabel(row) {
-  const kind = resolvePreviewKind(row);
-  if (kind === "pdf") return "PDF";
-  if (kind === "word") return "Word";
-  if (kind === "excel") return "Excel";
-  if (kind === "image") return "Image";
-  return "File";
-}
-
-function AttachmentKindIcon({ kind }) {
-  if (kind === "PDF") return <FileText size={14} aria-hidden="true" />;
-  if (kind === "Word") return <FileType2 size={14} aria-hidden="true" />;
-  if (kind === "Excel") return <FileSpreadsheet size={14} aria-hidden="true" />;
-  if (kind === "Image") return <ImageIcon size={14} aria-hidden="true" />;
-  return <FileText size={14} aria-hidden="true" />;
-}
-
-export function DocumentAttachmentsPanel({ row, onDownload, onOpen }) {
+export function DocumentAttachmentsPanel({ row, onUpload, onDelete }) {
   if (!row) {
     return <p className="document-company-popup__preview-empty">첨부 파일이 없습니다.</p>;
   }
 
-  const files = row.hasPdf || row.dataUrl
-    ? [
-        {
-          id: row.id,
-          label: row.pdfFileName || row.title,
-          kind: resolveAttachmentKindLabel(row),
-          row,
-        },
-      ]
-    : [];
-
-  if (!files.length) {
-    return <p className="document-company-popup__preview-empty">등록된 첨부파일이 없습니다.</p>;
-  }
-
   return (
-    <ul className="document-company-popup__attachment-list">
-      {files.map((file) => (
-        <li key={file.id} className="document-company-popup__attachment-row">
-          <div className="document-company-popup__attachment-item document-company-popup__attachment-item--static">
-            <AttachmentKindIcon kind={file.kind} />
-            <span className="document-company-popup__attachment-kind">{file.kind}</span>
-            <span className="document-company-popup__attachment-name">{file.label}</span>
-          </div>
-          <div className="document-company-popup__attachment-actions">
-            <SecondaryButton type="button" onClick={() => onDownload?.(file.row)}>
-              <Download size={12} aria-hidden="true" />
-              다운로드
-            </SecondaryButton>
-            <SecondaryButton type="button" onClick={() => onOpen?.(file.row)}>
-              <ExternalLink size={12} aria-hidden="true" />
-              열기
-            </SecondaryButton>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <FoundationAttachment
+      attachments={getDocumentFoundationAttachments(row)}
+      onUpload={onUpload}
+      onDelete={onDelete}
+      canDeleteAttachment={(attachment) => !isBaseDocumentAttachment(attachment)}
+    />
   );
 }
 

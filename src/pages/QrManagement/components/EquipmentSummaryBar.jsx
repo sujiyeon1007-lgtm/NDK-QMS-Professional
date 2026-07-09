@@ -7,22 +7,13 @@ import { QR_CHARGING_PAGE_COPY } from "../../../config/equipmentConfig";
 function buildSummaryKpiItems(summary) {
   return [
     {
-      id: "total",
-      label: "현재 설비",
-      value: summary.total,
+      id: "running",
+      label: "운전중",
+      value: summary.running,
       countUnit: "대",
-      tone: "incoming",
-      icon: Factory,
-      filterable: false,
-    },
-    {
-      id: "idle",
-      label: "대기",
-      value: summary.idle,
-      countUnit: "대",
-      tone: "inspect-wait",
-      icon: PauseCircle,
-      filterable: false,
+      tone: "production",
+      icon: PlayCircle,
+      filterable: true,
     },
     {
       id: "ready",
@@ -31,16 +22,16 @@ function buildSummaryKpiItems(summary) {
       countUnit: "대",
       tone: "prod-wait",
       icon: Clock,
-      filterable: false,
+      filterable: true,
     },
     {
-      id: "running",
-      label: "운전중",
-      value: summary.running,
+      id: "idle",
+      label: "대기",
+      value: summary.idle,
       countUnit: "대",
-      tone: "production",
-      icon: PlayCircle,
-      filterable: false,
+      tone: "inspect-wait",
+      icon: PauseCircle,
+      filterable: true,
     },
     {
       id: "maintenance",
@@ -49,13 +40,23 @@ function buildSummaryKpiItems(summary) {
       countUnit: "대",
       tone: "hold",
       icon: Wrench,
-      filterable: false,
+      filterable: true,
+    },
+    {
+      id: "total",
+      label: "현재 설비",
+      value: summary.total,
+      countUnit: "대",
+      tone: "incoming",
+      icon: Factory,
+      filterable: true,
     },
   ];
 }
 
-export default function EquipmentSummaryBar({ summary }) {
+export default function EquipmentSummaryBar({ summary, activeFilter = "total", onFilterChange }) {
   const items = buildSummaryKpiItems(summary);
+  const filterEnabled = typeof onFilterChange === "function";
 
   return (
     <TitanKpiBarSlot
@@ -64,7 +65,13 @@ export default function EquipmentSummaryBar({ summary }) {
     >
       <div className="titan-status-chip-bar" role="list" aria-label={QR_CHARGING_PAGE_COPY.summaryAriaLabel}>
         {items.map((chip) => (
-          <TitanKpiCard key={chip.id} chip={chip} disabled />
+          <TitanKpiCard
+            key={chip.id}
+            chip={chip}
+            active={filterEnabled && activeFilter === chip.id}
+            disabled={!filterEnabled}
+            onClick={() => onFilterChange?.(chip.id)}
+          />
         ))}
       </div>
     </TitanKpiBarSlot>

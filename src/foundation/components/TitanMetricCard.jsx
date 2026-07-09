@@ -6,9 +6,10 @@
   icon: Icon,
   tone = "blue",
   className = "",
+  ...props
 }) {
   return (
-    <article className={`titan-metric-card titan-metric-card--${tone} ${className}`.trim()}>
+    <article className={`titan-metric-card titan-metric-card--${tone} ${className}`.trim()} {...props}>
       <div className="titan-metric-card__head">
         <span className="titan-metric-card__title">{title}</span>
         {Icon ? (

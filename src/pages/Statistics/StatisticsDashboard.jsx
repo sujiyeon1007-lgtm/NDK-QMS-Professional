@@ -1,9 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  Factory,
-  ClipboardList,
-  Truck,
-  Package,
   Layers,
   AlertTriangle,
   TrendingUp,
@@ -15,46 +11,16 @@ import {
   buildStatisticsDashboardSnapshot,
   STATISTICS_MANAGEMENT_TABS,
 } from "../../utils/statisticsDashboardData";
+import { DashboardEmptyState } from "../../foundation/components/TitanDashboardCard";
 import "./StatisticsDashboard.css";
-
-const KPI_ICON = {
-  factory: Factory,
-  clipboard: ClipboardList,
-  truck: Truck,
-  package: Package,
-  layers: Layers,
-  alert: AlertTriangle,
-};
 
 function formatNumber(value) {
   return Number(value ?? 0).toLocaleString("ko-KR");
 }
 
-function Sparkline({ points }) {
-  if (!points || points.length < 2) return null;
-  const max = Math.max(...points, 1);
-  const min = Math.min(...points, 0);
-  const range = max - min || 1;
-  const width = 96;
-  const height = 28;
-  const step = width / (points.length - 1);
-  const path = points
-    .map((value, index) => {
-      const x = index * step;
-      const y = height - ((value - min) / range) * height;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  return (
-    <svg className="stat-dash-spark" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      <path d={path} fill="none" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
 function LineChart({ series }) {
   if (!series || !series.length) {
-    return <p className="stat-dash-empty">데이터 준비 중</p>;
+    return <DashboardEmptyState />;
   }
   const values = series.map((item) => Number(item.value) || 0);
   const max = Math.max(...values, 1);
@@ -131,11 +97,11 @@ export default function StatisticsDashboard() {
   const paretoMax = Math.max(...(snapshot.qualityPareto ?? []).map((row) => row.value), 1);
 
   return (
-    <div className="stat-dash">
+    <div className="stat-dash titan-dashboard-layout-v2">
       {/* ① Executive Summary */}
-      <section className="stat-dash-summary" aria-label="Executive Summary">
+      <section className="stat-dash-summary titan-dashboard-row titan-dashboard-kpi-bar-v2" aria-label="Executive Summary">
         {snapshot.executiveSummary.map((item) => (
-          <div key={item.id} className="stat-dash-summary__item">
+          <div key={item.id} className="stat-dash-summary__item titan-dashboard-span-2">
             <span className="stat-dash-summary__label">{item.label}</span>
             <span className="stat-dash-summary__value">
               {formatNumber(item.value)}
@@ -151,35 +117,9 @@ export default function StatisticsDashboard() {
         ))}
       </section>
 
-      {/* ② KPI Cards */}
-      <section className="stat-dash-kpis" aria-label="KPI Cards">
-        {snapshot.kpiCards.map((card) => {
-          const Icon = KPI_ICON[card.icon] ?? Activity;
-          return (
-            <article key={card.id} className={`stat-dash-kpi${card.tone === "danger" ? " is-danger" : ""}`}>
-              <div className="stat-dash-kpi__head">
-                <span className="stat-dash-kpi__icon">
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-                <span className="stat-dash-kpi__label">{card.label}</span>
-              </div>
-              <div className="stat-dash-kpi__value">
-                {formatNumber(card.value)}
-                <em>{card.unit}</em>
-              </div>
-              {card.spark?.length ? (
-                <div className="stat-dash-kpi__spark">
-                  <Sparkline points={card.spark} />
-                </div>
-              ) : null}
-            </article>
-          );
-        })}
-      </section>
-
-      {/* ③ Main Analytics */}
-      <section className="stat-dash-main" aria-label="Main Analytics">
-        <article className="stat-dash-card stat-dash-main__chart">
+      {/* ② Main Analytics — V2 핵심: 생산량 추이 + 금일 운영 현황 */}
+      <section className="stat-dash-main titan-dashboard-row titan-dashboard-row--hero" aria-label="Main Analytics">
+        <article className="stat-dash-card stat-dash-main__chart titan-dashboard-span-6">
           <header className="stat-dash-card__head">
             <TrendingUp size={16} aria-hidden="true" />
             <h3>생산량 추이</h3>
@@ -201,10 +141,10 @@ export default function StatisticsDashboard() {
           ) : null}
         </article>
 
-        <article className="stat-dash-card stat-dash-main__today">
+        <article className="stat-dash-card stat-dash-main__today stat-dash-card--compact titan-dashboard-span-3">
           <header className="stat-dash-card__head">
             <Activity size={16} aria-hidden="true" />
-            <h3>오늘 실적현황</h3>
+            <h3>금일 실적현황</h3>
           </header>
           <div className="stat-dash-progress-list">
             {snapshot.todayPerformance.map((row) => (
@@ -224,10 +164,10 @@ export default function StatisticsDashboard() {
           </div>
         </article>
 
-        <article className="stat-dash-card stat-dash-main__alerts">
+        <article className="stat-dash-card stat-dash-main__alerts stat-dash-card--compact titan-dashboard-span-3">
           <header className="stat-dash-card__head">
             <AlertTriangle size={16} aria-hidden="true" />
-            <h3>오늘 이상 알림</h3>
+            <h3>금일 이상 알림</h3>
           </header>
           <ul className="stat-dash-alerts">
             {snapshot.todayAlerts.map((alert) => (
@@ -240,63 +180,53 @@ export default function StatisticsDashboard() {
         </article>
       </section>
 
-      {/* ④ Quality Analytics */}
-      <section className="stat-dash-quality" aria-label="Quality Analytics">
-        <article className="stat-dash-card">
+      {/* ③ Operations Core — 업체별 생산량 + 생산성 */}
+      <section className="stat-dash-operations titan-dashboard-row titan-dashboard-row--operations" aria-label="업체별 생산량 및 생산성">
+        <article className="stat-dash-card stat-dash-mgmt stat-dash-mgmt--wide titan-dashboard-span-8">
           <header className="stat-dash-card__head">
-            <h3>불량 유형 분석</h3>
-            <span className="stat-dash-card__hint">Pareto</span>
+            <h3>업체별 생산량</h3>
+            <div className="stat-dash-mgmt__tabs" role="tablist" aria-label="업체별 생산량">
+              {STATISTICS_MANAGEMENT_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={managementTab === tab.id}
+                  className={`stat-dash-mgmt__tab${managementTab === tab.id ? " is-active" : ""}`}
+                  onClick={() => setManagementTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </header>
-          <div className="stat-dash-pareto">
-            {snapshot.qualityPareto.length ? (
-              snapshot.qualityPareto.map((row) => (
-                <div key={row.label} className="stat-dash-pareto__row">
-                  <span className="stat-dash-pareto__label" title={row.label}>
+          <ol className="stat-dash-rank stat-dash-rank--wide">
+            {managementRows.length ? (
+              managementRows.map((row, index) => (
+                <li key={row.label} className="stat-dash-rank__row">
+                  <span className="stat-dash-rank__no">{index + 1}</span>
+                  <span className="stat-dash-rank__label" title={row.label}>
                     {row.label}
                   </span>
-                  <span className="stat-dash-pareto__bar" aria-hidden="true">
-                    <span style={{ width: `${(row.value / paretoMax) * 100}%` }} />
+                  <span className="stat-dash-rank__bar" aria-hidden="true">
+                    <span style={{ width: `${(row.value / managementMax) * 100}%` }} />
                   </span>
-                  <span className="stat-dash-pareto__value">{row.value}</span>
-                  <span className="stat-dash-pareto__cum">{row.cumulativePct}%</span>
-                </div>
+                  <span className="stat-dash-rank__val">
+                    {formatNumber(row.value)}
+                    {activeTabDef.unit}
+                  </span>
+                </li>
               ))
             ) : (
-              <p className="stat-dash-empty">불량 데이터 없음</p>
+              <DashboardEmptyState />
             )}
-          </div>
+          </ol>
         </article>
 
-        <article className="stat-dash-card">
-          <header className="stat-dash-card__head">
-            <h3>공정별 불량률</h3>
-            <span className="stat-dash-card__hint">Heatmap</span>
-          </header>
-          <div className="stat-dash-heatmap">
-            {snapshot.processDefectHeatmap.length ? (
-              snapshot.processDefectHeatmap.map((row) => {
-                const intensity = row.value / heatmapMax;
-                return (
-                  <div
-                    key={row.label}
-                    className="stat-dash-heatmap__cell"
-                    style={{ "--heat": intensity.toFixed(2) }}
-                  >
-                    <span className="stat-dash-heatmap__label">{row.label}</span>
-                    <span className="stat-dash-heatmap__rate">{row.rate}%</span>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="stat-dash-empty">불량 데이터 없음</p>
-            )}
-          </div>
-        </article>
-
-        <article className="stat-dash-card stat-dash-quality__gauge">
+        <article className="stat-dash-card stat-dash-quality__gauge stat-dash-productivity stat-dash-card--compact titan-dashboard-span-4">
           <header className="stat-dash-card__head">
             <GaugeIcon size={16} aria-hidden="true" />
-            <h3>설비 가동률</h3>
+            <h3>생산성</h3>
           </header>
           <Gauge value={snapshot.equipmentGauge.value} />
           <p className="stat-dash-gauge__meta">
@@ -324,9 +254,9 @@ export default function StatisticsDashboard() {
             </div>
           </div>
           <div className="stat-dash-eqtop">
-            <h4>Top 10 설비</h4>
+            <h4>Top 5 설비</h4>
             <ul>
-              {snapshot.equipmentTop.map((eq) => (
+              {snapshot.equipmentTop.slice(0, 5).map((eq) => (
                 <li key={eq.id}>
                   <span className="stat-dash-eqtop__name" title={eq.label}>
                     {eq.label}
@@ -342,9 +272,9 @@ export default function StatisticsDashboard() {
         </article>
       </section>
 
-      {/* ⑤ LOT Center + ⑥ 경영 분석 + ⑦ Today Schedule */}
-      <section className="stat-dash-lower" aria-label="LOT / 경영 분석 / 일정">
-        <article className="stat-dash-card stat-dash-lot">
+      {/* ④ Analysis Zone — LOT / 공정 / 기타 Summary */}
+      <section className="stat-dash-lower titan-dashboard-row titan-dashboard-row--analysis" aria-label="LOT / 공정 / 기타 Summary">
+        <article className="stat-dash-card stat-dash-lot titan-dashboard-span-3">
           <header className="stat-dash-card__head">
             <Layers size={16} aria-hidden="true" />
             <h3>LOT 진행현황</h3>
@@ -359,51 +289,61 @@ export default function StatisticsDashboard() {
           </div>
         </article>
 
-        <article className="stat-dash-card stat-dash-mgmt">
+        <article className="stat-dash-card titan-dashboard-span-3">
           <header className="stat-dash-card__head">
-            <h3>경영 분석</h3>
-            <div className="stat-dash-mgmt__tabs" role="tablist" aria-label="경영 분석">
-              {STATISTICS_MANAGEMENT_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={managementTab === tab.id}
-                  className={`stat-dash-mgmt__tab${managementTab === tab.id ? " is-active" : ""}`}
-                  onClick={() => setManagementTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <h3>공정별 불량률</h3>
+            <span className="stat-dash-card__hint">Heatmap</span>
           </header>
-          <ol className="stat-dash-rank">
-            {managementRows.length ? (
-              managementRows.map((row, index) => (
-                <li key={row.label} className="stat-dash-rank__row">
-                  <span className="stat-dash-rank__no">{index + 1}</span>
-                  <span className="stat-dash-rank__label" title={row.label}>
-                    {row.label}
-                  </span>
-                  <span className="stat-dash-rank__bar" aria-hidden="true">
-                    <span style={{ width: `${(row.value / managementMax) * 100}%` }} />
-                  </span>
-                  <span className="stat-dash-rank__val">
-                    {formatNumber(row.value)}
-                    {activeTabDef.unit}
-                  </span>
-                </li>
-              ))
+          <div className="stat-dash-heatmap">
+            {snapshot.processDefectHeatmap.length ? (
+              snapshot.processDefectHeatmap.map((row) => {
+                const intensity = row.value / heatmapMax;
+                return (
+                  <div
+                    key={row.label}
+                    className="stat-dash-heatmap__cell"
+                    style={{ "--heat": intensity.toFixed(2) }}
+                  >
+                    <span className="stat-dash-heatmap__label">{row.label}</span>
+                    <span className="stat-dash-heatmap__rate">{row.rate}%</span>
+                  </div>
+                );
+              })
             ) : (
-              <p className="stat-dash-empty">데이터 없음</p>
+              <DashboardEmptyState title="이번 기간에는 불량 데이터가 없습니다." />
             )}
-          </ol>
+          </div>
         </article>
 
-        <article className="stat-dash-card stat-dash-schedule">
+        <article className="stat-dash-card titan-dashboard-span-3">
+          <header className="stat-dash-card__head">
+            <h3>불량 유형 분석</h3>
+            <span className="stat-dash-card__hint">Pareto</span>
+          </header>
+          <div className="stat-dash-pareto">
+            {snapshot.qualityPareto.length ? (
+              snapshot.qualityPareto.map((row) => (
+                <div key={row.label} className="stat-dash-pareto__row">
+                  <span className="stat-dash-pareto__label" title={row.label}>
+                    {row.label}
+                  </span>
+                  <span className="stat-dash-pareto__bar" aria-hidden="true">
+                    <span style={{ width: `${(row.value / paretoMax) * 100}%` }} />
+                  </span>
+                  <span className="stat-dash-pareto__value">{row.value}</span>
+                  <span className="stat-dash-pareto__cum">{row.cumulativePct}%</span>
+                </div>
+              ))
+            ) : (
+              <DashboardEmptyState title="이번 기간에는 불량 데이터가 없습니다." />
+            )}
+          </div>
+        </article>
+
+        <article className="stat-dash-card stat-dash-schedule titan-dashboard-span-3">
           <header className="stat-dash-card__head">
             <CalendarClock size={16} aria-hidden="true" />
-            <h3>오늘 일정</h3>
+            <h3>금일 일정</h3>
           </header>
           <ul className="stat-dash-timeline">
             {snapshot.schedule.map((row) => (

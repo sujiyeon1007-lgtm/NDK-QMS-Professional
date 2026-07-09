@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
@@ -37,8 +38,12 @@ import {
   buildEquipmentMasterDetail,
   buildEquipmentMasterSummary,
 } from "../../utils/equipmentMasterDetail";
-import { ensureEquipmentQrEntry } from "../../utils/qrEngineRegistryService";
-import MasterDataBackLink from "./MasterDataBackLink";
+import { QRService } from "../../utils/qrEngineRegistryService";
+import {
+  normalizeFoundationAttachments,
+  readFoundationAttachmentSession,
+  writeFoundationAttachmentSession,
+} from "../../utils/foundationAttachmentEngine";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -50,6 +55,12 @@ import "./MasterDataSprint8Polish.css";
 
 const SELECTION_KEY = "titan-master-selected-equipment-id";
 const CATEGORY_KEY = "equipment";
+const EQUIPMENT_ATTACHMENT_STORAGE_KEY = "project-titan-equipment-master-attachments-v1";
+
+function resolveEquipmentAttachmentOwnerKey(row = {}) {
+  const source = row ?? {};
+  return [source.id, source.code, source.name].filter(Boolean).join("::") || "equipment";
+}
 
 const EQUIPMENT_KPI_ICON = {
   total: Wrench,
@@ -129,6 +140,7 @@ export default function EquipmentManagementPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMode, setRegisterMode] = useState("add");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [attachmentVersion, setAttachmentVersion] = useState(0);
 
   const allRows = useMemo(
     () => getMasterDataByCategory(CATEGORY_KEY).map((row) => formatMasterRowForDisplay(row)),
@@ -219,8 +231,7 @@ export default function EquipmentManagementPage() {
         ? stageMasterUpdate(CATEGORY_KEY, selectedRow.id, form)
         : stageMasterAdd(CATEGORY_KEY, form);
     if (!result.ok) return;
-    const equipmentCode = String(form.code ?? result.row?.code ?? "").trim();
-    if (equipmentCode) ensureEquipmentQrEntry(equipmentCode);
+    QRService.createIfNotExists(CATEGORY_KEY, result.row);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) setSelectedId(result.row.id);
@@ -239,27 +250,35 @@ export default function EquipmentManagementPage() {
   };
 
   const health = detail.health ?? { status: "error", label: "관리 필요", icon: "🔴" };
+  const attachmentOwnerKey = resolveEquipmentAttachmentOwnerKey(selectedRow);
+  const attachments = readFoundationAttachmentSession(EQUIPMENT_ATTACHMENT_STORAGE_KEY, attachmentOwnerKey);
   const tabCounts = {
     processes: detail.counts.processes,
     materials: detail.counts.materials,
     lots: detail.counts.lots,
   };
 
+  const handleAttachmentUpload = (files) => {
+    writeFoundationAttachmentSession(
+      EQUIPMENT_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      [...attachments, ...normalizeFoundationAttachments(files)]
+    );
+    setAttachmentVersion((value) => value + 1);
+  };
+
+  const handleAttachmentDelete = (attachmentId) => {
+    writeFoundationAttachmentSession(
+      EQUIPMENT_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      attachments.filter((attachment) => attachment.id !== attachmentId)
+    );
+    setAttachmentVersion((value) => value + 1);
+  };
+
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>설비관리</h2>
-            <p className="company-management-page__intro">
-              열처리 설비 Master 입니다. 좌측 목록에서 설비를 선택하면 우측에서 담당 공정 · 처리 재질
-              · 작업 LOT · QR 정보 · 설비 정보를 확인할 수 있습니다. (Domain Master Workspace)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="설비 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = EQUIPMENT_KPI_ICON[kpi.id] ?? Wrench;
@@ -435,7 +454,7 @@ export default function EquipmentManagementPage() {
                     <section className="company-detail-section" aria-label="QR 정보">
                       <FieldGrid fields={EQUIPMENT_QR_FIELDS} source={detail.qr} />
                       <p className="company-detail-section__empty">
-                        QR 정보는 조회 전용입니다. (향후 Sprint 9 QR Workflow 연결 준비)
+                        QR 정보는 조회 전용입니다.
                       </p>
                     </section>
                   ) : null}
@@ -444,8 +463,18 @@ export default function EquipmentManagementPage() {
                     <section className="company-detail-section" aria-label="설비 정보">
                       <FieldGrid fields={EQUIPMENT_INFO_FIELDS} source={detail.info} />
                       <p className="company-detail-section__empty">
-                        설비 정보는 조회 전용입니다. (향후 유지보수 기능 확장 준비)
+                        설비 정보는 조회 전용입니다.
                       </p>
+                    </section>
+                  ) : null}
+
+                  {activeTab === "attachments" ? (
+                    <section className="company-detail-section" aria-label="첨부파일">
+                      <FoundationAttachment
+                        attachments={attachments}
+                        onUpload={handleAttachmentUpload}
+                        onDelete={handleAttachmentDelete}
+                      />
                     </section>
                   ) : null}
 

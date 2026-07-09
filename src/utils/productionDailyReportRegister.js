@@ -12,6 +12,44 @@ import {
 import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 import { isProductionComplete } from "./productionComplete";
 
+export const PRODUCTION_PROCESS_CONDITION_FIELDS = Object.freeze({
+  ionNitriding: {
+    match: ["이온질화"],
+    label: "이온질화 공정 조건",
+    fields: [
+      { key: "dischargeVoltage", label: "방전전압", unit: "V" },
+      { key: "dischargeCurrent", label: "방전전류", unit: "A" },
+      { key: "nitrogen", label: "질소(N2)", unit: "L/min" },
+      { key: "argon", label: "아르곤(Ar)", unit: "L/min" },
+      { key: "xGas", label: "X Gas", unit: "" },
+    ],
+  },
+  softNitriding: {
+    match: ["연질화"],
+    label: "연질화 공정 조건",
+    fields: [
+      { key: "ammonia", label: "암모니아(NH3)", unit: "L/min" },
+      { key: "nitrogen", label: "질소(N2)", unit: "L/min" },
+      { key: "oxygen", label: "산소(O2)", unit: "L/min" },
+    ],
+  },
+});
+
+function normalizeProcessText(value = "") {
+  return String(value ?? "").replace(/\s+/g, "").trim();
+}
+
+export function getProductionProcessConditionDefinition(processName = "") {
+  const normalized = normalizeProcessText(processName);
+  if (!normalized) return null;
+
+  return (
+    Object.values(PRODUCTION_PROCESS_CONDITION_FIELDS).find((definition) =>
+      definition.match.some((keyword) => normalized.includes(normalizeProcessText(keyword)))
+    ) ?? null
+  );
+}
+
 export function mapRecordToChargeProduct(record) {
   if (!record) return null;
 
@@ -41,6 +79,21 @@ export function formatHeatTreatmentConditionRows(rows = []) {
     .join(" + ");
 }
 
+export function formatHeatTreatmentProcessConditionRows(processName = "", values = {}) {
+  const definition = getProductionProcessConditionDefinition(processName);
+  if (!definition) return "";
+
+  const parts = definition.fields
+    .map((field) => {
+      const value = String(values?.[field.key] ?? "").trim();
+      if (!value) return "";
+      return `${field.label} ${value}${field.unit ? field.unit : ""}`;
+    })
+    .filter(Boolean);
+
+  return parts.length ? `${definition.label}: ${parts.join(" · ")}` : "";
+}
+
 export function parseHeatTreatmentConditionRows(text = "") {
   const trimmed = String(text ?? "").trim();
   if (!trimmed) return [{ temperature: "", duration: "" }];
@@ -61,6 +114,12 @@ export function hasHeatTreatmentConditionInput(rows = []) {
   return rows.some(
     (row) => String(row?.temperature ?? "").trim() || String(row?.duration ?? "").trim()
   );
+}
+
+export function hasHeatTreatmentProcessConditionInput(processName = "", values = {}) {
+  const definition = getProductionProcessConditionDefinition(processName);
+  if (!definition) return true;
+  return definition.fields.some((field) => String(values?.[field.key] ?? "").trim());
 }
 
 function buildProductionDailyReportCancelPatch() {
@@ -98,6 +157,7 @@ export function buildProductionDailyReportFormFromLot(lotNo, records = getSessio
     lotNo: primary.lotNo?.trim() || String(lotNo).trim(),
     chargeProducts: lotRecords.map(mapRecordToChargeProduct).filter(Boolean),
     heatTreatmentConditionRows: parseHeatTreatmentConditionRows(primary.heatTreatmentConditions),
+    heatTreatmentProcessConditions: primary.heatTreatmentProcessConditions ?? {},
     workDate: primary.workDate || "",
     equipment: primary.equipment || "",
     worker: primary.registrar || "관리자",

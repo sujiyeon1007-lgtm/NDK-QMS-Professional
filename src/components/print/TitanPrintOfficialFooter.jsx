@@ -2,19 +2,22 @@ import {
   TITAN_PRINT_ENGINE_VERSION,
   TITAN_PRINT_LAYOUT_VERSION,
 } from "../../config/titanListPrintStandard";
+import { buildCompanyPrintFooterLines } from "../../utils/companyWorkspaceService";
 
-/** Project TITAN — 공통 출력 Footer (PM Official Print Standard) */
+/** Project TITAN — 공통 출력 Footer (PM Official Print Standard · Company Master 연동) */
 function TitanPrintOfficialFooter({
   notes = [],
   documentCode = "DOC-01",
   printEngineVersion = TITAN_PRINT_ENGINE_VERSION,
   layoutVersion = TITAN_PRINT_LAYOUT_VERSION,
+  useCompanyFooter = true,
 }) {
   const defaultNotes = [
     "※ 작업수량 / 작업일 / LOT No.는 생산부에서 작성합니다.",
     "※ 열처리일보 등록 시 작성된 내용을 전산 입력합니다.",
   ];
   const lines = notes.length > 0 ? notes : defaultNotes;
+  const companyFooterLines = useCompanyFooter ? buildCompanyPrintFooterLines() : [];
 
   return (
     <footer className="titan-print-official-footer" aria-label="출력물 안내">
@@ -24,6 +27,16 @@ function TitanPrintOfficialFooter({
         ))}
       </div>
       <div className="titan-print-official-footer__brand">
+        {companyFooterLines.length ? (
+          <p className="titan-print-official-footer__company">
+            {companyFooterLines.map((line) => (
+              <span key={line}>
+                {line}
+                <br />
+              </span>
+            ))}
+          </p>
+        ) : null}
         <p className="titan-print-official-footer__meta">
           Document : {documentCode}
           <br />

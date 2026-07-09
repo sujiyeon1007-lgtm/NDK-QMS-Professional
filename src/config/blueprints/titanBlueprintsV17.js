@@ -13,6 +13,9 @@
  */
 
 import { defineBlueprint } from "./blueprintSections.js";
+import { DOCUMENT_MANAGEMENT_V101_BLUEPRINT } from "./documentManagementV101Blueprint.js";
+import { MOBILE_QR_PORTAL_BLUEPRINT } from "./mobileQrPortalBlueprint.js";
+import { QR_MENU_SHORTCUT_BLUEPRINT } from "./qrMenuShortcutBlueprint.js";
 
 /** @typedef {ReturnType<typeof defineBlueprint>} TitanBlueprint */
 
@@ -1991,6 +1994,9 @@ export const TITAN_BLUEPRINTS_V17 = {
   environment: ENVIRONMENT_BLUEPRINT,
   companyInfo: COMPANY_INFO_BLUEPRINT,
   lotLifecycle: LOT_LIFECYCLE_BLUEPRINT,
+  mobileQrPortal: MOBILE_QR_PORTAL_BLUEPRINT,
+  qrMenuShortcut: QR_MENU_SHORTCUT_BLUEPRINT,
+  documentManagementV101: DOCUMENT_MANAGEMENT_V101_BLUEPRINT,
 };
 
 /** V2.0 alias — 명시적 명칭 */

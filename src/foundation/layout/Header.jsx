@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, UserRound } from "lucide-react";
 
 import { SecondaryButton } from "../components/Button";
+import NdkLogo from "../../components/common/NdkLogo";
 import { getAuthDisplayUser, clearAuthSession } from "../../utils/titanAuthSession";
 import { TITAN_LOGIN_STORAGE } from "../../config/titanLoginSystem";
 import { getTitanEditionDisplayLabel } from "../../utils/titanEditionSession";
 import { isDemoAdminModeActive } from "../../utils/titanAdminAccess";
+import { getCompanyBrandingLogoUrl } from "../../utils/companyWorkspaceService";
 
 function formatClock(date) {
   const pad = (value) => String(value).padStart(2, "0");
@@ -22,6 +24,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
   const [user, setUser] = useState(() => getAuthDisplayUser());
+  const companyLogoUrl = getCompanyBrandingLogoUrl();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
@@ -41,7 +44,14 @@ export default function Header() {
 
   return (
     <header className="titan-header">
-      <h1 className="titan-header__title">NDK PQMS Professional</h1>
+      <div className="titan-header__brand" aria-label="회사 브랜드">
+        {companyLogoUrl ? (
+          <img className="titan-header__logo" src={companyLogoUrl} alt="Company Logo" />
+        ) : (
+          <NdkLogo className="titan-header__logo titan-header__logo--fallback" />
+        )}
+        <h1 className="titan-header__title">NDK PQMS Professional</h1>
+      </div>
       <span className="titan-header__note">Project TITAN V1.0</span>
       <div className="titan-header__spacer" />
       {isDemoAdminModeActive() ? (

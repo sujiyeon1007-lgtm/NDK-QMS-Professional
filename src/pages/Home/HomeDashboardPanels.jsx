@@ -621,6 +621,7 @@ export function HomeRecentWorkPanel({ records }) {
                     {lotLabel}
                   </strong>
                   <span className="home-recent-timeline__action">{item.statusLabel}</span>
+                  <span className="home-recent-timeline__meta">{item.registrar ?? "—"}</span>
                 </div>
                 <StatusChip variant={chip.variant}>{chip.label}</StatusChip>
               </li>

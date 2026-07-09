@@ -12,8 +12,18 @@ import { cloneSpecification } from "./productSpecificationModel";
 import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
 import { migrateHardeningDepthRows, normalizeHardeningDepthRows } from "./hardeningDepthModel";
 import { getTitanDemoInspectionLogSeeds } from "../data/titanDemoSampleData";
+import {
+  FOUNDATION_ATTACHMENT_ACCEPT,
+  FOUNDATION_ATTACHMENT_SUPPORTED_EXTENSIONS,
+  getFoundationAttachmentExtension,
+  isSupportedFoundationAttachment,
+  normalizeFoundationAttachment,
+  normalizeFoundationAttachments,
+} from "./foundationAttachmentEngine";
 
 const STORAGE_KEY = "project-titan-inspection-log-v3";
+export const INSPECTION_ATTACHMENT_ACCEPT = FOUNDATION_ATTACHMENT_ACCEPT;
+export const INSPECTION_ATTACHMENT_SUPPORTED_EXTENSIONS = FOUNDATION_ATTACHMENT_SUPPORTED_EXTENSIONS;
 
 export const INSPECTION_CATEGORIES = [
   { value: "개발", label: "개발" },
@@ -25,6 +35,11 @@ export const INSPECTION_CATEGORIES = [
 ];
 
 export const INSPECTION_JUDGMENTS = ["합격", "불합격", "보류"];
+
+export const getInspectionAttachmentExtension = getFoundationAttachmentExtension;
+export const isSupportedInspectionAttachment = isSupportedFoundationAttachment;
+export const normalizeTitanAttachment = normalizeFoundationAttachment;
+export const normalizeTitanAttachments = normalizeFoundationAttachments;
 
 function safeRead() {
   try {
@@ -94,7 +109,7 @@ function normalizeLog(log) {
     heatTreatmentCalculations: log.heatTreatmentCalculations || null,
     heatTreatmentEdits: log.heatTreatmentEdits || {},
     note: log.note?.trim() || "",
-    attachments: Array.isArray(log.attachments) ? log.attachments : [],
+    attachments: normalizeTitanAttachments(log.attachments),
     deleted: Boolean(log.deleted),
     createdAt: log.createdAt || new Date().toISOString(),
     updatedAt: log.updatedAt || new Date().toISOString(),
@@ -171,6 +186,25 @@ export function updateInspectionLog(id, patch) {
   logs[index] = updated;
   safeWrite(logs);
   return updated;
+}
+
+export function addInspectionLogAttachments(id, attachments = []) {
+  const log = getInspectionLogById(id);
+  if (!log) return null;
+  const nextAttachments = [
+    ...normalizeTitanAttachments(log.attachments),
+    ...normalizeTitanAttachments(attachments),
+  ];
+  return updateInspectionLog(id, { attachments: nextAttachments });
+}
+
+export function removeInspectionLogAttachment(id, attachmentId) {
+  const log = getInspectionLogById(id);
+  if (!log) return null;
+  const nextAttachments = normalizeTitanAttachments(log.attachments).filter(
+    (attachment) => attachment.id !== attachmentId
+  );
+  return updateInspectionLog(id, { attachments: nextAttachments });
 }
 
 export function softDeleteInspectionLog(id) {

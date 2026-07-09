@@ -16,7 +16,6 @@ import {
   stageMasterUpdate,
 } from "../../utils/masterData";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
-import MasterDataBackLink from "./MasterDataBackLink";
 import MasterEntityDetailModal from "./MasterEntityDetailModal";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
@@ -174,18 +173,6 @@ export default function MasterEntityManagementPage({ tabId }) {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>{pageTitle}</h2>
-            <p className="company-management-page__intro">
-              {launcherItem?.description ?? `${pageTitle} 목록을 관리합니다.`} 행을 더블클릭하면 상세
-              Popup이 열립니다.
-            </p>
-          </div>
-        </div>
-
         <TitanListInteractionHint />
 
         <div className="company-management-page__search">

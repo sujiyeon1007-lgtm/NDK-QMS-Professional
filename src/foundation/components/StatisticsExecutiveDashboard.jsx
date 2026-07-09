@@ -1,4 +1,10 @@
 import { BarChart2 } from "lucide-react";
+import {
+  DashboardCard as FoundationDashboardCard,
+  DashboardEmptyState,
+  DashboardGrid,
+  DashboardRow,
+} from "./TitanDashboardCard";
 
 const CHART_TONES = ["#2563eb", "#16a34a", "#f97316", "#8b5cf6", "#94a3b8"];
 const WORKFLOW_SERIES = [
@@ -22,7 +28,7 @@ function buildConicGradient(items) {
 }
 
 function EmptyChartMessage() {
-  return <p className="production-chart-card__empty">표시할 데이터가 없습니다.</p>;
+  return <DashboardEmptyState />;
 }
 
 function ExecLineChart({ items, unitLabel = "" }) {
@@ -201,31 +207,29 @@ function renderChartBody(chart) {
   return <EmptyChartMessage />;
 }
 
-function DashboardCard({ chart, size = "default", className = "" }) {
+function StatisticsDashboardCard({ chart, span = 4, height = "widget", className = "" }) {
   if (!chart) return null;
   return (
-    <article className={`stat-exec-card panel stat-exec-card--${size} ${className}`.trim()}>
-      <header className="stat-chart-head">
-        <BarChart2 size={16} aria-hidden="true" />
-        <h3>{chart.title}</h3>
-      </header>
+    <FoundationDashboardCard
+      title={chart.title}
+      icon={BarChart2}
+      span={span}
+      height={height}
+      className={`stat-exec-card ${className}`.trim()}
+    >
       <div className="stat-exec-card__body">{renderChartBody(chart)}</div>
-    </article>
+    </FoundationDashboardCard>
   );
 }
 
 function TopListCard({ list }) {
   if (!list) return null;
   return (
-    <article className="stat-exec-top panel">
-      <header className="stat-chart-head">
-        <BarChart2 size={16} aria-hidden="true" />
-        <h3>{list.title}</h3>
-      </header>
+    <FoundationDashboardCard title={list.title} icon={BarChart2} span={4} height="widget" className="stat-exec-top">
       <div className="stat-exec-top__body">
         <ExecBarChart items={list.items} ranked />
       </div>
-    </article>
+    </FoundationDashboardCard>
   );
 }
 
@@ -238,42 +242,47 @@ export default function StatisticsExecutiveDashboard({ dashboard }) {
   const bottomCharts = dashboard.bottomCharts ?? [];
 
   return (
-    <section className="stat-exec-dashboard" aria-label="경영 Dashboard">
+    <DashboardGrid className="stat-exec-dashboard" ariaLabel="경영 Dashboard">
       {dashboard.scopeLabel ? (
         <p className="statistics-charts-grid__scope">
           분석 기준: <strong>{dashboard.scopeLabel}</strong>
         </p>
       ) : null}
 
-      <div className="stat-exec-dashboard__main">
-        {mainCharts.map((chart) => (
-          <DashboardCard key={chart.id} chart={chart} size={chart.type === "multi-line" ? "hero" : "large"} />
+      <DashboardRow className="stat-exec-dashboard__main" minHeight="chart">
+        {mainCharts.map((chart, index) => (
+          <StatisticsDashboardCard
+            key={chart.id}
+            chart={chart}
+            span={index === 0 ? 8 : 2}
+            height="chart"
+          />
         ))}
-      </div>
+      </DashboardRow>
 
       {topLists.length ? (
-        <div className="stat-exec-dashboard__tops">
+        <DashboardRow className="stat-exec-dashboard__tops" minHeight="widget">
           {topLists.map((list) => (
             <TopListCard key={list.id} list={list} />
           ))}
-        </div>
+        </DashboardRow>
       ) : null}
 
       {analysis.length ? (
-        <div className="stat-exec-dashboard__analysis">
+        <DashboardRow className="stat-exec-dashboard__analysis" minHeight="widget">
           {analysis.map((chart) => (
-            <DashboardCard key={chart.id} chart={chart} size="analysis" />
+            <StatisticsDashboardCard key={chart.id} chart={chart} span={4} height="widget" />
           ))}
-        </div>
+        </DashboardRow>
       ) : null}
 
       {bottomCharts.length ? (
-        <div className="stat-exec-dashboard__bottom">
+        <DashboardRow className="stat-exec-dashboard__bottom" minHeight="widget">
           {bottomCharts.map((chart) => (
-            <DashboardCard key={chart.id} chart={chart} />
+            <StatisticsDashboardCard key={chart.id} chart={chart} span={3} height="widget" />
           ))}
-        </div>
+        </DashboardRow>
       ) : null}
-    </section>
+    </DashboardGrid>
   );
 }

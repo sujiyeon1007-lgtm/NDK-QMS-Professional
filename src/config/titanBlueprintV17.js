@@ -164,8 +164,8 @@ export const TITAN_BLUEPRINT_SPRINT_TARGETS = [
   "lotLifecycle",
 ];
 
-/** @deprecated lotLifecycle은 Review 순서 10번으로 통합 */
-export const TITAN_BLUEPRINT_SUPPORTING_TARGETS = [];
+/** Phase 5 Supporting Blueprints — PM 승인 전 구현 ❌ */
+export const TITAN_BLUEPRINT_SUPPORTING_TARGETS = ["mobileQrPortal", "qrMenuShortcut"];
 
 /** @deprecated V1.7 초안 순서 — V2.0 개정으로 대체 */
 export const TITAN_BLUEPRINT_SPRINT_TARGETS_V17 = [

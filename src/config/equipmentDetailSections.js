@@ -19,6 +19,7 @@ export const EQUIPMENT_DETAIL_TABS = [
   { id: "lots", label: "최근 작업 LOT" },
   { id: "qr", label: "QR 정보" },
   { id: "info", label: "설비 정보" },
+  { id: "attachments", label: "첨부파일" },
   { id: "updates", label: "최근 수정" },
 ];
 

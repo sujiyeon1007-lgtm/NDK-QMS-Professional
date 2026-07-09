@@ -1,40 +1,16 @@
 import { Layers3 } from "lucide-react";
 
-import { ENVIRONMENT_WORKSPACE_COPY } from "../../config/environmentWorkspaceArchitecture";
-
 export default function EnvironmentSectionPreview({
   layout = "form",
   previewFields = [],
   previewColumns = [],
   previewNote = "",
-  placeholder = false,
   sectionIcon: SectionIcon = Layers3,
+  sectionLabel = "",
 }) {
-  const note = placeholder ? ENVIRONMENT_WORKSPACE_COPY.uiPreviewNote : previewNote;
-
   return (
-    <div className="company-workspace-preparing">
-      <div className="company-workspace-preparing__hero">
-        <span className="company-workspace-preparing__icon" aria-hidden="true">
-          <SectionIcon size={34} />
-        </span>
-        <div className="company-workspace-preparing__copy">
-          <span className="company-workspace-preparing__badge">
-            {ENVIRONMENT_WORKSPACE_COPY.uiPreviewBadge}
-          </span>
-          <h3 className="company-workspace-preparing__title">
-            {ENVIRONMENT_WORKSPACE_COPY.uiPreviewTitle}
-          </h3>
-          <p className="company-workspace-preparing__note">{note}</p>
-          <div className="company-workspace-preparing__tags">
-            <span>{ENVIRONMENT_WORKSPACE_COPY.uiPreviewSample}</span>
-            <span>{ENVIRONMENT_WORKSPACE_COPY.uiPreviewPlaceholder}</span>
-            <span>{ENVIRONMENT_WORKSPACE_COPY.uiPreviewFuture}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="company-workspace-preparing__mock" aria-hidden="true">
+    <div className="company-workspace-preparing company-workspace-preparing--compact">
+      <div className="company-workspace-preparing__mock" aria-label={`${sectionLabel} 화면 구성`}>
         {layout === "form" ? (
           <div className="company-workspace-preparing__mock-form">
             {previewFields.slice(0, 6).map((label) => (
@@ -62,7 +38,7 @@ export default function EnvironmentSectionPreview({
           </div>
         ) : null}
 
-        {layout === "tree" ? (
+        {layout === "tree" && previewNote ? (
           <pre className="company-workspace-preparing__mock-tree">{previewNote}</pre>
         ) : null}
       </div>

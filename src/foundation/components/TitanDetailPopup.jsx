@@ -6,7 +6,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Box from "@mui/material/Box";
 import { SecondaryButton } from "./Button";
-import { titanDialogTransitionProps } from "./titanPopupTransition";
+import { mergeTitanDialogSlotProps, titanDialogTransitionSlots } from "./titanPopupTransition";
 import {
   TITAN_STANDARD_DETAIL_POPUP_HEIGHT,
   TITAN_STANDARD_DETAIL_POPUP_WIDTH,
@@ -85,9 +85,9 @@ export default function TitanDetailPopup({
       fullWidth={!isStandard}
       className={`titan-detail-popup${isStandard ? " titan-detail-popup--standard" : ""}`}
       aria-labelledby="titan-detail-popup-title"
-      {...titanDialogTransitionProps}
-      slotProps={
-        isStandard
+      slots={titanDialogTransitionSlots}
+      slotProps={mergeTitanDialogSlotProps({
+        ...(isStandard
           ? {
               container: {
                 sx: {
@@ -101,12 +101,12 @@ export default function TitanDetailPopup({
                 },
               },
             }
-          : undefined
-      }
-      PaperProps={{
-        className: "titan-detail-popup__paper",
-        sx: paperSx,
-      }}
+          : {}),
+        paper: {
+          className: "titan-detail-popup__paper",
+          sx: paperSx,
+        },
+      })}
     >
       <DialogTitle id="titan-detail-popup-title" className="titan-detail-popup__title">
         {title}

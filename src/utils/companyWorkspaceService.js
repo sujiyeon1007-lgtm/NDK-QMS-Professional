@@ -93,6 +93,31 @@ export function getCompanyProfile() {
   return ensureCompanyWorkspaceSeeded();
 }
 
+/** RC1.1 — Company Master print footer lines (성적서 · 리스트 · QR 공통) */
+export function buildCompanyPrintFooterLines(profile = getCompanyProfile()) {
+  const footer = profile.documentFooter ?? {};
+  const master = profile.companyMaster ?? {};
+  const companyName = String(footer.companyName || master.companyName || "").trim();
+  const address = String(footer.address || master.address || "").trim();
+  const phone = String(footer.phone || master.phone || "").trim();
+  const email = String(footer.email || master.email || "").trim();
+  const copyright = String(footer.copyright || "").trim();
+
+  const lines = [];
+  if (companyName) lines.push(companyName);
+  if (address) lines.push(address);
+  if (phone || email) {
+    lines.push([phone && `Tel ${phone}`, email && `Email ${email}`].filter(Boolean).join(" · "));
+  }
+  if (copyright) lines.push(copyright);
+  return lines.filter(Boolean);
+}
+
+/** RC1.1 — Header / Login branding logo from Company Master */
+export function getCompanyBrandingLogoUrl(profile = getCompanyProfile()) {
+  return String(profile?.branding?.logo ?? "").trim();
+}
+
 export function buildCompanyDashboard() {
   const profile = getCompanyProfile();
   const master = profile.companyMaster ?? {};
@@ -172,6 +197,25 @@ export function updateDocumentFooter(patch, updatedBy = "") {
   });
   companyStore.replace(next);
   return next.documentFooter;
+}
+
+export function updateCompanyBranding(patch, updatedBy = "") {
+  const profile = getCompanyProfile();
+  const next = normalizeProfile({
+    ...profile,
+    branding: {
+      ...profile.branding,
+      ...patch,
+      updatedAt: nowIso(),
+    },
+    meta: {
+      ...profile.meta,
+      lastUpdatedAt: nowIso(),
+      lastUpdatedBy: updatedBy || profile.meta?.lastUpdatedBy || "",
+    },
+  });
+  companyStore.replace(next);
+  return next.branding;
 }
 
 export function listBusinessSites() {

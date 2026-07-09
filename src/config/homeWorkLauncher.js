@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Calculator,
+  Database,
   Factory,
   LayoutGrid,
   Monitor,
@@ -9,6 +10,7 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 /**
  * HOME 업무 바로가기 — V1.5 UI Freeze (2×3 Launcher Grid)
@@ -21,6 +23,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     badge: "입고",
     tone: "blue",
     path: "/inout",
+    ctaLabel: "입고등록",
     icon: Package,
     moduleId: "inbound",
     metrics: [
@@ -33,7 +36,8 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "설비현황",
     badge: "관제",
     tone: "orange",
-    path: "/equipment-status",
+    path: OPERATION_ROUTES.equipmentStatus,
+    ctaLabel: "설비 가동 현황",
     icon: Monitor,
     moduleId: "qrSystem",
     metrics: [
@@ -47,7 +51,8 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     label: "제품 현황",
     badge: "추적",
     tone: "green",
-    path: "/equipment-status?view=product",
+    path: `${OPERATION_ROUTES.equipmentStatus}?view=product`,
+    ctaLabel: "제품 추적",
     icon: LayoutGrid,
     moduleId: null,
     metrics: [
@@ -58,10 +63,11 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
   },
   {
     id: "qrCharging",
-    label: "설비장입",
-    badge: "작업",
+    label: "설비 가동 현황",
+    badge: "관제/작업",
     tone: "purple",
-    path: "/production",
+    path: OPERATION_ROUTES.equipmentStatus,
+    ctaLabel: "작업 시작",
     icon: Factory,
     moduleId: "qrSystem",
     metrics: [
@@ -75,6 +81,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     badge: "출고",
     tone: "yellow",
     path: "/inout",
+    ctaLabel: "출고등록",
     icon: Truck,
     moduleId: "outbound",
     metrics: [
@@ -88,6 +95,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     badge: "통계",
     tone: "cyan",
     path: "/statistics",
+    ctaLabel: "통계 조회",
     icon: BarChart3,
     moduleId: "statistics",
     metrics: [
@@ -101,11 +109,12 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     badge: "경리",
     tone: "blue",
     path: "/accounting-clerk",
+    ctaLabel: "명세서 조회",
     icon: Wallet,
     moduleId: "accountingClerk",
     metrics: [
       { key: "activeFeatures", label: "사용 기능", suffix: "개" },
-      { key: "comingSoon", label: "준비 중", suffix: "개" },
+      { key: "statementViews", label: "명세서 조회", suffix: "건" },
     ],
   },
   {
@@ -114,24 +123,117 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     badge: "회계",
     tone: "purple",
     path: "/accounting",
+    ctaLabel: "회계 조회",
     icon: Calculator,
     moduleId: "accounting",
     metrics: [
       { key: "referenceViews", label: "조회 화면", suffix: "개" },
-      { key: "comingSoon", label: "준비 중", suffix: "개" },
+      { key: "statementViews", label: "거래 조회", suffix: "건" },
     ],
   },
   {
     id: "qrEngine",
-    label: "QR Engine",
+    label: "QR 정보관리",
     badge: "QR",
     tone: "cyan",
     path: "/qr",
+    ctaLabel: "QR 스캔",
     icon: QrCode,
     moduleId: "qrSystem",
     metrics: [
-      { key: "registry", label: "Registry", suffix: "건" },
-      { key: "scanRoutes", label: "Scan Route", suffix: "개" },
+      { key: "registry", label: "QR 목록", suffix: "건" },
+      { key: "scanRoutes", label: "스캔 경로", suffix: "개" },
+    ],
+  },
+];
+
+export const HOME_WORK_DASHBOARD_GROUPS = [
+  {
+    id: "operations",
+    label: "운영관리",
+    badge: "운영",
+    tone: "blue",
+    path: "/inout",
+    icon: Package,
+    ctaLabel: "운영관리",
+    metrics: [
+      { key: "todayIncoming", label: "금일 입고", suffix: "건" },
+      { key: "inboundWait", label: "입고 대기", suffix: "건" },
+      { key: "shipWait", label: "출고 대기", suffix: "건" },
+    ],
+  },
+  {
+    id: "production",
+    label: "생산관리",
+    badge: "생산",
+    tone: "purple",
+    path: "/production",
+    icon: Factory,
+    ctaLabel: "생산관리",
+    metrics: [
+      { key: "runningLots", label: "작업중 LOT", suffix: "건" },
+      { key: "heatWait", label: "열처리 대기", suffix: "건" },
+      { key: "productionDone", label: "생산 완료", suffix: "건" },
+    ],
+  },
+  {
+    id: "quality",
+    label: "품질관리",
+    badge: "품질",
+    tone: "green",
+    path: "/quality",
+    icon: LayoutGrid,
+    ctaLabel: "품질관리",
+    metrics: [
+      { key: "inspectionWait", label: "검사 대기", suffix: "건" },
+      { key: "certWait", label: "성적서 대기", suffix: "건" },
+      { key: "nonConformance", label: "부적합", suffix: "건" },
+    ],
+  },
+  {
+    id: "equipment",
+    label: "설비관리",
+    badge: "설비",
+    tone: "orange",
+    path: OPERATION_ROUTES.equipmentStatus,
+    icon: Monitor,
+    ctaLabel: "설비 가동 현황",
+    metrics: [
+      { key: "running", label: "운전중", suffix: "대" },
+      { key: "maintenance", label: "점검중", suffix: "대" },
+      { key: "ready", label: "장입 준비", suffix: "대" },
+    ],
+  },
+  {
+    id: "masterData",
+    label: "기준정보관리",
+    badge: "Master",
+    tone: "yellow",
+    path: "/settings/hub",
+    icon: Database,
+    ctaLabel: "Master Dashboard",
+    denseMetrics: true,
+    metrics: [
+      { key: "companies", label: "거래처", suffix: "개" },
+      { key: "products", label: "제품", suffix: "개" },
+      { key: "materials", label: "재질", suffix: "개" },
+      { key: "processes", label: "공정", suffix: "개" },
+      { key: "equipment", label: "설비", suffix: "대" },
+      { key: "workers", label: "작업자", suffix: "명" },
+    ],
+  },
+  {
+    id: "management",
+    label: "경영지원",
+    badge: "경영",
+    tone: "cyan",
+    path: "/accounting-clerk",
+    icon: Wallet,
+    ctaLabel: "경영지원",
+    metrics: [
+      { key: "statements", label: "거래명세서", suffix: "건" },
+      { key: "clerkViews", label: "경리", suffix: "개" },
+      { key: "accountingViews", label: "회계", suffix: "개" },
     ],
   },
 ];

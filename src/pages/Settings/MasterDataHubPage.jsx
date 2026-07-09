@@ -16,7 +16,6 @@ export default function MasterDataHubPage() {
 
   return (
     <TitanLauncherHubPage
-      intro="거래처 · 제품 · 재질 · 공정 · 설비 · 작업자 Master는 각각 독립된 리스트 화면에서 관리합니다."
       items={MASTER_DATA_LAUNCHER_ITEMS}
       cardsClassName="master-data-hub__cards"
     />

@@ -1,24 +1,48 @@
+import { createPortal } from "react-dom";
+import { CheckCircle2, X } from "lucide-react";
+import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import {
   NDK_SUPPLIER,
   buildStatementItemRows,
   getCustomerProfile,
 } from "../../utils/transactionStatementConfig";
-import { formatQtyWithUnit, parseQtyWithUnit } from "../../utils/productUnits";
+import { parseQtyWithUnit } from "../../utils/productUnits";
+import { getCompanyProfile } from "../../utils/companyWorkspaceService";
 import "./TransactionStatement.css";
+import "./TransactionStatementIssueResultDialog.css";
 
 function formatNum(value) {
   const num = Number(value);
   return Number.isFinite(num) && num !== 0 ? num.toLocaleString() : "";
 }
 
-function formatQtyCell(qty, unit = "EA") {
+function formatQtyNumberCell(qty) {
   const num = Number(qty);
-  if (!Number.isFinite(num) || num === 0) return "";
-  return formatQtyWithUnit(num, unit);
+  return Number.isFinite(num) && num !== 0 ? num.toLocaleString() : "";
+}
+
+function pickCompanyMasterValue(value, fallback, placeholders = []) {
+  const text = String(value ?? "").trim();
+  if (!text || placeholders.includes(text)) return fallback;
+  return text;
+}
+
+function buildSupplierProfile(companyProfile = {}) {
+  const master = companyProfile.companyMaster ?? {};
+  return {
+    regNo: pickCompanyMasterValue(master.businessNumber, NDK_SUPPLIER.regNo, ["000-00-00000"]),
+    name: pickCompanyMasterValue(master.companyName, NDK_SUPPLIER.name, ["주식회사 NDK"]),
+    representative: pickCompanyMasterValue(master.representative, NDK_SUPPLIER.representative, ["대표이사"]),
+    address: pickCompanyMasterValue(master.address, NDK_SUPPLIER.address),
+    businessType: pickCompanyMasterValue(master.businessType, NDK_SUPPLIER.businessType),
+    businessItem: pickCompanyMasterValue(master.businessItem, NDK_SUPPLIER.businessItem),
+    phone: pickCompanyMasterValue(master.phone, NDK_SUPPLIER.phone),
+    fax: pickCompanyMasterValue(master.fax, NDK_SUPPLIER.fax),
+  };
 }
 
 /** 공급받는자/공급자 — 10열 그리드 (좌 5 + 우 5) */
-function PartyInfoTable({ customer, supplier, showSeal, totalAmount }) {
+function PartyInfoTable({ customer, supplier, showSeal, sealImage, totalAmount }) {
   return (
     <table className="ts-form-table ts-party-table">
       <colgroup>
@@ -60,7 +84,11 @@ function PartyInfoTable({ customer, supplier, showSeal, totalAmount }) {
           <td className="ts-field-label">성명</td>
           <td className={`ts-field-value${showSeal ? " has-seal" : ""}`}>
             {supplier.representative}
-            {showSeal && <span className="ts-company-seal" aria-hidden="true">印</span>}
+            {showSeal && sealImage ? (
+              <img className="ts-company-seal-image" src={sealImage} alt="회사 직인" />
+            ) : showSeal ? (
+              <span className="ts-company-seal" aria-hidden="true">印</span>
+            ) : null}
           </td>
         </tr>
         <tr>
@@ -113,8 +141,9 @@ function StatementItemsTable({ itemRows, totals }) {
     <table className="ts-form-table ts-items-table">
       <colgroup>
         <col className="ts-i-no" />
-        <col className="ts-i-part-name" />
         <col className="ts-i-part-no" />
+        <col className="ts-i-part-name" />
+        <col className="ts-i-unit" />
         <col className="ts-i-qty" />
         <col className="ts-i-price" />
         <col className="ts-i-supply" />
@@ -125,8 +154,9 @@ function StatementItemsTable({ itemRows, totals }) {
       <thead>
         <tr>
           <th>NO.</th>
-          <th>품명</th>
           <th>품번</th>
+          <th>품명</th>
+          <th>단위</th>
           <th>수량</th>
           <th>단가</th>
           <th>금액</th>
@@ -139,9 +169,10 @@ function StatementItemsTable({ itemRows, totals }) {
         {itemRows.map((item, index) => (
           <tr key={index}>
             <td>{item ? index + 1 : ""}</td>
-            <td className="left">{item?.partName ?? ""}</td>
             <td className="left">{item?.partNo ?? ""}</td>
-            <td className="num">{formatQtyCell(item?.qty, item?.unit)}</td>
+            <td className="left">{item?.partName ?? ""}</td>
+            <td>{item?.unit ?? ""}</td>
+            <td className="num">{formatQtyNumberCell(item?.qty)}</td>
             <td className="num">{formatNum(item?.unitPrice)}</td>
             <td className="num">{formatNum(item?.supplyAmount)}</td>
             <td className="num">{formatNum(item?.vat)}</td>
@@ -151,9 +182,9 @@ function StatementItemsTable({ itemRows, totals }) {
         ))}
         <tr className="ts-items-footer">
           <td />
-          <td className="ts-receiver-label">인수자</td>
+          <td colSpan={2} className="ts-receiver-label">인수자</td>
           <td className="ts-receiver-sign">( 인 )</td>
-          <td className="num">{formatQtyCell(totals.qty, totals.unit)}</td>
+          <td className="num">{formatQtyNumberCell(totals.qty)}</td>
           <td className="ts-subtotal-label">소계</td>
           <td className="num">{formatNum(totals.supplyAmount)}</td>
           <td className="num">{formatNum(totals.vat)}</td>
@@ -171,6 +202,8 @@ function TransactionStatementSheet({
   customer,
   lineItem,
   totals,
+  supplier,
+  supplierBranding,
   showSeal = false,
   highlightDate = false,
 }) {
@@ -184,14 +217,20 @@ function TransactionStatementSheet({
           <span className="ts-issue-value">{issueDate}</span>
         </div>
         <h1 className="ts-title">거 래 명 세 서</h1>
-        <p className="ts-copy-label">{copyLabel}</p>
+        <div className="ts-copy-box">
+          {supplierBranding?.logo ? (
+            <img className="ts-company-logo" src={supplierBranding.logo} alt="회사 로고" />
+          ) : null}
+          <p className="ts-copy-label">{copyLabel}</p>
+        </div>
       </div>
 
       <div className="ts-form-block">
         <PartyInfoTable
           customer={customer}
-          supplier={NDK_SUPPLIER}
+          supplier={supplier}
           showSeal={showSeal}
+          sealImage={supplierBranding?.stamp || ""}
           totalAmount={totals.totalAmount}
         />
         <StatementItemsTable itemRows={itemRows} totals={totals} />
@@ -208,6 +247,9 @@ export default function TransactionStatementPreview({
   unitPrice,
   issueDate,
 }) {
+  const companyProfile = getCompanyProfile();
+  const supplierBranding = companyProfile.branding ?? {};
+  const supplier = buildSupplierProfile(companyProfile);
   const customer = getCustomerProfile(record.company);
   const unit = record.unit ?? "EA";
   const qty = Number.isFinite(Number(shipQtyNumeric))
@@ -243,6 +285,8 @@ export default function TransactionStatementPreview({
           customer={customer}
           lineItem={lineItem}
           totals={totals}
+          supplier={supplier}
+          supplierBranding={supplierBranding}
         />
         <div className="ts-page-divider" aria-hidden="true" />
         <TransactionStatementSheet
@@ -251,10 +295,66 @@ export default function TransactionStatementPreview({
           customer={customer}
           lineItem={lineItem}
           totals={totals}
+          supplier={supplier}
+          supplierBranding={supplierBranding}
           showSeal
           highlightDate
         />
       </div>
     </div>
+  );
+}
+
+export function TransactionStatementIssueResultDialog({
+  open,
+  result,
+  onPrintComplete,
+  onPdfOnly,
+  onViewHistory,
+  onClose,
+}) {
+  if (!open || !result) return null;
+
+  const statementId = result.statement?.id ?? "";
+
+  return createPortal(
+    <div className="ts-issue-result-overlay" role="presentation" onClick={onClose}>
+      <div
+        className="ts-issue-result-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="ts-issue-result-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="ts-issue-result-header">
+          <CheckCircle2 size={22} aria-hidden="true" />
+          <div>
+            <h2 id="ts-issue-result-title">거래명세서가 발행되었습니다.</h2>
+            <p>{statementId}</p>
+          </div>
+          <button type="button" className="ts-issue-result-close" onClick={onClose} aria-label="닫기">
+            <X size={18} />
+          </button>
+        </header>
+
+        <footer className="ts-issue-result-footer">
+          {onViewHistory ? (
+            <SecondaryButton type="button" onClick={onViewHistory}>
+              출고 이력 보기
+            </SecondaryButton>
+          ) : null}
+          <PrimaryButton type="button" onClick={onPrintComplete}>
+            인쇄 완료
+          </PrimaryButton>
+          <SecondaryButton type="button" onClick={onPdfOnly}>
+            PDF만 저장
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={onClose}>
+            닫기
+          </SecondaryButton>
+        </footer>
+      </div>
+    </div>,
+    document.body
   );
 }

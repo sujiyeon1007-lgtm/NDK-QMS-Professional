@@ -4,6 +4,7 @@ import { SecondaryButton } from "../../foundation/components/Button";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanWorkspaceModal from "../../foundation/components/TitanWorkspaceModal";
+import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import {
   PRODUCT_CERTIFICATE_COLUMNS,
   PRODUCT_CERTIFICATE_SUMMARY_FIELDS,
@@ -19,10 +20,21 @@ import {
   PRODUCT_SHIPMENT_COLUMNS,
 } from "../../config/productDetailSections";
 import { buildProductMasterDetail } from "../../utils/productMasterDetail";
+import {
+  normalizeFoundationAttachments,
+  readFoundationAttachmentSession,
+  writeFoundationAttachmentSession,
+} from "../../utils/foundationAttachmentEngine";
 import ProductSpecificationTab from "./ProductSpecificationTab";
 
 import "./CompanyManagement.css";
 import "./ProductManagement.css";
+
+const PRODUCT_MASTER_ATTACHMENT_STORAGE_KEY = "project-titan-product-master-attachments-v1";
+
+function resolveProductAttachmentOwnerKey(product = {}) {
+  return [product.id, product.partNo, product.company, product.name].filter(Boolean).join("::") || "product";
+}
 
 function renderProfileValue(row, field) {
   if (field.render === "active") {
@@ -128,6 +140,7 @@ function ProductDetailTabBar({ activeTab, onTabChange, counts }) {
 /** 제품 Row 더블클릭 — ERP/MES Master 상세 Popup (Sprint 8 · Blueprint V1.0 · 9탭) */
 export default function ProductDetailModal({ open, product, onClose }) {
   const [activeTab, setActiveTab] = useState("profile");
+  const [attachmentVersion, setAttachmentVersion] = useState(0);
 
   const detail = useMemo(() => buildProductMasterDetail(product), [product]);
 
@@ -137,6 +150,8 @@ export default function ProductDetailModal({ open, product, onClose }) {
   const kicker =
     [product.company, product.partNo].filter(Boolean).join(" | ") || "제품 Master";
   const health = detail.health ?? { status: "error", label: "관리 필요", icon: "🔴" };
+  const attachmentOwnerKey = resolveProductAttachmentOwnerKey(product);
+  const attachments = readFoundationAttachmentSession(PRODUCT_MASTER_ATTACHMENT_STORAGE_KEY, attachmentOwnerKey);
 
   const tabCounts = {
     production: detail.counts.production,
@@ -144,6 +159,24 @@ export default function ProductDetailModal({ open, product, onClose }) {
     certificate: detail.counts.certificate,
     lots: detail.counts.lots,
     shipments: detail.counts.shipments,
+  };
+
+  const handleAttachmentUpload = (files) => {
+    writeFoundationAttachmentSession(
+      PRODUCT_MASTER_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      [...attachments, ...normalizeFoundationAttachments(files)]
+    );
+    setAttachmentVersion((value) => value + 1);
+  };
+
+  const handleAttachmentDelete = (attachmentId) => {
+    writeFoundationAttachmentSession(
+      PRODUCT_MASTER_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      attachments.filter((attachment) => attachment.id !== attachmentId)
+    );
+    setAttachmentVersion((value) => value + 1);
   };
 
   const handleClose = () => {
@@ -277,6 +310,16 @@ export default function ProductDetailModal({ open, product, onClose }) {
               columns={PRODUCT_SHIPMENT_COLUMNS}
               rows={detail.shipments}
               emptyMessage="출고 이력이 없습니다."
+            />
+          </section>
+        ) : null}
+
+        {activeTab === "attachments" ? (
+          <section className="company-detail-section" aria-label="첨부파일">
+            <FoundationAttachment
+              attachments={attachments}
+              onUpload={handleAttachmentUpload}
+              onDelete={handleAttachmentDelete}
             />
           </section>
         ) : null}

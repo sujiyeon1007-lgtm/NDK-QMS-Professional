@@ -18,6 +18,7 @@ import {
   removeShipmentEventById,
   saveShipmentEvent,
   saveTransactionStatement,
+  updateTransactionStatement,
 } from "./titanHistorySession";
 import { onOutboundComplete, WORKFLOW_STATUS, getWorkflowStatus } from "./titanWorkflowStatus";
 import { isShipmentReady } from "./ndkWorkflow";
@@ -82,9 +83,18 @@ export function validateOutboundRegisterForm(form) {
   const stock = getStockQty(record);
   const parsed = parseQtyWithUnit(form.shipQty, record.unit || "EA");
   const shipQty = parsed.qty;
+  const manager = String(form.manager ?? "").trim();
 
   if (!Number.isFinite(shipQty) || shipQty <= 0) {
     return { ok: false, message: "출고수량(EA)을 입력하세요." };
+  }
+
+  if (!manager) {
+    return { ok: false, message: "출고 담당자를 선택하세요." };
+  }
+
+  if (!form.shipDate?.trim()) {
+    return { ok: false, message: "출고일을 입력하세요." };
   }
 
   if (shipQty > stock) {
@@ -103,7 +113,6 @@ export function validateOutboundRegisterForm(form) {
 export function applyOutboundRegister(form) {
   const validation = validateOutboundRegisterForm(form);
   if (!validation.ok) {
-    window.alert(validation.message);
     return { ok: false, message: validation.message };
   }
 
@@ -111,7 +120,7 @@ export function applyOutboundRegister(form) {
   const managementId = record.id;
   const stockBefore = stock;
   const shipDate = form.shipDate || getPrintOutputDate();
-  const shippedBy = form.manager || getCurrentTitanUser();
+  const shippedBy = form.manager?.trim() || getCurrentTitanUser();
   const outboundTime = new Date().toISOString();
   const statementStatus = getStatementPrintStatus(record).label;
 
@@ -124,7 +133,6 @@ export function applyOutboundRegister(form) {
   });
 
   if (!result.ok) {
-    window.alert(result.message || "출고 등록에 실패했습니다.");
     return { ok: false, message: result.message };
   }
 
@@ -181,6 +189,7 @@ export function applyOutboundRegister(form) {
 
   return {
     ok: true,
+    message: "출고 등록이 완료되었습니다.",
     managementId,
     record: getSessionProductionRecords().find((item) => item.id === managementId) ?? updated,
     shipQty,
@@ -239,7 +248,7 @@ export function cancelLastOutboundShipment(managementId) {
   };
 
   if (getWorkflowStatus(record) === WORKFLOW_STATUS.SHIP_DONE && stockAfter > 0) {
-    patch.workflowStatus = WORKFLOW_STATUS.CERT_DONE;
+    patch.workflowStatus = WORKFLOW_STATUS.PROD_DONE;
   }
 
   updateSessionProductionRecord(id, patch);
@@ -261,11 +270,16 @@ export function recordTransactionStatementPrint(record, payload = {}) {
   const now = new Date().toISOString();
   const history = Array.isArray(record.statementPrintHistory) ? [...record.statementPrintHistory] : [];
   const isReprint = history.length > 0;
+  const outputType = payload.outputType === "pdf" ? "pdf" : "print";
+  const outputStatus = payload.outputStatus ?? (outputType === "pdf" ? "PDF만 저장" : "출력 완료");
+  const pdfSaved = outputType === "pdf";
 
   const statementRow = saveTransactionStatement({
+    issuedAt: now,
     printedAt: now.slice(0, 10),
     printedBy: getCurrentTitanUser(),
     managementId: record.id,
+    lotNo: record.lotNo ?? "",
     company: record.company,
     partName: record.partName,
     partNo: record.partNo,
@@ -277,6 +291,10 @@ export function recordTransactionStatementPrint(record, payload = {}) {
     supplyAmount: amounts.supplyAmount,
     vat: amounts.vat,
     totalAmount: amounts.totalAmount,
+    pdfSaved,
+    outputType,
+    outputStatus,
+    reprint: isReprint,
   });
 
   history.push({
@@ -285,11 +303,12 @@ export function recordTransactionStatementPrint(record, payload = {}) {
     shipQty,
     reprint: isReprint,
     statementId: statementRow.id,
+    pdfSaved,
+    outputType,
+    outputStatus,
   });
 
-  const reprintCount = history.filter((entry) => entry.reprint).length;
-  const statementPrintStatus =
-    reprintCount > 0 ? `재출력 ${reprintCount}회` : "발행완료";
+  const statementPrintStatus = "발행완료";
 
   const partialShipHistory = Array.isArray(record.partialShipHistory)
     ? record.partialShipHistory.map((entry, index, items) =>
@@ -305,4 +324,31 @@ export function recordTransactionStatementPrint(record, payload = {}) {
   });
 
   return statementRow;
+}
+
+export function updateTransactionStatementOutputStatus(managementId, statementId, outputStatus) {
+  const normalizedStatus = outputStatus === "PDF만 저장" ? "PDF만 저장" : "출력 완료";
+  const pdfSaved = normalizedStatus === "PDF만 저장";
+  const updated = updateTransactionStatement(statementId, {
+    outputStatus: normalizedStatus,
+    outputType: pdfSaved ? "pdf" : "print",
+    pdfSaved,
+  });
+
+  const record = getSessionProductionRecords().find((item) => item.id === managementId);
+  if (record?.id) {
+    const history = Array.isArray(record.statementPrintHistory)
+      ? record.statementPrintHistory.map((entry) =>
+          entry.statementId === statementId
+            ? { ...entry, outputStatus: normalizedStatus, outputType: pdfSaved ? "pdf" : "print", pdfSaved }
+            : entry
+        )
+      : [];
+    updateSessionProductionRecord(record.id, {
+      statementPrintHistory: history,
+      statementPrintStatus: "발행완료",
+    });
+  }
+
+  return updated;
 }

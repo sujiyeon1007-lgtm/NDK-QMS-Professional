@@ -16,7 +16,6 @@ export const MENU_FREEZE_DATE = "2026-07-07";
 /** Sidebar 1Depth — V1.0 Access Lock (12 menus · 2026-07-08 PM) */
 export const MENU_FREEZE_SIDEBAR_ORDER = [
   "home",
-  "equipmentStatus",
   "qrEngine",
   "inoutManagement",
   "productionManagement",
@@ -36,7 +35,7 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
     id: "mes",
     label: "MES",
     emoji: "🏭",
-    menuIds: ["equipmentStatus", "qrEngine"],
+    menuIds: ["qrEngine"],
   },
   {
     id: "operations",
@@ -67,17 +66,16 @@ export const MENU_FREEZE_SIDEBAR_GROUPS = [
 /** Sidebar 1Depth — V1.0 Access Lock (12 menus · Launcher Hub) */
 export const MENU_FREEZE_SIDEBAR = [
   { order: 1, id: "home", label: "HOME", emoji: "🏠" },
-  { order: 2, id: "equipmentStatus", label: "설비현황", emoji: "📡" },
-  { order: 3, id: "qrEngine", label: "QR Engine", emoji: "▣" },
-  { order: 4, id: "inoutManagement", label: "운영관리", emoji: "📦" },
-  { order: 5, id: "productionManagement", label: "생산관리", emoji: "🏭" },
-  { order: 6, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
-  { order: 7, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
-  { order: 8, id: "accountingClerk", label: "경리관리", emoji: "💼" },
-  { order: 9, id: "accounting", label: "회계관리", emoji: "🧾" },
-  { order: 10, id: "masterData", label: "기준정보관리", emoji: "⚙" },
-  { order: 11, id: "environment", label: "환경설정", emoji: "🔧" },
-  { order: 12, id: "companyInfo", label: "회사정보", emoji: "🏢" },
+  { order: 2, id: "qrEngine", label: "QR 정보관리", emoji: "▣" },
+  { order: 3, id: "inoutManagement", label: "운영관리", emoji: "📦" },
+  { order: 4, id: "productionManagement", label: "생산관리", emoji: "🏭" },
+  { order: 5, id: "qualityManagement", label: "품질관리", emoji: "🧪" },
+  { order: 6, id: "statisticsInquiry", label: "통계관리", emoji: "📊" },
+  { order: 7, id: "accountingClerk", label: "경리관리", emoji: "💼" },
+  { order: 8, id: "accounting", label: "회계관리", emoji: "🧾" },
+  { order: 9, id: "masterData", label: "기준정보관리", emoji: "⚙" },
+  { order: 10, id: "environment", label: "환경설정", emoji: "🔧" },
+  { order: 11, id: "companyInfo", label: "회사정보", emoji: "🏢" },
 ];
 
 export const PRESENTATION_MENU_DEV_ORDER = [...MENU_FREEZE_SIDEBAR_ORDER];
@@ -227,16 +225,16 @@ export const MENU_FREEZE_ROLES = {
     features: ["QR 생성", "QR 출력", "QR 재출력", "QR 미리보기", "QR 관리", "QR 사용안내"],
   },
   equipmentStatus: {
-    label: "설비현황",
+    label: "설비 가동 현황",
     role: "Control Room — 생산부장 · 공장장 · 관리자 (Equipment · LOT · Product View)",
     features: ["Equipment View", "LOT View", "Product View", "KPI 7 · Detail Popup"],
     note: "Sprint 3E — Control Room 통합 · 제품현황 Product View 흡수 · equipmentWorkflowService SSOT",
   },
   qrCharging: {
-    label: "설비장입",
-    role: "생산관리 Launcher 내부 — Sidebar ❌ · 공정별 장입 작업",
-    features: ["전체 설비 현황", "공정별 설비 목록", "장입 시작", "열처리 완료"],
-    note: "V2.0 Blueprint — /production/charging · MES는 관제만",
+    label: "설비 가동 현황",
+    role: "생산관리 Navigation 내부 — 설비 관제와 장입 작업 통합",
+    features: ["장입 준비", "작업 시작", "작업 종료", "LOT 확인"],
+    note: "Sprint 16-12 — 설비장입 메뉴를 제거하고 설비 가동 현황으로 통합",
   },
   environment: {
     label: "환경설정",
@@ -252,8 +250,8 @@ export const MENU_FREEZE_ROLES = {
   productionManagement: {
     label: "생산관리",
     role: "생산 운영 Launcher Hub",
-    features: ["생산계획", "설비장입", "생산일보", "생산실적관리", "출력관리"],
-    note: "V1.5 Launcher Hub · 설비 장입은 내부 Hub",
+    features: ["생산계획", "설비 가동 현황", "생산일보", "생산실적관리", "출력관리"],
+    note: "PM UX · LOT 생성은 생산계획 내부 Action, 설비 장입 기능은 설비 가동 현황으로 통합",
   },
   qualityManagement: {
     label: "품질관리",

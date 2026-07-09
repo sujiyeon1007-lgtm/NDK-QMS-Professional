@@ -178,11 +178,6 @@ export default function PrintManagementWorkspace() {
         <TitanWorkflowStatusChipBar items={kpiItems} ariaLabel="출력관리 문서 현황" />
       </TitanKpiBarSlot>
 
-      <p className="inventory-status-page__notice">
-        출력관리 Workspace — 입고리스트 · 출고리스트 · 검사성적서 · 거래명세서 · 기타 문서를 한 곳에서 출력합니다.
-        문서 데이터는 Titan Document Engine(TDE) Interface를 통해 집계되며, 향후 실제 Document Engine으로 교체됩니다.
-      </p>
-
       <div className="inventory-status-page__view-modes" role="tablist" aria-label="문서 종류">
         {summaries.map((category) => (
           <button

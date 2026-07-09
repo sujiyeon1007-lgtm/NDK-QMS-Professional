@@ -1,6 +1,14 @@
 import { SectionPageActionsProvider } from "./SectionPageActionsContext";
 import TitanMenuToolbar from "./TitanMenuToolbar";
+import { WorkspaceNavigationTabs } from "./SectionTabs";
+import TitanBreadcrumb from "../components/TitanBreadcrumb";
 import "./SectionPageLayout.css";
+
+function normalizeBreadcrumbItems(items = []) {
+  return items
+    .map((item) => (typeof item === "string" ? { label: item } : item))
+    .filter((item) => item?.label);
+}
 
 function SectionPageHeader({ section, description }) {
   return (
@@ -15,22 +23,51 @@ function SectionPageHeader({ section, description }) {
   );
 }
 
-function SectionPageLayoutInner({ section, description, children }) {
+function SectionPageLayoutInner({
+  section,
+  description,
+  workspaceNav,
+  breadcrumbItems,
+  sectionTabs,
+  hidePageHeader = false,
+  children,
+}) {
+  const normalizedBreadcrumbItems = normalizeBreadcrumbItems(breadcrumbItems);
+  const toolbarTabs = sectionTabs ?? section.tabs;
+  const toolbarTabCount = toolbarTabs?.length ?? 0;
+
   return (
-    <div className="titan-section-page">
-      <SectionPageHeader section={section} description={description} />
-      <TitanMenuToolbar tabs={section.tabs} />
-      <div className="titan-section-page__body">{children}</div>
-    </div>
+    <SectionPageActionsProvider toolbarTabCount={toolbarTabCount}>
+      <div className="titan-section-page">
+        {!hidePageHeader ? <SectionPageHeader section={section} description={description} /> : null}
+        <WorkspaceNavigationTabs nav={workspaceNav} />
+        {normalizedBreadcrumbItems.length ? <TitanBreadcrumb items={normalizedBreadcrumbItems} /> : null}
+        <TitanMenuToolbar tabs={toolbarTabs} />
+        <div className="titan-section-page__body">{children}</div>
+      </div>
+    </SectionPageActionsProvider>
   );
 }
 
-export default function SectionPageLayout({ section, description, children }) {
+export default function SectionPageLayout({
+  section,
+  description,
+  workspaceNav,
+  breadcrumbItems,
+  sectionTabs,
+  hidePageHeader = false,
+  children,
+}) {
   return (
-    <SectionPageActionsProvider>
-      <SectionPageLayoutInner section={section} description={description}>
-        {children}
-      </SectionPageLayoutInner>
-    </SectionPageActionsProvider>
+    <SectionPageLayoutInner
+      section={section}
+      description={description}
+      workspaceNav={workspaceNav}
+      breadcrumbItems={breadcrumbItems}
+      sectionTabs={sectionTabs}
+      hidePageHeader={hidePageHeader}
+    >
+      {children}
+    </SectionPageLayoutInner>
   );
 }

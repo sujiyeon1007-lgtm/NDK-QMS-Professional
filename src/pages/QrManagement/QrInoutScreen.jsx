@@ -106,11 +106,6 @@ export default function QrInoutScreen() {
     setPage(1);
   };
 
-  const handleRowCreate = (row) => {
-    if (!canCreate || row.hasQr) return;
-    handleCreate(row.managementId);
-  };
-
   const handleDelete = (row) => {
     if (!isAdmin || !row.hasQr) return;
     const confirmed = window.confirm(`${row.managementId} QR을 삭제하시겠습니까?`);

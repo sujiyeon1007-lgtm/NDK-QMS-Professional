@@ -72,6 +72,13 @@
   --titan-table-row-selected: #e3edff;
   --titan-table-cell-py: 10px;
   --titan-table-cell-px: 12px;
+  --titan-data-grid-header-h: 42px;
+  --titan-data-grid-row-h: 42px;
+  --titan-data-grid-min-rows: 10;
+  --titan-data-grid-min-height: calc(
+    var(--titan-data-grid-header-h) + (var(--titan-data-grid-row-h) * var(--titan-data-grid-min-rows))
+  );
+  --titan-data-grid-max-height: min(64vh, 640px);
 
   /* Layout */
   --titan-sidebar-width: 168px;
@@ -111,6 +118,11 @@
   --titan-dashboard-card-radius: 16px;
   --titan-dashboard-card-padding: 20px;
   --titan-dashboard-card-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  --titan-dashboard-grid-gap: 16px;
+  --titan-dashboard-kpi-min-h: 118px;
+  --titan-dashboard-summary-min-h: 180px;
+  --titan-dashboard-chart-min-h: 300px;
+  --titan-dashboard-widget-min-h: 240px;
   --titan-kpi-card-radius: 16px;
   --titan-kpi-card-padding: 18px;
   --titan-kpi-card-gradient: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);

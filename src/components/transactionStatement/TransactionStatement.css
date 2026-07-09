@@ -75,6 +75,19 @@
   padding-bottom: 2px;
 }
 
+.ts-copy-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.ts-company-logo {
+  max-width: 66px;
+  max-height: 28px;
+  object-fit: contain;
+}
+
 .ts-form-block {
   width: 100%;
 }
@@ -163,6 +176,17 @@
   pointer-events: none;
 }
 
+.ts-company-seal-image {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .ts-total-row td {
   height: 30px;
 }
@@ -190,7 +214,7 @@
   white-space: nowrap;
 }
 
-/* ── 품목표 9열 ── */
+/* ── 품목표 10열 ── */
 .ts-items-table {
   margin-top: -1px;
 }
@@ -200,39 +224,43 @@
 }
 
 .ts-items-table .ts-i-no {
-  width: 5%;
+  width: 4.5%;
 }
 
 .ts-items-table .ts-i-part-name {
-  width: 18%;
+  width: 16%;
 }
 
 .ts-items-table .ts-i-part-no {
-  width: 14%;
+  width: 13%;
+}
+
+.ts-items-table .ts-i-unit {
+  width: 6%;
 }
 
 .ts-items-table .ts-i-qty {
-  width: 9%;
+  width: 7%;
 }
 
 .ts-items-table .ts-i-price {
-  width: 10%;
+  width: 9%;
 }
 
 .ts-items-table .ts-i-supply {
-  width: 13%;
+  width: 12%;
 }
 
 .ts-items-table .ts-i-vat {
-  width: 11%;
+  width: 10%;
 }
 
 .ts-items-table .ts-i-total {
-  width: 13%;
+  width: 12%;
 }
 
 .ts-items-table .ts-i-note {
-  width: 7%;
+  width: 10.5%;
 }
 
 .ts-items-table thead th {

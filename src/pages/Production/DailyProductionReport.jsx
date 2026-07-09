@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { FileDown, FileSpreadsheet, Plus, Printer, QrCode } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle2, Factory, FileDown, FileSpreadsheet, Plus, Printer, QrCode } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
+import TitanSearchAutocomplete from "../../foundation/components/TitanSearchAutocomplete";
 import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
@@ -11,6 +12,7 @@ import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetai
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import ProductionDailyReportPrint from "../../components/print/ProductionDailyReportPrint";
 import { getPrintDocumentMeta, TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
+import { OPERATION_ROUTES } from "../../config/operationsRouteRegistry";
 import {
   createEmptyProductionDailyReportSearch,
   matchesBasicSearch,
@@ -26,8 +28,12 @@ import { buildV13ProductListColumns } from "../../config/standardProductList";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { getProductionDailyReportScreenData } from "../../utils/productionWorkspaceData";
+import { getProductionDailyReportScreenData, getProductionPlanScreenData } from "../../utils/productionWorkspaceData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { getTitanDataEngine } from "../../foundation/data";
+import { EQUIPMENT_RUN_STATUS_META } from "../../config/equipmentConfig";
+import { getEquipmentList, createManualChargeableLot } from "../../utils/equipmentWorkflowService";
+import { generateProductionLotNo } from "../../utils/productionLotNumber";
 import {
   APPROVAL_STATUS_OPTIONS,
   formatProductionDailyReportDateTime,
@@ -45,7 +51,7 @@ import {
 } from "../../config/registerModalStandard";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
-import { ensureLotQrEntry } from "../../utils/qrEngineRegistryService";
+import { QRService } from "../../utils/qrEngineRegistryService";
 import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import {
   buildProductionDailyReportLotBundleFromSelectedRows,
@@ -88,6 +94,9 @@ import { SMART_WORK_DAILY_QUERY } from "../../config/titanV11Workflow";
 import "../InOut/InboundManagement.css";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import { OperationsWorkflowNextDialog } from "../InOut/OutboundStatementPromptDialog";
+import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
+import "../../foundation/components/OperationsWorkflowNextDialog.css";
 import "./ProductionManagement.css";
 
 function matchesProductionDailyReportSearch(record, row, search) {
@@ -133,9 +142,367 @@ function mapRecordToRow(record) {
   return mapV13ProductListRow(record, getProductionDailyReportStatus(record), { screenKey: "production" });
 }
 
+function buildManualLotEquipmentLabel(equipment) {
+  return `${equipment.name}      ${resolveManualLotEquipmentStatusLabel(equipment.status)}`;
+}
+
+function normalizeManualLotSearchText(value) {
+  return String(value ?? "").replace(/[\s-]+/g, "").toLowerCase();
+}
+
+function buildManualLotNumberRecords() {
+  const dataEngine = getTitanDataEngine();
+  const lotRows = dataEngine.lot.list().map((row) => ({ lotNo: row.lotNo }));
+  const equipmentLots = dataEngine.equipment.list().flatMap((equipment) =>
+    (equipment.chargeableLots ?? []).map((row) => ({ lotNo: row.lotNo }))
+  );
+  return [...getSessionProductionRecords(), ...lotRows, ...equipmentLots];
+}
+
+function resolveManualLotStatusVariant(status) {
+  return EQUIPMENT_RUN_STATUS_META[status]?.variant ?? "wait";
+}
+
+function resolveManualLotEquipmentStatusLabel(status) {
+  if (status === "running") return "작업중";
+  if (status === "maintenance") return "점검중";
+  if (status === "ready") return "장입 준비";
+  return "대기";
+}
+
+function resolveManualLotRecordValue(record, keys, fallback = "—") {
+  for (const key of keys) {
+    const value = record?.[key];
+    if (value != null && String(value).trim()) return value;
+  }
+  return fallback;
+}
+
+function mapManualLotWaitingRow(record) {
+  const qty = resolveManualLotRecordValue(record, ["qty", "quantity", "incomingQty"], 0);
+  return {
+    ...record,
+    id: record.id,
+    managementId: resolveManualLotRecordValue(record, ["mesManagementNo", "managementId", "id"]),
+    companyLabel: resolveManualLotRecordValue(record, ["company", "companyName"]),
+    productNameLabel: resolveManualLotRecordValue(record, ["partName", "productName", "itemName"]),
+    partNoLabel: resolveManualLotRecordValue(record, ["partNo", "productNo", "itemNo"]),
+    materialLabel: resolveManualLotRecordValue(record, ["material", "materialName"]),
+    qtyLabel: Number(qty) ? Number(qty).toLocaleString("ko-KR") : "—",
+    qtyValue: Number(qty) || 0,
+    dueDateLabel: resolveManualLotRecordValue(record, ["dueDate", "incomingDate", "registeredAt"]),
+    statusLabel: "생산 대기",
+  };
+}
+
+const MANUAL_LOT_WAITING_COLUMNS = [
+  { key: "managementId", label: "관리번호", widthHint: "id", identifier: true },
+  { key: "companyLabel", label: "업체명", widthHint: "company" },
+  { key: "productNameLabel", label: "품명", widthHint: "product" },
+  { key: "partNoLabel", label: "품번", widthHint: "partNo" },
+  { key: "materialLabel", label: "재질", widthHint: "material" },
+  { key: "qtyLabel", label: "수량", widthHint: "qty" },
+  { key: "dueDateLabel", label: "생산 기준일", widthHint: "date" },
+  {
+    key: "statusLabel",
+    label: "상태",
+    widthHint: "status",
+    render: (row) => <StatusChip variant="wait">{row.statusLabel}</StatusChip>,
+  },
+];
+
+export function ManualLotRegistrationPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    equipmentQuery: "",
+    productionDate: getPrintOutputDate(),
+    operator: "",
+    note: "",
+  });
+  const [selectedRecordId, setSelectedRecordId] = useState("");
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
+  const [createdResult, setCreatedResult] = useState(null);
+  const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const waitingRows = useMemo(() => {
+    void refreshKey;
+    return getProductionPlanScreenData().baseRecords.map(mapManualLotWaitingRow);
+  }, [refreshKey]);
+  const selectedRecord = useMemo(
+    () => waitingRows.find((row) => row.id === selectedRecordId) ?? waitingRows[0] ?? null,
+    [waitingRows, selectedRecordId]
+  );
+  const equipmentList = useMemo(() => getEquipmentList(), [refreshKey]);
+  const selectedEquipment = useMemo(
+    () => equipmentList.find((equipment) => equipment.id === selectedEquipmentId) ?? null,
+    [equipmentList, selectedEquipmentId]
+  );
+  const equipmentOptions = useMemo(
+    () =>
+      equipmentList.map((equipment) => ({
+        equipment,
+        label: buildManualLotEquipmentLabel(equipment),
+        searchText: normalizeManualLotSearchText(
+          `${equipment.id} ${equipment.name} ${equipment.code ?? ""} ${equipment.process} ${EQUIPMENT_RUN_STATUS_META[equipment.status]?.label ?? ""} ${resolveManualLotEquipmentStatusLabel(equipment.status)}`
+        ),
+      })),
+    [equipmentList]
+  );
+  const equipmentSuggestions = useMemo(() => {
+    const keyword = normalizeManualLotSearchText(form.equipmentQuery);
+    const filtered = keyword
+      ? equipmentOptions.filter((option) => option.searchText.includes(keyword))
+      : equipmentOptions;
+    return filtered.slice(0, 20).map((option) => option.label);
+  }, [equipmentOptions, form.equipmentQuery]);
+  const nextLotNo = useMemo(() => {
+    if (!selectedEquipment || !form.productionDate) return "";
+    return generateProductionLotNo({
+      workDate: form.productionDate,
+      equipment: selectedEquipment.name,
+      records: buildManualLotNumberRecords(),
+    });
+  }, [selectedEquipment, form.productionDate, refreshKey]);
+
+  const updateField = (key, value) => {
+    setError("");
+    setCreatedResult(null);
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSelectWaitingRow = (row) => {
+    setSelectedRecordId(row.id);
+    setCreatedResult(null);
+    setError("");
+  };
+
+  const handleEquipmentSelect = (label) => {
+    const keyword = normalizeManualLotSearchText(label);
+    const matched =
+      equipmentOptions.find((option) => option.label === label) ??
+      equipmentOptions.find((option) => keyword && option.searchText.includes(keyword));
+    if (!matched) {
+      setSelectedEquipmentId("");
+      setForm((prev) => ({ ...prev, equipmentQuery: label }));
+      return;
+    }
+    setSelectedEquipmentId(matched.equipment.id);
+    setForm((prev) => ({ ...prev, equipmentQuery: matched.label }));
+  };
+
+  const handleCreateLot = () => {
+    if (!selectedEquipment) {
+      setError("설비를 선택하세요.");
+      return;
+    }
+    if (!form.productionDate) {
+      setError("생산일자를 입력하세요.");
+      return;
+    }
+    if (!nextLotNo) {
+      setError("LOT 번호를 생성할 수 없습니다. 설비와 생산일자를 확인하세요.");
+      return;
+    }
+
+    const result = createManualChargeableLot({
+      equipmentId: selectedEquipment.id,
+      lotNo: nextLotNo,
+      workDate: form.productionDate,
+      sourceRecordId: selectedRecord?.id,
+      managementId: selectedRecord?.managementId,
+      company: selectedRecord?.companyLabel,
+      productName: selectedRecord?.productNameLabel,
+      partNo: selectedRecord?.partNoLabel,
+      material: selectedRecord?.materialLabel,
+      qty: selectedRecord?.qtyValue,
+      operator: form.operator,
+      note: form.note,
+    });
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    QRService.createIfNotExists("lot", result.lotNo);
+    setCreatedResult(result);
+    setError("");
+    setRefreshKey((key) => key + 1);
+    setSelectedRecordId("");
+  };
+
+  const selectedMeta = selectedEquipment
+    ? EQUIPMENT_RUN_STATUS_META[selectedEquipment.status] ?? EQUIPMENT_RUN_STATUS_META.idle
+    : null;
+
+  return (
+    <div className="manual-lot-page">
+      <section className="manual-lot-page__hero">
+        <div>
+          <p className="manual-lot-page__eyebrow">Manual LOT Workflow</p>
+          <h2>수기 LOT 등록</h2>
+          <p>
+            생산 대기 리스트에서 작업 대상을 선택하고, 설비를 지정한 뒤 LOT를 생성하는 생산 시작 화면입니다.
+          </p>
+        </div>
+        <div className="manual-lot-page__rule">
+          <strong>PM 원칙</strong>
+          <span>LOT Preview는 계산만 수행합니다. LOT · QR · 설비 연결은 LOT 생성 버튼 클릭 시점에만 반영됩니다.</span>
+        </div>
+      </section>
+
+      <section className="manual-lot-page__workspace" aria-label="생산 시작 Workspace">
+        <div className="manual-lot-page__list-card">
+          <div className="manual-lot-page__section-head">
+            <div>
+              <h3>생산 대기 리스트</h3>
+              <p>생산을 시작할 대상을 선택하면 우측 LOT 생성 패널이 자동 갱신됩니다.</p>
+            </div>
+            <span className="manual-lot-page__count">{waitingRows.length.toLocaleString("ko-KR")}건</span>
+          </div>
+          <TitanDataTable
+            columns={MANUAL_LOT_WAITING_COLUMNS}
+            rows={waitingRows}
+            activeRowId={selectedRecord?.id}
+            onRowClick={handleSelectWaitingRow}
+            emptyMessage="생산 대기 대상이 없습니다."
+            ariaLabel="생산 대기 리스트"
+          />
+        </div>
+
+        <aside className="manual-lot-page__preview" aria-label="LOT 생성 패널">
+          <div className="manual-lot-page__preview-head">
+            <Factory size={18} aria-hidden="true" />
+            <strong>LOT 생성 패널</strong>
+          </div>
+
+          {selectedRecord ? (
+            <dl className="manual-lot-page__summary">
+              <div>
+                <dt>관리번호</dt>
+                <dd>{selectedRecord.managementId}</dd>
+              </div>
+              <div>
+                <dt>업체명</dt>
+                <dd>{selectedRecord.companyLabel}</dd>
+              </div>
+              <div>
+                <dt>품명</dt>
+                <dd>{selectedRecord.productNameLabel}</dd>
+              </div>
+              <div>
+                <dt>품번</dt>
+                <dd>{selectedRecord.partNoLabel}</dd>
+              </div>
+              <div>
+                <dt>재질</dt>
+                <dd>{selectedRecord.materialLabel}</dd>
+              </div>
+              <div>
+                <dt>수량</dt>
+                <dd>{selectedRecord.qtyLabel}</dd>
+              </div>
+              <div>
+                <dt>생산 예정일</dt>
+                <dd>
+                  <input
+                    className="titan-input"
+                    type="date"
+                    value={form.productionDate}
+                    onChange={(event) => updateField("productionDate", event.target.value)}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>설비</dt>
+                <dd>
+                  <TitanSearchAutocomplete
+                    fieldKey="manualLotEquipment"
+                    value={form.equipmentQuery}
+                    onChange={(value) => {
+                      updateField("equipmentQuery", value);
+                      setSelectedEquipmentId("");
+                    }}
+                    onSelect={handleEquipmentSelect}
+                    suggestions={equipmentSuggestions}
+                    placeholder="66 / 3S / 10S / 이온 / 연질화"
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>생성될 LOT번호</dt>
+                <dd className="manual-lot-page__lot-no">{nextLotNo || "설비 선택 후 자동 Preview"}</dd>
+              </div>
+              <div>
+                <dt>상태</dt>
+                <dd>
+                  {selectedEquipment ? (
+                    <StatusChip variant={resolveManualLotStatusVariant(selectedEquipment.status)}>
+                      {selectedMeta.emoji} {resolveManualLotEquipmentStatusLabel(selectedEquipment.status)}
+                    </StatusChip>
+                  ) : (
+                    <StatusChip variant="wait">설비 미선택</StatusChip>
+                  )}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="manual-lot-page__empty">생산 대기 리스트에서 작업 대상을 선택하세요.</p>
+          )}
+
+          <label className="manual-lot-page__field">
+            <span>작업자</span>
+            <input className="titan-input" value={form.operator} onChange={(event) => updateField("operator", event.target.value)} placeholder="작업자" />
+          </label>
+
+          <label className="manual-lot-page__field">
+            <span>비고</span>
+            <input className="titan-input" value={form.note} onChange={(event) => updateField("note", event.target.value)} placeholder="긴급 생산 / 전일 누락 / QR 예외 사유 등" />
+          </label>
+
+          {error ? <p className="manual-lot-page__error" role="alert">{error}</p> : null}
+
+          {createdResult ? (
+            <div className="manual-lot-page__success manual-lot-page__toast" role="status" aria-live="polite">
+              <CheckCircle2 size={18} aria-hidden="true" />
+              <div>
+                <strong>LOT 생성 완료</strong>
+                <span>{createdResult.lotNo}</span>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="manual-lot-page__actions">
+            <PrimaryButton type="button" onClick={handleCreateLot} disabled={!selectedRecord}>
+              <Plus size={14} aria-hidden="true" />
+              LOT 생성
+            </PrimaryButton>
+            <button className="titan-btn titan-btn--secondary" type="button" onClick={() => navigate(OPERATION_ROUTES.equipmentStatus)}>
+              설비 가동 현황 확인
+            </button>
+          </div>
+        </aside>
+      </section>
+
+      <section className="manual-lot-page__history" aria-label="생산 이력">
+        <div className="manual-lot-page__section-head">
+          <div>
+            <h3>생산 이력</h3>
+            <p>LOT 생성 후 설비 가동 현황과 작업일보에서 이어서 관리합니다.</p>
+          </div>
+          {createdResult ? <span className="manual-lot-page__lot-no">{createdResult.lotNo}</span> : null}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function DailyProductionReport() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [workflowNextStep, setWorkflowNextStep] = useState(null);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitialId, setRegisterInitialId] = useState("");
   const [registerMode, setRegisterMode] = useState("register");
@@ -582,6 +949,7 @@ export default function DailyProductionReport() {
         equipment: form.equipment,
         registrar: form.worker.trim() || "관리자",
         heatTreatmentConditions: form.heatTreatmentConditions?.trim() || "",
+        heatTreatmentProcessConditions: form.heatTreatmentProcessConditions ?? {},
         note: form.note.trim(),
         registered: true,
         lotCreatedAt: existing.lotCreatedAt || now,
@@ -602,7 +970,7 @@ export default function DailyProductionReport() {
         title: `LOT 등록 — ${form.lotNo}`,
       });
       const lotNo = form.lotNo?.trim();
-      if (lotNo) ensureLotQrEntry(lotNo);
+      if (lotNo) QRService.createIfNotExists("lot", lotNo);
     }
 
     const lastId = products[products.length - 1]?.managementId;
@@ -670,6 +1038,7 @@ export default function DailyProductionReport() {
     }
 
     setRefreshKey((k) => k + 1);
+    setWorkflowNextStep(getOperationsWorkflowNextStep("shotComplete"));
   };
 
   const handleRowCancelComplete = (row) => {
@@ -769,10 +1138,6 @@ export default function DailyProductionReport() {
 
       <div className="inbound-page__list quality-page__list production-page__list-column">
         <div className="production-page__table-area">
-          <div className="production-page__list-header">
-            <h3>열처리일보 목록 (총 {totalCount}건)</h3>
-          </div>
-
           <TitanDataTable
             className="inbound-page__table"
             columns={columns}
@@ -869,6 +1234,17 @@ export default function DailyProductionReport() {
             }
           },
         }}
+      />
+
+      <OperationsWorkflowNextDialog
+        open={Boolean(workflowNextStep)}
+        step={workflowNextStep}
+        onNavigate={(path) => {
+          navigate(path);
+          setWorkflowNextStep(null);
+        }}
+        onStay={() => setWorkflowNextStep(null)}
+        onClose={() => setWorkflowNextStep(null)}
       />
     </div>
   );

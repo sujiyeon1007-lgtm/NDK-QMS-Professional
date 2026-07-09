@@ -54,6 +54,19 @@ export function buildLotQrBrowserUrl(lotNo) {
   return buildQrBrowserUrl(QR_ENGINE_ROUTES.lotLifecycle(lotNo));
 }
 
+export function buildQrEntryBrowserUrl(qrType, target) {
+  const type = normalizeQrType(qrType);
+  if (type === "equipment") return buildEquipmentQrBrowserUrl(target);
+  if (type === "lot") return buildLotQrBrowserUrl(target);
+  if (type === "inbound") return buildQrBrowserUrl(QR_ENGINE_ROUTES.inboundEntry);
+  if (type === "outbound") return buildQrBrowserUrl(QR_ENGINE_ROUTES.outboundEntry);
+  if (type === "product") return buildQrBrowserUrl(QR_ENGINE_ROUTES.productEntry(target));
+  if (type === "material") return buildQrBrowserUrl(QR_ENGINE_ROUTES.materialEntry(target));
+  if (type === "document") return buildQrBrowserUrl(QR_ENGINE_ROUTES.documentEntry);
+  if (type === "worker") return buildQrBrowserUrl(QR_ENGINE_ROUTES.workerEntry(target));
+  return buildQrBrowserUrl(QR_ENGINE_ROUTES.dashboard);
+}
+
 function isBrowserUrl(value) {
   return /^https?:\/\//i.test(String(value ?? "").trim());
 }
@@ -131,6 +144,10 @@ export function resolveQrBrowserPayload(rowOrValue) {
   );
   if ((qrType === "lot" || row.lotNo) && lotNo) return buildLotQrBrowserUrl(lotNo);
 
+  if (["inbound", "outbound", "product", "material", "document", "worker"].includes(qrType)) {
+    return buildQrEntryBrowserUrl(qrType, row.entityKey ?? row.target);
+  }
+
   const equipmentFromSmartAccess = parseEquipmentSmartAccessId(scanCandidate || row.qrPayload);
   if (equipmentFromSmartAccess) return buildEquipmentQrBrowserUrl(equipmentFromSmartAccess);
 
@@ -165,6 +182,36 @@ export function resolveQrBrowserUrlPayload(payload) {
           path,
         };
       }
+    }
+    if (url.pathname === QR_ENGINE_ROUTES.inboundEntry) {
+      return { type: "inbound", target: "inbound-entry", path };
+    }
+    if (url.pathname === QR_ENGINE_ROUTES.outboundEntry) {
+      return { type: "outbound", target: "outbound-entry", path };
+    }
+    if (url.pathname === "/settings/products") {
+      return {
+        type: "product",
+        target: url.searchParams.get("qrTarget") ?? "products",
+        path,
+      };
+    }
+    if (url.pathname === "/settings/materials") {
+      return {
+        type: "material",
+        target: url.searchParams.get("qrTarget") ?? "materials",
+        path,
+      };
+    }
+    if (url.pathname === QR_ENGINE_ROUTES.documentEntry) {
+      return { type: "document", target: "quality-documents", path };
+    }
+    if (url.pathname === "/production/work-journal") {
+      return {
+        type: "worker",
+        target: url.searchParams.get("worker") ?? "worker",
+        path,
+      };
     }
     return { type: "unknown", path };
   } catch {

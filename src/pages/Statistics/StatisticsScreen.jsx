@@ -23,6 +23,7 @@ import {
   buildProductionStatisticsListColumns,
   buildQualityStatisticsListColumns,
   buildSalesStatisticsListColumns,
+  buildShotStatisticsListColumns,
 } from "../../config/standardProductList";
 import {
   formatReferenceInputValue,
@@ -38,6 +39,7 @@ import "../Production/ProductionManagement.css";
 import "./Statistics.css";
 
 function getListColumns(tabId) {
+  if (tabId === "shot") return buildShotStatisticsListColumns();
   if (tabId === "quality") return buildQualityStatisticsListColumns();
   if (tabId === "sales") return buildSalesStatisticsListColumns();
   return buildProductionStatisticsListColumns();
@@ -101,7 +103,7 @@ export default function StatisticsScreen() {
   return (
     <div className={`statistics-page statistics-page--executive inbound-page ${scope.accentClass}`}>
       <SectionPageActions>
-        <SecondaryButton type="button">
+        <SecondaryButton type="button" onClick={() => window.alert("엑셀 출력 기능은 V1.1에서 제공될 예정입니다.")}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>

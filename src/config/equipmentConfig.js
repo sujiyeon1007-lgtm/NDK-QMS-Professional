@@ -5,6 +5,8 @@
  * 설비 상태 4단계 및 장입 버튼 규칙 = Project TITAN 공식 SSOT
  */
 
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
+
 /** @typedef {"idle"|"ready"|"running"|"maintenance"} EquipmentRunStatus */
 
 /**
@@ -295,18 +297,18 @@ export const HOME_EQUIPMENT_WIDGET_COPY = {
   subtitle: "설비 중심 열처리 운전 · 장입 준비 · 점검 상태",
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
-  linkLabel: "장입관리",
-  linkTo: "/production/charging",
+  linkLabel: "설비 가동 현황",
+  linkTo: OPERATION_ROUTES.equipmentStatus,
 };
 
 export const EQUIPMENT_STATUS_PAGE_COPY = {
-  title: "설비 현황",
+  title: "설비 가동 현황",
   kicker: "MES Dashboard",
   description: "전체 설비 운전 · 장입 · 점검 상태를 한 화면에서 관제합니다.",
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
-  chargingLinkLabel: "장입 작업",
-  chargingLinkTo: "/production/charging",
+  chargingLinkLabel: "작업 시작/종료",
+  chargingLinkTo: OPERATION_ROUTES.equipmentStatus,
 };
 
 /** @deprecated EQUIPMENT_RAW_LIST 사용 — status는 계산값 */

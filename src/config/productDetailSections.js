@@ -61,6 +61,7 @@ export const PRODUCT_DETAIL_TABS = [
   { id: "certificate", label: "성적서" },
   { id: "lots", label: "LOT" },
   { id: "shipments", label: "출고" },
+  { id: "attachments", label: "첨부파일" },
   { id: "updates", label: "최근 수정" },
 ];
 

@@ -49,6 +49,60 @@ function appendLotLifecycleEvent(event) {
   writeLifecycleEvents(events);
 }
 
+export function recordLotEquipmentLifecycleEvent({
+  lotNo,
+  action,
+  equipmentId = "",
+  equipmentName = "",
+  operator = "",
+  managementIds = [],
+} = {}) {
+  const key = String(lotNo ?? "").trim();
+  if (!key) return null;
+
+  const resolvedIds =
+    managementIds.length > 0
+      ? managementIds
+      : getSessionProductionRecords()
+          .filter((row) => String(row.lotNo ?? "").trim() === key)
+          .map((row) => row.id);
+
+  const isStart = action === "equipmentWorkStart";
+  appendLotLifecycleEvent({
+    type: action,
+    action: isStart ? "설비 작업 시작" : "설비 작업 완료",
+    lotNo: key,
+    equipmentId,
+    equipmentName,
+    operator,
+    managementIds: resolvedIds,
+    createdAt: new Date().toISOString(),
+    source: "qr-equipment",
+  });
+  return true;
+}
+
+export function getLotLifecycleEventsByLotNo(lotNo) {
+  const key = String(lotNo ?? "").trim();
+  if (!key) return [];
+  return readLifecycleEvents()
+    .filter((event) => String(event.lotNo ?? "").trim() === key)
+    .slice()
+    .reverse();
+}
+
+export function countEquipmentTodayWorkFinishes(equipmentId, dateKey = null) {
+  const equipmentKey = String(equipmentId ?? "").trim();
+  if (!equipmentKey) return 0;
+  const today = dateKey ?? new Date().toISOString().slice(0, 10);
+  return readLifecycleEvents().filter(
+    (event) =>
+      event.type === "equipmentWorkFinish" &&
+      String(event.equipmentId ?? "").trim() === equipmentKey &&
+      String(event.createdAt ?? "").slice(0, 10) === today
+  ).length;
+}
+
 export function resolveLotBadgeStatus(record) {
   if (!record) return null;
 

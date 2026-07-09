@@ -20,9 +20,9 @@ import {
   buildProductListMeta,
   buildProductMasterSummary,
 } from "../../utils/productMasterDetail";
+import { QRService } from "../../utils/qrEngineRegistryService";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import ProductDetailModal from "./ProductDetailModal";
-import MasterDataBackLink from "./MasterDataBackLink";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -178,6 +178,7 @@ export default function ProductManagementPage() {
         : stageMasterAdd("products", form);
 
     if (!result.ok) return;
+    QRService.createIfNotExists("products", result.row);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) {
@@ -207,19 +208,6 @@ export default function ProductManagementPage() {
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>제품관리</h2>
-            <p className="company-management-page__intro">
-              Project TITAN LOT Lifecycle · QR · 성적서(TDE) 연결의 중심이 되는 제품 Master 입니다.
-              행을 더블클릭하면 상세 Popup에서 재질 · 공정 · 생산 · 품질 · 성적서 · LOT · 출고까지
-              확인할 수 있습니다.
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="제품 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = PRODUCT_KPI_ICON[kpi.id] ?? Boxes;

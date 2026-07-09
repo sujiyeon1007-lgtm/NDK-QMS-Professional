@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ClipboardCheck,
@@ -13,6 +13,7 @@ import {
 
 import StatusChip from "../StatusChip";
 import TitanProcessNameCell from "../TitanProcessNameCell";
+import FoundationAttachment from "../FoundationAttachment";
 import {
   buildStandardAttachmentRows,
   buildStandardBasicInfo,
@@ -23,6 +24,12 @@ import {
   buildStandardQrWorkHistoryRows,
   STANDARD_PROCESS_HISTORY_STEP_TONES,
 } from "../../../utils/standardDetailPopupModel";
+import {
+  normalizeFoundationAttachment,
+  normalizeFoundationAttachments,
+} from "../../../utils/foundationAttachmentEngine";
+
+const STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY = "project-titan-foundation-popup-attachments-v1";
 
 const PROCESS_HISTORY_ICONS = {
   incomingRegistered: ClipboardList,
@@ -34,6 +41,77 @@ const PROCESS_HISTORY_ICONS = {
   certificateIssued: FileText,
   shipmentDone: Truck,
 };
+
+function resolveStandardAttachmentOwnerKey(record = {}) {
+  return [
+    record.id,
+    record.managementId,
+    record.mesManagementNo,
+    record.lotNo,
+    record.partNo,
+  ]
+    .filter(Boolean)
+    .join("::") || "unknown";
+}
+
+function readStandardDetailStoredAttachments(ownerKey) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return normalizeFoundationAttachments(parsed?.[ownerKey] ?? []);
+  } catch {
+    return [];
+  }
+}
+
+function writeStandardDetailStoredAttachments(ownerKey, attachments) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[ownerKey] = normalizeFoundationAttachments(attachments);
+    globalThis.sessionStorage?.setItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // SessionStorage demo repository.
+  }
+}
+
+function readStandardDetailDeletedBaseIds(ownerKey) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return Array.isArray(parsed?.[`${ownerKey}::__deletedBaseIds`])
+      ? parsed[`${ownerKey}::__deletedBaseIds`].map(String)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStandardDetailDeletedBaseIds(ownerKey, ids) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[`${ownerKey}::__deletedBaseIds`] = [...new Set(ids.map(String))];
+    globalThis.sessionStorage?.setItem(STANDARD_DETAIL_ATTACHMENT_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // SessionStorage demo repository.
+  }
+}
+
+function convertStandardAttachmentRow(row, index) {
+  return normalizeFoundationAttachment(
+    {
+      id: row.key,
+      name: row.name,
+      category: row.category,
+      detail: row.detail,
+      dataUrl: row.dataUrl || row.url || "",
+      uploadedAt: row.uploadedAt,
+      uploadedBy: row.uploadedBy,
+    },
+    index
+  );
+}
 
 export function StandardDetailBasicInfoPanel({ record, listRow, statusLabel, statusVariant }) {
   const info = useMemo(() => {
@@ -139,7 +217,12 @@ export function StandardDetailProcessHistoryPanel({ record }) {
                 <span className="titan-standard-detail-popup__process-timeline-label">{row.label}</span>
               </div>
               <span className="titan-standard-detail-popup__process-timeline-datetime">{row.datetime}</span>
-              <span className="titan-standard-detail-popup__process-timeline-assignee">{row.assignee}</span>
+              <span
+                className="titan-standard-detail-popup__process-timeline-assignee"
+                title={row.assigneeDetail && row.assigneeDetail !== row.assignee ? row.assigneeDetail : undefined}
+              >
+                {row.assignee}
+              </span>
               <span className="titan-standard-detail-popup__process-timeline-status">
                 {row.completed ? (
                   <span className="titan-standard-detail-popup__process-timeline-status-done">{row.status}</span>
@@ -235,36 +318,56 @@ export function StandardDetailCoLotProductsPanel({ record, onSelectCoLotProduct 
 
 export function StandardDetailAttachmentsPanel({ record }) {
   const rows = useMemo(() => buildStandardAttachmentRows(record), [record]);
+  const ownerKey = useMemo(() => resolveStandardAttachmentOwnerKey(record), [record]);
+  const baseAttachments = useMemo(
+    () => rows.map(convertStandardAttachmentRow).filter(Boolean),
+    [rows]
+  );
+  const [storedAttachments, setStoredAttachments] = useState(() =>
+    readStandardDetailStoredAttachments(ownerKey)
+  );
+  const [deletedBaseIds, setDeletedBaseIds] = useState(() =>
+    readStandardDetailDeletedBaseIds(ownerKey)
+  );
 
-  if (!rows.length) {
-    return (
-      <p className="titan-detail-popup__empty titan-standard-detail-popup__attachments-empty">
-        등록된 첨부파일이 없습니다.
-      </p>
-    );
-  }
+  useEffect(() => {
+    setStoredAttachments(readStandardDetailStoredAttachments(ownerKey));
+    setDeletedBaseIds(readStandardDetailDeletedBaseIds(ownerKey));
+  }, [ownerKey]);
+
+  const attachments = useMemo(
+    () => [
+      ...baseAttachments.filter((attachment) => !deletedBaseIds.includes(String(attachment.id))),
+      ...storedAttachments,
+    ],
+    [baseAttachments, deletedBaseIds, storedAttachments]
+  );
+
+  const handleUpload = (files) => {
+    const next = [...storedAttachments, ...normalizeFoundationAttachments(files)];
+    setStoredAttachments(next);
+    writeStandardDetailStoredAttachments(ownerKey, next);
+  };
+
+  const handleDelete = (attachmentId) => {
+    const baseIds = new Set(baseAttachments.map((attachment) => attachment.id));
+    if (baseIds.has(attachmentId)) {
+      const next = [...new Set([...deletedBaseIds, String(attachmentId)])];
+      setDeletedBaseIds(next);
+      writeStandardDetailDeletedBaseIds(ownerKey, next);
+      return;
+    }
+    const next = storedAttachments.filter((attachment) => attachment.id !== attachmentId);
+    setStoredAttachments(next);
+    writeStandardDetailStoredAttachments(ownerKey, next);
+  };
 
   return (
-    <div className="titan-standard-detail-popup__table-scroll">
-      <table className="titan-standard-detail-popup__compact-table titan-standard-detail-popup__attachments-table">
-        <thead>
-          <tr>
-            <th>구분</th>
-            <th>파일명</th>
-            <th>비고</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key}>
-              <td>{row.category}</td>
-              <td>{row.name}</td>
-              <td>{row.detail}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <FoundationAttachment
+      attachments={attachments}
+      onUpload={handleUpload}
+      onDelete={handleDelete}
+    />
   );
 }
 

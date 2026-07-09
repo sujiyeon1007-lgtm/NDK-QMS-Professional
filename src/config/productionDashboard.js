@@ -3,6 +3,7 @@
  */
 
 import { CircleCheck, Cog, Factory, AlertTriangle, TrendingUp } from "lucide-react";
+import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 /** @typedef {'blue' | 'orange' | 'green' | 'purple'} ProductionKpiTone */
 
@@ -14,7 +15,7 @@ export const PRODUCTION_DAILY_STATUS_CARDS = [
     subLabel: "작업 진행 중",
     icon: Cog,
     tone: "green",
-    to: "/production/daily-report",
+    to: OPERATION_ROUTES.dailyWork,
   },
   {
     id: "prodDone",
@@ -22,7 +23,7 @@ export const PRODUCTION_DAILY_STATUS_CARDS = [
     subLabel: "열처리 완료 건",
     icon: CircleCheck,
     tone: "purple",
-    to: "/production/daily-report",
+    to: OPERATION_ROUTES.dailyWork,
   },
 ];
 

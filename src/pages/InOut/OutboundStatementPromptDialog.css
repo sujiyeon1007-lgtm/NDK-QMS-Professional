@@ -71,10 +71,29 @@ body.outbound-statement-prompt-open {
   color: #0f172a;
 }
 
+.outbound-statement-prompt-subquestion {
+  font-size: 14px;
+  font-weight: 800;
+  color: #475569;
+}
+
 .outbound-statement-prompt-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px 18px;
   border-top: 1px solid #e2e8f0;
+}
+
+.outbound-statement-prompt-action {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.outbound-statement-prompt-action small {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
 }

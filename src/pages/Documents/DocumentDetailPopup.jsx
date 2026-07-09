@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import Dialog from "@mui/material/Dialog";
-import DialogContent from "@mui/material/DialogContent";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import Box from "@mui/material/Box";
 import { Download, ExternalLink, Pencil, Trash2 } from "lucide-react";
 
-import { SecondaryButton } from "../../foundation/components/Button";
-import { titanDialogTransitionProps } from "../../foundation/components/titanPopupTransition";
-import { DOCUMENT_DETAIL_POPUP_TABS } from "../../config/documentDetailPopupTabs";
+import FoundationActionBar from "../../foundation/components/FoundationActionBar";
+import FoundationQrPanel from "../../foundation/components/FoundationQrPanel";
+import TitanStandardDetailPopup from "../../foundation/components/detailPopup/TitanStandardDetailPopup";
+import {
+  DOCUMENT_DETAIL_TAB_IDS,
+  getDocumentDetailTabs,
+} from "../../config/detailTabs/documentDetailTabs";
 import { appendDocumentChangeLog } from "../../utils/documentChangeLogSession";
 import { deleteCompanyDocument } from "../../utils/documentCrudActions";
+import {
+  appendDocumentFoundationAttachments,
+  deleteDocumentFoundationAttachment,
+} from "../../utils/documentFoundationAttachments";
 import { getDocumentManagementActionPermissions } from "../../utils/documentManagementPermissions";
 import { groupDocumentsByDocumentNo } from "../../utils/companyDocumentManagement";
 import {
@@ -27,70 +29,24 @@ import {
   formatDocumentDetailFields,
   openDocumentRow,
 } from "./documentDetailActions";
-import {
-  TITAN_DOCUMENT_DETAIL_POPUP_HEIGHT,
-  TITAN_DOCUMENT_DETAIL_POPUP_WIDTH,
-} from "../../config/documentDetailPopupLayout";
 import "../../foundation/components/detailPopup/detailPopup.css";
 import "../../foundation/components/detailPopup/standardDetailPopup.css";
 import "./DocumentCompanyPopup.css";
 
-function DocumentDetailTabPanel({ children, value, index }) {
-  const isActive = Number(value) === index;
-
-  return (
-    <div
-      role="tabpanel"
-      id={`document-detail-tabpanel-${index}`}
-      aria-labelledby={`document-detail-tab-${index}`}
-      aria-hidden={!isActive}
-      className={["titan-standard-detail-popup__tab-panel", isActive ? "is-active" : ""]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="titan-standard-detail-popup__tab-panel-inner">{children}</div>
-    </div>
-  );
-}
-
-function DocumentDetailSummaryHeader({ companyName, row }) {
+function buildDocumentStandardSummary(companyName, row) {
   const fields = formatDocumentDetailFields(row, companyName);
   if (!fields) return null;
 
-  return (
-    <header
-      id="document-detail-popup-summary"
-      className="titan-standard-detail-popup__header-card document-detail-popup__header"
-    >
-      <div className="document-detail-popup__header-main">
-        <span className="document-detail-popup__header-company">
-          {companyName || row.company || "—"}
-        </span>
-        <strong className="titan-standard-detail-popup__product-identity document-detail-popup__header-title">
-          {fields.title}
-        </strong>
-        <div className="document-detail-popup__header-meta-line">
-          <span className="document-detail-popup__header-label-inline">문서번호</span>
-          <span className="document-detail-popup__header-doc-no">{fields.documentNo}</span>
-        </div>
-        {fields.attachmentName ? (
-          <div className="document-detail-popup__header-meta-line document-detail-popup__header-attachment">
-            <span className="document-detail-popup__header-label-inline">첨부</span>
-            <span
-              className="document-detail-popup__header-attachment-name"
-              title={fields.attachmentName}
-            >
-              {fields.attachmentName}
-            </span>
-          </div>
-        ) : null}
-      </div>
-      <aside className="document-detail-popup__header-rev" aria-label="Revision">
-        <span className="titan-standard-detail-popup__header-label">Rev</span>
-        <strong className="document-detail-popup__header-rev-value">{fields.revision}</strong>
-      </aside>
-    </header>
-  );
+  return {
+    company: companyName || row.company || "—",
+    partName: fields.title || "—",
+    partNo: fields.documentNo || "문서번호 미등록",
+    lotNo: fields.revision || "—",
+    currentProcess: row.documentTypeLabel || row.typeLabel || "문서관리",
+    currentProcessVariant: "document",
+    statusLabel: row.statusLabel || row.approvalStatus || "등록",
+    statusVariant: row.statusVariant === "complete" ? "complete" : "wait",
+  };
 }
 
 export default function DocumentDetailPopup({
@@ -124,6 +80,8 @@ export default function DocumentDetailPopup({
 
   const canEditSelected = Boolean(permissions.canEdit && row?.source === "related-document");
   const canDownloadSelected = Boolean(row?.hasPdf || row?.dataUrl);
+  const summary = useMemo(() => buildDocumentStandardSummary(companyName, row), [companyName, row]);
+  const tabs = useMemo(() => getDocumentDetailTabs(row), [row]);
 
   useEffect(() => {
     if (open) {
@@ -152,9 +110,73 @@ export default function DocumentDetailPopup({
     onRefresh?.();
   };
 
+  const handleUploadAttachments = useCallback(
+    (files) => {
+      if (!row) return;
+      appendDocumentFoundationAttachments(row, files);
+      appendDocumentChangeLog(row.id, "첨부파일 등록", `${files.length}개`);
+      bumpUi();
+      onRefresh?.();
+    },
+    [bumpUi, onRefresh, row]
+  );
+
+  const handleDeleteAttachment = useCallback(
+    (attachmentId) => {
+      if (!row) return;
+      deleteDocumentFoundationAttachment(row, attachmentId);
+      appendDocumentChangeLog(row.id, "첨부파일 삭제", String(attachmentId));
+      bumpUi();
+      onRefresh?.();
+    },
+    [bumpUi, onRefresh, row]
+  );
+
+  const renderDocumentActions = () => (
+    <FoundationActionBar
+      className="document-detail-popup__foundation-actions"
+      ariaLabel="문서 작업"
+      align="start"
+      size="compact"
+      actions={[
+        {
+          id: "editDocument",
+          label: "수정",
+          icon: Pencil,
+          hidden: !canEditSelected,
+          onClick: () => setRegisterMode("edit"),
+        },
+        {
+          id: "deleteDocument",
+          label: "삭제",
+          icon: Trash2,
+          variant: "danger",
+          hidden: !permissions.canDelete,
+          onClick: handleDelete,
+        },
+        {
+          id: "downloadDocument",
+          label: "다운로드",
+          icon: Download,
+          hidden: !permissions.canDownload,
+          disabled: !canDownloadSelected,
+          onClick: () => downloadDocumentRow(row),
+        },
+        {
+          id: "openDocument",
+          label: "열기",
+          icon: ExternalLink,
+          hidden: !permissions.canDownload,
+          disabled: !canDownloadSelected,
+          onClick: () => openDocumentRow(row),
+        },
+      ]}
+    />
+  );
+
   const renderTabPanel = (tabId) => {
     switch (tabId) {
-      case "revision":
+      case DOCUMENT_DETAIL_TAB_IDS.revisionHistory:
         return (
           <DocumentRevisionHistoryPanel
             revisionGroup={activeRevisionGroup}
@@ -163,15 +185,7 @@ export default function DocumentDetailPopup({
             canRegisterRevision={permissions.canRevision}
           />
         );
-      case "attachments":
-        return (
-          <DocumentAttachmentsPanel
-            row={row}
-            onDownload={downloadDocumentRow}
-            onOpen={openDocumentRow}
-          />
-        );
-      case "related":
+      case DOCUMENT_DETAIL_TAB_IDS.relatedDocuments:
         return (
           <DocumentRelatedPanel
             rows={sourceRows}
@@ -182,139 +196,46 @@ export default function DocumentDetailPopup({
             }}
           />
         );
-      case "memo":
+      case DOCUMENT_DETAIL_TAB_IDS.qr:
+        return (
+          <FoundationQrPanel
+            entityType="document"
+            target={row}
+            title={row?.title || row?.documentNo || "문서관리"}
+          />
+        );
+      case DOCUMENT_DETAIL_TAB_IDS.attachments:
+        return (
+          <DocumentAttachmentsPanel
+            row={row}
+            onUpload={handleUploadAttachments}
+            onDelete={handleDeleteAttachment}
+          />
+        );
+      case DOCUMENT_DETAIL_TAB_IDS.memo:
         return <DocumentMemoPanel row={row} />;
       default:
-        return <DocumentBasicInfoPanel row={row} companyName={companyName} />;
+        return (
+          <div className="document-detail-popup__foundation-basic">
+            <DocumentBasicInfoPanel row={row} companyName={companyName} />
+            {renderDocumentActions()}
+          </div>
+        );
     }
   };
 
   if (!open || !row) return null;
 
-  return createPortal(
+  return (
     <>
-      <Dialog
+      <TitanStandardDetailPopup
         open={open}
         onClose={onClose}
-        fullWidth={false}
-        maxWidth={false}
-        scroll="paper"
-        className="titan-detail-popup titan-standard-detail-popup document-detail-popup"
-        aria-labelledby="document-detail-popup-summary"
-        sx={{ zIndex: 1500 }}
-        {...titanDialogTransitionProps}
-        slotProps={{
-          backdrop: {
-            sx: { zIndex: 1499 },
-          },
-          container: {
-            sx: {
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100vw",
-              height: "100dvh",
-              margin: 0,
-              padding: 0,
-            },
-          },
-          paper: {
-            className:
-              "titan-detail-popup__paper titan-standard-detail-popup__paper document-detail-popup__paper",
-            sx: {
-              width: `${TITAN_DOCUMENT_DETAIL_POPUP_WIDTH}px`,
-              minWidth: `${TITAN_DOCUMENT_DETAIL_POPUP_WIDTH}px`,
-              maxWidth: `${TITAN_DOCUMENT_DETAIL_POPUP_WIDTH}px`,
-              height: `${TITAN_DOCUMENT_DETAIL_POPUP_HEIGHT}px`,
-              minHeight: `${TITAN_DOCUMENT_DETAIL_POPUP_HEIGHT}px`,
-              maxHeight: `${TITAN_DOCUMENT_DETAIL_POPUP_HEIGHT}px`,
-              overflow: "hidden",
-              boxSizing: "border-box",
-              flexShrink: 0,
-              flexGrow: 0,
-              margin: 0,
-            },
-          },
-        }}
-      >
-        <div className="titan-standard-detail-popup__shell document-detail-popup__shell">
-          <DocumentDetailSummaryHeader companyName={companyName} row={row} />
-
-          <Box className="titan-detail-popup__tabs-wrap titan-standard-detail-popup__tabs-wrap">
-            <Tabs
-              value={activeTab}
-              onChange={(_, value) => setActiveTab(value)}
-              variant="scrollable"
-              scrollButtons="auto"
-              aria-label="문서 상세 탭"
-              className="titan-detail-popup__tabs"
-            >
-              {DOCUMENT_DETAIL_POPUP_TABS.map((tab, index) => (
-                <Tab
-                  key={tab.id}
-                  value={index}
-                  label={tab.label}
-                  id={`document-detail-tab-${index}`}
-                  aria-controls={`document-detail-tabpanel-${index}`}
-                />
-              ))}
-            </Tabs>
-          </Box>
-
-          <DialogContent
-            className="titan-detail-popup__content titan-standard-detail-popup__content"
-            dividers
-          >
-            <div className="titan-standard-detail-popup__tab-stage">
-              {DOCUMENT_DETAIL_POPUP_TABS.map((tab, index) => (
-                <DocumentDetailTabPanel key={tab.id} value={activeTab} index={index}>
-                  {renderTabPanel(tab.id)}
-                </DocumentDetailTabPanel>
-              ))}
-            </div>
-          </DialogContent>
-
-          <div className="titan-detail-popup__footer titan-standard-detail-popup__footer document-detail-popup__footer">
-            <div className="document-detail-popup__footer-actions">
-              {canEditSelected ? (
-                <SecondaryButton type="button" onClick={() => setRegisterMode("edit")}>
-                  <Pencil size={12} aria-hidden="true" />
-                  수정
-                </SecondaryButton>
-              ) : null}
-              {permissions.canDelete ? (
-                <SecondaryButton type="button" onClick={handleDelete}>
-                  <Trash2 size={12} aria-hidden="true" />
-                  삭제
-                </SecondaryButton>
-              ) : null}
-              {permissions.canDownload ? (
-                <>
-                  <SecondaryButton
-                    type="button"
-                    onClick={() => downloadDocumentRow(row)}
-                    disabled={!canDownloadSelected}
-                  >
-                    <Download size={12} aria-hidden="true" />
-                    다운로드
-                  </SecondaryButton>
-                  <SecondaryButton
-                    type="button"
-                    onClick={() => openDocumentRow(row)}
-                    disabled={!canDownloadSelected}
-                  >
-                    <ExternalLink size={12} aria-hidden="true" />
-                    열기
-                  </SecondaryButton>
-                </>
-              ) : null}
-            </div>
-            <SecondaryButton type="button" onClick={onClose}>
-              닫기
-            </SecondaryButton>
-          </div>
-        </div>
-      </Dialog>
+        tabs={tabs}
+        summary={summary}
+        renderTabContent={renderTabPanel}
+        ariaLabel="문서관리 상세정보"
+      />
 
       <DocumentRegisterModal
         open={Boolean(registerMode)}
@@ -324,7 +245,6 @@ export default function DocumentDetailPopup({
         mode={registerMode || "register"}
         initialRow={registerMode === "register" ? null : row}
       />
-    </>,
-    document.body
+    </>
   );
 }

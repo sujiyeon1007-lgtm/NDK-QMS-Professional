@@ -75,7 +75,7 @@ export const INBOUND_REGISTRATION_WORKFLOW = [
   { step: 14, id: "note", label: "비고", userInput: true, optional: true },
   { step: 15, id: "save", label: "저장" },
   { step: 16, id: "registered", label: "입고현황 등록" },
-  { step: 17, id: "toWorkDaily", label: "작업일보 이동", nextMenu: "/production/daily-report" },
+  { step: 17, id: "toWorkDaily", label: "작업일보 이동", nextMenu: "/operations/daily-work" },
 ];
 
 /** 품번 선택 → Master 자동 연결 (현재) */

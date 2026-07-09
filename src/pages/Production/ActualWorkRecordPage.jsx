@@ -19,7 +19,6 @@ import {
   awrStatusLabel,
   buildActualConditionView,
   buildActualWorkRecordSummary,
-  buildKnowledgeInputFromActualWorkRecord,
   getActualWorkRecords,
   softDeleteActualWorkRecord,
   updateActualWorkRecord,
@@ -97,10 +96,6 @@ export default function ActualWorkRecordPage() {
   );
 
   const conditionView = useMemo(() => buildActualConditionView(selectedRow), [selectedRow]);
-  const knowledgeInput = useMemo(
-    () => buildKnowledgeInputFromActualWorkRecord(selectedRow),
-    [selectedRow]
-  );
 
   useEffect(() => {
     setPage(1);
@@ -410,17 +405,6 @@ export default function ActualWorkRecordPage() {
                     </section>
                   ) : null}
 
-                  {activeTab === "knowledge" ? (
-                    <section className="company-detail-section" aria-label="Knowledge 연계">
-                      <p className="company-detail-section__notice company-detail-section__notice--recipe" role="note">
-                        본 작업 기록은 향후 <strong>Knowledge Record</strong>의 입력 데이터가 됩니다. (구조
-                        설계만 · Engine 미구현)
-                      </p>
-                      <pre className="awr-knowledge-preview">
-                        {JSON.stringify(knowledgeInput, null, 2)}
-                      </pre>
-                    </section>
-                  ) : null}
                 </div>
               </>
             ) : (

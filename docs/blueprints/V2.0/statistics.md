@@ -79,6 +79,33 @@ HOME → 설비현황 → 운영관리 → 생산관리 → 품질관리로 이�
 
 금일 생산 · 금일 출고 · 금일 검사 · **LOT 평균 리드타임** · 불량률 · 설비 가동률
 
+### KPI Card 표시 정책 (PM 2026-07-09)
+
+생산통계 · 품질통계 · 영업통계 상단 KPI Card는 **숫자 우선 Foundation KPI Card**로 통일한다.
+
+**KPI Card 내부 금지:**
+- Sparkline · 미니 Line Graph · 카드 내부 차트 ❌
+- Progress Bar · Badge ❌
+- Line / Bar / Pie / Gauge 등 시각화는 **Dashboard Charts 영역에만** 배치
+
+**KPI 종류별 표시:**
+
+| Kind | 표시 방식 |
+|------|-----------|
+| Count | 큰 숫자 + 전월 대비 증감 |
+| Rate (%) | 큰 퍼센트 + 목표/전월 대비 텍스트 |
+| Status | 숫자 또는 짧은 상태 텍스트 |
+| Target | 목표값 표시 |
+| Trend | ▲/▼ Delta 표시 |
+
+**예시:**
+- 검사건수 `11건` `▲ +2건 (전월)`
+- 합격률 `98.7%` · 목표 `98%`
+- 불량률 `1.3%` · 목표 `2%` · `▼ 양호`
+- NCR `3건`
+
+**원칙:** KPI는 즉시 읽히는 현황 지표이며, 추이 분석은 Dashboard Chart에서만 제공한다.
+
 ---
 
 ## Dashboard Drill Down (PM 공식)
@@ -182,6 +209,7 @@ Excel/PDF export (future) · 조회 전용
 - Read Only (등록/수정/삭제 ❌)
 - Dashboard KPI · Drill Down
 - Workflow Analytics · Single pipeline
+- KPI Card Sparkline/Progress/Badge 제거 · number-first 정책 준수
 - PM Final Review → Freeze
 
 ---

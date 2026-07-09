@@ -1,12 +1,30 @@
 /**
  * 생산 결과 Session 데이터 (UI · managementId 기준)
- * Project TITAN V1.0 — 입고·재고·단위 통합 세션
+ * Project TITAN P0 — 입고·출고·재고·생산 운영 SSOT (단일 Write Path)
  * 향후 SQLite daily_work / work_sheet 테이블과 managementId·lotNo로 연동
  */
 
+import { readJson, writeJson } from "../foundation/data/sessionStorageAdapter";
 import { getStockQty, syncShipmentStatus } from "./inventory";
 import { normalizeInboundDataFields } from "./inboundDataFields";
-import { TITAN_DEMO_PRODUCTION_RECORDS } from "../data/titanDemoSampleData";
+import {
+  TITAN_DEMO_PRODUCTION_RECORDS,
+  TITAN_QA_DEMO_PRODUCTION_RECORDS,
+  TITAN_QA_DEMO_SHIPMENT_EVENTS,
+  buildQaDemoMasterSeed,
+} from "../data/titanDemoSampleData";
+import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
+import {
+  OPERATIONS_DATA_MODE_STORAGE_KEY,
+  OPERATIONS_DATA_MODES,
+  TITAN_QA_DEMO_SEED_VERSION,
+} from "../config/presentationBuildPolicy";
+import { replaceSessionMasterData, TITAN_OPERATIONAL_MASTER_SEED } from "./masterData";
+import { replaceOperationsHistory, resetOperationsHistory } from "./titanHistorySession";
+
+/** 운영 CRUD 단일 영속 저장소 (sessionStorage) */
+export const OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY =
+  "titan-operations-production-records-v1";
 
 export const PRODUCTION_RECORDS = TITAN_DEMO_PRODUCTION_RECORDS;
 
@@ -68,12 +86,40 @@ export function groupRecordsByLot(records) {
   return [...map.values()].sort((a, b) => a.lotNo.localeCompare(b.lotNo, "ko"));
 }
 
-/** UI 세션 공유 (향후 SQLite 단일 소스로 대체) */
-let sessionRecords = PRODUCTION_RECORDS.map((record) => {
+function normalizeSessionRecord(record) {
   const normalized = normalizeInboundDataFields({ ...record });
   const synced = syncShipmentStatus(normalized);
   return { ...normalized, ...synced, stockQty: getStockQty(normalized) };
-});
+}
+
+function buildSeedSessionRecords() {
+  return PRODUCTION_RECORDS.map((record) => normalizeSessionRecord(record));
+}
+
+function persistSessionRecords() {
+  writeJson(OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY, sessionRecords);
+}
+
+function loadSessionRecords() {
+  const stored = readJson(OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY, null);
+  if (Array.isArray(stored)) {
+    return stored.map((record) => normalizeSessionRecord(record));
+  }
+  const empty = [];
+  writeJson(OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY, empty);
+  return empty;
+}
+
+export function replaceSessionProductionRecords(nextRecords = []) {
+  sessionRecords = (Array.isArray(nextRecords) ? nextRecords : []).map((record) =>
+    normalizeSessionRecord(record)
+  );
+  persistSessionRecords();
+  return sessionRecords;
+}
+
+/** 운영 SSOT — 모든 입고·출고·재고·생산 CRUD는 이 모듈만 경유 */
+let sessionRecords = loadSessionRecords();
 
 export function getSessionProductionRecords() {
   return sessionRecords.map((record) => normalizeInboundDataFields(record));
@@ -90,6 +136,7 @@ export function updateSessionProductionRecord(id, patch) {
     const synced = syncShipmentStatus(merged);
     return { ...merged, ...synced, stockQty: getStockQty(merged) };
   });
+  persistSessionRecords();
   return sessionRecords;
 }
 
@@ -100,10 +147,16 @@ export function updateSessionProductionRecordsByLot(lotKey, patch) {
     const synced = syncShipmentStatus(merged);
     return { ...merged, ...synced, stockQty: getStockQty(merged) };
   });
+  persistSessionRecords();
   return sessionRecords;
 }
 
 export function addSessionProductionRecord(record) {
+  const id = String(record?.id ?? "").trim();
+  if (id && sessionRecords.some((item) => item.id === id)) {
+    return { ok: false, message: `이미 등록된 관리번호입니다: ${id}` };
+  }
+
   const normalized = normalizeInboundDataFields(record);
   const synced = syncShipmentStatus(normalized);
   const newRecord = {
@@ -114,13 +167,18 @@ export function addSessionProductionRecord(record) {
     incomingRegistered: true,
   };
   sessionRecords = [newRecord, ...sessionRecords];
+  persistSessionRecords();
   return newRecord;
 }
 
 export function deleteSessionProductionRecord(id) {
   const before = sessionRecords.length;
   sessionRecords = sessionRecords.filter((record) => record.id !== id);
-  return { ok: sessionRecords.length < before, message: sessionRecords.length < before ? "" : "관리번호를 찾을 수 없습니다." };
+  const ok = sessionRecords.length < before;
+  if (ok) {
+    persistSessionRecords();
+  }
+  return { ok, message: ok ? "" : "관리번호를 찾을 수 없습니다." };
 }
 
 export function processShipment(id, shipQty, meta = {}) {
@@ -173,3 +231,51 @@ export function getAllRecordsInLot(records, lotNo) {
 }
 
 export { getStockQty };
+
+export function getOperationsDataMode() {
+  return readJson(OPERATIONS_DATA_MODE_STORAGE_KEY, OPERATIONS_DATA_MODES.OPERATIONAL);
+}
+
+function setOperationsDataMode(mode) {
+  writeJson(OPERATIONS_DATA_MODE_STORAGE_KEY, mode);
+}
+
+export function getOperationsRecordCount() {
+  return getSessionProductionRecords().length;
+}
+
+export function resetOperationsToEmpty() {
+  replaceSessionProductionRecords([]);
+  resetOperationsHistory();
+  replaceSessionMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+  setOperationsDataMode(OPERATIONS_DATA_MODES.OPERATIONAL);
+  notifyWorkflowDataRefresh({ source: "operations-bootstrap", mode: OPERATIONS_DATA_MODES.OPERATIONAL });
+  return { mode: OPERATIONS_DATA_MODES.OPERATIONAL, recordCount: 0 };
+}
+
+export function loadQaDemoSeed() {
+  replaceSessionMasterData(buildQaDemoMasterSeed(TITAN_OPERATIONAL_MASTER_SEED));
+  replaceSessionProductionRecords(
+    TITAN_QA_DEMO_PRODUCTION_RECORDS.map((row) => ({ ...row }))
+  );
+  replaceOperationsHistory({
+    shipmentEvents: TITAN_QA_DEMO_SHIPMENT_EVENTS.map((row) => ({ ...row })),
+    transactionStatements: [],
+    defectRecords: [],
+  });
+  setOperationsDataMode(OPERATIONS_DATA_MODES.QA_DEMO);
+  notifyWorkflowDataRefresh({
+    source: "qa-demo-seed",
+    mode: OPERATIONS_DATA_MODES.QA_DEMO,
+    version: TITAN_QA_DEMO_SEED_VERSION,
+  });
+  return {
+    mode: OPERATIONS_DATA_MODES.QA_DEMO,
+    recordCount: TITAN_QA_DEMO_PRODUCTION_RECORDS.length,
+    version: TITAN_QA_DEMO_SEED_VERSION,
+  };
+}
+
+export function restoreOperationalFromQaDemo() {
+  return resetOperationsToEmpty();
+}

@@ -15,6 +15,7 @@ import { recordQrTraceabilityEvent } from "./qrTraceabilitySession";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 import { getTimelineByLotNo, getTimelineByEquipmentId } from "./timelineQuery";
 import { prepareCertificateLinkForLot } from "./certificateLinkPrep";
+import { recordLotEquipmentLifecycleEvent } from "./productionPlanLot";
 import {
   addActualWorkRecord,
   getActualWorkRecords,
@@ -355,6 +356,15 @@ export function executeStartCharging(input) {
     equipmentName: equipment?.equipmentName ?? equipmentId,
   });
 
+  recordLotEquipmentLifecycleEvent({
+    lotNo,
+    action: "equipmentWorkStart",
+    equipmentId,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+    operator,
+    managementIds: legacyIds,
+  });
+
   notifyWorkflowDataRefresh({
     action: "startCharging",
     equipmentId,
@@ -409,6 +419,15 @@ export function executeFinishCharging(input) {
     lotNo,
     operator,
     equipmentName: equipment?.equipmentName ?? equipmentId,
+  });
+
+  recordLotEquipmentLifecycleEvent({
+    lotNo,
+    action: "equipmentWorkFinish",
+    equipmentId,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+    operator,
+    managementIds: legacyIds,
   });
 
   notifyWorkflowDataRefresh({

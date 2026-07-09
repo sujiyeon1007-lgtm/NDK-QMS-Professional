@@ -2,12 +2,27 @@
  * 입고 데이터 공통 필드 — 발주번호 · 업체 LOT (제품 Master ❌)
  */
 
+import {
+  getShotWorkStatusMeta,
+  getWorkTypeMeta,
+  normalizeShotWorkStatus,
+  normalizeWorkTypeId,
+} from "../config/workTypeWorkflow";
+
 export function normalizeInboundDataFields(record = {}) {
+  const workType = normalizeWorkTypeId(record.workType);
+  const workTypeMeta = getWorkTypeMeta(workType);
+  const shotStatus = normalizeShotWorkStatus(record.shotStatus);
+  const shotStatusMeta = getShotWorkStatusMeta(shotStatus);
   return {
     ...record,
     purchaseOrderNo: String(record.purchaseOrderNo ?? "").trim(),
     customerLotNo: String(record.customerLotNo ?? "").trim(),
     lotNo: String(record.lotNo ?? "").trim(),
+    workType,
+    workTypeLabel: workTypeMeta.label,
+    shotStatus,
+    shotStatusLabel: shotStatusMeta.label,
   };
 }
 

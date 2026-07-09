@@ -3,6 +3,7 @@ import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
 import { getProductionProcessName } from "../../config/productionProcessCodes";
 import TitanPrintPage from "./TitanPrintPage";
 import TitanPrintPageHeader from "./TitanPrintPageHeader";
+import TitanPrintOfficialFooter from "./TitanPrintOfficialFooter";
 import "./titan-print.css";
 
 /** 성적서 전용 양식 — 개발 예정 (Preview·출력 연동용 스텁) */
@@ -67,6 +68,8 @@ function CertificatePrint({ record, printDateTime = "", printUser = "" }) {
                 성적서 양식은 품질 문서 전용 Form 개발 후 이 영역에 연동됩니다.
               </p>
             </section>
+
+            <TitanPrintOfficialFooter documentCode="DOC-03" notes={[]} useCompanyFooter />
           </>
         ) : (
           <p className="titan-print-placeholder">출력할 성적서 대상을 선택하세요.</p>

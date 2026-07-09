@@ -10,26 +10,26 @@ function renderButtonChildren(children) {
   });
 }
 
-export function PrimaryButton({ children, className = "", ...props }) {
+export function PrimaryButton({ children, className = "", type = "button", ...props }) {
   return (
-    <button type="button" className={`titan-btn titan-btn--primary ${className}`.trim()} {...props}>
+    <button type={type} className={`titan-btn titan-btn--primary ${className}`.trim()} {...props}>
       {renderButtonChildren(children)}
     </button>
   );
 }
 
-export function SecondaryButton({ children, className = "", ...props }) {
+export function SecondaryButton({ children, className = "", type = "button", ...props }) {
   return (
-    <button type="button" className={`titan-btn titan-btn--secondary ${className}`.trim()} {...props}>
+    <button type={type} className={`titan-btn titan-btn--secondary ${className}`.trim()} {...props}>
       {renderButtonChildren(children)}
     </button>
   );
 }
 
-export default function Button({ variant = "secondary", children, className = "", ...props }) {
+export default function Button({ variant = "secondary", children, className = "", type = "button", ...props }) {
   const cls = variant === "primary" ? "titan-btn--primary" : "titan-btn--secondary";
   return (
-    <button type="button" className={`titan-btn ${cls} ${className}`.trim()} {...props}>
+    <button type={type} className={`titan-btn ${cls} ${className}`.trim()} {...props}>
       {renderButtonChildren(children)}
     </button>
   );

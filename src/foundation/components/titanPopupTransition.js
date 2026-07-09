@@ -5,7 +5,16 @@ export const TITAN_POPUP_TRANSITION_DURATION = 180;
 
 export const TitanPopupGrowTransition = Grow;
 
-export const titanDialogTransitionProps = {
-  TransitionComponent: TitanPopupGrowTransition,
-  transitionDuration: TITAN_POPUP_TRANSITION_DURATION,
+export const titanDialogTransitionSlots = {
+  transition: TitanPopupGrowTransition,
 };
+
+export function mergeTitanDialogSlotProps(slotProps = {}) {
+  return {
+    ...slotProps,
+    transition: {
+      timeout: TITAN_POPUP_TRANSITION_DURATION,
+      ...(slotProps.transition ?? {}),
+    },
+  };
+}

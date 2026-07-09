@@ -23,7 +23,7 @@ export const TITAN_PRINT_DOCUMENT_TYPES = {
 export const TITAN_PRINT_DOCUMENT_META = {
   [TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST]: {
     previewSystem: TITAN_PRINT_PREVIEW_SYSTEM.IN_OUT_LIST,
-    label: "입고 리스트 (열처리 작업 요청 리스트)",
+    label: "입고 리스트",
   },
   [TITAN_PRINT_DOCUMENT_TYPES.OUTBOUND_LIST]: {
     previewSystem: TITAN_PRINT_PREVIEW_SYSTEM.IN_OUT_LIST,

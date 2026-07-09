@@ -11,6 +11,7 @@ import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { hasCertificateFilesForManagementId } from "./certificateSession";
 import { isIncomingRegistered } from "./productionRecords";
 import { isProductionComplete } from "./productionComplete";
+import { isHeatTreatmentWorkType, isShotWorkComplete } from "../config/workTypeWorkflow";
 
 /** Per-menu task status labels (업무상태) */
 export const MENU_TASK_STATUS = {
@@ -26,6 +27,7 @@ export const MENU_TASK_STATUS = {
 
 export function isHeatTreatmentMenuEligible(record) {
   if (!isIncomingRegistered(record)) return false;
+  if (!isHeatTreatmentWorkType(record)) return false;
   return Boolean(
     record?.htlNo?.trim() ||
       record?.workSheetGenerated ||
@@ -35,6 +37,7 @@ export function isHeatTreatmentMenuEligible(record) {
 }
 
 export function isHeatTreatmentComplete(record) {
+  if (!isHeatTreatmentWorkType(record)) return false;
   return isProductionComplete(record);
 }
 
@@ -44,6 +47,7 @@ export function isInspectionComplete(record) {
 }
 
 export function isInspectionMenuEligible(record) {
+  if (isShotWorkComplete(record) && record?.shotInspectionRequired) return true;
   return isHeatTreatmentComplete(record);
 }
 
@@ -60,6 +64,7 @@ export function isCertificateMenuEligible(record) {
 export function isOutboundMenuEligible(record) {
   if (!isIncomingRegistered(record)) return false;
   if (getStockQty(record) <= 0) return false;
+  if (isShotWorkComplete(record) && !record?.shotInspectionRequired) return true;
   return isCertificateIssued(record);
 }
 

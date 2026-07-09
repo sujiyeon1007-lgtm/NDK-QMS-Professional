@@ -14,6 +14,68 @@ Companion: `.cursor/rules/project-titan-vision-roadmap-v1.mdc` · `src/config/sm
 
 ---
 
+## Mobile QR Portal (PM Blueprint · 2026-07-09)
+
+Project TITAN QR의 장기 방향은 **QR 생성**보다 **QR를 활용한 모바일 현장 작업 경험**이다.
+
+```text
+Desktop TITAN = 관리 Workspace
+Mobile QR Portal = QR 기반 현장 작업 Portal
+```
+
+휴대폰 QR Scan 결과는 Desktop UI 축소판이 아니라 Mobile 전용 Portal로 진입한다.
+
+| QR | Mobile URL |
+|---|---|
+| 설비 | `/mobile/qr/equipment/{UUID}` |
+| LOT | `/mobile/qr/lot/{UUID}` |
+| 문서 | `/mobile/qr/document/{UUID}` |
+| 작업자 | `/mobile/qr/worker/{UUID}` |
+
+Mobile Portal에서 제거: Sidebar · Dashboard · Launcher · 복잡한 Navigation · 환경설정 · 통계 · 관리 메뉴.
+
+UI 원칙: 큰 버튼 · 큰 글씨 · 카드형 UI · 최소 정보 · 세로 스크롤 · 장갑 착용 터치 고려.
+
+**SSoT:** `docs/blueprints/V2.0/mobile-qr-portal.md` · `src/config/blueprints/mobileQrPortalBlueprint.js` · `TITAN_MOBILE_QR_PORTAL_POLICY`
+
+**Status:** Blueprint Proposed · Architecture Only — UI/Router/Foundation 구현은 PM 승인 후.
+
+---
+
+## V1.0.1 QR Engine Split (PM Direction · 2026-07-09)
+
+**SSoT:** `src/config/blueprints/titanV101ExpansionBlueprint.js` · `docs/blueprints/V2.0/v1-0-1-expansion-policy.md`
+
+V1.0.1 이후 QR 설계는 아래 분리를 우선한다. 기존 V1.7 3분류는 참고/Legacy 정책이며, 구현 전 PM 확인 후 V1.0.1 정책으로 정리한다.
+
+| QR | 생성 정책 | 대상 |
+|---|---|---|
+| **Master QR** | 자동 또는 관리자 확정 | 설비 · 제품 · 재질 · 작업자 · 회사(optional) |
+| **Data QR** | **On-demand only** | LOT · 입고 · 출고 · 성적서 · 거래명세서 · 발주서 · 반출증 · 문서 |
+| **Menu Shortcut QR** | 고정 · 재사용 | Mobile route · 메뉴/업무 바로가기 |
+
+**Registry:** 실제 생성·출력·재발급·요청된 QR만 저장. 미생성 Data QR 선등록 ❌
+
+**Foundation:** QR 생성/미리보기/출력/재발급 UI는 향후 `FoundationQrPanel` 공통 계약으로 통일한다.
+
+**Implementation Gate:** UI · Router · Store · CSS · Runtime 구현 ❌ — Architecture/Blueprint only.
+
+### QR Menu Shortcut (PM Blueprint)
+
+**SSoT:** `docs/blueprints/V2.0/qr-menu-shortcut.md` · `src/config/blueprints/qrMenuShortcutBlueprint.js` · `TITAN_QR_MENU_SHORTCUT_POLICY`
+
+Menu Shortcut QR는 Data QR와 독립된 **고정 메뉴 진입 QR**이다.
+
+| 항목 | 정책 |
+|---|---|
+| 생성 | 한 번 생성 후 재사용 |
+| 대상 | `/mobile/inbound` · `/mobile/shipment` · `/mobile/inspection` · `/mobile/production/*` · `/mobile/document` · `/mobile/inventory` 등 |
+| QR Engine UI | Menu Shortcut · 메뉴 선택 · QR 미리보기 · PNG 출력 · PDF 출력 · QR 재출력 |
+| 출력 | 회사 로고 + 메뉴명 출력 양식 optional |
+| Registry | `menuShortcut` category — Data QR Registry와 분리 |
+
+---
+
 ## PM 공식 철학
 
 > Project TITAN의 모든 QR은 **제품의 흐름(Traceability)을 연결하는 수단**
@@ -113,6 +175,7 @@ Config: `TITAN_QR_LOOKUP_PERMISSIONS` in `titanQrArchitectureV17.js`
 ## Cursor Do
 
 - Traceability QR 설계 시 **LOT = QR 1:1** · 문서별 QR 생성 금지
+- 휴대폰 QR Scan은 Desktop UI가 아니라 Mobile QR Portal 진입으로 설계
 - Print Engine: Document No. + **동일 LOT Traceability QR** 부착 (Roadmap 3)
 - Lifecycle 화면: Document No. 목록 표시 · **QR payload에 문서번호 저장 ❌**
 - 조회 API/UI: `TITAN_QR_LOOKUP_PERMISSIONS` 역할별 필드 마스킹
@@ -123,6 +186,7 @@ Config: `TITAN_QR_LOOKUP_PERMISSIONS` in `titanQrArchitectureV17.js`
 - 문서 출력마다 **새 Traceability QR 생성**
 - Document No.를 **QR payload에 embed**
 - QR 생성 전용 Sidebar/Router/Launcher 메뉴 추가
+- Desktop Layout을 모바일에 축소 적용
 - Roadmap 순서 무시한 일괄 구현
 - Architecture Rule 없이 ad-hoc QR Scheme 추가
 

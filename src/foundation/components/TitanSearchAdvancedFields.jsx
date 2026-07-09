@@ -4,6 +4,10 @@
 import Input from "./Input";
 import TitanDateInput from "./TitanDateInput";
 import { TitanAdvancedSearchField } from "./TitanSearchPanel";
+import {
+  getTitanQuickDateRange,
+  TITAN_DATE_RANGE_QUICK_FILTERS,
+} from "../../config/listSearchStandard";
 export function ManagementIdField({ draft, onDraftChange, getSuggestions }) {
   return (
     <TitanAdvancedSearchField
@@ -169,7 +173,23 @@ export function NoteField({ draft, onDraftChange, getSuggestions }) {
   );
 }
 
-export function DateRangeField({ label, fromKey, toKey, draft, onDraftChange }) {
+export function DateRangeField({
+  label,
+  fromKey,
+  toKey,
+  draft,
+  onDraftChange,
+  showQuickFilters = true,
+}) {
+  const applyQuickFilter = (rangeId) => {
+    const range = getTitanQuickDateRange(rangeId);
+    onDraftChange({
+      ...draft,
+      [fromKey]: range.from,
+      [toKey]: range.to,
+    });
+  };
+
   return (
     <div className="titan-advanced-search__field titan-advanced-search__field--date-range">
       <span className="titan-advanced-search__label">{label}</span>
@@ -188,6 +208,20 @@ export function DateRangeField({ label, fromKey, toKey, draft, onDraftChange }) 
           aria-label={`${label} 종료`}
         />
       </div>
+      {showQuickFilters ? (
+        <div className="titan-advanced-search__date-quick" aria-label={`${label} 빠른 기간`}>
+          {TITAN_DATE_RANGE_QUICK_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              className="titan-advanced-search__date-quick-btn"
+              onClick={() => applyQuickFilter(filter.id)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

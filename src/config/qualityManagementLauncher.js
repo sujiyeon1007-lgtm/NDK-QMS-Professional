@@ -14,7 +14,7 @@ export const QUALITY_MANAGEMENT_LAUNCHER_ITEMS = [
   },
   {
     id: "certificate",
-    label: "성적서관리",
+    label: "성적서",
     badge: "성적서",
     badgeColor: "blue",
     path: "/quality/certificate",
@@ -24,7 +24,7 @@ export const QUALITY_MANAGEMENT_LAUNCHER_ITEMS = [
   },
   {
     id: "defect-history",
-    label: "불량이력관리",
+    label: "부적합",
     badge: "품질",
     badgeColor: "green",
     path: "/quality/defect-history",

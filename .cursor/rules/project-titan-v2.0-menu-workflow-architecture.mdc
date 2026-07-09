@@ -136,6 +136,35 @@ V2.0 Architecture ✅ → Blueprint V2.0 개정 → PM 승인 → 구현 → QA 
 
 ---
 
+## V1.0.1 Expansion Addendum (Architecture Only · 2026-07-09)
+
+**SSoT:** `src/config/blueprints/titanV101ExpansionBlueprint.js` · `docs/blueprints/V2.0/v1-0-1-expansion-policy.md`
+
+V2.0 Frozen Workspace 순서는 유지한다. 아래 항목은 **Phase 5 Supporting Blueprint**이며 Sidebar/Router/Store/UI 구현 금지.
+
+### Work Type Workflow
+
+| Work Type | Flow | Bypass |
+|---|---|---|
+| Heat Treatment | 입고 → 생산계획 → 설비장입 → 생산일보 → 검사 → 성적서 → 출고 | — |
+| Shot | 입고 → Shot Work Status → 검사 → 성적서 → 출고 | 생산계획 · 설비장입 |
+
+- 화면/메뉴 활성화는 `workType` 기준 자동.
+- 사용자가 Workflow Status를 직접 골라 화면을 강제하지 않는다.
+- `Shot Work Status`는 생산관리 하위 지원 Workspace Blueprint이며 Sidebar 추가 ❌
+
+### Statistics / KPI / Archive
+
+- 통계관리: `Shot Status` tab은 Blueprint only · Read Only.
+- KPI: sparkline/micro chart 제거 · number/progress/delta/target/badge 사용.
+- 수신문서 보관함: Archive · Workflow Stage 아님 · KPI 대기 건수 포함 ❌
+
+### Accounting Lite
+
+경리/회계 Lite는 ERP 대체 ❌ · 출고/문서/마감/조회 지원 범위만. 전자세금계산서 직접발행·홈택스·금융연동·원가엔진은 Future only.
+
+---
+
 ## Cursor Do
 
 - 화면/메뉴 설계 시 `TITAN_V20_SCREEN_DATA_RULES` 확인

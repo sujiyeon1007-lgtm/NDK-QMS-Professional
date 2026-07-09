@@ -213,7 +213,9 @@ export default function InventoryStatusPage() {
     [rows, viewMode, viewLabel]
   );
 
-  const openPrintPreview = () => {
+  const openPrintPreview = (event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
     if (rows.length === 0) {
       window.alert("출력할 재고 데이터가 없습니다.");
       return;
@@ -251,14 +253,12 @@ export default function InventoryStatusPage() {
         />
       </TitanKpiBarSlot>
 
-      <p className="inventory-status-page__notice">
-        재고는 직접 입력하지 않습니다. 입고관리 · 출고관리 업무 데이터를 기반으로 자동 계산됩니다. (V2.0: 조정 ·
-        실사 · 창고 · 안전재고 구조만 준비)
-        <SecondaryButton type="button" onClick={openPrintPreview} disabled={rows.length === 0} style={{ marginLeft: 12 }}>
+      <div className="inventory-status-page__notice-row">
+        <SecondaryButton type="button" onClick={openPrintPreview} disabled={rows.length === 0}>
           <Printer size={14} aria-hidden="true" />
           재고 PDF 출력
         </SecondaryButton>
-      </p>
+      </div>
 
       <div className="inventory-status-page__view-modes" role="tablist" aria-label="재고 조회 기준">
         {INVENTORY_VIEW_MODES.map((mode) => (

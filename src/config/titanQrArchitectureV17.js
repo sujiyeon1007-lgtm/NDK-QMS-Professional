@@ -16,6 +16,12 @@ export const TITAN_QR_ARCHITECTURE_LOCK_DATE = "2026-07-07";
 /** PM 추가 승인 — Traceability LOT 기준 · 조회 권한 보완 */
 export const TITAN_QR_ARCHITECTURE_SUPPLEMENT_DATE = "2026-07-07";
 
+/** PM 추가 제안 — Mobile QR Portal Blueprint */
+export const TITAN_QR_MOBILE_PORTAL_BLUEPRINT_DATE = "2026-07-09";
+
+/** PM 추가 제안 — V1.0.1 QR Engine split (Architecture only) */
+export const TITAN_QR_V101_EXPANSION_DATE = "2026-07-09";
+
 export const TITAN_QR_ARCHITECTURE_VERSION = "V1.7";
 
 /** PM 공식 철학 */
@@ -88,6 +94,119 @@ export const TITAN_DOCUMENT_NO_POLICY = {
     "NDK-OUT-2026-000123",
   ],
   printLayout: "Document No. (문서별) + Traceability QR (LOT별 · 동일 LOT 동일 QR)",
+};
+
+/** Mobile QR Portal — Architecture Only (PM Blueprint 2026-07-09) */
+export const TITAN_MOBILE_QR_PORTAL_POLICY = {
+  status: "blueprint-proposed",
+  implementationStatus: "architecture-only",
+  principle:
+    "Desktop TITAN은 관리 Workspace, Mobile QR Portal은 QR 기반 현장 작업 Portal로 UI를 분리한다.",
+  desktopUiTarget: "management-workspace",
+  mobileUiTarget: "field-work-portal",
+  sharedBackend: true,
+  removeFromMobile: [
+    "Sidebar",
+    "Dashboard",
+    "Launcher",
+    "복잡한 Navigation",
+    "환경설정",
+    "통계",
+    "관리 메뉴",
+  ],
+  urlPolicy: {
+    equipment: "/mobile/qr/equipment/{UUID}",
+    lot: "/mobile/qr/lot/{UUID}",
+    document: "/mobile/qr/document/{UUID}",
+    worker: "/mobile/qr/worker/{UUID}",
+  },
+  foundationMobileComponents: [
+    "MobilePortalShell",
+    "MobileQrSummaryCard",
+    "MobileQrStatusCard",
+    "MobileQrActionButton",
+    "MobileAttachmentList",
+  ],
+  docPath: "docs/blueprints/V2.0/mobile-qr-portal.md",
+};
+
+/** V1.0.1 QR Engine split — superseding future policy (Blueprint only) */
+export const TITAN_QR_V101_SPLIT_POLICY = {
+  status: "blueprint-only",
+  docPath: "docs/blueprints/V2.0/v1-0-1-expansion-policy.md",
+  supersedesForFutureImplementation: "Legacy V1.7 Operation/Traceability QR generation language",
+  masterQr: {
+    generation: "auto-or-admin-confirmed",
+    targets: ["equipment", "product", "material", "worker", "companyOptional"],
+  },
+  dataQr: {
+    generation: "on-demand-only",
+    targets: ["lot", "inbound", "outbound", "certificate", "invoice", "purchaseOrder", "releaseSlip", "document"],
+    registry: "actual-generated-only",
+  },
+  menuShortcutQr: {
+    generation: "fixed-reusable",
+    route: "/mobile/qr/menu/{shortcutId}",
+  },
+  foundationQrPanel: "planned-common-contract",
+};
+
+/** Menu Shortcut QR — fixed mobile menu entry QR (PM Blueprint 2026-07-09) */
+export const TITAN_QR_MENU_SHORTCUT_POLICY = {
+  status: "blueprint-proposed",
+  implementationStatus: "architecture-only",
+  category: "menuShortcut",
+  principle:
+    "Menu Shortcut QR는 고정 메뉴 진입 QR이며, Data QR(상세 데이터 조회 QR)와 독립적으로 관리한다.",
+  fixedAndReusable: true,
+  dataQrOnDemandUnchanged: true,
+  defaultTarget: "Mobile Portal route",
+  resolverRoute: "/mobile/qr/menu/{shortcutId}",
+  registryPolicy: {
+    separateFromDataQr: true,
+    recordsOnlyFixedShortcuts: true,
+    reprintKeepsSameTarget: true,
+    printHistoryRequired: true,
+  },
+  qrEngineUiRequirements: [
+    "Menu Shortcut",
+    "메뉴 선택",
+    "QR 미리보기",
+    "PNG 출력",
+    "PDF 출력",
+    "QR 재출력",
+    "회사 로고 + 메뉴명 출력 양식 (optional)",
+  ],
+  shortcutRoutes: {
+    inbound: "/mobile/inbound",
+    shipment: "/mobile/shipment",
+    inspection: "/mobile/inspection",
+    productionDaily: "/mobile/production/daily-report",
+    productionPlan: "/mobile/production/plan",
+    shot: "/mobile/shot",
+    equipmentInspection: "/mobile/equipment/inspection",
+    document: "/mobile/document",
+    inventory: "/mobile/inventory",
+    incomingDocumentArchive: "/mobile/document/incoming-archive",
+    lotCreate: "/mobile/lot/create",
+    qrCenter: "/mobile/qr-center",
+  },
+  examples: [
+    "현장 입구 → 입고등록 QR",
+    "검사실 → 검사등록 QR",
+    "출고장 → 출고등록 QR",
+    "생산현장 → 생산일보 QR",
+    "쇼트 작업장 → 쇼트 작업현황 QR",
+    "문서관리실 → 문서관리 QR",
+  ],
+  docPath: "docs/blueprints/V2.0/qr-menu-shortcut.md",
+};
+
+export const TITAN_QR_CATEGORY_SEPARATION_POLICY = {
+  menuShortcutQr: "고정 메뉴 바로가기 QR — 1회 생성 후 재사용",
+  dataQr: "상세 데이터 조회 QR — 기존 On-demand 정책 유지",
+  independentManagement: true,
+  sharedMobilePortal: true,
 };
 
 export const TITAN_QR_LOOKUP_PERMISSIONS = {
@@ -316,6 +435,10 @@ export const TITAN_QR_DEVELOPMENT_PRINCIPLES = [
   "출력물에는 Document No. + 동일 LOT Traceability QR을 함께 출력한다",
   "Document No.는 QR payload에 저장하지 않는다 — Lifecycle 화면에서 표시",
   "QR Scan은 문서가 아니라 LOT Lifecycle 화면을 연다",
+  "휴대폰 QR Scan은 Desktop UI가 아니라 Mobile QR Portal URL을 연다",
+  "Menu Shortcut QR와 Data QR는 독립적으로 관리한다",
+  "Menu Shortcut QR는 고정 QR로 1회 생성 후 재사용한다",
+  "Data QR는 기존 On-demand 정책을 유지한다",
   "QR 조회는 역할(관리자·사내·고객)별 필드 마스킹을 적용한다",
   "QR 생성보다 QR 재사용을 우선한다",
   "Router · Sidebar · Launcher 구조 변경 ❌",
@@ -410,5 +533,9 @@ export function getTitanQrArchitectureSummary() {
       status: row.status,
     })),
     foundation: TITAN_QR_V17_FOUNDATION,
+    mobilePortal: TITAN_MOBILE_QR_PORTAL_POLICY,
+    menuShortcut: TITAN_QR_MENU_SHORTCUT_POLICY,
+    categorySeparation: TITAN_QR_CATEGORY_SEPARATION_POLICY,
+    v101SplitPolicy: TITAN_QR_V101_SPLIT_POLICY,
   };
 }

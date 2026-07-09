@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Layers, Link2, Pencil, Plus, ShieldAlert, Trash2 } from "lucide-react";
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
@@ -29,7 +30,12 @@ import {
   buildMaterialMasterDetail,
   buildMaterialMasterSummary,
 } from "../../utils/materialMasterDetail";
-import MasterDataBackLink from "./MasterDataBackLink";
+import { QRService } from "../../utils/qrEngineRegistryService";
+import {
+  normalizeFoundationAttachments,
+  readFoundationAttachmentSession,
+  writeFoundationAttachmentSession,
+} from "../../utils/foundationAttachmentEngine";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
 
@@ -40,6 +46,12 @@ import "./MaterialManagement.css";
 import "./MasterDataSprint8Polish.css";
 
 const SELECTION_KEY = "titan-master-selected-materials-id";
+const MATERIAL_ATTACHMENT_STORAGE_KEY = "project-titan-material-master-attachments-v1";
+
+function resolveMaterialAttachmentOwnerKey(row = {}) {
+  const source = row ?? {};
+  return [source.id, source.code, source.name, source.spec].filter(Boolean).join("::") || "material";
+}
 
 const MATERIAL_KPI_ICON = {
   total: Layers,
@@ -119,6 +131,7 @@ export default function MaterialManagementPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerMode, setRegisterMode] = useState("add");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [attachmentVersion, setAttachmentVersion] = useState(0);
 
   const allRows = useMemo(
     () => getMasterDataByCategory("materials").map((row) => formatMasterRowForDisplay(row)),
@@ -209,6 +222,7 @@ export default function MaterialManagementPage() {
         ? stageMasterUpdate("materials", selectedRow.id, form)
         : stageMasterAdd("materials", form);
     if (!result.ok) return;
+    QRService.createIfNotExists("materials", result.row);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) setSelectedId(result.row.id);
@@ -227,6 +241,8 @@ export default function MaterialManagementPage() {
   };
 
   const health = detail.health ?? { status: "error", label: "관리 필요", icon: "🔴" };
+  const attachmentOwnerKey = resolveMaterialAttachmentOwnerKey(selectedRow);
+  const attachments = readFoundationAttachmentSession(MATERIAL_ATTACHMENT_STORAGE_KEY, attachmentOwnerKey);
   const tabCounts = {
     products: detail.counts.products,
     processes: detail.counts.processes,
@@ -234,21 +250,27 @@ export default function MaterialManagementPage() {
     certificate: detail.counts.certificate,
   };
 
+  const handleAttachmentUpload = (files) => {
+    writeFoundationAttachmentSession(
+      MATERIAL_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      [...attachments, ...normalizeFoundationAttachments(files)]
+    );
+    setAttachmentVersion((value) => value + 1);
+  };
+
+  const handleAttachmentDelete = (attachmentId) => {
+    writeFoundationAttachmentSession(
+      MATERIAL_ATTACHMENT_STORAGE_KEY,
+      attachmentOwnerKey,
+      attachments.filter((attachment) => attachment.id !== attachmentId)
+    );
+    setAttachmentVersion((value) => value + 1);
+  };
+
   return (
     <>
       <div className="company-management-page">
-        <MasterDataBackLink />
-
-        <div className="company-management-page__head">
-          <div>
-            <h2>재질관리</h2>
-            <p className="company-management-page__intro">
-              재질 Master 입니다. 좌측 목록에서 재질을 선택하면 우측에서 규격 · 열처리 조건 · 적용 제품
-              · 관련 공정 · LOT · 성적서 기준을 확인할 수 있습니다. (Domain Master Workspace)
-            </p>
-          </div>
-        </div>
-
         <section className="company-master-kpis" aria-label="재질 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = MATERIAL_KPI_ICON[kpi.id] ?? Layers;
@@ -436,6 +458,16 @@ export default function MaterialManagementPage() {
                       <p className="company-detail-section__empty">
                         성적서 기준은 조회 전용입니다. (Document Engine · TDE 연결 준비)
                       </p>
+                    </section>
+                  ) : null}
+
+                  {activeTab === "attachments" ? (
+                    <section className="company-detail-section" aria-label="첨부파일">
+                      <FoundationAttachment
+                        attachments={attachments}
+                        onUpload={handleAttachmentUpload}
+                        onDelete={handleAttachmentDelete}
+                      />
                     </section>
                   ) : null}
 

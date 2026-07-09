@@ -9,13 +9,14 @@ import {
   MENU_TASK_STATUS,
 } from "./menuWorkflowGate";
 import { matchesInboundDataSearch } from "./inboundDataFields";
-import { getInspectionLogs } from "./inspectionLogSession";
+import { getInspectionLogs, normalizeTitanAttachments } from "./inspectionLogSession";
 import { mapV13ProductListRow } from "./processFlow";
 import {
   getInspectionResultLabel,
   getMassInspectionManagementStatus,
 } from "./workflowProcessStatus";
 import { getSessionProductionRecords } from "./productionRecords";
+import { formatFoundationAttachmentTypeLabel } from "./foundationAttachmentEngine";
 
 function resolveProductionCompleteDate(record) {
   const raw =
@@ -54,6 +55,7 @@ export function getMassProductionInspectionRows() {
       const log = logIndex.get(record.id) ?? null;
       const status = resolveMassInspectionStatus(log);
       const v13 = mapV13ProductListRow(record, status, { screenKey: "inspection" });
+      const attachments = normalizeTitanAttachments(log?.attachments);
 
       return {
         ...v13,
@@ -80,6 +82,8 @@ export function getMassProductionInspectionRows() {
         inspectionStatusVariant: status.variant,
         assignee: log?.assignee || record.registrar || record.worker || "—",
         note: log?.note || record.note || "",
+        attachments,
+        attachmentCount: attachments.length,
         logId: log?.id ?? null,
         record,
         log,
@@ -159,6 +163,21 @@ export function matchesMassProductionInspectionSearch(row, search) {
     return false;
   }
   if (search.note && !String(row.note ?? "").includes(search.note.trim())) return false;
+  if (search.attachmentStatus?.trim()) {
+    const query = search.attachmentStatus.trim().toLowerCase();
+    const count = Number(row.attachmentCount ?? 0);
+    const attachmentNames = (row.attachments ?? [])
+      .map((attachment) => `${formatFoundationAttachmentTypeLabel(attachment)} ${attachment.name}`)
+      .join(" ")
+      .toLowerCase();
+    if (query.includes("미") || query.includes("없")) {
+      if (count > 0) return false;
+    } else if (query.includes("등록") || query.includes("첨부")) {
+      if (count === 0) return false;
+    } else if (!attachmentNames.includes(query)) {
+      return false;
+    }
+  }
   if (search.customerLotNo?.trim()) {
     const query = search.customerLotNo.trim().toLowerCase();
     const mergedLot = String(row.customerLotNo ?? "").toLowerCase();

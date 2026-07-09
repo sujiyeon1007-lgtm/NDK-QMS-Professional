@@ -18,7 +18,10 @@ import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   buildProductionDailyReportFormFromLot,
   formatHeatTreatmentConditionRows,
+  formatHeatTreatmentProcessConditionRows,
+  getProductionProcessConditionDefinition,
   hasHeatTreatmentConditionInput,
+  hasHeatTreatmentProcessConditionInput,
   mapRecordToChargeProduct,
 } from "../../utils/productionDailyReportRegister";
 import {
@@ -91,6 +94,10 @@ export default function DailyProductionReportRegisterModal({
   const equipmentList = useMemo(
     () => (open ? getActiveEquipmentByHeatTreatment(resolvedHeatTreatment) : []),
     [open, resolvedHeatTreatment]
+  );
+  const processConditionDefinition = useMemo(
+    () => getProductionProcessConditionDefinition(resolvedHeatTreatment),
+    [resolvedHeatTreatment]
   );
   const workerList = useMemo(() => (open ? getActiveWorkers() : []), [open]);
 
@@ -197,6 +204,16 @@ export default function DailyProductionReportRegisterModal({
     }));
   };
 
+  const updateProcessConditionField = (key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      heatTreatmentProcessConditions: {
+        ...(prev.heatTreatmentProcessConditions ?? {}),
+        [key]: value,
+      },
+    }));
+  };
+
   const addConditionRow = () => {
     setForm((prev) => ({
       ...prev,
@@ -289,6 +306,14 @@ export default function DailyProductionReportRegisterModal({
       return;
     }
 
+    if (
+      processConditionDefinition &&
+      !hasHeatTreatmentProcessConditionInput(resolvedHeatTreatment, form.heatTreatmentProcessConditions)
+    ) {
+      window.alert(`${processConditionDefinition.label}을 1개 이상 입력하세요.`);
+      return;
+    }
+
     const lotCheck = validateLotForSubmit();
     if (!lotCheck.ok) {
       window.alert(lotCheck.message);
@@ -307,10 +332,17 @@ export default function DailyProductionReportRegisterModal({
       }
     }
 
+    const baseConditionText = formatHeatTreatmentConditionRows(form.heatTreatmentConditionRows);
+    const processConditionText = formatHeatTreatmentProcessConditionRows(
+      resolvedHeatTreatment,
+      form.heatTreatmentProcessConditions
+    );
+
     onRegister(
       {
         ...form,
-        heatTreatmentConditions: formatHeatTreatmentConditionRows(form.heatTreatmentConditionRows),
+        heatTreatmentConditions: [baseConditionText, processConditionText].filter(Boolean).join(" / "),
+        heatTreatmentProcessConditions: form.heatTreatmentProcessConditions ?? {},
         lotNo: lotCheck.lotNo ?? form.lotNo.trim(),
       },
       { mode, editLotNo }
@@ -443,6 +475,31 @@ export default function DailyProductionReportRegisterModal({
             </div>
           ))}
         </div>
+        {processConditionDefinition ? (
+          <div className="daily-report-register__process-condition-panel">
+            <p className="daily-report-register__process-condition-title">
+              {processConditionDefinition.label}
+            </p>
+            <div className="daily-report-register__process-condition-grid">
+              {processConditionDefinition.fields.map((field) => (
+                <label key={field.key} className="daily-report-register__process-condition-field">
+                  <span>{field.label}</span>
+                  <Input
+                    className="daily-report-register__line-input"
+                    value={form.heatTreatmentProcessConditions?.[field.key] ?? ""}
+                    onChange={(e) => updateProcessConditionField(field.key, e.target.value)}
+                    placeholder={field.unit ? field.unit : "값"}
+                    inputMode="decimal"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="titan-modal__hint">
+            장입 제품의 공정이 이온질화 또는 연질화로 확정되면 공정 조건 입력란이 자동 표시됩니다.
+          </p>
+        )}
       </div>
 
       <div className="titan-modal__section">

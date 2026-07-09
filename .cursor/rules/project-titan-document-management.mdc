@@ -3,11 +3,14 @@ description: Project TITAN 문서관리 — REV.4 · 품질 공지 통합 · V1.
 alwaysApply: true
 ---
 
-# 문서관리 (Document Management · REV.4)
+# 문서관리 (Document Management · REV.4 + V1.0.1 Blueprint)
 
 **Source:** `src/config/qualityDocumentManagement.js` · `src/config/titanV1OfficialPolicy.js`
 
 **Companion:** `project-titan-v1-official-policy-rev3.mdc`
+
+**V1.0.1 Blueprint:** `docs/blueprints/V2.0/document-management-v101.md` · **PM Approved** · Architecture/Blueprint only · UI/Router/Runtime 구현 ❌
+**V1.0.2 Policy:** `docs/blueprints/V2.0/v1-0-2-foundation-action-tde-policy.md` · Foundation Action Bar + TDE output integration
 
 ---
 
@@ -87,6 +90,49 @@ HOME `공지사항` 패널 · `/notices` → `/documents` 리다이렉트
 
 ---
 
+## V1.0.1 문서관리 재구성 (Blueprint Only)
+
+상위 문서관리 Workspace 순서와 V2.0 frozen 10 Workspace order는 변경하지 않는다.
+
+```text
+Document Management
+  ├ Quality Document Management (품질문서관리)
+  └ Internal Document Management (내부문서관리)
+     ├ Incoming Documents
+     ├ Outgoing Documents
+     └ General Documents
+```
+
+### Quality Document Management
+
+QMS 문서 · Rev · 승인 중심.
+
+- 대상: 품질매뉴얼 · 절차서 · 작업표준서 · 검사기준서 · 관리계획서 · 품질 도면 · 품질/검사 양식 · 교육자료 · 기타 품질문서
+- 기능: Rev 관리 · 현행본 · 개정이력 · 승인상태/이력 · 첨부파일 · PDF Preview · 관련 LOT/제품 · QR 수동 생성
+- 검색: 문서명 · 문서번호 · Rev · 등록일 · 상태 · 등록자
+
+### Internal Document Management
+
+회사 일반문서 · 보관 · 검색 중심.
+
+- 구성: Incoming Documents · Outgoing Documents · General Documents
+- 대상: 발주서 · 고객도면 · 출고증 · MTC · 고객요청 · 공급처 거래명세서 · 세금계산서 · 성적서 · 거래명세서 · 출고전표 · 계약서 · 견적서 · 회의자료 · 사진 등
+- 기능: 첨부파일 · 검색 · PDF Preview · 관련 업체 · 선택적 관련 LOT · QR 수동 생성
+- 검색: 업체 · 문서유형 · 문서명 · PO/발주번호 · 등록일 · 수신일 · 메모
+
+### Foundation / QR / Link Policy
+
+- 두 Workspace 모두 `TitanStandardDetailPopup` 기반
+- 공통 Tab: 기본정보 · 첨부파일 · QR · 관련정보 · 메모
+- 품질문서 추가 Tab: Rev 이력 · 승인 이력
+- Attachment: `FoundationAttachment` 재사용
+- QR: `FoundationQrPanel`에서 사용자가 요청할 때만 생성
+- 등록 시 자동 QR 생성 ❌
+- Incoming Document Archive는 입고와 강제 연결하지 않음 — 입고/LOT/제품/업체 링크는 선택
+- 거래명세서, 출고증 등 Outgoing Documents 출력은 TDE 연동 정책을 따른다.
+
+---
+
 ## 향후 (자동 품질 공지 생성)
 
 - Revision 변경 · 검사기준 변경 · 도면 변경 · 고객 요구사항 변경 시 품질 공지 자동 생성
@@ -101,3 +147,4 @@ Config: `QUALITY_NOTICE_AUTO_GENERATION`
 - 품질 공지를 MES Master에 중복 저장
 - V1.0에서 ACK(읽음) 기능 구현 (V2.0)
 - Revision 없이 PDF만 업로드 (Revision 문서 이력 필수)
+- 거래명세서/출고증/성적서 출력 Layout을 화면별로 중복 구현 (TDE 한 곳에서 관리)

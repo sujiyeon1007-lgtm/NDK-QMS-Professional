@@ -14,6 +14,96 @@ export const SEARCH_SUBMIT_LABEL = "조회";
 
 export const SEARCH_RESET_LABEL = "초기화";
 
+function padDatePart(value) {
+  return String(value).padStart(2, "0");
+}
+
+export function formatTitanDateInputValue(date = new Date()) {
+  return [
+    date.getFullYear(),
+    padDatePart(date.getMonth() + 1),
+    padDatePart(date.getDate()),
+  ].join("-");
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function addMonths(date, months) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+export function getTitanStandardDefaultDateRange(referenceDate = new Date()) {
+  const start = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  return {
+    from: formatTitanDateInputValue(start),
+    to: formatTitanDateInputValue(referenceDate),
+  };
+}
+
+export function getTitanQuickDateRange(rangeId, referenceDate = new Date()) {
+  const today = new Date(referenceDate);
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+  switch (rangeId) {
+    case "today":
+      return {
+        from: formatTitanDateInputValue(today),
+        to: formatTitanDateInputValue(today),
+      };
+    case "thisWeek": {
+      const start = addDays(today, mondayOffset);
+      const end = addDays(start, 6);
+      return {
+        from: formatTitanDateInputValue(start),
+        to: formatTitanDateInputValue(end),
+      };
+    }
+    case "thisMonth": {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      return {
+        from: formatTitanDateInputValue(start),
+        to: formatTitanDateInputValue(end),
+      };
+    }
+    case "lastMonth": {
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      return {
+        from: formatTitanDateInputValue(start),
+        to: formatTitanDateInputValue(end),
+      };
+    }
+    case "recent3Months": {
+      const start = addMonths(today, -3);
+      return {
+        from: formatTitanDateInputValue(start),
+        to: formatTitanDateInputValue(today),
+      };
+    }
+    case "all":
+      return { from: "", to: "" };
+    default:
+      return getTitanStandardDefaultDateRange(today);
+  }
+}
+
+export const TITAN_DATE_RANGE_QUICK_FILTERS = [
+  { id: "today", label: "금일" },
+  { id: "thisWeek", label: "이번 주" },
+  { id: "thisMonth", label: "이번 달" },
+  { id: "lastMonth", label: "지난 달" },
+  { id: "recent3Months", label: "최근 3개월" },
+  { id: "all", label: "전체" },
+];
+
 /** 기본 검색 4항목 (항상 표시) */
 export const BASIC_SEARCH_KEYS = ["company", "partName", "partNo", "material"];
 
@@ -48,14 +138,15 @@ export const WORK_JOURNAL_BASIC_SEARCH_FIELDS = [
 ];
 
 export function createEmptyInboundSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     managementId: "",
     lotNo: "",
     purchaseOrderNo: "",
     customerLotNo: "",
-    incomingDateFrom: "",
-    incomingDateTo: "",
+    incomingDateFrom: standardDateRange.from,
+    incomingDateTo: standardDateRange.to,
     productionDateFrom: "",
     productionDateTo: "",
     dueDateFrom: "",
@@ -72,6 +163,7 @@ export function createEmptyInboundSearch() {
 export const INBOUND_BASIC_SEARCH_FIELDS = STANDARD_PRODUCT_BASIC_SEARCH_FIELDS;
 
 export function createEmptyWorkJournalSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     company: "",
     category: "",
@@ -79,13 +171,14 @@ export function createEmptyWorkJournalSearch() {
     managementId: "",
     lotNo: "",
     assignee: "",
-    dateFrom: "",
-    dateTo: "",
+    dateFrom: standardDateRange.from,
+    dateTo: standardDateRange.to,
     source: "",
   };
 }
 
 export function createEmptyOutboundSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     purchaseOrderNo: "",
@@ -94,8 +187,8 @@ export function createEmptyOutboundSearch() {
     shipDateTo: "",
     productionDateFrom: "",
     productionDateTo: "",
-    incomingDateFrom: "",
-    incomingDateTo: "",
+    incomingDateFrom: standardDateRange.from,
+    incomingDateTo: standardDateRange.to,
     managementId: "",
     lotNo: "",
     process: "",
@@ -107,13 +200,14 @@ export function createEmptyOutboundSearch() {
 }
 
 export function createEmptyProductionDailyReportSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     managementId: "",
     lotNo: "",
     process: "",
-    workDateFrom: "",
-    workDateTo: "",
+    workDateFrom: standardDateRange.from,
+    workDateTo: standardDateRange.to,
     productionDateFrom: "",
     productionDateTo: "",
     incomingDateFrom: "",
@@ -133,6 +227,7 @@ export function createEmptyProductionDailyReportRegister() {
     lotNo: "",
     chargeProducts: [],
     heatTreatmentConditionRows: [{ temperature: "", duration: "" }],
+    heatTreatmentProcessConditions: {},
     workDate: "",
     equipment: "",
     worker: "",
@@ -141,11 +236,12 @@ export function createEmptyProductionDailyReportRegister() {
 }
 
 export function createEmptyProductionResultsSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     process: "",
-    workDateFrom: "",
-    workDateTo: "",
+    workDateFrom: standardDateRange.from,
+    workDateTo: standardDateRange.to,
     equipment: "",
     worker: "",
     status: "",
@@ -153,6 +249,7 @@ export function createEmptyProductionResultsSearch() {
 }
 
 export function createEmptyDefectHistorySearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     managementId: "",
@@ -162,12 +259,13 @@ export function createEmptyDefectHistorySearch() {
     worker: "",
     defectType: "",
     handlingStatus: "",
-    occurredDateFrom: "",
-    occurredDateTo: "",
+    occurredDateFrom: standardDateRange.from,
+    occurredDateTo: standardDateRange.to,
   };
 }
 
 export function createEmptyInspectionLogSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     purchaseOrderNo: "",
@@ -179,8 +277,8 @@ export function createEmptyInspectionLogSearch() {
     incomingDateTo: "",
     productionDateFrom: "",
     productionDateTo: "",
-    inspectionDateFrom: "",
-    inspectionDateTo: "",
+    inspectionDateFrom: standardDateRange.from,
+    inspectionDateTo: standardDateRange.to,
     assignee: "",
     manager: "",
     qty: "",
@@ -191,6 +289,7 @@ export function createEmptyInspectionLogSearch() {
 
 /** 검사관리 3탭 공통 — 양산 · 개발 · 기타 */
 export function createEmptyInspectionManagementSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     managementId: "",
@@ -201,12 +300,13 @@ export function createEmptyInspectionManagementSearch() {
     incomingDateTo: "",
     productionDateFrom: "",
     productionDateTo: "",
-    registeredDateFrom: "",
-    registeredDateTo: "",
+    registeredDateFrom: standardDateRange.from,
+    registeredDateTo: standardDateRange.to,
     process: "",
     customerLotNo: "",
     purchaseOrderNo: "",
     note: "",
+    attachmentStatus: "",
     category: "",
   };
 }
@@ -239,6 +339,7 @@ export function createEmptyInspectionLogRegister() {
 }
 
 export function createEmptyCertificateSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     purchaseOrderNo: "",
@@ -250,8 +351,8 @@ export function createEmptyCertificateSearch() {
     incomingDateTo: "",
     productionDateFrom: "",
     productionDateTo: "",
-    registeredDateFrom: "",
-    registeredDateTo: "",
+    registeredDateFrom: standardDateRange.from,
+    registeredDateTo: standardDateRange.to,
     assignee: "",
     manager: "",
     qty: "",
@@ -294,14 +395,15 @@ export function createEmptyHomeSearch() {
 }
 
 export function createEmptyDepartmentWorkSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     ...EMPTY_BASIC_SEARCH,
     title: "",
     assignee: "",
     status: "",
     priority: "",
-    requestDateFrom: "",
-    requestDateTo: "",
+    requestDateFrom: standardDateRange.from,
+    requestDateTo: standardDateRange.to,
     dueDateFrom: "",
     dueDateTo: "",
   };
@@ -321,12 +423,13 @@ export function createEmptyDocumentManagementSearch() {
 
 /** Document Management — 품질 공지 검색 */
 export function createEmptyQualityNoticeSearch() {
+  const standardDateRange = getTitanStandardDefaultDateRange();
   return {
     title: "",
     author: "",
     status: "",
-    createdDateFrom: "",
-    createdDateTo: "",
+    createdDateFrom: standardDateRange.from,
+    createdDateTo: standardDateRange.to,
     effectiveDateFrom: "",
     effectiveDateTo: "",
   };

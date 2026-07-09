@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, Plus } from "lucide-react";
 
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
-import { SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { createEmptyDocumentManagementSearch } from "../../config/listSearchStandard";
@@ -12,9 +12,11 @@ import { buildDocumentCompanyListColumns } from "../../config/standardProductLis
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
   buildCompanyDocumentListRows,
+  getCompanyDocumentRegistryRows,
   matchesCompanyDocumentListSearch,
 } from "../../utils/companyDocumentManagement";
 import DocumentCompanyPopup from "./DocumentCompanyPopup";
+import DocumentDetailPopup from "./DocumentDetailPopup";
 
 import "../Quality/QualityManagement.css";
 import "./DocumentManagementPage.css";
@@ -23,6 +25,8 @@ export default function DocumentManagementPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeId, setActiveId] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [detailPopupState, setDetailPopupState] = useState(null);
+  const [openRegisterOnOpen, setOpenRegisterOnOpen] = useState(false);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyDocumentManagementSearch, { storageKey: "documents" });
 
@@ -65,6 +69,17 @@ export default function DocumentManagementPage() {
     setPopupOpen(true);
   }, []);
 
+  const openDocumentRegister = useCallback(() => {
+    const targetRow = activeRow ?? filteredRows[0] ?? null;
+    if (!targetRow) {
+      window.alert("문서를 등록할 업체를 먼저 선택하세요.");
+      return;
+    }
+    setActiveId(targetRow.id);
+    setOpenRegisterOnOpen(true);
+    setPopupOpen(true);
+  }, [activeRow, filteredRows]);
+
   const columns = useMemo(
     () =>
       buildDocumentCompanyListColumns({
@@ -103,10 +118,12 @@ export default function DocumentManagementPage() {
         advancedContent={null}
       />
 
-      <p className="qms-document-page__workflow-note">
-        업체를 선택하면 문서 종류(가로 탭) · 문서 리스트 · 상세 Popup에서 Revision · 첨부파일을
-        관리합니다.
-      </p>
+      <div className="qms-document-page__top-actions" aria-label="문서관리 작업">
+        <PrimaryButton type="button" onClick={openDocumentRegister} disabled={!filteredRows.length}>
+          <Plus size={12} aria-hidden="true" />
+          + 등록
+        </PrimaryButton>
+      </div>
 
       <div className="qms-document-page__list quality-page__list">
         <TitanDataTable
@@ -134,6 +151,36 @@ export default function DocumentManagementPage() {
         companyRow={activeRow}
         onClose={() => setPopupOpen(false)}
         onRefresh={() => setRefreshKey((key) => key + 1)}
+        openRegisterOnOpen={openRegisterOnOpen}
+        onRegisterOpenConsumed={() => setOpenRegisterOnOpen(false)}
+        onOpenDocumentDetail={({ row, companyName, sourceRows }) => {
+          setPopupOpen(false);
+          setDetailPopupState({
+            row,
+            companyName,
+            sourceRows: sourceRows?.length ? sourceRows : getCompanyDocumentRegistryRows(companyName),
+          });
+        }}
+      />
+
+      <DocumentDetailPopup
+        open={Boolean(detailPopupState?.row)}
+        onClose={() => setDetailPopupState(null)}
+        companyName={detailPopupState?.companyName ?? ""}
+        row={detailPopupState?.row ?? null}
+        sourceRows={detailPopupState?.sourceRows ?? []}
+        onRefresh={() => {
+          setRefreshKey((key) => key + 1);
+          setDetailPopupState((prev) => {
+            if (!prev?.companyName) return prev;
+            const nextSourceRows = getCompanyDocumentRegistryRows(prev.companyName);
+            const nextRow = nextSourceRows.find((row) => row.id === prev.row?.id) ?? prev.row;
+            return { ...prev, sourceRows: nextSourceRows, row: nextRow };
+          });
+        }}
+        onSelectRow={(row) => {
+          setDetailPopupState((prev) => (prev ? { ...prev, row } : prev));
+        }}
       />
     </div>
   );

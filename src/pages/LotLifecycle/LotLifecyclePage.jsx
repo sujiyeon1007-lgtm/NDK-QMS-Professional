@@ -11,6 +11,7 @@ import {
   generateAndSaveTechnologyDocumentJson,
   getTitanDocumentJsonByKnowledgeId,
 } from "../../utils/titanDocumentJsonBuilder";
+import { LOT_DETAIL_TABS } from "../../config/detailTabs/lotDetailTabs";
 import { TDE_RENDER_SLOTS } from "../../config/titanDocumentJsonModel";
 
 import "../InOut/InboundManagement.css";
@@ -36,7 +37,7 @@ export default function LotLifecyclePage() {
   const initialLot = searchParams.get("lot") ?? "";
   const [lotInput, setLotInput] = useState(initialLot);
   const [activeLot, setActiveLot] = useState(initialLot);
-  const [activeTab, setActiveTab] = useState("technology");
+  const [activeTab, setActiveTab] = useState("basicInfo");
   const [documentJson, setDocumentJson] = useState(null);
   const [docMessage, setDocMessage] = useState("");
 
@@ -165,31 +166,20 @@ export default function LotLifecyclePage() {
           </header>
 
           <nav className="company-detail-tabs" aria-label="LOT Lifecycle 상세">
-            <button
-              type="button"
-              className={`company-detail-tabs__btn${activeTab === "technology" ? " is-active" : ""}`}
-              onClick={() => setActiveTab("technology")}
-            >
-              Technology Summary
-            </button>
-            <button
-              type="button"
-              className={`company-detail-tabs__btn${activeTab === "traceability" ? " is-active" : ""}`}
-              onClick={() => setActiveTab("traceability")}
-            >
-              Traceability
-            </button>
-            <button
-              type="button"
-              className={`company-detail-tabs__btn${activeTab === "document" ? " is-active" : ""}`}
-              onClick={() => setActiveTab("document")}
-            >
-              Document JSON
-            </button>
+            {LOT_DETAIL_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`company-detail-tabs__btn${activeTab === tab.id ? " is-active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
 
           <div className="lot-lifecycle-workspace__body">
-            {activeTab === "technology" ? (
+            {activeTab === "basicInfo" || activeTab === "processHistory" ? (
               <section className="company-detail-section" aria-label="Technology Summary">
                 <p className="company-detail-section__notice company-detail-section__notice--recipe" role="note">
                   Blueprint §6.1.1 — 대표 온도 · 대표 시간 · Version · 편차 · 판정 요약만 표시합니다.
@@ -259,7 +249,7 @@ export default function LotLifecyclePage() {
               </section>
             ) : null}
 
-            {activeTab === "traceability" ? (
+            {["inspectionHistory", "outboundHistory", "qr", "attachments", "memo"].includes(activeTab) ? (
               <section className="company-detail-section" aria-label="Traceability">
                 {traceability ? (
                   <dl className="company-detail-section__grid company-detail-section__grid--trade">
@@ -279,22 +269,38 @@ export default function LotLifecyclePage() {
                       <dt>설비</dt>
                       <dd>{traceability.equipmentName || "—"}</dd>
                     </div>
-                    <div>
-                      <dt>생산일보</dt>
-                      <dd>{traceability.dailyReport?.status || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>검사</dt>
-                      <dd>{traceability.inspection?.status || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>성적서</dt>
-                      <dd>{traceability.certificate?.status || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>출고</dt>
-                      <dd>{traceability.shipment?.status || "—"}</dd>
-                    </div>
+                    {activeTab === "inspectionHistory" ? (
+                      <>
+                        <div>
+                          <dt>검사</dt>
+                          <dd>{traceability.inspection?.status || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>성적서</dt>
+                          <dd>{traceability.certificate?.status || "—"}</dd>
+                        </div>
+                      </>
+                    ) : activeTab === "outboundHistory" ? (
+                      <div>
+                        <dt>출고</dt>
+                        <dd>{traceability.shipment?.status || "—"}</dd>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <dt>생산일보</dt>
+                          <dd>{traceability.dailyReport?.status || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>검사</dt>
+                          <dd>{traceability.inspection?.status || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>출고</dt>
+                          <dd>{traceability.shipment?.status || "—"}</dd>
+                        </div>
+                      </>
+                    )}
                   </dl>
                 ) : (
                   <p className="company-detail-section__empty">Traceability 정보가 없습니다.</p>
@@ -302,7 +308,7 @@ export default function LotLifecyclePage() {
               </section>
             ) : null}
 
-            {activeTab === "document" ? (
+            {activeTab === "qr" ? (
               <section className="company-detail-section" aria-label="Document JSON">
                 <p className="company-detail-section__notice company-detail-section__notice--recipe" role="note">
                   TITAN이 Document JSON을 생성합니다. TDE는 Header · Body · Table · Graph · Photo ·
