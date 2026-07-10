@@ -95,6 +95,8 @@ function applyGridFilters(rows, tableColumns, filterState, sortState) {
     tableColumns.every((col) => {
       const state = filterState[col.key];
       if (!state || !Array.isArray(state.selectedValues)) return true;
+      // Empty selectedValues = filter cleared (not "match nothing")
+      if (state.selectedValues.length === 0) return true;
       return state.selectedValues.includes(getFilterText(row, col));
     })
   );
@@ -236,6 +238,17 @@ export default function TitanTableFrame({
     () => applyGridFilters(rows, filterableColumns, filterState, sortState),
     [rows, filterableColumns, filterState, sortState]
   );
+
+  // Stale column filters can hide all rows after Master data refresh (e.g. Excel Import)
+  useEffect(() => {
+    if (rows.length === 0) return;
+    const visible = applyGridFilters(rows, filterableColumns, filterState, sortState);
+    if (visible.length === 0 && (Object.keys(filterState).length > 0 || sortState)) {
+      setFilterState({});
+      setSortState(null);
+      closeFilterPopup();
+    }
+  }, [rows, filterableColumns, filterState, sortState]);
 
   const { wrapRef, tableRef } = useTitanTableAutoLayout({
     enabled: isCompact,

@@ -13,16 +13,20 @@ import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
 import {
   buildCompanyAbbreviation,
   getCompanyAbbreviation,
+  resolveUniqueAbbreviation,
   shouldAutoUpdateAbbreviation,
 } from "./companyAbbreviation";
 import { normalizeCompanyNdkAssignees, getCompanyNdkAssigneeLabel } from "./companyNdkAssigneesModel";
 import {
   initMasterDataStoresFromSession,
+  persistCompaniesToCustomerStore,
   readMasterCategoryFromStore,
   resolveMasterStoreCategory,
   syncAllMasterStoresFromSession,
+  syncMasterCategoryToStore,
 } from "../foundation/data/master/masterDataSync";
 import { MASTER_STORE_CATEGORIES } from "../foundation/data/master/masterConstants";
+import { TITAN_DATA_STORAGE_KEYS } from "../foundation/data/titanDataStorageKeys";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 import {
   normalizeRecipeParameters,
@@ -753,6 +757,9 @@ function migrateCompanyMaster(rows = []) {
       abbreviationLocked: Boolean(row.abbreviationLocked),
       abbreviationManual: Boolean(row.abbreviationManual),
       ceoName: row.ceoName?.trim() ?? "",
+      bizNo: normalizeCompanyBizNo(row.bizNo),
+      businessType: row.businessType?.trim() ?? "",
+      businessItem: row.businessItem?.trim() ?? "",
       fax: row.fax?.trim() ?? "",
       homepage: row.homepage?.trim() ?? "",
       tradeStartDate: row.tradeStartDate?.trim() ?? "",
@@ -825,8 +832,36 @@ function loadMasterDataFromStorage() {
 /** @type {typeof MASTER_DATA} */
 let sessionMasterData = loadMasterDataFromStorage();
 
+/** RC1 — boot: customer store (runtime SSOT) wins when it has more rows than legacy memory */
+function hydrateCompaniesFromCustomerStoreIfEmpty() {
+  if (typeof globalThis.sessionStorage === "undefined") return;
+
+  const memoryCount = (sessionMasterData.companies ?? []).length;
+
+  try {
+    const raw = globalThis.sessionStorage.getItem(TITAN_DATA_STORAGE_KEYS.customer);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
+    if (parsed.length > memoryCount) {
+      sessionMasterData.companies = migrateCompanyMaster(parsed);
+    }
+  } catch {
+    /* keep seed */
+  }
+}
+
+hydrateCompaniesFromCustomerStoreIfEmpty();
+
 function syncMasterStoresAfterPersist(changedCategory = null) {
-  syncAllMasterStoresFromSession(sessionMasterData);
+  MASTER_STORE_CATEGORIES.forEach((categoryKey) => {
+    const rows = Array.isArray(sessionMasterData[categoryKey]) ? sessionMasterData[categoryKey] : [];
+    // RC1 — empty memory companies must not wipe runtime customer store
+    if (categoryKey === "companies" && rows.length === 0) {
+      return;
+    }
+    syncMasterCategoryToStore(categoryKey, rows);
+  });
   notifyWorkflowDataRefresh({
     source: "master-data",
     category: changedCategory ? resolveMasterStoreCategory(changedCategory) : "all",
@@ -836,12 +871,22 @@ function syncMasterStoresAfterPersist(changedCategory = null) {
 initMasterDataStoresFromSession(sessionMasterData);
 
 function persistMasterData(changedCategory = null) {
+  const resolved = changedCategory ? resolveCategoryKey(changedCategory) : null;
+  if (!resolved || resolved === "companies") {
+    persistCompaniesToCustomerStore(sessionMasterData.companies ?? []);
+  }
+
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
   } catch {
-    /* ignore quota errors in UI mode */
+    /* quota */
   }
   syncMasterStoresAfterPersist(changedCategory);
+}
+
+/** RC1 bulk import — defer per-row persist; flush once after Import 실행 */
+export function flushMasterDataPersist(changedCategory = null) {
+  persistMasterData(changedCategory);
 }
 
 function resolveStorageCategory(categoryKey) {
@@ -853,6 +898,57 @@ function resolveStorageCategory(categoryKey) {
 
 function filterByCodeGroup(rows, groupLabel) {
   return rows.filter((row) => row.group === groupLabel);
+}
+
+/** RC1 — companies SSOT read: customerStore primary · project-titan-master-data-v3 fallback */
+function readCompaniesFromMasterSession() {
+  const storeRows = readMasterCategoryFromStore("companies");
+  const memoryRows = Array.isArray(sessionMasterData.companies) ? sessionMasterData.companies : [];
+  let legacyStorageRows = [];
+
+  if (typeof globalThis.sessionStorage !== "undefined") {
+    try {
+      const raw = globalThis.sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.companies)) {
+          legacyStorageRows = parsed.companies;
+        }
+      }
+    } catch {
+      /* keep memoryRows */
+    }
+  }
+
+  const bestCount = Math.max(storeRows.length, memoryRows.length, legacyStorageRows.length);
+
+  if (storeRows.length === bestCount && storeRows.length > 0) {
+    sessionMasterData.companies = storeRows;
+    return storeRows;
+  }
+
+  if (memoryRows.length === bestCount && memoryRows.length > 0) {
+    return memoryRows;
+  }
+
+  if (legacyStorageRows.length === bestCount && legacyStorageRows.length > 0) {
+    sessionMasterData.companies = legacyStorageRows;
+    return legacyStorageRows;
+  }
+
+  if (storeRows.length > 0) {
+    sessionMasterData.companies = storeRows;
+    return storeRows;
+  }
+  if (memoryRows.length > 0) {
+    return memoryRows;
+  }
+  if (legacyStorageRows.length > 0) {
+    sessionMasterData.companies = legacyStorageRows;
+    return legacyStorageRows;
+  }
+
+  return [];
 }
 
 export function getMasterCategories() {
@@ -867,6 +963,10 @@ export function getMasterDataByCategory(categoryKey) {
   const resolvedKey = resolveCategoryKey(categoryKey);
   if (CODE_GROUP_ALIASES[resolvedKey]) {
     return filterByCodeGroup(sessionMasterData.customCodes ?? [], CODE_GROUP_ALIASES[resolvedKey]);
+  }
+  // RC1 — companies only: customerStore (titan-data-engine) primary; legacy master-data-v3 fallback
+  if (resolvedKey === "companies") {
+    return readCompaniesFromMasterSession();
   }
   if (INTEGRATED_MASTER_KEYS.has(resolvedKey)) {
     const storeRows = readMasterCategoryFromStore(resolvedKey);
@@ -961,9 +1061,16 @@ function enrichCompanyRecord(normalized, rawPayload, mode, existingId) {
     normalized.abbreviationLocked = Boolean(current.abbreviationLocked);
     normalized.abbreviationManual = Boolean(current.abbreviationManual);
   } else {
-    normalized.abbreviation = buildCompanyAbbreviation(normalized.name, rows, {
-      manualAbbreviation: manualLock ? manualAbbrev : "",
-    });
+    const bizDigits = String(normalized.bizNo ?? "").replace(/\D/g, "");
+    if (bizDigits.length === 10 && !manualLock) {
+      normalized.code = normalized.code || `B${bizDigits}`;
+      const existingAbbrevs = rows.map((row) => getCompanyAbbreviation(row));
+      normalized.abbreviation = resolveUniqueAbbreviation(`C${bizDigits.slice(-5)}`, existingAbbrevs);
+    } else {
+      normalized.abbreviation = buildCompanyAbbreviation(normalized.name, rows, {
+        manualAbbreviation: manualLock ? manualAbbrev : "",
+      });
+    }
     normalized.abbreviationLocked = manualLock;
     normalized.abbreviationManual = manualLock;
   }
@@ -1025,13 +1132,15 @@ function normalizePayload(categoryKey, payload) {
       abbreviationLocked: Boolean(payload.abbreviationLocked),
       abbreviationManual: Boolean(payload.abbreviationManual),
       ceoName: payload.ceoName?.trim() ?? "",
-      bizNo: payload.bizNo?.trim() ?? "",
+      bizNo: normalizeCompanyBizNo(payload.bizNo),
       manager: payload.manager?.trim() ?? "",
       phone: payload.phone?.trim() ?? "",
       fax: payload.fax?.trim() ?? "",
       mobile: payload.mobile?.trim() ?? "",
       email: payload.email?.trim() ?? "",
       address: payload.address?.trim() ?? "",
+      businessType: payload.businessType?.trim() ?? "",
+      businessItem: payload.businessItem?.trim() ?? "",
       defaultRequirements: payload.defaultRequirements?.trim() ?? "",
       inspectionStandard: payload.inspectionStandard?.trim() ?? "",
       certificateForm: payload.certificateForm?.trim() ?? "",
@@ -1185,24 +1294,39 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
   }
 
   const rows = getMasterDataByCategory(resolvedKey);
-  const codeDup = rows.some(
-    (item) => item.code.toLowerCase() === normalized.code.toLowerCase() && item.id !== existingId
-  );
-  if (codeDup) {
-    return {
-      ok: false,
-      message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 거래처코드입니다.",
-    };
+  if (resolvedKey !== "companies") {
+    const codeDup = rows.some(
+      (item) => item.code.toLowerCase() === normalized.code.toLowerCase() && item.id !== existingId
+    );
+    if (codeDup) {
+      return {
+        ok: false,
+        message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 거래처코드입니다.",
+      };
+    }
   }
 
   if (resolvedKey === "companies") {
-    const abbrevDup = rows.some(
-      (item) =>
-        getCompanyAbbreviation(item).toLowerCase() === normalized.abbreviation.toLowerCase() &&
-        item.id !== existingId
-    );
-    if (abbrevDup) {
-      return { ok: false, message: "이미 사용 중인 거래처 약칭입니다. 관리자 설정에서 수정하세요." };
+    const nextCode = String(normalized.code ?? "").trim().toLowerCase();
+    const codeDup = rows.some((item) => {
+      if (item.id === existingId) return false;
+      return [item.code, item.abbreviation, getCompanyAbbreviation(item)]
+        .filter((value) => String(value ?? "").trim())
+        .some((value) => String(value).trim().toLowerCase() === nextCode);
+    });
+    if (codeDup) {
+      return { ok: false, message: "이미 사용 중인 거래처코드입니다." };
+    }
+
+    if (normalized.abbreviationManual || normalized.abbreviationLocked) {
+      const abbrevDup = rows.some(
+        (item) =>
+          getCompanyAbbreviation(item).toLowerCase() === normalized.abbreviation.toLowerCase() &&
+          item.id !== existingId
+      );
+      if (abbrevDup) {
+        return { ok: false, message: "이미 사용 중인 거래처 약칭입니다. 관리자 설정에서 수정하세요." };
+      }
     }
   }
 
@@ -1229,7 +1353,7 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
   return { ok: true, normalized, storageKey, categoryKey: resolvedKey };
 }
 
-export function stageMasterAdd(categoryKey, payload, { skipValidation = false } = {}) {
+export function stageMasterAdd(categoryKey, payload, { skipValidation = false, deferPersist = false } = {}) {
   const resolvedKey = resolveCategoryKey(categoryKey);
   const validation = skipValidation
     ? {
@@ -1250,11 +1374,13 @@ export function stageMasterAdd(categoryKey, payload, { skipValidation = false } 
 
   const storageKey = validation.storageKey;
   sessionMasterData[storageKey] = [...(sessionMasterData[storageKey] ?? []), newRow];
-  persistMasterData(resolvedKey);
+  if (!deferPersist) {
+    persistMasterData(resolvedKey);
+  }
   return { ok: true, row: newRow };
 }
 
-export function stageMasterUpdate(categoryKey, rowId, payload) {
+export function stageMasterUpdate(categoryKey, rowId, payload, { deferPersist = false } = {}) {
   const resolvedKey = resolveCategoryKey(categoryKey);
   const validation = validateMasterRow(resolvedKey, payload, "edit", rowId);
   if (!validation.ok) {
@@ -1274,7 +1400,9 @@ export function stageMasterUpdate(categoryKey, rowId, payload) {
     qrUuid: rows[index].qrUuid ?? validation.normalized.qrUuid,
   });
   sessionMasterData[storageKey] = rows.map((row, i) => (i === index ? updated : row));
-  persistMasterData(resolvedKey);
+  if (!deferPersist) {
+    persistMasterData(resolvedKey);
+  }
   return { ok: true, row: updated };
 }
 
@@ -1435,6 +1563,16 @@ export function generateProductManagementCode(companyName, existingCodes = null)
   return `${prefix}${String(maxSeq + 1).padStart(3, "0")}`;
 }
 
+export function normalizeCompanyBizNo(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+  }
+  return raw;
+}
+
 export function findCompanyByCode(code) {
   const q = String(code ?? "").trim().toLowerCase();
   if (!q) return null;
@@ -1442,6 +1580,16 @@ export function findCompanyByCode(code) {
     getMasterDataByCategory("companies").find(
       (row) =>
         row.code?.toLowerCase() === q || getCompanyAbbreviation(row).toLowerCase() === q
+    ) ?? null
+  );
+}
+
+export function findCompanyByBizNo(bizNo) {
+  const normalized = normalizeCompanyBizNo(bizNo);
+  if (!normalized) return null;
+  return (
+    getMasterDataByCategory("companies").find(
+      (row) => normalizeCompanyBizNo(row.bizNo) === normalized
     ) ?? null
   );
 }
@@ -1507,11 +1655,16 @@ export function compareProductMasterChanges(existing, incoming) {
 export function compareCompanyMasterChanges(existing, incoming) {
   const fields = [
     { key: "name", label: "업체명" },
+    { key: "ceoName", label: "대표자" },
+    { key: "bizNo", label: "사업자등록번호" },
     { key: "manager", label: "담당자" },
     { key: "phone", label: "전화번호" },
     { key: "mobile", label: "휴대전화" },
+    { key: "fax", label: "팩스" },
     { key: "email", label: "이메일" },
     { key: "address", label: "주소" },
+    { key: "businessType", label: "업태" },
+    { key: "businessItem", label: "종목" },
     { key: "note", label: "비고" },
   ];
   return fields

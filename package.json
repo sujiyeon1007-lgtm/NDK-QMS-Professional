@@ -11,6 +11,8 @@
     "verify:workflow-engine": "npx vite-node scripts/verify-titan-workflow-engine.mjs",
     "verify:workflow-integration": "npx vite-node scripts/verify-workflow-integration.mjs",
     "verify:master-data-integration": "npx vite-node scripts/verify-master-data-integration.mjs",
+    "verify:rc1-company-import": "npx vite-node scripts/verify-rc1-company-excel-import.mjs",
+    "verify:rc1-company-import-browser": "npx vite-node scripts/verify-rc1-company-import-browser.mjs",
     "verify:qr-workflow-v17": "npx vite-node scripts/verify-qr-workflow-v17.mjs",
     "verify:home-workspace": "npx vite-node scripts/verify-home-workspace.mjs",
     "verify:quality-workspace": "npx vite-node scripts/verify-quality-workspace.mjs",

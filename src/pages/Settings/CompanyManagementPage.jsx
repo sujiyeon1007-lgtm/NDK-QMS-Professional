@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Handshake, Pencil, Plus, Trash2, UserCheck, UserX } from "lucide-react";
+import { Building2, Download, FileSpreadsheet, Handshake, Pencil, Plus, Trash2, UserCheck, UserX } from "lucide-react";
 
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
@@ -20,11 +20,15 @@ import CompanyDetailModal from "./CompanyDetailModal";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
+import MasterExcelImportModal from "./MasterExcelImportModal";
+import { exportMasterExcel } from "../../utils/masterExcelImport";
+import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
 
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
 import "./ProductManagement.css";
 import "./MasterDataSprint8Polish.css";
+import "./MasterDataManagement.css";
 
 const COMPANY_SELECTION_KEY = "titan-master-selected-company-id";
 
@@ -52,6 +56,21 @@ export default function CompanyManagementPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [detailCompany, setDetailCompany] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+
+  useEffect(() => {
+    let refreshTimer = null;
+    return subscribeWorkflowDataRefresh((event) => {
+      const category = event?.detail?.category;
+      if (!category || category === "all" || category === "companies" || category === "customers") {
+        if (refreshTimer) window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(() => {
+          setRefreshKey((key) => key + 1);
+        }, 120);
+      }
+    });
+  }, []);
 
   const allCompanies = useMemo(() => {
     return getMasterDataByCategory("companies").map((row) => formatMasterRowForDisplay(row));
@@ -168,6 +187,16 @@ export default function CompanyManagementPage() {
     setRefreshKey((key) => key + 1);
   };
 
+  const handleExportExcel = async () => {
+    if (exportBusy) return;
+    setExportBusy(true);
+    try {
+      await exportMasterExcel("companies");
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
   return (
     <>
       <div className="company-management-page">
@@ -208,6 +237,7 @@ export default function CompanyManagementPage() {
 
         <div className="company-management-page__table-wrap company-management-page__table-wrap--compact master-data-grid">
           <TitanDataTable
+            key={`company-list-${refreshKey}`}
             className="inbound-page__table company-management-page__table--compact"
             columns={tableColumns}
             rows={pagedCompanies}
@@ -247,6 +277,14 @@ export default function CompanyManagementPage() {
           >
             <Trash2 size={14} aria-hidden="true" />
             삭제
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={() => setImportOpen(true)}>
+            <FileSpreadsheet size={14} aria-hidden="true" />
+            Excel 가져오기
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={handleExportExcel} disabled={exportBusy}>
+            <Download size={14} aria-hidden="true" />
+            Excel보내기
           </SecondaryButton>
         </div>
 
@@ -293,6 +331,17 @@ export default function CompanyManagementPage() {
           onClose={() => setDeleteTarget(null)}
         />
       ) : null}
+
+      <MasterExcelImportModal
+        masterType="companies"
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onComplete={() => {
+          setSearchKeyword("");
+          setRefreshKey((key) => key + 1);
+          setPage(1);
+        }}
+      />
     </>
   );
 }

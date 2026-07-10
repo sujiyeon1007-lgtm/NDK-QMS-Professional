@@ -20,7 +20,8 @@ import {
   equipmentStoreToMasterRow,
 } from "./masterDataMappers";
 import { buildEquipmentRecordsFromMasterRows } from "./masterEquipmentBuilder";
-import { readJson } from "../sessionStorageAdapter";
+import { readJson, writeJsonDetailed, getLastWriteError } from "../sessionStorageAdapter";
+import { TITAN_DATA_STORAGE_KEYS } from "../titanDataStorageKeys";
 
 /** @type {Record<string, import("./customerStore").default>} */
 const STORE_BY_CATEGORY = {
@@ -66,11 +67,33 @@ export function syncMasterCategoryToStore(categoryKey, rows = []) {
     return next;
   }
 
+  // RC1 — never overwrite runtime customer store with empty session rows
+  if (resolved === "companies" && rows.length === 0) {
+    const existing = readJson(TITAN_DATA_STORAGE_KEYS.customer, null);
+    if (Array.isArray(existing) && existing.length > 0) {
+      return existing;
+    }
+  }
+
   const store = STORE_BY_CATEGORY[resolved];
   if (!store) return rows;
 
   store.replaceAll(cloneMasterRows(rows));
   return store.list();
+}
+
+/** RC1 runtime debug — customer store write result */
+export function persistCompaniesToCustomerStore(rows = []) {
+  const payload = cloneMasterRows(rows);
+  const write = writeJsonDetailed(TITAN_DATA_STORAGE_KEYS.customer, payload);
+  return {
+    storageKey: TITAN_DATA_STORAGE_KEYS.customer,
+    requestedCount: payload.length,
+    writeOk: write.ok,
+    byteLength: write.byteLength,
+    readBackCount: write.readBackCount,
+    error: write.error ?? getLastWriteError(TITAN_DATA_STORAGE_KEYS.customer),
+  };
 }
 
 /**
@@ -120,6 +143,14 @@ export function readMasterCategoryFromStore(categoryKey) {
 export function initMasterDataStoresFromSessionStorage() {
   const snapshot = readMasterSessionSnapshot();
   if (!snapshot) return { ok: false, message: "No master session snapshot" };
+
+  const customerRaw = readJson(TITAN_DATA_STORAGE_KEYS.customer, null);
+  const customerCount = Array.isArray(customerRaw) ? customerRaw.length : 0;
+  const legacyCompanies = Array.isArray(snapshot.companies) ? snapshot.companies.length : 0;
+  if (customerCount > legacyCompanies) {
+    snapshot.companies = customerRaw;
+  }
+
   return syncAllMasterStoresFromSession(snapshot);
 }
 
@@ -141,6 +172,7 @@ export default {
   initMasterDataStoresFromSession,
   initMasterDataStoresFromSessionStorage,
   readMasterCategoryFromStore,
+  persistCompaniesToCustomerStore,
   buildEquipmentRecordsFromMasterRows,
   getMasterStoreSummary,
 };

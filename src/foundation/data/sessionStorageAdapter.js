@@ -20,14 +20,40 @@ export function readJson(key, fallback = null) {
   }
 }
 
+/** @type {Record<string, string | null>} */
+const lastWriteErrors = {};
+
+export function getLastWriteError(key) {
+  return lastWriteErrors[key] ?? null;
+}
+
 export function writeJson(key, value) {
+  const result = writeJsonDetailed(key, value);
+  return result.ok;
+}
+
+/** @returns {{ ok: boolean, byteLength?: number, error?: string, readBackCount?: number }} */
+export function writeJsonDetailed(key, value) {
   const storage = getStorage();
-  if (!storage) return false;
+  if (!storage) {
+    lastWriteErrors[key] = "sessionStorage unavailable";
+    return { ok: false, error: lastWriteErrors[key] };
+  }
   try {
-    storage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
+    const payload = JSON.stringify(value);
+    storage.setItem(key, payload);
+    lastWriteErrors[key] = null;
+    let readBackCount;
+    try {
+      const readBack = JSON.parse(storage.getItem(key) ?? "null");
+      readBackCount = Array.isArray(readBack) ? readBack.length : undefined;
+    } catch {
+      readBackCount = undefined;
+    }
+    return { ok: true, byteLength: payload.length, readBackCount };
+  } catch (error) {
+    lastWriteErrors[key] = error?.message ?? String(error);
+    return { ok: false, error: lastWriteErrors[key] };
   }
 }
 
