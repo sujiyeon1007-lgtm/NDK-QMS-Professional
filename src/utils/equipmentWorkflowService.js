@@ -6,17 +6,21 @@
  */
 
 import {
-  EQUIPMENT_CHARGEABLE_LOTS,
   EQUIPMENT_LOT_PRODUCTS,
   EQUIPMENT_PROCESS_GROUP_ORDER,
   EQUIPMENT_RAW_LIST,
   EQUIPMENT_RUN_STATUS_SSOT,
-  EQUIPMENT_RUNNING_LOTS,
   resolveEquipmentChargingButtons,
 } from "../config/equipmentConfig";
 import { getTitanDataEngine } from "../foundation/data";
-import { addSessionProductionRecord, updateSessionProductionRecord } from "./productionRecords";
+import {
+  addSessionProductionRecord,
+  getSessionProductionRecords,
+  updateSessionProductionRecord,
+} from "./productionRecords";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
+import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "./workflowProcessStatus";
+import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 export { resolveEquipmentChargingButtons };
 
@@ -49,6 +53,52 @@ function readEquipmentStoreList() {
   }
 }
 
+function hasActiveEquipmentRunningRecord(runningSession) {
+  if (!runningSession?.lotNo) return false;
+
+  const lotKey = String(runningSession.lotNo).trim().toUpperCase();
+  const productionId = String(runningSession.productionId ?? "").trim();
+  const records = getSessionProductionRecords();
+
+  if (productionId) {
+    const byId = records.find((row) => String(row.id ?? "").trim() === productionId);
+    if (byId && resolveRecordCurrentProcess(byId).key === CURRENT_PROCESS_KEYS.HT_RUNNING) {
+      return true;
+    }
+  }
+
+  return records.some((row) => {
+    const rowLot = String(row.lotNo ?? "").trim().toUpperCase();
+    if (rowLot !== lotKey) return false;
+    return resolveRecordCurrentProcess(row).key === CURRENT_PROCESS_KEYS.HT_RUNNING;
+  });
+}
+
+function reconcileEquipmentStoreRecord(storeRecord) {
+  const maintenance = Boolean(storeRecord.maintenance) || storeRecord.status === "maintenance";
+  let runningSession = storeRecord.runningSession ?? null;
+  const chargeableLots = Array.isArray(storeRecord.chargeableLots)
+    ? storeRecord.chargeableLots.map((row) => ({ ...row }))
+    : [];
+
+  if (runningSession && !hasActiveEquipmentRunningRecord(runningSession)) {
+    runningSession = null;
+  }
+
+  let status = /** @type {import("../config/equipmentConfig").EquipmentRunStatus} */ ("idle");
+  if (maintenance) status = "maintenance";
+  else if (runningSession) status = "running";
+  else if (chargeableLots.length > 0) status = "ready";
+
+  return {
+    ...storeRecord,
+    runningSession,
+    chargeableLots,
+    status,
+    currentLot: runningSession?.lotNo ?? chargeableLots[0]?.lotNo ?? null,
+  };
+}
+
 /**
  * @param {import("../config/equipmentConfig").EquipmentRawRecord} equipment
  * @returns {import("../config/equipmentConfig").EquipmentRunStatus}
@@ -56,13 +106,6 @@ function readEquipmentStoreList() {
 export function computeEquipmentRunStatus(equipment) {
   if (!equipment) return "idle";
   if (equipment.maintenance) return "maintenance";
-
-  const runningLot = EQUIPMENT_RUNNING_LOTS[equipment.id];
-  if (runningLot) return "running";
-
-  const chargeableLots = EQUIPMENT_CHARGEABLE_LOTS[equipment.id] ?? [];
-  if (chargeableLots.length > 0) return "ready";
-
   return "idle";
 }
 
@@ -70,12 +113,13 @@ export function computeEquipmentRunStatus(equipment) {
  * @param {Record<string, unknown>} storeRecord
  */
 function buildEquipmentViewModelFromStore(storeRecord) {
+  const reconciled = reconcileEquipmentStoreRecord(storeRecord);
   const status = /** @type {import("../config/equipmentConfig").EquipmentRunStatus} */ (
-    storeRecord.status ?? "idle"
+    reconciled.status ?? "idle"
   );
-  const runningSession = storeRecord.runningSession ?? null;
-  const chargeableLots = Array.isArray(storeRecord.chargeableLots)
-    ? storeRecord.chargeableLots.map((row) => ({ ...row }))
+  const runningSession = reconciled.runningSession ?? null;
+  const chargeableLots = Array.isArray(reconciled.chargeableLots)
+    ? reconciled.chargeableLots.map((row) => ({ ...row }))
     : [];
   const displayLots = runningSession
     ? [runningSession.lotNo]
@@ -101,18 +145,13 @@ function buildEquipmentViewModelFromStore(storeRecord) {
  */
 export function buildEquipmentViewModel(equipment) {
   const status = computeEquipmentRunStatus(equipment);
-  const runningSession = EQUIPMENT_RUNNING_LOTS[equipment.id] ?? null;
-  const chargeableLots = (EQUIPMENT_CHARGEABLE_LOTS[equipment.id] ?? []).map((row) => ({ ...row }));
-  const displayLots = runningSession
-    ? [runningSession.lotNo]
-    : chargeableLots.map((row) => row.lotNo);
 
   return {
     ...equipment,
     status,
-    runningSession: runningSession ? { ...runningSession } : null,
-    chargeableLots,
-    displayLots,
+    runningSession: null,
+    chargeableLots: [],
+    displayLots: [],
     chargingButtons: resolveEquipmentChargingButtons(status),
   };
 }
@@ -260,7 +299,7 @@ export function createManualChargeableLot(input) {
       registrar: chargeableRow.operator || "생산부",
       registered: false,
       incomingRegistered: true,
-      workflowStatus: "HT_WAIT",
+      workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
       currentProcess: "열처리 대기",
       qrGenerated: true,
       source: "manual-lot",
@@ -284,7 +323,7 @@ export function createManualChargeableLot(input) {
       note: chargeableRow.note,
       registered: false,
       incomingRegistered: true,
-      workflowStatus: "HT_WAIT",
+      workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
       currentProcess: "열처리 대기",
       source: "manual-lot",
       createdAt: new Date().toISOString(),

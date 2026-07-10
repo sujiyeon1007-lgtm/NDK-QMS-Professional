@@ -73,7 +73,7 @@ export default function Home() {
         </HomeLeftPanel>
 
         <div className="home-board__main" aria-label="업무 바로가기">
-          <HomeWorkLauncherPanel records={records} />
+          <HomeWorkLauncherPanel records={records} refreshKey={refreshKey} />
         </div>
       </div>
     </div>

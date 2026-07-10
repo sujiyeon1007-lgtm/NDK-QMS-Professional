@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { OTHER_INSPECTION_CATEGORIES, OTHER_INSPECTION_STATUS } from "../../config/inspectionManagement";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { createEmptyOtherInspectionRegister } from "../../utils/otherInspectionSession";
 
 export default function OtherInspectionRegisterModal({
@@ -13,7 +16,7 @@ export default function OtherInspectionRegisterModal({
   mode = "create",
 }) {
   const [form, setForm] = useState(createEmptyOtherInspectionRegister());
-  const companies = getMasterDataByCategory("companies");
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +41,29 @@ export default function OtherInspectionRegisterModal({
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+    }));
   };
 
   const handleSubmit = () => {
@@ -92,28 +118,28 @@ export default function OtherInspectionRegisterModal({
             ))}
           </select>
         </label>
-        <label className="titan-modal__field">
-          <span>업체</span>
-          <Input
-            value={form.company}
-            onChange={(e) => updateField("company", e.target.value)}
-            placeholder="업체"
-            list="other-inspection-companies"
-          />
-          <datalist id="other-inspection-companies">
-            {companies.map((company) => (
-              <option key={company.id ?? company.name} value={company.name} />
-            ))}
-          </datalist>
-        </label>
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <Input
-            value={form.partName}
-            onChange={(e) => updateField("partName", e.target.value)}
-            placeholder="품명"
-          />
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체"
+          value={form.company}
+          onChange={handleCompanyChange}
+          options={companyOptions}
+          placeholder="거래처 선택"
+        />
+        <TitanCascadeProductPicker
+          inline
+          partNameOnly
+          showDrawingNo={false}
+          company={form.company}
+          value={{
+            partName: form.partName,
+            partNo: "",
+            drawingNo: "",
+          }}
+          onChange={handleCascadeChange}
+          fieldClassName="titan-modal__field"
+          kicker="기타검사 등록"
+        />
         <label className="titan-modal__field titan-modal__field--span-2">
           <span>내용</span>
           <Input

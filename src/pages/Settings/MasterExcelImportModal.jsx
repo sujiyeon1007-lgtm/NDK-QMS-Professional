@@ -156,7 +156,12 @@ export default function MasterExcelImportModal({ masterType, open, onClose, onCo
 
   const stepIndex = STEPS.indexOf(step);
   const conflictCount = analysis?.keyConflicts?.length ?? 0;
-  const conflictLabel = masterType === "products" ? "업체·품번 중복" : "키 중복";
+  const conflictLabel =
+    masterType === "products"
+      ? "업체·품번 중복"
+      : masterType === "companies"
+        ? "사업자번호 중복"
+        : "키 중복";
 
   return createPortal(
     <div className="titan-modal-overlay" role="presentation" onClick={step === "importing" ? undefined : onClose}>
@@ -313,7 +318,9 @@ export default function MasterExcelImportModal({ masterType, open, onClose, onCo
                           {row.rowIndex}행 ·{" "}
                           {masterType === "products"
                             ? `${row.payload.company} · ${row.payload.partNo}`
-                            : row.payload.code}
+                            : masterType === "companies"
+                              ? `${row.payload.name ?? "—"} · ${row.payload.bizNo ?? "—"}`
+                              : row.payload.code}
                         </strong>
                         <span>{formatMasterChangeSummary(row.changes)}</span>
                         {row.changes?.length ? (

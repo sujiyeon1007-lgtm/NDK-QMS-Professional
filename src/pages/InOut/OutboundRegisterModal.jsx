@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { OUTBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getActiveWorkers } from "../../utils/masterData";
 import { getStockQty } from "../../utils/inventory";
@@ -14,6 +16,10 @@ import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 
 const EMPTY_FORM = mapRecordToOutboundRegisterForm(null);
+
+function formatOutboundRecordOption(record) {
+  return `${record.id} · ${record.company} · ${record.partName} · 실재고 ${getStockQty(record)} EA`;
+}
 
 function resolveRegisterRecord(managementId, eligibleRecords = []) {
   const trimmed = managementId?.trim();
@@ -40,6 +46,16 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
     }
     return records;
   }, [eligibleRecords, form.managementId]);
+
+  const outboundRecordOptions = useMemo(
+    () => displayRecords.map((record) => formatOutboundRecordOption(record)),
+    [displayRecords]
+  );
+
+  const selectedOutboundOption = useMemo(() => {
+    const record = displayRecords.find((item) => item.id === form.managementId);
+    return record ? formatOutboundRecordOption(record) : "";
+  }, [displayRecords, form.managementId]);
 
   useEffect(() => {
     if (!open) return;
@@ -100,20 +116,17 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
     >
       <div className="titan-modal__section">
         <p className="titan-modal__section-title">출고 대상 선택</p>
-        <label className="titan-modal__field titan-modal__field--full">
-          <span>관리번호</span>
-          <select
-            value={form.managementId}
-            onChange={(e) => handleManagementChange(e.target.value)}
-          >
-            <option value="">선택</option>
-            {displayRecords.map((record) => (
-              <option key={record.id} value={record.id}>
-                {record.id} · {record.company} · {record.partName} · 실재고 {getStockQty(record)} EA
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field titan-modal__field--full"
+          label="관리번호"
+          value={selectedOutboundOption}
+          onChange={(option) => {
+            const managementId = option.split(" · ")[0]?.trim() ?? "";
+            handleManagementChange(managementId);
+          }}
+          options={outboundRecordOptions}
+          placeholder="관리번호 선택"
+        />
       </div>
 
       <div className="titan-modal__section">

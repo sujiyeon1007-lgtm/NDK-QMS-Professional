@@ -9,6 +9,7 @@ import {
   updateSessionProductionRecord,
 } from "./productionRecords";
 import { getCurrentTitanUser } from "./titanHistorySession";
+import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 const LIFECYCLE_STORAGE_KEY = "titan-lot-lifecycle-events";
 
@@ -214,7 +215,8 @@ export function createProductionLots(managementIds, { htlListNo = "", memo = "" 
       lotCancelledAt: "",
       lotCancelledBy: "",
       lotCancelReason: "",
-      completionStatus: "작업대기",
+      workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
+      completionStatus: WORKFLOW_STATUS.WORK_WAIT,
     });
   });
 

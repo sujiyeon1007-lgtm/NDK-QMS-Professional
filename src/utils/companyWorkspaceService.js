@@ -118,6 +118,27 @@ export function getCompanyBrandingLogoUrl(profile = getCompanyProfile()) {
   return String(profile?.branding?.logo ?? "").trim();
 }
 
+/** RC1 — Company Branding SSOT: 직인 PNG (모든 문서 공통) */
+export function getCompanyBrandingStampUrl(profile = getCompanyProfile()) {
+  return String(profile?.branding?.stamp ?? "").trim();
+}
+
+/** RC1 — Company Branding SSOT: 대표이사 서명 PNG (모든 문서 공통) */
+export function getCompanyBrandingSignatureUrl(profile = getCompanyProfile()) {
+  return String(profile?.branding?.signature ?? "").trim();
+}
+
+/** RC1 — 문서 출력 엔진 공통 Branding 번들 (Company Branding → 직인 → 자동 출력) */
+export function getCompanyBrandingForDocuments(profile = getCompanyProfile()) {
+  return {
+    logo: getCompanyBrandingLogoUrl(profile),
+    stamp: getCompanyBrandingStampUrl(profile),
+    signature: getCompanyBrandingSignatureUrl(profile),
+    footerLines: buildCompanyPrintFooterLines(profile),
+    representative: String(profile?.companyMaster?.representative ?? "").trim(),
+  };
+}
+
 export function buildCompanyDashboard() {
   const profile = getCompanyProfile();
   const master = profile.companyMaster ?? {};

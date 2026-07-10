@@ -73,6 +73,7 @@ function buildSectionMetrics(sectionId, profile) {
     branding: [
       { title: "Logo", value: branding.logo ? "등록" : "미등록", description: "회사 로고", tone: "pink" },
       { title: "직인", value: branding.stamp ? "등록" : "미등록", description: "Branding Asset", tone: "amber" },
+      { title: "서명", value: branding.signature ? "등록" : "미등록", description: "대표이사 서명", tone: "mint" },
     ],
     documentFooter: [
       { title: "Footer 회사명", value: footer.companyName ? "등록" : "미등록", description: footer.companyName || "-", tone: "blue" },

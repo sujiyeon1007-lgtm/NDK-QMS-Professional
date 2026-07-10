@@ -7,7 +7,10 @@ import {
   getCustomerProfile,
 } from "../../utils/transactionStatementConfig";
 import { parseQtyWithUnit } from "../../utils/productUnits";
-import { getCompanyProfile } from "../../utils/companyWorkspaceService";
+import {
+  getCompanyBrandingForDocuments,
+  getCompanyProfile,
+} from "../../utils/companyWorkspaceService";
 import "./TransactionStatement.css";
 import "./TransactionStatementIssueResultDialog.css";
 
@@ -42,7 +45,7 @@ function buildSupplierProfile(companyProfile = {}) {
 }
 
 /** 공급받는자/공급자 — 10열 그리드 (좌 5 + 우 5) */
-function PartyInfoTable({ customer, supplier, showSeal, sealImage, totalAmount }) {
+function PartyInfoTable({ customer, supplier, showSeal, sealImage, signatureImage, totalAmount }) {
   return (
     <table className="ts-form-table ts-party-table">
       <colgroup>
@@ -82,8 +85,11 @@ function PartyInfoTable({ customer, supplier, showSeal, sealImage, totalAmount }
           <td className="ts-field-label">상호</td>
           <td className="ts-field-value">{supplier.name}</td>
           <td className="ts-field-label">성명</td>
-          <td className={`ts-field-value${showSeal ? " has-seal" : ""}`}>
+          <td className={`ts-field-value${showSeal ? " has-seal" : ""}${showSeal && signatureImage ? " has-signature" : ""}`}>
             {supplier.representative}
+            {showSeal && signatureImage ? (
+              <img className="ts-company-signature-image" src={signatureImage} alt="대표이사 서명" />
+            ) : null}
             {showSeal && sealImage ? (
               <img className="ts-company-seal-image" src={sealImage} alt="회사 직인" />
             ) : showSeal ? (
@@ -231,6 +237,7 @@ function TransactionStatementSheet({
           supplier={supplier}
           showSeal={showSeal}
           sealImage={supplierBranding?.stamp || ""}
+          signatureImage={supplierBranding?.signature || ""}
           totalAmount={totals.totalAmount}
         />
         <StatementItemsTable itemRows={itemRows} totals={totals} />
@@ -248,7 +255,12 @@ export default function TransactionStatementPreview({
   issueDate,
 }) {
   const companyProfile = getCompanyProfile();
-  const supplierBranding = companyProfile.branding ?? {};
+  const companyBranding = getCompanyBrandingForDocuments(companyProfile);
+  const supplierBranding = {
+    logo: companyBranding.logo,
+    stamp: companyBranding.stamp,
+    signature: companyBranding.signature,
+  };
   const supplier = buildSupplierProfile(companyProfile);
   const customer = getCustomerProfile(record.company);
   const unit = record.unit ?? "EA";
@@ -300,6 +312,13 @@ export default function TransactionStatementPreview({
           showSeal
           highlightDate
         />
+        {companyBranding.footerLines.length ? (
+          <footer className="ts-document-footer" aria-label="문서 Footer">
+            {companyBranding.footerLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </footer>
+        ) : null}
       </div>
     </div>
   );

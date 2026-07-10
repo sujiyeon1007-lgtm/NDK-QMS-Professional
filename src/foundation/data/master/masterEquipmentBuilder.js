@@ -2,11 +2,7 @@
  * Project TITAN V1.6 — Master equipment → EquipmentStore records
  */
 
-import {
-  EQUIPMENT_CHARGEABLE_LOTS,
-  EQUIPMENT_MAINTENANCE_IDS,
-  EQUIPMENT_RUNNING_LOTS,
-} from "../../../config/equipmentConfig";
+import { EQUIPMENT_MAINTENANCE_IDS } from "../../../config/equipmentConfig";
 import { masterRowToEquipmentRecord } from "./masterDataMappers";
 
 /**
@@ -26,11 +22,11 @@ export function buildEquipmentRecordsFromMasterRows(masterRows = [], existingRec
       const runningSession =
         existing && "runningSession" in existing
           ? existing.runningSession ?? null
-          : EQUIPMENT_RUNNING_LOTS[code] ?? null;
+          : null;
       const chargeableLots =
         existing && Array.isArray(existing.chargeableLots)
           ? existing.chargeableLots.map((item) => ({ ...item }))
-          : (EQUIPMENT_CHARGEABLE_LOTS[code] ?? []).map((item) => ({ ...item }));
+          : [];
       const maintenance = EQUIPMENT_MAINTENANCE_IDS.has(code) || row.active === false;
 
       let status = existing?.status ?? "idle";

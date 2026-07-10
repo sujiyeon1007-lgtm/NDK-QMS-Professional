@@ -138,17 +138,22 @@ export function inferWorkflowStatus(record) {
   }
 
   if (record.workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
-    if (record.htlNo?.trim() || record.workSheetGenerated) {
-      return WORKFLOW_STATUS.PROD_PROGRESS;
-    }
     return WORKFLOW_STATUS.WORK_WAIT;
   }
 
-  if (record.htlNo || record.workSheetGenerated) {
-    return WORKFLOW_STATUS.PROD_PROGRESS;
-  }
-
   return null;
+}
+
+/**
+ * 생산 대기(열처리 대기) Stage — Workflow 상태 변경으로만 진입 (입고리스트 출력과 독립)
+ * @param {object | null | undefined} record
+ * @returns {boolean}
+ */
+export function isProductionWaitingStageRecord(record) {
+  if (!record?.incomingRegistered) return false;
+  if (record.registered && record.lotNo?.trim()) return false;
+  if (record.lotNo?.trim()) return false;
+  return getWorkflowStatus(record) === WORKFLOW_STATUS.WORK_WAIT;
 }
 
 /**
@@ -157,6 +162,9 @@ export function inferWorkflowStatus(record) {
  */
 export function getWorkflowStatus(record) {
   const stored = record?.workflowStatus?.trim();
+  if (stored === "HT_WAIT") {
+    return WORKFLOW_STATUS.WORK_WAIT;
+  }
   if (stored && Object.values(WORKFLOW_STATUS).includes(stored)) {
     return stored;
   }
@@ -212,12 +220,12 @@ function patchWorkflowStatus(record, nextStatus, extra = {}) {
 }
 
 /**
- * Work request list printed → 작업대기 + assign HTL
+ * 입고리스트(DOC-01) 출력 완료 — 문서 이력만 기록 (Workflow 변경 없음)
  * @param {string[]} managementIds
  * @param {string} htlNo
  * @param {{ isReprint?: boolean }} [options]
  */
-export function applyHtlWorkListPrinted(managementIds = [], htlNo = "", options = {}) {
+export function applyInboundHtlDocumentPrinted(managementIds = [], htlNo = "", options = {}) {
   const trimmedHtl = htlNo?.trim();
   if (!trimmedHtl || !managementIds.length) return;
 
@@ -233,28 +241,72 @@ export function applyHtlWorkListPrinted(managementIds = [], htlNo = "", options 
     history.push(historyEntry);
 
     updateSessionProductionRecord(id, {
-      ...patchWorkflowStatus(record, WORKFLOW_STATUS.PROD_PROGRESS, {
-        htlNo: trimmedHtl,
-        workSheetGenerated: true,
-        htlPrintedAt: now,
-        htlPrintStatus: "출력완료",
-        htlPrintHistory: history,
-      }),
+      htlNo: trimmedHtl,
+      htlPrintedAt: now,
+      htlPrintStatus: "출력완료",
+      htlPrintHistory: history,
     });
   });
+}
+
+/** @deprecated RC1 — use applyInboundHtlDocumentPrinted (문서) + applyMoveToProductionWaiting (Workflow) */
+export function applyHtlWorkListPrinted(managementIds = [], htlNo = "", options = {}) {
+  applyInboundHtlDocumentPrinted(managementIds, htlNo, options);
+}
+
+/**
+ * 생산 대기로 이동 — Workflow 상태 변경 (입고리스트 출력과 독립)
+ * @param {string[]} managementIds
+ */
+export function applyMoveToProductionWaiting(managementIds = []) {
+  const ids = [...new Set(managementIds.map((id) => String(id ?? "").trim()).filter(Boolean))];
+  if (!ids.length) return { moved: 0, skipped: 0 };
+
+  const now = new Date().toISOString();
+  let moved = 0;
+  let skipped = 0;
+
+  ids.forEach((id) => {
+    const record = getSessionProductionRecords().find((item) => item.id === id);
+    if (!record?.incomingRegistered) {
+      skipped += 1;
+      return;
+    }
+    if (record.registered && record.lotNo?.trim()) {
+      skipped += 1;
+      return;
+    }
+    if (isProductionWaitingStageRecord(record)) {
+      skipped += 1;
+      return;
+    }
+    if (getWorkflowStatus(record) && getWorkflowStatus(record) !== WORKFLOW_STATUS.WORK_WAIT) {
+      const rank = getWorkflowStatusRankValue(getWorkflowStatus(record));
+      if (rank > getWorkflowStatusRankValue(WORKFLOW_STATUS.WORK_WAIT)) {
+        skipped += 1;
+        return;
+      }
+    }
+
+    updateSessionProductionRecord(id, {
+      ...patchWorkflowStatus(record, WORKFLOW_STATUS.WORK_WAIT, {
+        productionWaitingAt: now,
+      }),
+    });
+    moved += 1;
+  });
+
+  return { moved, skipped };
 }
 
 /** @param {object[]} [records] */
 export function getPendingDailyReportWorkRequests(records = getSessionProductionRecords()) {
   return records.filter((record) => {
-    if (!record?.incomingRegistered || !record.htlNo?.trim()) return false;
+    if (!record?.incomingRegistered) return false;
     if (record.registered && record.lotNo?.trim()) return false;
     const status = getWorkflowStatus(record);
-    return (
-      status === WORKFLOW_STATUS.WORK_WAIT ||
-      status === WORKFLOW_STATUS.PROD_PROGRESS ||
-      status === null
-    );
+    if (!status) return false;
+    return status === WORKFLOW_STATUS.WORK_WAIT || status === WORKFLOW_STATUS.PROD_PROGRESS;
   });
 }
 
@@ -264,7 +316,7 @@ export function onDailyReportStarted(managementId) {
   if (!id) return;
 
   const record = getSessionProductionRecords().find((item) => item.id === id);
-  if (!record?.htlNo) return;
+  if (!record) return;
 
   updateSessionProductionRecord(id, patchWorkflowStatus(record, WORKFLOW_STATUS.PROD_PROGRESS));
 }

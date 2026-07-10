@@ -4,6 +4,7 @@ import { Plus, X } from "lucide-react";
 import Input from "../../foundation/components/Input";
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { createEmptyProductionDailyReportRegister } from "../../config/listSearchStandard";
 import {
   PRODUCTION_DAILY_EDIT_MODAL_TITLE,
@@ -36,6 +37,10 @@ import {
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 import "./ProductionManagement.css";
+
+function formatChargeRequestOption(record) {
+  return `${record.id} · ${record.company} · ${record.partName} · ${record.partNo}`;
+}
 
 function buildInitialForm(mode, initialManagementId = "", editLotNo = "", pendingRequests = []) {
   const baseForm = {
@@ -116,6 +121,22 @@ export default function DailyProductionReportRegisterModal({
         (record) => !form.chargeProducts.some((item) => item.managementId === record.id)
       ),
     [selectableRequests, form.chargeProducts]
+  );
+
+  const productPickerOptions = useMemo(
+    () => availableRequests.map((record) => formatChargeRequestOption(record)),
+    [availableRequests]
+  );
+
+  const selectedProductPickerOption = useMemo(() => {
+    if (!productPickerId) return "";
+    const record = availableRequests.find((item) => item.id === productPickerId);
+    return record ? formatChargeRequestOption(record) : "";
+  }, [availableRequests, productPickerId]);
+
+  const equipmentOptions = useMemo(
+    () => equipmentList.map((item) => item.name ?? item.code),
+    [equipmentList]
   );
 
   useEffect(() => {
@@ -384,21 +405,16 @@ export default function DailyProductionReportRegisterModal({
           <p className="titan-modal__section-title">장입 제품 리스트</p>
           {availableRequests.length > 0 ? (
             <div className="daily-report-register__product-picker">
-              <select
-                value={productPickerId}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setProductPickerId(value);
-                  if (value) addChargeProduct(value);
+              <TitanSearchableSelect
+                value={selectedProductPickerOption}
+                onChange={(option) => {
+                  const id = option.split(" · ")[0]?.trim() ?? "";
+                  setProductPickerId(id);
+                  if (id) addChargeProduct(id);
                 }}
-              >
-                <option value="">제품 추가</option>
-                {availableRequests.map((record) => (
-                  <option key={record.id} value={record.id}>
-                    {record.id} · {record.company} · {record.partName} · {record.partNo}
-                  </option>
-                ))}
-              </select>
+                options={productPickerOptions}
+                placeholder="제품 추가"
+              />
             </div>
           ) : null}
         </div>
@@ -513,18 +529,14 @@ export default function DailyProductionReportRegisterModal({
               onChange={(e) => updateField("workDate", e.target.value)}
             />
           </label>
-          <label className="titan-modal__field">
-            <span>설비</span>
-            <select value={form.equipment} onChange={(e) => updateField("equipment", e.target.value)}>
-              <option value="">선택</option>
-              {equipmentList.map((item) => (
-                <option key={item.id} value={item.name ?? item.code}>
-                  {item.name ?? item.code}
-                  {item.equipType ? ` · ${item.equipType}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TitanSearchableSelect
+            className="titan-modal__field"
+            label="설비"
+            value={form.equipment}
+            onChange={(value) => updateField("equipment", value)}
+            options={equipmentOptions}
+            placeholder="선택"
+          />
           <label className="titan-modal__field">
             <span>작업자</span>
             <select value={form.worker} onChange={(e) => updateField("worker", e.target.value)}>

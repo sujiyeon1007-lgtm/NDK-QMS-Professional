@@ -9,6 +9,13 @@
   gap: 12px;
 }
 
+.accounting-internal-items__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+}
+
 .accounting-clerk-launcher-grid {
   margin-top: 0;
 }

@@ -236,6 +236,16 @@ body.incoming-modal-open {
   min-width: 0;
 }
 
+.admin-searchable-select-wrap .admin-searchable-select {
+  flex: 1;
+  min-width: 0;
+  display: block;
+}
+
+.admin-searchable-select-wrap .admin-searchable-select .titan-search-ac {
+  width: 100%;
+}
+
 .admin-manage-btn {
   width: 40px;
   height: 40px;

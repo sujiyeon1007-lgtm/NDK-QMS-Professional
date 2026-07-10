@@ -1,7 +1,6 @@
 import { getEquipmentList, getEquipmentSummary } from "./equipmentWorkflowService";
 import { getTitanDataEngine } from "../foundation/data";
-import { getMasterStoreSummary } from "../foundation/data/master/masterDataSync";
-import { buildHomeTopKpiCounts, getHomeScreenData } from "./homeDashboardData";
+import { buildHomeDashboardRuntimeMetrics } from "./homeDashboardRuntimeMetrics";
 import { getHomeWorkspaceRecords } from "./homeWorkspaceData";
 
 function readDashboardKpi() {
@@ -28,29 +27,15 @@ function readLotSummary() {
   }
 }
 
-function readMasterSummary() {
-  try {
-    return getMasterStoreSummary();
-  } catch {
-    return {
-      companies: 0,
-      products: 0,
-      materials: 0,
-      heatTreatment: 0,
-      equipment: 0,
-      workers: 0,
-    };
-  }
-}
-
 /**
- * HOME 업무 바로가기 카드 — DashboardStore · LotStore · EquipmentStore 집계
+ * HOME 업무 바로가기 카드 — Runtime Workflow + Master 집계 (RC1)
  * @param {object[]} [records]
  */
 export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()) {
+  const runtime = buildHomeDashboardRuntimeMetrics();
+  const workflowRecords = runtime.records.length > 0 ? runtime.records : records;
   const dashboardKpi = readDashboardKpi();
   const lotSummary = readLotSummary();
-  const masterSummary = readMasterSummary();
   const equipmentSummary = dashboardKpi
     ? {
         running: dashboardKpi.equipmentRunning ?? 0,
@@ -64,16 +49,16 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
       .filter((item) => item.status === "ready")
       .reduce((sum, item) => sum + item.chargeableLots.length, 0);
 
-  const { counts, baseRecords } = getHomeScreenData(records);
-  const topKpi = buildHomeTopKpiCounts(records);
-  const productionDone = baseRecords.filter((row) =>
+  const { counts } = runtime;
+  const topKpi = runtime.topKpi;
+  const productionDone = workflowRecords.filter((row) =>
     String(row.completionStatus ?? row.workflowStatus ?? "").includes("생산완료")
   ).length;
 
   return {
     inbound: {
       todayIncoming: topKpi.todayIncoming,
-      inboundWait: counts.RECEIVED ?? 0,
+      inboundWait: runtime.inboundRegistered,
     },
     equipmentStatus: {
       running: equipmentSummary.running,
@@ -81,9 +66,9 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
       maintenance: equipmentSummary.maintenance,
     },
     productStatus: {
-      inProgress: lotSummary?.inProgress ?? baseRecords.length,
-      inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
-      shipWait: counts.SHIP_WAIT ?? 0,
+      inProgress: runtime.productionInProgress,
+      inspectionWait: counts.INSPECTION_WAIT ?? 0,
+      shipWait: runtime.shipWait,
     },
     qrCharging: {
       chargeableLots: chargeableLotCount,
@@ -91,36 +76,36 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
     },
     outbound: {
       todayShipment: topKpi.todayShipment,
-      shipWait: counts.SHIP_WAIT ?? 0,
+      shipWait: runtime.shipWait,
     },
     statistics: {
-      heatRunning: dashboardKpi?.equipmentRunning ?? counts.HT_RUNNING ?? 0,
-      inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
+      heatRunning: runtime.productionInProgress,
+      inspectionWait: counts.INSPECTION_WAIT ?? 0,
     },
     accountingClerk: {
-      activeFeatures: 6,
-      statementViews: baseRecords.filter((row) => row.shipmentDate).length,
+      activeFeatures: 0,
+      statementViews: workflowRecords.filter((row) => row.shipmentDate).length,
     },
     accounting: {
-      referenceViews: 4,
-      statementViews: baseRecords.filter((row) => row.shipmentDate).length,
+      referenceViews: 0,
+      statementViews: workflowRecords.filter((row) => row.shipmentDate).length,
     },
     qrEngine: {
       registry: 0,
-      scanRoutes: 2,
+      scanRoutes: 0,
     },
     operations: {
       todayIncoming: topKpi.todayIncoming,
-      inboundWait: counts.RECEIVED ?? 0,
-      shipWait: counts.SHIP_WAIT ?? 0,
+      inboundWait: runtime.inboundRegistered,
+      shipWait: runtime.shipWait,
     },
     production: {
-      runningLots: lotSummary?.inProgress ?? counts.HT_RUNNING ?? 0,
+      runningLots: runtime.productionInProgress,
       heatWait: counts.HT_WAIT ?? 0,
       productionDone,
     },
     quality: {
-      inspectionWait: lotSummary?.inspectionWait ?? counts.INSPECTION_WAIT ?? 0,
+      inspectionWait: counts.INSPECTION_WAIT ?? 0,
       certWait: counts.CERT_WAIT ?? 0,
       nonConformance: 0,
     },
@@ -130,17 +115,17 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
       ready: equipmentSummary.ready,
     },
     masterData: {
-      companies: masterSummary.companies ?? 0,
-      products: masterSummary.products ?? 0,
-      materials: masterSummary.materials ?? 0,
-      processes: masterSummary.heatTreatment ?? 0,
-      equipment: masterSummary.equipment ?? 0,
-      workers: masterSummary.workers ?? 0,
+      companies: runtime.companies,
+      products: runtime.products,
+      materials: runtime.materials,
+      processes: runtime.heatTreatment,
+      equipment: runtime.equipment,
+      workers: runtime.workers,
     },
     management: {
       statements: topKpi.todayShipment,
-      clerkViews: 6,
-      accountingViews: 4,
+      clerkViews: 0,
+      accountingViews: 0,
     },
   };
 }

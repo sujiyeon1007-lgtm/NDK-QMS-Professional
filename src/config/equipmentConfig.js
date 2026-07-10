@@ -152,111 +152,11 @@ export const EQUIPMENT_RAW_LIST = buildEquipmentRawList();
  * @typedef {{ lotNo: string, startTime: string, expectedEndTime: string, progress: number, statusLabel: string, operator?: string }} EquipmentRunningSession
  */
 
-/** @type {Record<string, EquipmentRunningSession>} — Master 설비 코드 (EquipmentStore SSOT) */
-export const EQUIPMENT_RUNNING_LOTS = {
-  "3S-1": {
-    lotNo: "LOT240630",
-    startTime: "08:32",
-    expectedEndTime: "18:20",
-    progress: 65,
-    statusLabel: "진행중",
-    operator: "홍길동",
-  },
-  "3S-3": {
-    lotNo: "LOT-20260707-001",
-    startTime: "08:30",
-    expectedEndTime: "14:30",
-    progress: 82,
-    statusLabel: "진행중",
-    operator: "김작업",
-  },
-  "10S-02": {
-    lotNo: "LOT240628",
-    startTime: "09:05",
-    expectedEndTime: "19:30",
-    progress: 48,
-    statusLabel: "진행중",
-    operator: "이영희",
-  },
-  "61": {
-    lotNo: "LOT240620",
-    startTime: "10:15",
-    expectedEndTime: "14:00",
-    progress: 91,
-    statusLabel: "진행중",
-    operator: "박민수",
-  },
-};
+/** @type {Record<string, EquipmentRunningSession>} — RC1: idle unless real workflow session */
+export const EQUIPMENT_RUNNING_LOTS = {};
 
-/** @type {Record<string, EquipmentChargeableLotRow[]>} — Master 설비 코드 */
-export const EQUIPMENT_CHARGEABLE_LOTS = {
-  "3S-2": [
-    {
-      id: "lot-s9-demo",
-      lotNo: "LOT-20260707-001",
-      partName: "샤프트",
-      qty: 120,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-    {
-      id: "lot-240701",
-      lotNo: "LOT240701",
-      partName: "BULL GEAR",
-      qty: 12,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-    {
-      id: "lot-240702",
-      lotNo: "LOT240702",
-      partName: "#2 PINION GEAR",
-      qty: 8,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-  ],
-  "3S-4": [
-    {
-      id: "lot-240703",
-      lotNo: "LOT240703",
-      partName: "DRIVE SHAFT",
-      qty: 20,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-  ],
-  "10S-01": [
-    {
-      id: "lot-240704",
-      lotNo: "LOT240704",
-      partName: "SPROCKET",
-      qty: 16,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-  ],
-  "10S-03": [
-    {
-      id: "lot-240705",
-      lotNo: "LOT240705",
-      partName: "RING GEAR",
-      qty: 6,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-  ],
-  "62": [
-    {
-      id: "lot-240706",
-      lotNo: "LOT240706",
-      partName: "CLUTCH HUB",
-      qty: 10,
-      unit: "EA",
-      statusLabel: "장입대기",
-    },
-  ],
-};
+/** @type {Record<string, EquipmentChargeableLotRow[]>} — RC1: no demo chargeable defaults */
+export const EQUIPMENT_CHARGEABLE_LOTS = {};
 
 /**
  * 동일 LOT 제품 목록 (Dummy)

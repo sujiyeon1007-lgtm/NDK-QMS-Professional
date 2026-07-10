@@ -158,8 +158,8 @@ export const HOME_WORK_DASHBOARD_GROUPS = [
     ctaLabel: "운영관리",
     metrics: [
       { key: "todayIncoming", label: "금일 입고", suffix: "건" },
-      { key: "inboundWait", label: "입고 대기", suffix: "건" },
-      { key: "shipWait", label: "출고 대기", suffix: "건" },
+      { key: "inboundWait", label: "입고현황", suffix: "건" },
+      { key: "shipWait", label: "출고대기", suffix: "건" },
     ],
   },
   {
@@ -171,7 +171,7 @@ export const HOME_WORK_DASHBOARD_GROUPS = [
     icon: Factory,
     ctaLabel: "생산관리",
     metrics: [
-      { key: "runningLots", label: "작업중 LOT", suffix: "건" },
+      { key: "runningLots", label: "생산현황", suffix: "건" },
       { key: "heatWait", label: "열처리 대기", suffix: "건" },
       { key: "productionDone", label: "생산 완료", suffix: "건" },
     ],

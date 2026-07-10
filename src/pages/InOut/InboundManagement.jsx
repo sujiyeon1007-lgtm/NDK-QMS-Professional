@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FileSpreadsheet, Plus, Printer } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
@@ -11,6 +11,7 @@ import TitanTableFooter from "../../foundation/components/TitanTableFooter";
 import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
 import InboundRowActions from "./InboundRowActions";
 import InboundDetailPopup from "./InboundDetailPopup";
@@ -34,6 +35,7 @@ import {
 import { parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
+import { exportHtlWorkListXlsx } from "../../utils/titanPrintExport";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
 import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
@@ -47,14 +49,18 @@ import {
 import {
   buildInboundHistoryWorkspaceRecords,
   buildIncomingTaskWorkspaceRecords,
+  isIncomingTaskStageRecord,
 } from "../../utils/operationsWorkspaceData";
 import { mapV13ProductListRow } from "../../utils/processFlow";
-import { isHeatTreatmentNotStarted, isHtlFirstPrintTarget } from "../../utils/htlPrintEligibility";
+import { isHtlFirstPrintTarget, isProductionWaitingOutputTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import { OperationsWorkflowNextDialog } from "./OutboundStatementPromptDialog";
 import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
-import { applyHtlWorkListPrinted } from "../../utils/titanWorkflowStatus";
+import {
+  applyInboundHtlDocumentPrinted,
+  applyMoveToProductionWaiting,
+} from "../../utils/titanWorkflowStatus";
 import {
   applyInboundListPrinted,
   resolveInboundCheckboxPrintRows,
@@ -120,6 +126,8 @@ function InboundPrintCriteriaModal({
   companyOptions,
   partNameOptions,
   materialOptions,
+  title = "입고리스트 출력",
+  submitLabel = "출력",
 }) {
   const updateCriteria = (patch) => onCriteriaChange((prev) => ({ ...prev, ...patch }));
 
@@ -128,9 +136,9 @@ function InboundPrintCriteriaModal({
       open={open}
       onClose={onClose}
       onSubmit={onSubmit}
-      title="입고리스트 출력"
+      title={title}
       kicker="입고 현황 문서"
-      submitLabel="출력"
+      submitLabel={submitLabel}
       size="wide"
     >
       <div className="titan-modal__grid inbound-print-criteria">
@@ -148,53 +156,35 @@ function InboundPrintCriteriaModal({
           </select>
         </label>
 
-        <label className="titan-modal__field">
-          <span>업체</span>
-          <select
-            value={criteria.company}
-            onChange={(event) => updateCriteria({ company: event.target.value })}
-            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.COMPANY}
-          >
-            <option value="">업체 선택</option>
-            {companyOptions.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체"
+          value={criteria.company}
+          onChange={(value) => updateCriteria({ company: value })}
+          options={companyOptions}
+          placeholder="업체 선택"
+          disabled={criteria.type !== INBOUND_PRINT_CRITERIA.COMPANY}
+        />
 
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <select
-            value={criteria.partName}
-            onChange={(event) => updateCriteria({ partName: event.target.value })}
-            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PART_NAME}
-          >
-            <option value="">품명 선택</option>
-            {partNameOptions.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="품명"
+          value={criteria.partName}
+          onChange={(value) => updateCriteria({ partName: value })}
+          options={partNameOptions}
+          placeholder="품명 선택"
+          disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PART_NAME}
+        />
 
-        <label className="titan-modal__field">
-          <span>재질</span>
-          <select
-            value={criteria.material}
-            onChange={(event) => updateCriteria({ material: event.target.value })}
-            disabled={criteria.type !== INBOUND_PRINT_CRITERIA.MATERIAL}
-          >
-            <option value="">재질 선택</option>
-            {materialOptions.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="재질"
+          value={criteria.material}
+          onChange={(value) => updateCriteria({ material: value })}
+          options={materialOptions}
+          placeholder="재질 선택"
+          disabled={criteria.type !== INBOUND_PRINT_CRITERIA.MATERIAL}
+        />
 
         <label className="titan-modal__field">
           <span>시작일</span>
@@ -341,13 +331,6 @@ function matchesInboundStatusSearch(statusLabel, searchStatus) {
   return false;
 }
 
-function isProductionWaitingOutputTarget(record) {
-  if (!record) return false;
-  if (isInboundShipOutComplete(record)) return false;
-  if (record.lotNo?.trim()) return false;
-  return isHeatTreatmentNotStarted(record);
-}
-
 export default function InboundManagement({ forcedMode } = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -369,6 +352,9 @@ export default function InboundManagement({ forcedMode } = {}) {
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
   const [printCriteriaOpen, setPrintCriteriaOpen] = useState(false);
+  const [printCriteriaIntent, setPrintCriteriaIntent] = useState("print");
+  const pendingInboundExcelExportRef = useRef(false);
+  const [inboundPrintBusy, setInboundPrintBusy] = useState(false);
   const [printCriteria, setPrintCriteria] = useState(createInboundPrintCriteria);
   const [workflowNextStep, setWorkflowNextStep] = useState(null);
   const chipRecords = useMemo(() => resolveInboundListRecords(viewMode), [refreshKey, viewMode]);
@@ -461,31 +447,82 @@ export default function InboundManagement({ forcedMode } = {}) {
         const managementIds = printProps.rows
           .map((row) => String(row.managementId ?? row.id ?? "").trim())
           .filter(Boolean);
-        applyHtlWorkListPrinted(managementIds, listNo, {
+        applyInboundHtlDocumentPrinted(managementIds, listNo, {
           isReprint: printProps.printMode === "reprint",
         });
       }
 
       setRefreshKey((key) => key + 1);
       if (!isHistoryMode) {
-        setWorkflowNextStep(getOperationsWorkflowNextStep("inboundListPrinted"));
+        setInOutPrintSession({ open: false, props: null });
       }
     },
     [isHistoryMode]
   );
 
+  const moveRowsToProductionWaiting = useCallback((rows) => {
+    const moveRows = rows.filter((row) => isIncomingTaskStageRecord(row.record ?? row));
+    if (moveRows.length === 0) {
+      window.alert("생산 대기로 이동할 입고 제품이 없습니다.\n(입고 대기 · 생산 미투입 제품만 가능)");
+      return { moved: 0, skipped: 0, managementIds: [] };
+    }
+
+    const managementIds = moveRows
+      .map((row) => String(row.managementId ?? row.id ?? row.record?.id ?? "").trim())
+      .filter(Boolean);
+    const { moved, skipped } = applyMoveToProductionWaiting(managementIds);
+
+    if (moved === 0) {
+      window.alert("생산 대기로 이동할 수 있는 제품이 없습니다.");
+      return { moved: 0, skipped, managementIds };
+    }
+
+    setSelectedIds((prev) => prev.filter((id) => !managementIds.includes(id)));
+    if (detailPopupRow && managementIds.includes(detailPopupRow.id)) {
+      setDetailPopupRow(null);
+    }
+    setRefreshKey((key) => key + 1);
+
+    if (skipped > 0) {
+      window.alert(`${moved}건 생산 대기로 이동했습니다. (${skipped}건 제외)`);
+    }
+
+    setWorkflowNextStep(getOperationsWorkflowNextStep("inboundMovedToProduction"));
+    return { moved, skipped, managementIds };
+  }, [detailPopupRow]);
+
+  const handleMoveToProductionWaiting = useCallback(() => {
+    if (isHistoryMode) return;
+
+    if (selectedRows.length === 0) {
+      window.alert("생산 대기로 이동할 입고 제품을 선택하세요.\n(입고 대기 · 생산 미투입 제품만 가능)");
+      return;
+    }
+
+    moveRowsToProductionWaiting(selectedRows);
+  }, [isHistoryMode, moveRowsToProductionWaiting, selectedRows]);
+
+  const handleInboundMoveToProduction = useCallback(
+    (row) => {
+      if (isHistoryMode) return;
+      moveRowsToProductionWaiting([row]);
+    },
+    [isHistoryMode, moveRowsToProductionWaiting]
+  );
+
   const openInboundPrintCriteria = () => {
+    setPrintCriteriaIntent("print");
     setPrintCriteria(createInboundPrintCriteria());
     setPrintCriteriaOpen(true);
   };
 
-  const handleInboundCriteriaPrint = () => {
-    const printRows = inboundPrintRows.filter((row) => matchesInboundPrintCriteria(row.record, printCriteria));
-    if (printRows.length === 0) {
-      window.alert("선택한 기준에 해당하는 입고 제품이 없습니다.");
-      return;
-    }
+  const openInboundExcelCriteria = () => {
+    setPrintCriteriaIntent("excel");
+    setPrintCriteria(createInboundPrintCriteria());
+    setPrintCriteriaOpen(true);
+  };
 
+  const openInboundPrintPreview = (printRows) => {
     setInOutPrintSession({
       open: true,
       props: buildInOutListPrintProps(printRows, {
@@ -497,6 +534,46 @@ export default function InboundManagement({ forcedMode } = {}) {
     });
     setPrintCriteriaOpen(false);
   };
+
+  const handleInboundCriteriaSubmit = () => {
+    const printRows = inboundPrintRows.filter((row) => matchesInboundPrintCriteria(row.record, printCriteria));
+    if (printRows.length === 0) {
+      window.alert("선택한 기준에 해당하는 입고 제품이 없습니다.");
+      return;
+    }
+
+    if (printCriteriaIntent === "excel") {
+      pendingInboundExcelExportRef.current = true;
+    }
+
+    openInboundPrintPreview(printRows);
+  };
+
+  useEffect(() => {
+    if (!inOutPrintSession.open || !inOutPrintSession.props || !pendingInboundExcelExportRef.current || inboundPrintBusy) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(async () => {
+      const printProps = inOutPrintSession.props;
+      if (!printProps) return;
+
+      pendingInboundExcelExportRef.current = false;
+      setInboundPrintBusy(true);
+      try {
+        await exportHtlWorkListXlsx({
+          ...printProps,
+          filename: `${printProps.listNo || "list"}.xlsx`,
+        });
+        handleInOutPrinted(printProps);
+      } finally {
+        setInboundPrintBusy(false);
+        setInOutPrintSession({ open: false, props: null });
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [inOutPrintSession.open, inOutPrintSession.props, inboundPrintBusy, handleInOutPrinted]);
 
   const toggleRow = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -632,9 +709,6 @@ export default function InboundManagement({ forcedMode } = {}) {
     setActiveId(managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
-    if (!isHistoryMode) {
-      setWorkflowNextStep(getOperationsWorkflowNextStep("inboundRegisterComplete"));
-    }
   };
 
   const handleInboundUpdate = (form, managementId) => {
@@ -661,7 +735,7 @@ export default function InboundManagement({ forcedMode } = {}) {
           <Printer size={14} aria-hidden="true" />
           {INBOUND_LIST_PRINT_TOOLBAR_LABEL}
         </SecondaryButton>
-        <SecondaryButton type="button" onClick={openInboundPrintCriteria}>
+        <SecondaryButton type="button" onClick={openInboundExcelCriteria}>
           <FileSpreadsheet size={14} aria-hidden="true" />
           엑셀 출력
         </SecondaryButton>
@@ -773,7 +847,9 @@ export default function InboundManagement({ forcedMode } = {}) {
         criteria={printCriteria}
         onCriteriaChange={setPrintCriteria}
         onClose={() => setPrintCriteriaOpen(false)}
-        onSubmit={handleInboundCriteriaPrint}
+        onSubmit={handleInboundCriteriaSubmit}
+        title={printCriteriaIntent === "excel" ? "입고리스트 엑셀 출력" : "입고리스트 출력"}
+        submitLabel={printCriteriaIntent === "excel" ? "엑셀 출력" : "출력"}
         companyOptions={inboundPrintOptions.companies}
         partNameOptions={inboundPrintOptions.partNames}
         materialOptions={inboundPrintOptions.materials}

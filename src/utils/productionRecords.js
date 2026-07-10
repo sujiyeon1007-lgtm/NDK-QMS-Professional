@@ -11,8 +11,10 @@ import {
   TITAN_DEMO_PRODUCTION_RECORDS,
   TITAN_QA_DEMO_PRODUCTION_RECORDS,
   TITAN_QA_DEMO_SHIPMENT_EVENTS,
+  RC1_DEMO_BRANDING_PATCH,
   buildQaDemoMasterSeed,
 } from "../data/titanDemoSampleData";
+import companyStore from "../foundation/data/master/companyStore";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 import {
   OPERATIONS_DATA_MODE_STORAGE_KEY,
@@ -98,6 +100,7 @@ function buildSeedSessionRecords() {
 
 function persistSessionRecords() {
   writeJson(OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY, sessionRecords);
+  notifyWorkflowDataRefresh({ source: "production-records" });
 }
 
 function loadSessionRecords() {
@@ -254,6 +257,17 @@ export function resetOperationsToEmpty() {
 }
 
 export function loadQaDemoSeed() {
+  const profile = companyStore.get();
+  companyStore.replace({
+    ...profile,
+    companyMaster: { ...profile.companyMaster, ...RC1_DEMO_BRANDING_PATCH.companyMaster, updatedAt: new Date().toISOString() },
+    branding: { ...profile.branding, ...RC1_DEMO_BRANDING_PATCH.branding },
+    documentFooter: {
+      ...profile.documentFooter,
+      ...RC1_DEMO_BRANDING_PATCH.documentFooter,
+      updatedAt: new Date().toISOString(),
+    },
+  });
   replaceSessionMasterData(buildQaDemoMasterSeed(TITAN_OPERATIONAL_MASTER_SEED));
   replaceSessionProductionRecords(
     TITAN_QA_DEMO_PRODUCTION_RECORDS.map((row) => ({ ...row }))

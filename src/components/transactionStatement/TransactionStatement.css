@@ -187,6 +187,35 @@
   pointer-events: none;
 }
 
+.ts-company-signature-image {
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 26px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.ts-field-value.has-seal.has-signature {
+  padding-right: 104px !important;
+}
+
+.ts-document-footer {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #d1d5db;
+  text-align: center;
+  font-size: 8px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.ts-document-footer p {
+  margin: 0;
+}
+
 .ts-total-row td {
   height: 30px;
 }

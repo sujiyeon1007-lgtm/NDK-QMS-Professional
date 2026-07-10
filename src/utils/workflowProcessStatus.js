@@ -7,7 +7,7 @@
  */
 
 import { getCertificateFileStatus, hasCertificateFilesForManagementId } from "./certificateSession";
-import { getHtlPrintStatus, HTL_PRINT_STATUS } from "./htlPrintEligibility";
+import { isProductionWaitingStageRecord } from "./titanWorkflowStatus";
 import {
   isHeatTreatmentComplete,
   isInspectionComplete,
@@ -118,12 +118,6 @@ function buildCurrentProcess(key) {
   };
 }
 
-function isHtlPrinted(record) {
-  return (
-    getHtlPrintStatus(record) === HTL_PRINT_STATUS.PRINTED || Boolean(record?.htlNo?.trim())
-  );
-}
-
 function hasLotCreated(record) {
   return Boolean(record?.registered && record?.lotNo?.trim());
 }
@@ -185,17 +179,22 @@ export function resolveRecordCurrentProcess(record) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.INSPECTION_WAIT);
   }
 
-  // ③ 열처리 중 — LOT 생성 완료 · 열처리 진행 중
-  if (hasLotCreated(record)) {
+  // ③ 열처리 중 — 생산일보 등록 · 열처리 미완료
+  if (hasLotCreated(record) && !isHeatTreatmentComplete(record)) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.HT_RUNNING);
   }
 
-  // ② 열처리 대기 — HTL 출력 완료 · LOT 생성 전
-  if (isHtlPrinted(record)) {
+  // ②-b 열처리 대기 — LOT 생성 · 생산일보 미등록 (설비 장입 대기)
+  if (record?.lotNo?.trim() && !record?.registered && !isHeatTreatmentComplete(record)) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.HT_WAIT);
   }
 
-  // ① 입고등록 — 입고 등록 완료 · HTL 출력 전
+  // ②-a 열처리 대기 — 생산 대기 투입 · LOT 생성 전 (입고리스트 출력과 독립)
+  if (isProductionWaitingStageRecord(record)) {
+    return buildCurrentProcess(CURRENT_PROCESS_KEYS.HT_WAIT);
+  }
+
+  // ① 입고등록 — 입고 등록 완료 · 생산 대기 미투입
   return buildCurrentProcess(CURRENT_PROCESS_KEYS.RECEIVED);
 }
 

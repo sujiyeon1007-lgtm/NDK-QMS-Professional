@@ -12,6 +12,7 @@ import { parseEquipmentFromQrPayload } from "./equipmentQr";
 import { processEquipmentQrScan } from "./equipmentQrWorkflow";
 import { getEquipmentDetailSnapshot } from "./equipmentWorkflowService";
 import { getMasterDataByCategory } from "./masterData";
+import { parseLotFromQrPayload } from "./ndkWorkflow";
 import {
   countEngineRegistryByType,
   listQrEngineRegistryRows,
@@ -54,6 +55,7 @@ function writeJson(key, value) {
 
 function resolveLotQr(payload) {
   const text = String(payload ?? "").trim();
+  if (/^https?:\/\//i.test(text)) return null;
   const lotNo = parseLotFromQrPayload(text);
   if (!hasText(lotNo)) return null;
   if (text.toUpperCase().startsWith("NDK|LOT|")) {

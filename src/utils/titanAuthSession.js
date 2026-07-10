@@ -46,7 +46,9 @@ export function getAuthSession() {
 export function isAuthenticated() {
   const session = getAuthSession();
   if (!session?.userId) return false;
-  return Boolean(getUserById(session.userId));
+  if (getUserById(session.userId)) return true;
+  // Operational reset may clear users[] while session remains — keep workspace access for empty-state setup.
+  return Boolean(String(session.loginId ?? "").trim());
 }
 
 export function saveAuthSession(payload) {

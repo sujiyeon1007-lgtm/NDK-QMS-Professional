@@ -1,6 +1,9 @@
 /**
  * 거래명세서 양식 — 공급자(NDK) 고정 · 공급받는자(업체) 프로필
+ * 공급받는자 SSOT: 기준정보관리 거래처 Master (companies)
  */
+
+import { getMasterDataByCategory } from "./masterData";
 
 export const NDK_SUPPLIER = {
   regNo: "615-81-86148",
@@ -11,20 +14,6 @@ export const NDK_SUPPLIER = {
   businessItem: "플라즈마장치수탁가공",
   phone: "055-326-4242",
   fax: "055-326-4244",
-};
-
-/** 업체명 기준 공급받는자 정보 (향후 기준정보/SQLite 연동) */
-export const CUSTOMER_PROFILES = {
-  "(주)모전기공": {
-    regNo: "314-88-00265",
-    name: "(주)모전기공",
-    representative: "손두현",
-    address: "부산광역시 강서구 과학산단2로43번길 38(지사동)",
-    businessType: "제조",
-    businessItem: "자동차부품외",
-    phone: "051-971-1551",
-    fax: "051-971-1552",
-  },
 };
 
 const EMPTY_CUSTOMER = {
@@ -38,14 +27,44 @@ const EMPTY_CUSTOMER = {
   fax: "",
 };
 
-export function getCustomerProfile(companyName) {
-  if (!companyName?.trim()) return { ...EMPTY_CUSTOMER };
+function findCompanyMasterByName(companyName) {
+  const key = companyName?.trim();
+  if (!key) return null;
+
+  const companies = getMasterDataByCategory("companies").filter((row) => row.active !== false);
   return (
-    CUSTOMER_PROFILES[companyName.trim()] ?? {
-      ...EMPTY_CUSTOMER,
-      name: companyName.trim(),
-    }
+    companies.find((row) => row.name?.trim() === key) ??
+    companies.find((row) => row.code?.trim() === key) ??
+    null
   );
+}
+
+function mapCompanyMasterToCustomerProfile(company, fallbackName = "") {
+  if (!company) {
+    return {
+      ...EMPTY_CUSTOMER,
+      name: fallbackName,
+    };
+  }
+
+  return {
+    regNo: company.bizNo?.trim() ?? "",
+    name: company.name?.trim() || fallbackName,
+    representative: company.ceoName?.trim() || company.manager?.trim() || "",
+    address: company.address?.trim() ?? "",
+    businessType: company.businessType?.trim() ?? "",
+    businessItem: company.businessItem?.trim() ?? "",
+    phone: company.phone?.trim() || company.mobile?.trim() || "",
+    fax: company.fax?.trim() ?? "",
+  };
+}
+
+export function getCustomerProfile(companyName) {
+  const key = companyName?.trim();
+  if (!key) return { ...EMPTY_CUSTOMER };
+
+  const company = findCompanyMasterByName(key);
+  return mapCompanyMasterToCustomerProfile(company, key);
 }
 
 /** 품목 행 + 빈 행 (양식 10행) */

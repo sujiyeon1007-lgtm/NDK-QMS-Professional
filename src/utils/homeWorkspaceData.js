@@ -7,9 +7,11 @@
 
 import { getTitanDataEngine } from "../foundation/data";
 import { getSessionProductionRecords } from "./productionRecords";
+import { refreshHomeDashboardMasterSources } from "./homeDashboardRuntimeMetrics";
 
 /** DashboardStore 캐시 갱신 — Workflow 이벤트 · 수동 새로고침 */
 export function refreshHomeWorkspaceCache() {
+  refreshHomeDashboardMasterSources();
   try {
     return getTitanDataEngine().dashboard.refreshCache();
   } catch {
@@ -17,27 +19,12 @@ export function refreshHomeWorkspaceCache() {
   }
 }
 
-/** productionStore row → HOME KPI/Launcher 호환 record */
-function mapProductionStoreRowToRecord(row) {
-  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
-  const id = String(payload.id ?? payload.mesManagementNo ?? row.productionId ?? "").trim();
-  if (!id) return null;
-  return { ...payload, id };
-}
-
 /**
- * HOME Workspace — TitanDataEngine productionStore 기반 records
+ * HOME Workspace — operational Session SSOT (입고·생산·출고 CRUD)
+ * RC1: demo-seeded productionStore is not used for HOME KPI.
  * @returns {object[]}
  */
 export function getHomeWorkspaceRecords() {
-  try {
-    refreshHomeWorkspaceCache();
-    const rows = getTitanDataEngine().production.list();
-    const records = rows.map(mapProductionStoreRowToRecord).filter(Boolean);
-    if (records.length > 0) return records;
-  } catch {
-    // legacy fallback below
-  }
   return getSessionProductionRecords();
 }
 

@@ -43,9 +43,20 @@ export const DEMO_ID_FIELD_ALIAS = {
   note: "V1.0 Demo record.id === MES 관리번호",
 };
 
-/** V1.0 · V1.1 동일 Workflow — Backend만 교체 */
+/** V1.1 Repository Layer — PM conditional approved · see titanRepositoryLayerV11.js */
+export const REPOSITORY_V11_PRINCIPLE = Object.freeze([
+  "Real company operations",
+  "Workflow",
+  "UI",
+  "Repository",
+  "Data Source",
+]);
+
+/** Repository swap policy — Workflow/UI unchanged (Platform REV.6 + V1.1 PM) */
 export const REPOSITORY_SWAP_POLICY = {
   uiChanges: false,
   workflowChanges: false,
-  swapTarget: "repository implementation only",
+  businessLogicChanges: false,
+  swapTarget: "repository implementation + data source adapter only",
+  v11Config: "src/config/titanRepositoryLayerV11.js",
 };

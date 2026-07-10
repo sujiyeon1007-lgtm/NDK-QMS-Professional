@@ -1,4 +1,20 @@
 /* Environment Workspace — Sprint 12 placeholder CRUD actions */
+.environment-empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.environment-toggle-list--readonly li {
+  list-style: disc;
+  margin-left: 1.25rem;
+}
+
+.environment-workspace-section-page .environment-content-panel {
+  margin-top: 0;
+}
+
 .environment-workspace-crud-actions {
   display: flex;
   flex-wrap: wrap;

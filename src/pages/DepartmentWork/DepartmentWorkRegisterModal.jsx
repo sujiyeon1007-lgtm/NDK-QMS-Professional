@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { DEPARTMENT_WORK_REGISTER_LABEL } from "../../config/registerModalStandard";
 import {
   DEPARTMENT_DEFINITIONS,
   DEPARTMENT_WORK_PRIORITY,
   DEPARTMENT_WORK_STATUS,
 } from "../../config/departmentWorkDashboard";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { createEmptyDepartmentWorkRegister } from "../../utils/departmentWorkSession";
 
@@ -20,7 +23,7 @@ export default function DepartmentWorkRegisterModal({
 }) {
   const [form, setForm] = useState(createEmptyDepartmentWorkRegister(defaultDepartmentId));
 
-  const companies = getMasterDataByCategory("companies");
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +68,34 @@ export default function DepartmentWorkRegisterModal({
       }
       return next;
     });
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+      partNo: "",
+      material: "",
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+        material: autofill.material || prev.material,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+    }));
   };
 
   const handleSubmit = () => {
@@ -176,37 +207,27 @@ export default function DepartmentWorkRegisterModal({
             placeholder="관리번호 (선택)"
           />
         </label>
-        <label className="titan-modal__field">
-          <span>업체명</span>
-          <select
-            className="titan-search-panel__select"
-            value={form.company}
-            onChange={(e) => updateField("company", e.target.value)}
-          >
-            <option value="">선택</option>
-            {companies.map((item) => (
-              <option key={item.id ?? item.code} value={item.name ?? item.code}>
-                {item.name ?? item.code}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <Input
-            value={form.partName}
-            onChange={(e) => updateField("partName", e.target.value)}
-            placeholder="품명"
-          />
-        </label>
-        <label className="titan-modal__field">
-          <span>품번</span>
-          <Input
-            value={form.partNo}
-            onChange={(e) => updateField("partNo", e.target.value)}
-            placeholder="품번"
-          />
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체명"
+          value={form.company}
+          onChange={handleCompanyChange}
+          options={companyOptions}
+          placeholder="거래처 선택"
+        />
+        <TitanCascadeProductPicker
+          inline
+          company={form.company}
+          value={{
+            partName: form.partName,
+            partNo: form.partNo,
+            drawingNo: "",
+          }}
+          onChange={handleCascadeChange}
+          autoFields={{ material: form.material }}
+          fieldClassName="titan-modal__field"
+          kicker="부서별 업무 등록"
+        />
         <label className="titan-modal__field">
           <span>재질</span>
           <Input

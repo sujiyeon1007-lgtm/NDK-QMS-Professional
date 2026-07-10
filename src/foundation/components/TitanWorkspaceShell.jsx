@@ -1,4 +1,6 @@
-﻿import TitanBreadcrumb from "./TitanBreadcrumb";
+import { Link } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import TitanBreadcrumb from "./TitanBreadcrumb";
 import { WorkspaceNavigationTabs } from "../layout/SectionTabs";
 
 export default function TitanWorkspaceShell({
@@ -10,6 +12,7 @@ export default function TitanWorkspaceShell({
   homePath,
   isHome = false,
   breadcrumbItems = [],
+  backLink = null,
   hideHeaderWhenNotHome = true,
   ariaLabel = "Workspace",
   children,
@@ -48,6 +51,13 @@ export default function TitanWorkspaceShell({
 
       {navItems.length ? (
         <WorkspaceNavigationTabs nav={{ items: navItems, homePath, ariaLabel }} />
+      ) : null}
+
+      {backLink?.to ? (
+        <Link to={backLink.to} className={backLink.className || "titan-hub-back-link"}>
+          <ChevronLeft size={16} aria-hidden="true" />
+          {backLink.label || "Back"}
+        </Link>
       ) : null}
 
       {normalizedBreadcrumb.length ? <TitanBreadcrumb items={normalizedBreadcrumb} /> : null}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import TitanRegisterModal from "./TitanRegisterModal";
+import TitanSearchableSelect from "./TitanSearchableSelect";
 import {
   generateProductManagementCode,
   getActiveMasterNames,
@@ -131,20 +132,14 @@ export default function QuickProductRegisterModal({
             onChange={(event) => updateField("spec", event.target.value)}
           />
         </label>
-        <label className="master-register-modal__field">
-          <span>재질</span>
-          <select
-            value={form.material}
-            onChange={(event) => updateField("material", event.target.value)}
-          >
-            <option value="">재질 선택</option>
-            {materialOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="master-register-modal__field"
+          label="재질"
+          value={form.material}
+          onChange={(value) => updateField("material", value)}
+          options={materialOptions}
+          placeholder="재질 선택"
+        />
         <label className="master-register-modal__field">
           <span>기본단가</span>
           <input
@@ -154,20 +149,14 @@ export default function QuickProductRegisterModal({
             onChange={(event) => updateField("unitPrice", event.target.value)}
           />
         </label>
-        <label className="master-register-modal__field">
-          <span>기본 열처리 종류</span>
-          <select
-            value={form.process}
-            onChange={(event) => updateField("process", event.target.value)}
-          >
-            <option value="">공정 선택</option>
-            {processOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="master-register-modal__field"
+          label="기본 열처리 종류"
+          value={form.process}
+          onChange={(value) => updateField("process", value)}
+          options={processOptions}
+          placeholder="공정 선택"
+        />
       </div>
     </TitanRegisterModal>
   );

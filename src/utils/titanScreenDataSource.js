@@ -16,9 +16,9 @@ import {
 } from "./qualityWorkspaceData";
 import {
   countProductionChipBucket,
-  filterProductionDailyReportRecords,
   getProductionDailyReportStatusLabel,
 } from "./productionDailyReportStatus";
+import { buildProductionDailyReportWorkspaceRecords } from "./productionWorkspaceData";
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
 
 /** @typedef {Record<string, number>} StatusChipCounts */
@@ -42,7 +42,7 @@ export function getInboundScreenData(records = getSessionProductionRecords()) {
 
 export function getProductionScreenData(records = getSessionProductionRecords()) {
   const source = records?.length ? records : getSessionProductionRecords();
-  const baseRecords = filterProductionDailyReportRecords(source);
+  const baseRecords = buildProductionDailyReportWorkspaceRecords(source);
   return {
     baseRecords,
     counts: {
@@ -113,7 +113,7 @@ export function getMassInspectionBaseRows() {
 
 export function getProductionBaseRecords(records = getSessionProductionRecords()) {
   const source = records?.length ? records : getSessionProductionRecords();
-  return filterProductionDailyReportRecords(source);
+  return buildProductionDailyReportWorkspaceRecords(source);
 }
 
 export { getProductionDailyReportStatusLabel };

@@ -3,6 +3,7 @@ import { Building2 } from "lucide-react";
 
 import { FoundationActionBar, TitanDataTable } from "../../foundation/uiKit";
 import {
+  buildCompanyPrintFooterLines,
   resolveBusinessSiteTypeLabel,
   resolveEmployeeStatusLabel,
 } from "../../utils/companyWorkspaceService";
@@ -31,7 +32,7 @@ const BRANDING_ASSET_DEFINITIONS = Object.freeze([
     key: "signature",
     nameKey: "signatureName",
     mimeKey: "signatureMimeType",
-    label: "회사 서명 / 전자서명",
+    label: "대표이사 서명",
     fallback: "Sign",
   },
 ]);
@@ -255,7 +256,7 @@ function CompanyFormPanel({ title, fields, values, editing, onChange }) {
   );
 }
 
-function CompanyBrandingPanel({ draft, editing, onDraftChange }) {
+function CompanyBrandingPanel({ profile, draft, editing, onDraftChange }) {
   return (
     <section className="company-master-panel" aria-label="Branding">
       <h3 className="company-master-panel__title">Company Branding Center</h3>
@@ -320,7 +321,7 @@ function CompanyBrandingPanel({ draft, editing, onDraftChange }) {
           </label>
         </div>
 
-        <CompanyBrandingOutputPreview draft={draft} />
+        <CompanyBrandingOutputPreview draft={draft} profile={profile} />
       </div>
     </section>
   );
@@ -479,10 +480,15 @@ function CompanyBrandingAssetCard({ asset, draft, editing, onDraftChange }) {
   );
 }
 
-function CompanyBrandingOutputPreview({ draft }) {
+function CompanyBrandingOutputPreview({ draft, profile = {} }) {
   const primaryColor = draft.brandTheme?.primaryColor || "#1d4ed8";
   const accentColor = draft.brandTheme?.accentColor || "#0f766e";
   const fontFamily = draft.documentFont || "system-ui";
+  const previewProfile = {
+    ...profile,
+    branding: { ...(profile.branding ?? {}), ...draft },
+  };
+  const footerLines = buildCompanyPrintFooterLines(previewProfile);
 
   return (
     <section className="company-branding-output-preview" aria-label="출력 미리보기">
@@ -505,6 +511,15 @@ function CompanyBrandingOutputPreview({ draft }) {
             <footer>
               {draft.stamp ? <img src={draft.stamp} alt="" /> : <span>직인</span>}
               {draft.signature ? <img src={draft.signature} alt="" /> : <span>서명</span>}
+              {footerLines.length ? (
+                <div className="company-branding-document-sample__footer-lines">
+                  {footerLines.map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
+                </div>
+              ) : (
+                <span className="company-branding-document-sample__footer-placeholder">문서 Footer</span>
+              )}
             </footer>
           </div>
         ))}

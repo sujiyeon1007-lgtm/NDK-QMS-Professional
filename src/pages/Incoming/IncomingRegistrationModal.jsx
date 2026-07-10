@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { X, Sparkles } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import {
   getActiveMasterNames,
   getCompanyCodeMap,
 } from "../../utils/masterData";
+import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getProductUnitOptions, parseQtyWithUnit } from "../../utils/productUnits";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
@@ -53,41 +55,6 @@ const emptyForm = {
   note: "",
 };
 
-function AdminSelectField({
-  label,
-  value,
-  options,
-  placeholder,
-  onChange,
-  onAdminClick,
-  className = "",
-}) {
-  return (
-    <label className={`form-field ${className}`.trim()}>
-      <span>{label}</span>
-      <div className="admin-select-wrap">
-        <select value={value} onChange={(event) => onChange(event.target.value)}>
-          <option value="">{placeholder}</option>
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="admin-manage-btn"
-          title="관리자 설정"
-          aria-label={`${label} 관리자 설정`}
-          onClick={onAdminClick}
-        >
-          *
-        </button>
-      </div>
-    </label>
-  );
-}
-
 function IncomingRegistrationModal({
   onClose,
   onRegister,
@@ -99,11 +66,25 @@ function IncomingRegistrationModal({
 }) {
   const isEdit = mode === "edit" && Boolean(editManagementId);
   const navigate = useNavigate();
+  const [masterRefreshKey, setMasterRefreshKey] = useState(0);
+
+  useEffect(() => {
+    return subscribeWorkflowDataRefresh((event) => {
+      const category = event?.detail?.category;
+      if (!category || category === "all" || category === "companies" || category === "customers") {
+        setMasterRefreshKey((key) => key + 1);
+      }
+    });
+  }, []);
+
   const companyCodeMap = useMemo(
     () => companyCodeMapProp ?? getCompanyCodeMap(),
-    [companyCodeMapProp]
+    [companyCodeMapProp, masterRefreshKey]
   );
-  const companyOptions = useMemo(() => getActiveMasterNames("companies"), []);
+  const companyOptions = useMemo(
+    () => getActiveMasterNames("companies"),
+    [masterRefreshKey]
+  );
   const managerOptions = useMemo(() => resolveAssigneeWorkerOptions(), []);
   const unitOptions = useMemo(() => getProductUnitOptions(), []);
 
@@ -317,15 +298,27 @@ function IncomingRegistrationModal({
                 />
               </label>
 
-              <AdminSelectField
-                className="span-2"
-                label="거래처"
-                value={form.company}
-                options={companyOptions}
-                placeholder="거래처 선택"
-                onChange={handleCompanyChange}
-                onAdminClick={() => handleAdminManage("업체명")}
-              />
+              <div className="form-field span-2">
+                <span>거래처</span>
+                <div className="admin-select-wrap admin-searchable-select-wrap">
+                  <TitanSearchableSelect
+                    className="admin-searchable-select"
+                    value={form.company}
+                    onChange={handleCompanyChange}
+                    options={companyOptions}
+                    placeholder="거래처 선택"
+                  />
+                  <button
+                    type="button"
+                    className="admin-manage-btn"
+                    title="관리자 설정"
+                    aria-label="거래처 관리자 설정"
+                    onClick={() => handleAdminManage("업체명")}
+                  >
+                    *
+                  </button>
+                </div>
+              </div>
 
               <label className="form-field">
                 <span>담당자</span>

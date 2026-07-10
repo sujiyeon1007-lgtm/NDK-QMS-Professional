@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BASE = process.env.QA_BASE_URL || "http://127.0.0.1:5173";
+const BASE = process.env.QA_BASE_URL || "http://127.0.0.1:5174";
 const EXCEL = process.env.RC1_COMPANY_EXCEL || join(root, "scripts/fixtures/rc1-company-master-sales.xls");
 const MASTER_KEY = "project-titan-master-data-v3";
 const CUSTOMER_KEY = "titan-data-engine-v1.6/master/customer";

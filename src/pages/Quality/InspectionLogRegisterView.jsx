@@ -16,6 +16,12 @@ import { addInspectionLog } from "../../utils/inspectionLogSession";
 import { createInspectionReport } from "../../utils/inspectionReportSession";
 import { upsertDevelopmentInspection, getDevelopmentInspectionById } from "../../utils/developmentInspectionSession";
 import { upsertOtherInspection, getOtherInspectionById } from "../../utils/otherInspectionSession";
+import {
+  exportInspectionReportXlsx,
+  exportTitanPdf,
+  printTitanDocument,
+} from "../../utils/titanPrintExport";
+import { getPrintDocumentMeta, TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import "./InspectionReport.css";
 
 export default function InspectionLogRegisterView() {
@@ -23,6 +29,9 @@ export default function InspectionLogRegisterView() {
   const [searchParams] = useSearchParams();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const reportMeta = getPrintDocumentMeta(TITAN_PRINT_DOCUMENT_TYPES.INSPECTION_REPORT);
 
   const initialReport = useMemo(
     () => loadRegisterReportFromSearchParams(searchParams),
@@ -155,6 +164,34 @@ export default function InspectionLogRegisterView() {
 
   const previewReport = useMemo(() => syncReportJudgments(report), [report]);
 
+  const handlePrint = async (documentEl) => {
+    setBusy(true);
+    try {
+      await printTitanDocument(documentEl);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePdf = async (documentEl) => {
+    setBusy(true);
+    try {
+      await exportTitanPdf(documentEl, `${previewReport?.reportNo || "inspection-report"}.pdf`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleExcel = async () => {
+    if (!previewReport) return;
+    setBusy(true);
+    try {
+      await exportInspectionReportXlsx(previewReport);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="ir-page">
       <div className="ir-page__toolbar">
@@ -206,10 +243,12 @@ export default function InspectionLogRegisterView() {
       <TitanPrintPreviewModal
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        title="검사 리포트 미리보기"
-        onPrint={() => {}}
-        onPdf={() => {}}
-        excelEnabled={false}
+        title={`${reportMeta?.label ?? "검사 리포트"} 출력 미리보기`}
+        onPrint={handlePrint}
+        onPdf={handlePdf}
+        onExcel={handleExcel}
+        excelEnabled
+        busy={busy}
       >
         {previewReport ? <InspectionReportPrint report={previewReport} /> : null}
       </TitanPrintPreviewModal>

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarDays, CheckCircle2, Factory, Layers, Printer, X } from "lucide-react";
 
-import { OPERATION_ROUTES, getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
+import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
 import { OperationsWorkflowNextDialog } from "../InOut/OutboundStatementPromptDialog";
 import "../../foundation/components/OperationsWorkflowNextDialog.css";
 
@@ -36,6 +36,15 @@ import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { generateProductionLotNo } from "../../utils/productionLotNumber";
 import { QRService } from "../../utils/qrEngineRegistryService";
+import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
+import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
+import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
+import { isProductionWaitingOutputTarget } from "../../utils/htlPrintEligibility";
+import {
+  applyInboundListPrinted,
+  resolveInboundPrintMode,
+} from "../InOut/inboundListPrintActions";
+import { applyInboundHtlDocumentPrinted } from "../../utils/titanWorkflowStatus";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import "../InOut/InboundManagement.css";
 import "../Inventory/InventoryStatus.css";
@@ -152,6 +161,7 @@ export default function ProductionPlanWorkspace() {
   const [popupError, setPopupError] = useState("");
   const [createdResult, setCreatedResult] = useState(null);
   const [workflowNextStep, setWorkflowNextStep] = useState(null);
+  const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
 
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyInboundSearch, { storageKey: "production-plan" });
@@ -320,8 +330,47 @@ export default function ProductionPlanWorkspace() {
     setWorkflowNextStep(getOperationsWorkflowNextStep("productionLotCreated"));
   };
 
-  const handleOpenProductionWaitingOutput = () =>
-    navigate(`${OPERATION_ROUTES.inboundPending}?shortcut=production-waiting-output`);
+  const handleProductionWaitingPrinted = useCallback(
+    (printProps) => {
+      if (!printProps?.listNo || !printProps?.rows?.length) return;
+
+      applyInboundListPrinted(printProps.rows, printProps.listNo);
+
+      const listNo = String(printProps.listNo).trim();
+      if (listNo.startsWith("HTL")) {
+        const managementIds = printProps.rows
+          .map((row) => String(row.managementId ?? row.id ?? "").trim())
+          .filter(Boolean);
+        applyInboundHtlDocumentPrinted(managementIds, listNo, {
+          isReprint: printProps.printMode === "reprint",
+        });
+      }
+
+      bumpRefresh();
+    },
+    [bumpRefresh]
+  );
+
+  const handleOpenProductionWaitingOutput = () => {
+    const printSourceRows = workspaceRecords
+      .filter((record) => isProductionWaitingOutputTarget(record))
+      .map((record) => ({ record, id: record.id }));
+
+    if (printSourceRows.length === 0) {
+      window.alert("출력할 생산 대기 제품이 없습니다.");
+      return;
+    }
+
+    setInOutPrintSession({
+      open: true,
+      props: buildInOutListPrintProps(printSourceRows, {
+        listNoPrefix: "HTL",
+        outputDate: getPrintOutputDate(),
+        records: getSessionProductionRecords(),
+        printMode: resolveInboundPrintMode(printSourceRows),
+      }),
+    });
+  };
 
   return (
     <div className="inbound-page inventory-status-page production-plan-page">
@@ -499,6 +548,14 @@ export default function ProductionPlanWorkspace() {
         }}
         onStay={() => setWorkflowNextStep(null)}
         onClose={() => setWorkflowNextStep(null)}
+      />
+
+      <InOutListPrintPreviewModal
+        open={inOutPrintSession.open}
+        onClose={() => setInOutPrintSession({ open: false, props: null })}
+        documentType={TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST}
+        printProps={inOutPrintSession.props}
+        onAfterPrint={handleProductionWaitingPrinted}
       />
     </div>
   );

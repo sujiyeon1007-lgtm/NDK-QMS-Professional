@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { DEVELOPMENT_INSPECTION_STATUS } from "../../config/inspectionManagement";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { createEmptyDevelopmentInspectionRegister } from "../../utils/developmentInspectionSession";
 
 export default function DevelopmentInspectionRegisterModal({
@@ -13,7 +16,7 @@ export default function DevelopmentInspectionRegisterModal({
   mode = "create",
 }) {
   const [form, setForm] = useState(createEmptyDevelopmentInspectionRegister());
-  const companies = getMasterDataByCategory("companies");
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -40,6 +43,31 @@ export default function DevelopmentInspectionRegisterModal({
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+      material: "",
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        material: autofill.material || prev.material,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+    }));
   };
 
   const handleSubmit = () => {
@@ -74,28 +102,29 @@ export default function DevelopmentInspectionRegisterModal({
             placeholder="시험명"
           />
         </label>
-        <label className="titan-modal__field">
-          <span>업체명</span>
-          <Input
-            value={form.company}
-            onChange={(e) => updateField("company", e.target.value)}
-            placeholder="업체명"
-            list="dev-inspection-companies"
-          />
-          <datalist id="dev-inspection-companies">
-            {companies.map((company) => (
-              <option key={company.id ?? company.name} value={company.name} />
-            ))}
-          </datalist>
-        </label>
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <Input
-            value={form.partName}
-            onChange={(e) => updateField("partName", e.target.value)}
-            placeholder="품명"
-          />
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체명"
+          value={form.company}
+          onChange={handleCompanyChange}
+          options={companyOptions}
+          placeholder="거래처 선택"
+        />
+        <TitanCascadeProductPicker
+          inline
+          partNameOnly
+          showDrawingNo={false}
+          company={form.company}
+          value={{
+            partName: form.partName,
+            partNo: "",
+            drawingNo: "",
+          }}
+          onChange={handleCascadeChange}
+          autoFields={{ material: form.material }}
+          fieldClassName="titan-modal__field"
+          kicker="개발검사 등록"
+        />
         <label className="titan-modal__field">
           <span>재질</span>
           <Input

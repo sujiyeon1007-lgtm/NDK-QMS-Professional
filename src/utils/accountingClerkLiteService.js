@@ -373,6 +373,16 @@ export function saveAccountingInternalItem(payload) {
   return normalized;
 }
 
+export function deleteAccountingInternalItem(id) {
+  const targetId = String(id ?? "").trim();
+  if (!targetId) return false;
+  const rows = safeReadInternalItems().map(normalizeInternalItem);
+  const nextRows = rows.filter((row) => row.id !== targetId);
+  if (nextRows.length === rows.length) return false;
+  safeWriteInternalItems(nextRows);
+  return true;
+}
+
 export function buildAccountingClosingSummary() {
   const items = getAccountingInternalItemRows();
   const statements = buildAccountingStatementRows();

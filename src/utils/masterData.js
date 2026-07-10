@@ -10,6 +10,7 @@ import {
   canDeleteWorker,
 } from "./masterUsage";
 import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
+import { resolveRc1DemoProductMasterSeed } from "../data/rc1DemoProductMasterSeed";
 import {
   buildCompanyAbbreviation,
   getCompanyAbbreviation,
@@ -235,6 +236,48 @@ export const MASTER_DATA = {
           directPhone: "051-971-1551",
         },
       ],
+    },
+    {
+      id: "c8",
+      code: "CS",
+      name: "(유)창성정밀",
+      ceoName: "김정화",
+      bizNo: "621-81-12791",
+      phone: "",
+      fax: "",
+      email: "",
+      address: "",
+      note: "Excel Import",
+      active: true,
+      contacts: [],
+    },
+    {
+      id: "c9",
+      code: "SH",
+      name: "삼화기계공업",
+      ceoName: "",
+      bizNo: "",
+      phone: "",
+      fax: "",
+      email: "",
+      address: "",
+      note: "",
+      active: true,
+      contacts: [],
+    },
+    {
+      id: "c10",
+      code: "JY",
+      name: "진영산업",
+      ceoName: "",
+      bizNo: "",
+      phone: "",
+      fax: "",
+      email: "",
+      address: "",
+      note: "",
+      active: true,
+      contacts: [],
     },
   ],
   products: [...SEOAM_DEMO_PRODUCTS],
@@ -852,6 +895,53 @@ function hydrateCompaniesFromCustomerStoreIfEmpty() {
 }
 
 hydrateCompaniesFromCustomerStoreIfEmpty();
+
+/** RC1 — boot: seed product master when session + product store are both empty */
+function hydrateProductsFromRc1DemoSeedIfEmpty() {
+  if (typeof globalThis.sessionStorage === "undefined") return;
+
+  const memoryProducts = Array.isArray(sessionMasterData.products) ? sessionMasterData.products : [];
+  if (memoryProducts.length > 0) return;
+
+  let storeProducts = [];
+  try {
+    const raw = globalThis.sessionStorage.getItem(TITAN_DATA_STORAGE_KEYS.product);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        storeProducts = parsed;
+      }
+    }
+  } catch {
+    /* keep empty */
+  }
+
+  if (storeProducts.length > 0) {
+    sessionMasterData.products = migrateLegacyProducts(storeProducts);
+    try {
+      globalThis.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
+    } catch {
+      /* quota */
+    }
+    return;
+  }
+
+  const companyNames = (sessionMasterData.companies ?? [])
+    .filter((row) => row.active !== false)
+    .map((row) => row.name)
+    .filter(Boolean);
+  const seeded = resolveRc1DemoProductMasterSeed(companyNames);
+  if (seeded.length === 0) return;
+
+  sessionMasterData.products = migrateLegacyProducts(seeded);
+  try {
+    globalThis.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
+  } catch {
+    /* quota */
+  }
+}
+
+hydrateProductsFromRc1DemoSeedIfEmpty();
 
 function syncMasterStoresAfterPersist(changedCategory = null) {
   MASTER_STORE_CATEGORIES.forEach((categoryKey) => {

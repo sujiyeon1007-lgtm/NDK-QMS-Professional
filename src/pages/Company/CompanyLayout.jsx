@@ -61,6 +61,15 @@ export default function CompanyLayout() {
       homePath={COMPANY_WORKSPACE_ROUTES.dashboard}
       isHome={isWorkspaceHome}
       breadcrumbItems={breadcrumbItems}
+      backLink={
+        isWorkspaceHome
+          ? null
+          : {
+              to: COMPANY_WORKSPACE_ROUTES.dashboard,
+              label: "Workspace",
+              className: "company-workspace-back-link",
+            }
+      }
       ariaLabel="Company Workspace"
     >
       <Outlet />

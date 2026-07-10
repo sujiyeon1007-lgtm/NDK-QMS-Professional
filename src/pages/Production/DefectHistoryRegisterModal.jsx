@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { DEFECT_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { getActiveWorkers, getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames, getActiveWorkers, getMasterDataByCategory } from "../../utils/masterData";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import {
   DEFECT_HANDLING_STATUS,
@@ -14,10 +17,20 @@ import {
 export default function DefectHistoryRegisterModal({ open, onClose, onRegister }) {
   const [form, setForm] = useState(createEmptyDefectRegister());
 
-  const companies = getMasterDataByCategory("companies");
-  const equipmentList = getMasterDataByCategory("equipment");
-  const workerList = getActiveWorkers();
-  const processCodes = getProductionProcessCodes();
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
+  const processOptions = useMemo(
+    () => getProductionProcessCodes().map((item) => item.name),
+    [open]
+  );
+  const equipmentOptions = useMemo(
+    () =>
+      getMasterDataByCategory("equipment")
+        .filter((item) => item.active !== false)
+        .map((item) => item.name ?? item.code)
+        .filter(Boolean),
+    [open]
+  );
+  const workerList = useMemo(() => getActiveWorkers(), [open]);
 
   useEffect(() => {
     if (open) {
@@ -84,6 +97,35 @@ export default function DefectHistoryRegisterModal({ open, onClose, onRegister }
     }));
   };
 
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+      partNo: "",
+      material: "",
+    }));
+  };
+
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+        material: autofill.material || prev.material,
+        process: autofill.process || prev.process,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+    }));
+  };
+
   const handleSubmit = () => {
     if (!form.managementId.trim() || !form.defectType || !form.defectQty) return;
     if (!form.fourM.man.worker.trim() || !form.action.cause.trim()) return;
@@ -118,48 +160,39 @@ export default function DefectHistoryRegisterModal({ open, onClose, onRegister }
             placeholder="LOT.NO"
           />
         </label>
-        <label className="titan-modal__field">
-          <span>업체명</span>
-          <select
-            className="titan-search-panel__select"
-            value={form.company}
-            onChange={(e) => updateField("company", e.target.value)}
-          >
-            <option value="">선택</option>
-            {companies.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-modal__field">
-          <span>품명</span>
-          <Input value={form.partName} onChange={(e) => updateField("partName", e.target.value)} />
-        </label>
-        <label className="titan-modal__field">
-          <span>품번</span>
-          <Input value={form.partNo} onChange={(e) => updateField("partNo", e.target.value)} />
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체명"
+          value={form.company}
+          onChange={handleCompanyChange}
+          options={companyOptions}
+          placeholder="거래처 선택"
+        />
+        <TitanCascadeProductPicker
+          inline
+          company={form.company}
+          value={{
+            partName: form.partName,
+            partNo: form.partNo,
+            drawingNo: "",
+          }}
+          onChange={handleCascadeChange}
+          autoFields={{ material: form.material }}
+          fieldClassName="titan-modal__field"
+          kicker="불량이력 등록"
+        />
         <label className="titan-modal__field">
           <span>재질</span>
           <Input value={form.material} onChange={(e) => updateField("material", e.target.value)} />
         </label>
-        <label className="titan-modal__field">
-          <span>공정</span>
-          <select
-            className="titan-search-panel__select"
-            value={form.process}
-            onChange={(e) => updateField("process", e.target.value)}
-          >
-            <option value="">선택</option>
-            {processCodes.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="공정"
+          value={form.process}
+          onChange={(value) => updateField("process", value)}
+          options={processOptions}
+          placeholder="공정 선택"
+        />
         <label className="titan-modal__field">
           <span>불량유형</span>
           <select
@@ -192,21 +225,14 @@ export default function DefectHistoryRegisterModal({ open, onClose, onRegister }
             onChange={(e) => updateField("occurredDate", e.target.value)}
           />
         </label>
-        <label className="titan-modal__field">
-          <span>설비</span>
-          <select
-            className="titan-search-panel__select"
-            value={form.equipment}
-            onChange={(e) => updateField("equipment", e.target.value)}
-          >
-            <option value="">선택</option>
-            {equipmentList.map((item) => (
-              <option key={item.id} value={item.name ?? item.code}>
-                {item.name ?? item.code}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="설비"
+          value={form.equipment}
+          onChange={(value) => updateField("equipment", value)}
+          options={equipmentOptions}
+          placeholder="설비 선택"
+        />
         <label className="titan-modal__field">
           <span>작업자</span>
           <select

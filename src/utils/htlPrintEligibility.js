@@ -3,6 +3,7 @@
  */
 
 import { isIncomingRegistered } from "./productionRecords";
+import { isInboundShipOutComplete } from "./inboundManagementStatus";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 import { isHeatTreatmentWorkType } from "../config/workTypeWorkflow";
 
@@ -31,8 +32,19 @@ export function isHeatTreatmentNotStarted(record) {
   return true;
 }
 
+/** 생산 대기 리스트(DOC-01) 출력 대상 — LOT 미생성 · 열처리 미진행 */
+export function isProductionWaitingOutputTarget(record) {
+  if (!record) return false;
+  if (isInboundShipOutComplete(record)) return false;
+  if (record.lotNo?.trim()) return false;
+  return isHeatTreatmentNotStarted(record);
+}
+
 export function getHtlPrintStatus(record) {
-  if (record?.htlPrintStatus === HTL_PRINT_STATUS.PRINTED || record?.workSheetGenerated) {
+  if (record?.htlPrintStatus === HTL_PRINT_STATUS.PRINTED) {
+    return HTL_PRINT_STATUS.PRINTED;
+  }
+  if (record?.inboundListPrintCount > 0 || record?.inboundListLastDocNo) {
     return HTL_PRINT_STATUS.PRINTED;
   }
   return HTL_PRINT_STATUS.NOT_PRINTED;

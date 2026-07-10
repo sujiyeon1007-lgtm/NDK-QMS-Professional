@@ -112,6 +112,7 @@ Master Store (SSoT · 중복 관리 ❌)
 | S-⑥ | QR Menu Shortcut | [qr-menu-shortcut.md](./qr-menu-shortcut.md) | ✅ PM Approved | ❌ Architecture Only |
 | S-⑦ | V1.0.2 Foundation Action / TDE Policy | [v1-0-2-foundation-action-tde-policy.md](./v1-0-2-foundation-action-tde-policy.md) | ✅ PM Approved | ❌ Architecture Only |
 | S-⑧ | Foundation Workspace Layout Standard | [foundation-workspace-layout.md](./foundation-workspace-layout.md) | ✅ PM Approved | ❌ Architecture Only |
+| S-⑨ | Repository Layer V1.1 | [repository-layer-v11-draft.md](./repository-layer-v11-draft.md) | ✅ PM Conditional Approved | ❌ Architecture Only |
 
 > Mobile QR Portal: Desktop 관리 UI와 분리된 QR 기반 현장 작업 Portal. QR payload는 Desktop Workspace가 아니라 `/mobile/qr/{type}/{UUID}` Mobile Portal URL을 사용한다.
 > Document Management V1.0.1: 기존 10 Workspace 순서 변경 없이 문서관리 내부를 `Quality Document Management` / `Internal Document Management`로 분리하는 지원 Blueprint다.
@@ -121,6 +122,7 @@ Master Store (SSoT · 중복 관리 ❌)
 > QR Menu Shortcut: Data QR와 분리된 고정 메뉴 진입 QR. `/mobile/qr/menu/{shortcutId}` 또는 직접 Mobile route로 현장 작업 화면을 즉시 연다.
 > V1.0.2 Foundation Action / TDE Policy: 삭제·수정·QR·첨부·PDF·출력·메일·닫기는 공통 Foundation Action Bar로 통일하고, 성적서·거래명세서·출고증·발주서·QR·PDF 출력은 화면별 구현이 아니라 TDE 중심으로 정리한다.
 > Foundation Workspace Layout Standard: Dashboard · Business · Archive · Master · Tool 5개 Layout을 정의한다. Accounting Lite는 Dashboard가 아니라 Business Layout이며, Gallery는 문서/Reference Blueprint만 있고 Runtime UI/Router 구현은 하지 않는다.
+> Repository Layer V1.1: Workflow-first 원칙. Repository는 Workflow를 지원하는 계층이며 Workflow를 변경하지 않는다. Sprint 1 최우선 = LotRepository + EquipmentWorkflowRepository. 성공 기준 = 설비 QR → 장입 가능 LOT → 작업 시작 → 품질/생산/휴대폰 동일 데이터. RC1 종료 후 LOT 중심 중앙 데이터 구조로 V1.1 착수.
 
 ### V1.0.1 Approved Implementation Sequence
 

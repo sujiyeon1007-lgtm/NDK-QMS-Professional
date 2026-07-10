@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BASE = process.env.QA_BASE_URL || "http://127.0.0.1:5173";
+const BASE = process.env.QA_BASE_URL || "http://127.0.0.1:5174";
 const EXCEL = process.env.RC1_COMPANY_EXCEL || join(root, "scripts/fixtures/rc1-company-master-sales.xls");
 const MASTER_KEY = "project-titan-master-data-v3";
 const CUSTOMER_KEY = "titan-data-engine-v1.6/master/customer";
@@ -24,6 +24,7 @@ const MOJEON = {
 };
 
 const SKIP_UNDO = process.env.RC1_SKIP_UNDO === "1" || process.argv.includes("--skip-undo");
+const RUNTIME_QA = process.env.RC1_RUNTIME_QA === "1" || process.argv.includes("--runtime-qa");
 
 const checks = [];
 function step(name, ok, detail = "") {
@@ -50,21 +51,29 @@ async function captureCompanyUi(page) {
         }
       };
 
-      const customerStoreCount = parseCount(customerKey);
-      const legacyCount = parseCount(masterKey, "companies");
-      const tableRows = document.querySelectorAll(
-        ".company-management-page .titan-table tbody tr:not(.titan-table__row--empty)"
-      ).length;
+      const pageRoot = document.querySelector(".company-management-page");
+      const kpiCards = [...document.querySelectorAll(".company-master-kpi")];
+      const totalCard = kpiCards.find((card) => card.textContent?.includes("\uC804\uCCB4 \uAC70\uB798\uCC98"));
+      const kpiTotal = totalCard?.querySelector(".company-master-kpi__value")?.textContent?.trim() ?? "";
+      const searchInput =
+        document.querySelector('input[aria-label="\uAC70\uB798\uCC98 \uAC80\uC0C9"]') ??
+        document.querySelector(".company-management-page__search input");
+      const searchVal = searchInput?.value ?? "";
+      const tableWrap = document.querySelector(".company-management-page__table-wrap");
+      const tableRows = tableWrap
+        ? tableWrap.querySelectorAll(".titan-table tbody tr:not(.titan-table__row--empty)").length
+        : 0;
       const footer =
-        document.querySelector(".titan-table-footer")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-      const kpiTotal = document.querySelector(".company-master-kpi__value")?.textContent?.trim() ?? "";
+        tableWrap?.querySelector(".titan-table-footer")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
       const emptyMsg =
-        document.querySelector(".company-management-page .titan-table__empty")?.textContent?.trim() ?? "";
-      const searchVal = document.querySelector(".company-management-page__search input")?.value ?? "";
+        tableWrap?.querySelector(".titan-table__empty")?.textContent?.trim() ??
+        document.querySelector(".company-management-page .titan-table__empty")?.textContent?.trim() ??
+        "";
 
       return {
-        customerStoreCount,
-        legacyCount,
+        pageReady: Boolean(pageRoot),
+        customerStoreCount: parseCount(customerKey),
+        legacyCount: parseCount(masterKey, "companies"),
         tableRows,
         footer,
         kpiTotal,
@@ -198,17 +207,12 @@ async function main() {
     await page.locator(".titan-modal-overlay").first().waitFor({ state: "hidden", timeout: 10000 });
     await page.waitForTimeout(1200);
 
+    await page.screenshot({ path: join(root, "qa-rc1-company-runtime-600.png"), fullPage: true });
+
     const uiAfterImport = await captureCompanyUi(page);
-    step(
-      "3a customer store sessionStorage",
-      uiAfterImport.customerStoreCount >= EXPECTED - 10 && uiAfterImport.customerStoreCount <= EXPECTED + 10,
-      `count=${uiAfterImport.customerStoreCount}`
-    );
-    step(
-      "3b KPI = 600",
-      kpiNum(uiAfterImport.kpiTotal) >= EXPECTED - 10 && kpiNum(uiAfterImport.kpiTotal) <= EXPECTED + 10,
-      `kpi=${uiAfterImport.kpiTotal}`
-    );
+    step("3a customer store sessionStorage", uiAfterImport.customerStoreCount >= EXPECTED - 10 && uiAfterImport.customerStoreCount <= EXPECTED + 10, `count=${uiAfterImport.customerStoreCount}`);
+    step("3a2 page ready", uiAfterImport.pageReady, "company-management-page");
+    step("3b KPI = 600 (전체 거래처)", kpiNum(uiAfterImport.kpiTotal) >= EXPECTED - 10 && kpiNum(uiAfterImport.kpiTotal) <= EXPECTED + 10, `kpi=${uiAfterImport.kpiTotal}`);
     step(
       "3c Footer = 총 600건",
       /총\s*600\s*건/.test(uiAfterImport.footer),
@@ -225,7 +229,7 @@ async function main() {
       `search=${uiAfterImport.searchVal}`
     );
 
-    await page.fill(".company-management-page__search input", MOJEON.name);
+    await page.fill('input[aria-label="\uAC70\uB798\uCC98 \uAC80\uC0C9"]', MOJEON.name);
     await page.waitForTimeout(400);
     const searchUi = await captureCompanyUi(page);
     step(
@@ -234,7 +238,7 @@ async function main() {
       `rows=${searchUi.tableRows} footer=${searchUi.footer}`
     );
 
-    await page.fill(".company-management-page__search input", "");
+    await page.fill('input[aria-label="\uAC70\uB798\uCC98 \uAC80\uC0C9"]', "");
     await page.waitForTimeout(400);
 
     const page2Btn = page.locator(".titan-table-footer").getByRole("button", { name: "2" });

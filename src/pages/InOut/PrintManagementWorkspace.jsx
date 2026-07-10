@@ -13,6 +13,7 @@ import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import TransactionStatementPrintDocument from "../../components/print/TransactionStatementPrintDocument";
+import CertificatePrint from "../../components/print/CertificatePrint";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import {
   DOCUMENT_ENGINE_CATEGORY_IDS,
@@ -42,7 +43,9 @@ export default function PrintManagementWorkspace() {
   );
   const [inOutPreview, setInOutPreview] = useState(null);
   const [statementRecord, setStatementRecord] = useState(null);
+  const [certificateRecord, setCertificateRecord] = useState(null);
   const [statementBusy, setStatementBusy] = useState(false);
+  const [certificateBusy, setCertificateBusy] = useState(false);
 
   const summaries = useMemo(() => {
     void refreshKey;
@@ -99,6 +102,10 @@ export default function PrintManagementWorkspace() {
       setStatementRecord(row.record);
       return;
     }
+    if (previewKind === DOCUMENT_PREVIEW_KIND.CERTIFICATE) {
+      setCertificateRecord(row.record);
+      return;
+    }
     if (previewKind === DOCUMENT_PREVIEW_KIND.NAVIGATE && activeCategory?.navigateTo) {
       navigate(activeCategory.navigateTo);
     }
@@ -127,6 +134,27 @@ export default function PrintManagementWorkspace() {
       );
     } finally {
       setStatementBusy(false);
+    }
+  };
+
+  const handleCertificatePrint = async (documentEl) => {
+    setCertificateBusy(true);
+    try {
+      await printTitanDocument(documentEl);
+      setRefreshKey((key) => key + 1);
+    } finally {
+      setCertificateBusy(false);
+    }
+  };
+
+  const handleCertificatePdf = async (documentEl) => {
+    setCertificateBusy(true);
+    try {
+      const docId = certificateRecord?.id ?? certificateRecord?.managementId ?? "certificate";
+      await exportTitanPdf(documentEl, `certificate-${docId}.pdf`);
+      setRefreshKey((key) => key + 1);
+    } finally {
+      setCertificateBusy(false);
     }
   };
 
@@ -236,6 +264,18 @@ export default function PrintManagementWorkspace() {
         busy={statementBusy}
       >
         {statementPrintProps ? <TransactionStatementPrintDocument {...statementPrintProps} /> : null}
+      </TitanPrintPreviewModal>
+
+      <TitanPrintPreviewModal
+        open={Boolean(certificateRecord)}
+        onClose={() => setCertificateRecord(null)}
+        title="검사성적서 출력 미리보기"
+        onPrint={handleCertificatePrint}
+        onPdf={handleCertificatePdf}
+        excelEnabled={false}
+        busy={certificateBusy}
+      >
+        {certificateRecord ? <CertificatePrint record={certificateRecord} /> : null}
       </TitanPrintPreviewModal>
     </div>
   );

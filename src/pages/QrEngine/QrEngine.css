@@ -877,3 +877,40 @@ body.qr-engine-work-complete-open {
 .qr-engine-inline-link:hover {
   text-decoration: underline;
 }
+
+.qr-engine-print-sheet__footer,
+.qr-print-sheet__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--titan-border);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--titan-text-muted);
+  text-align: center;
+}
+
+.qr-engine-print-sheet__branding,
+.qr-print-sheet__branding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.qr-engine-print-sheet__stamp,
+.qr-print-sheet__stamp {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.qr-engine-print-sheet__signature,
+.qr-print-sheet__signature {
+  width: 56px;
+  height: 24px;
+  object-fit: contain;
+}

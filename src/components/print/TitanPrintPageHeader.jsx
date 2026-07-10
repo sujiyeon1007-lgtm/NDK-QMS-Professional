@@ -1,11 +1,10 @@
 import NdkLogo from "../common/NdkLogo";
 import TitanApprovalBox from "./TitanApprovalBox";
-import { getCompanyProfile } from "../../utils/companyWorkspaceService";
+import { getCompanyBrandingLogoUrl } from "../../utils/companyWorkspaceService";
 
 /** Project TITAN 공통 출력 Header — 좌: 로고, 중: 제목, 우: 결재란 */
 function TitanPrintPageHeader({ title }) {
-  const branding = getCompanyProfile().branding ?? {};
-  const companyLogo = branding.logo || "";
+  const companyLogo = getCompanyBrandingLogoUrl();
 
   return (
     <header className="titan-print-header">

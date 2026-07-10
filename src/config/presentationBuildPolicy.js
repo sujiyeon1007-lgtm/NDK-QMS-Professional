@@ -172,6 +172,6 @@ export const OPERATIONS_DATA_MODES = Object.freeze({
   QA_DEMO: "qa-demo",
 });
 
-export const TITAN_QA_DEMO_SEED_VERSION = "V1.0-P0";
-export const TITAN_QA_DEMO_SEED_LABEL = "TITAN QA Demo Seed";
+export const TITAN_QA_DEMO_SEED_VERSION = "RC1-DEMO-1.0";
+export const TITAN_QA_DEMO_SEED_LABEL = "RC1 CEO Demo Seed";
 

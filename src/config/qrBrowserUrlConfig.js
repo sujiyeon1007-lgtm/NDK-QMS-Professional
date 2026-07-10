@@ -21,6 +21,44 @@ function isLocalhostOrigin(origin) {
   }
 }
 
+function parseOriginParts(originOrUrl) {
+  try {
+    const url = new URL(originOrUrl);
+    return {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === "https:" ? "443" : "80"),
+      origin: url.origin,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Use saved Base URL only when it still matches the active runtime session.
+ * - Same origin → use saved value
+ * - localhost + LAN IP with same port → intentional mobile override
+ * - Port/host drift (e.g. stale 5173 while runtime is 5174) → ignore saved value
+ */
+function shouldUseConfiguredBaseUrl(configured, runtimeOrigin) {
+  const configuredParts = parseOriginParts(configured);
+  const runtimeParts = parseOriginParts(runtimeOrigin);
+  if (!configuredParts) return false;
+  if (!runtimeParts) return true;
+
+  if (configuredParts.origin === runtimeParts.origin) return true;
+
+  if (
+    isLocalhostOrigin(runtimeOrigin) &&
+    !isLocalhostOrigin(configured) &&
+    configuredParts.port === runtimeParts.port
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function getQrBrowserBaseUrl() {
   const configured =
     typeof window !== "undefined"
@@ -28,12 +66,32 @@ export function getQrBrowserBaseUrl() {
       : "";
   const envConfigured = import.meta.env?.VITE_TITAN_QR_BASE_URL ?? "";
   const runtimeOrigin = getRuntimeOrigin();
+  const trimmedConfigured = trimSlash(configured);
+  const trimmedEnv = trimSlash(envConfigured);
+  const trimmedRuntime = trimSlash(runtimeOrigin);
+
+  if (trimmedConfigured && shouldUseConfiguredBaseUrl(trimmedConfigured, trimmedRuntime)) {
+    return trimmedConfigured;
+  }
 
   return (
-    trimSlash(configured) ||
-    trimSlash(envConfigured) ||
-    (isLocalhostOrigin(runtimeOrigin) ? QR_BROWSER_BASE_URL_DEFAULT_DEV : trimSlash(runtimeOrigin))
+    trimmedRuntime ||
+    trimmedEnv ||
+    trimmedConfigured ||
+    QR_BROWSER_BASE_URL_DEFAULT_DEV
   );
+}
+
+export function setQrBrowserBaseUrl(url) {
+  const normalized = trimSlash(url);
+  if (typeof window !== "undefined") {
+    if (normalized) {
+      window.localStorage.setItem(QR_BROWSER_BASE_URL_STORAGE_KEY, normalized);
+    } else {
+      window.localStorage.removeItem(QR_BROWSER_BASE_URL_STORAGE_KEY);
+    }
+  }
+  return normalized || getQrBrowserBaseUrl();
 }
 
 export function buildQrBrowserUrl(path) {

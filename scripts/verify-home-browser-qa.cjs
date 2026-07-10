@@ -1,6 +1,6 @@
 ﻿const { chromium } = require("playwright");
 
-const BASE = process.env.TITAN_BASE_URL || process.env.QA_BASE_URL || "http://localhost:5173";
+const BASE = process.env.TITAN_BASE_URL || process.env.QA_BASE_URL || "http://localhost:5174";
 const ERROR_BOUNDARY_SNIPPET = "\uC77C\uC2DC\uC801\uC778 \uC624\uB958";
 
 function assert(condition, message) {

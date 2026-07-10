@@ -392,15 +392,10 @@ export function getProductionChargingScreenData(records = getProductionRecords()
 
 export function isProductionDailyReportStageRecord(record) {
   if (!isHeatTreatmentWorkType(record)) return false;
-
-  if (resolveRecordCurrentProcess(record).key === PRODUCTION_DAILY_REPORT_STAGE) {
-
-    return filterProductionDailyReportRecords([record]).length > 0;
-
+  if (resolveRecordCurrentProcess(record).key !== PRODUCTION_DAILY_REPORT_STAGE) {
+    return false;
   }
-
   return filterProductionDailyReportRecords([record]).length > 0;
-
 }
 
 

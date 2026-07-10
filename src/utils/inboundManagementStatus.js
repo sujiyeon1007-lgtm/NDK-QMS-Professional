@@ -79,11 +79,6 @@ export function getInboundManagementStatus(record) {
   }
 
   if (workflowStatus === WORKFLOW_STATUS.WORK_WAIT) {
-    const printedWithoutLot =
-      (record.htlNo || record.workSheetGenerated) && !Boolean(record.registered && record.lotNo?.trim());
-    if (printedWithoutLot) {
-      return { label: "생산 대기", variant: "prod-wait" };
-    }
     return { label: "생산 대기", variant: "prod-wait" };
   }
 
@@ -104,10 +99,6 @@ export function getInboundManagementStatus(record) {
 
   if (hasLot) {
     return null;
-  }
-
-  if (record.htlNo || record.workSheetGenerated) {
-    return { label: "생산 대기", variant: "prod-wait" };
   }
 
   return { label: INBOUND_STATUS_LABELS.INCOMING_DONE, variant: "incoming" };

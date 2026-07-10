@@ -38,6 +38,7 @@ export const DOCUMENT_ENGINE_CATEGORY_IDS = {
 export const DOCUMENT_PREVIEW_KIND = {
   IN_OUT_LIST: "inOutList",
   STATEMENT: "statement",
+  CERTIFICATE: "certificate",
   NAVIGATE: "navigate",
 };
 
@@ -73,8 +74,7 @@ export const DOCUMENT_ENGINE_CATEGORIES = [
     label: "검사성적서",
     docCode: "DOC-03",
     description: "검사 성적서 (성적서관리 발행)",
-    previewKind: DOCUMENT_PREVIEW_KIND.NAVIGATE,
-    navigateTo: "/quality/certificate",
+    previewKind: DOCUMENT_PREVIEW_KIND.CERTIFICATE,
   },
   {
     id: DOCUMENT_ENGINE_CATEGORY_IDS.TRANSACTION_STATEMENT,

@@ -1,7 +1,7 @@
 const { chromium } = require("playwright");
 const { mkdirSync } = require("node:fs");
 const { join } = require("node:path");
-const BASE = process.env.TITAN_BASE_URL || "http://localhost:5173";
+const BASE = process.env.TITAN_BASE_URL || "http://localhost:5174";
 const OUT = join(__dirname, "..", "screenshots", "company-dashboard-sprint11.png");
 (async () => {
   mkdirSync(join(__dirname, "..", "screenshots"), { recursive: true });

@@ -14,9 +14,12 @@ function isLauncherItemVisible(item, isModuleEnabled) {
   return isModuleEnabled(item.moduleId);
 }
 
-export default function HomeWorkLauncherPanel({ records }) {
+export default function HomeWorkLauncherPanel({ records, refreshKey = 0 }) {
   const { isModuleEnabled } = useTitanModuleFlags();
-  const metricsByCard = useMemo(() => buildHomeWorkLauncherMetrics(records), [records]);
+  const metricsByCard = useMemo(
+    () => buildHomeWorkLauncherMetrics(records),
+    [records, refreshKey]
+  );
 
   const items = useMemo(
     () => HOME_WORK_DASHBOARD_GROUPS.filter((item) => isLauncherItemVisible(item, isModuleEnabled)),

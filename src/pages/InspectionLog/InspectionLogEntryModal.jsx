@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import {
   INSPECTION_CATEGORIES,
   INSPECTION_JUDGMENTS,
@@ -174,17 +175,13 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
                 onChange={(event) => handleChange("lotNo", event.target.value)}
               />
             </label>
-            <label>
-              <span>업체명</span>
-              <select value={form.company} onChange={(event) => handleCompanyChange(event.target.value)}>
-                <option value="">업체 선택</option>
-                {companyOptions.map((company) => (
-                  <option key={company} value={company}>
-                    {company}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <TitanSearchableSelect
+              label="업체명"
+              value={form.company}
+              onChange={handleCompanyChange}
+              options={companyOptions}
+              placeholder="거래처 선택"
+            />
             <TitanCascadeProductPicker
               inline
               company={form.company}

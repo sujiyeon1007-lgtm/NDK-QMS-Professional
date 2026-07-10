@@ -3,6 +3,8 @@ import { resolveQrBrowserPayload } from "../../config/qrBrowserUrlConfig";
 import {
   buildCompanyPrintFooterLines,
   getCompanyBrandingLogoUrl,
+  getCompanyBrandingStampUrl,
+  getCompanyBrandingSignatureUrl,
 } from "../../utils/companyWorkspaceService";
 import NdkLogo from "../../components/common/NdkLogo";
 
@@ -13,6 +15,8 @@ export default function QrPrintSheet({ rows = [], title = "QR 라벨" }) {
   if (!rows.length) return null;
   const companyLogo = getCompanyBrandingLogoUrl();
   const footerLines = buildCompanyPrintFooterLines();
+  const companyStamp = getCompanyBrandingStampUrl();
+  const companySignature = getCompanyBrandingSignatureUrl();
 
   return (
     <div className="titan-print-document qr-print-sheet" data-print-title={title}>
@@ -33,8 +37,16 @@ export default function QrPrintSheet({ rows = [], title = "QR 라벨" }) {
             </div>
             <pre className="qr-print-sheet__payload">{resolveQrBrowserPayload(row)}</pre>
           </div>
-          {footerLines.length ? (
+          {footerLines.length || companyStamp || companySignature ? (
             <footer className="qr-print-sheet__footer">
+              {companyStamp || companySignature ? (
+                <div className="qr-print-sheet__branding" aria-hidden="true">
+                  {companyStamp ? <img src={companyStamp} alt="" className="qr-print-sheet__stamp" /> : null}
+                  {companySignature ? (
+                    <img src={companySignature} alt="" className="qr-print-sheet__signature" />
+                  ) : null}
+                </div>
+              ) : null}
               {footerLines.map((line) => (
                 <span key={line}>{line}</span>
               ))}

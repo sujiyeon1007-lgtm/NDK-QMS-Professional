@@ -151,9 +151,9 @@ export function buildCompanyAbbreviation(companyName, existingRows = [], { manua
   const manual = String(manualAbbreviation ?? "").trim().toUpperCase();
   if (manual) return manual.slice(0, 6);
 
-  const existing = existingRows
-    .map((row) => row.abbreviation ?? row.code)
-    .filter(Boolean);
+  const existing = existingRows.flatMap((row) =>
+    [row.abbreviation, row.code].filter((value) => String(value ?? "").trim())
+  );
 
   const generated = generateCompanyAbbreviation(companyName);
   return resolveUniqueAbbreviation(generated, existing);

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import {
   APPEARANCE_ITEM_KEYS,
   CERTIFICATE_OUTPUT_MODES,
@@ -11,7 +12,7 @@ import {
   HARDNESS_UNITS,
   normalizeSpecification,
 } from "../../utils/productSpecificationModel";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames } from "../../utils/masterData";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
 import "../../pages/Quality/QualityManagement.css";
 
@@ -24,8 +25,11 @@ function createDimensionId() {
 export default function ProductRegisterModal({ open, onClose, onRegister, initialData = null }) {
   const [form, setForm] = useState(createEmptyProductRegistration());
 
-  const companies = getMasterDataByCategory("companies");
-  const processCodes = getProductionProcessCodes();
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
+  const processOptions = useMemo(
+    () => getProductionProcessCodes().map((item) => item.name),
+    [open]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -151,17 +155,14 @@ export default function ProductRegisterModal({ open, onClose, onRegister, initia
       <fieldset className="quality-register-fieldset">
         <legend>① 기본정보</legend>
         <div className="titan-modal__grid">
-          <label className="titan-modal__field">
-            <span>업체명</span>
-            <select value={form.company} onChange={(e) => updateField("company", e.target.value)}>
-              <option value="">선택</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.name}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TitanSearchableSelect
+            className="titan-modal__field"
+            label="업체명"
+            value={form.company}
+            onChange={(value) => updateField("company", value)}
+            options={companyOptions}
+            placeholder="거래처 선택"
+          />
           <label className="titan-modal__field">
             <span>품명</span>
             <Input value={form.partName} onChange={(e) => updateField("partName", e.target.value)} />
@@ -178,17 +179,14 @@ export default function ProductRegisterModal({ open, onClose, onRegister, initia
             <span>재질</span>
             <Input value={form.material} onChange={(e) => updateField("material", e.target.value)} />
           </label>
-          <label className="titan-modal__field">
-            <span>열처리 공정</span>
-            <select value={form.process} onChange={(e) => updateField("process", e.target.value)}>
-              <option value="">선택</option>
-              {processCodes.map((item) => (
-                <option key={item.id} value={item.name}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TitanSearchableSelect
+            className="titan-modal__field"
+            label="열처리 공정"
+            value={form.process}
+            onChange={(value) => updateField("process", value)}
+            options={processOptions}
+            placeholder="공정 선택"
+          />
           <label className="titan-modal__field titan-modal__field--full">
             <span>비고</span>
             <Input value={form.note} onChange={(e) => updateField("note", e.target.value)} />

@@ -263,7 +263,6 @@ export function HomeKpiSearchPanel(props) {
 
 export function HomeTodaySummary({ records }) {
   const { flags } = useTitanModuleFlags();
-  if (!isHomeWidgetVisible("todayWork", flags)) return null;
 
   const summaryMap = useMemo(
     () => Object.fromEntries(buildTodayWorkSummary(records).map((item) => [item.id, item.value])),
@@ -276,6 +275,7 @@ export function HomeTodaySummary({ records }) {
     [flags]
   );
 
+  if (!isHomeWidgetVisible("todayWork", flags)) return null;
   if (cards.length === 0) return null;
 
   return (

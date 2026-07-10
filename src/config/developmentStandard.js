@@ -199,6 +199,27 @@ export const BETA_SITE_VERIFICATION_CHECKLIST = [
 /** RC1.1 Official Freeze — Browser QA gate SSoT @see src/config/rc11OfficialFreeze.js */
 export { RC1_BROWSER_QA_GATE, RC11_BROWSER_QA_SCRIPT } from "./rc11OfficialFreeze.js";
 
+/** RC1 Official Operational Policy — PM 2026-07-10 @see src/config/rc1OperationalPolicy.js */
+export {
+  RC1_OPERATIONAL_POLICY_VERSION,
+  RC1_GOAL,
+  RC1_OPERATIONAL_SCOPE,
+  RC1_OPERATIONAL_EXCLUDED,
+  RC1_DEVELOPMENT_PRIORITY,
+  RC1_STORAGE_POLICY,
+  RC1_ALLOWED_WORK,
+  RC1_DEFERRED_WORK,
+  RC1_EXIT_CRITERIA,
+  getRc1OperationalPolicySummary,
+  V11_ARCHITECTURE_DIRECTION_VERSION,
+  RC1_CONFIRMED_OPERATING_ENVIRONMENT,
+  V11_LONG_TERM_PLATFORM_DIRECTION,
+  V11_PRIMARY_GOAL,
+  V11_ARCHITECTURE_CONSIDERATIONS,
+  V11_ARCHITECTURE_REVIEW_GATE,
+  getV11ArchitectureDirectionSummary,
+} from "./rc1OperationalPolicy.js";
+
 /**
  * 공식 개발 → Beta 배포 Flow (V1.3)
  * Build 성공 · Regression 통과 후에만 beta-demo push

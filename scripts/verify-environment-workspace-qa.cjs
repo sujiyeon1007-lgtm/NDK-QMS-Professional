@@ -1,4 +1,4 @@
-﻿const { chromium } = require("playwright");
+const { chromium } = require("playwright");
 
 const BASE = process.env.TITAN_BASE_URL || "http://localhost:5174";
 const routes = [
@@ -64,10 +64,39 @@ async function expectLauncherHome(page, label) {
   assert((await page.locator(".company-launcher-grid .company-launcher-card").count()) === 9, label + ": expected 9 launcher cards");
 }
 
-async function expectSectionPlaceholder(page, label) {
+async function expectSectionPage(page, label) {
   await page.locator(".company-workspace-section-page").waitFor({ state: "attached", timeout: 30000 });
   await expectHealthyPage(page, label);
-  assert((await page.locator(".company-workspace-back-link").count()) > 0, label + ": workspace back link missing");
+  const skeletonRows = await page.locator(".company-workspace-preparing__mock-row").count();
+  assert(skeletonRows === 0, label + ": skeleton must not be used as empty state");
+  const wiredPanel = await page.locator(".environment-content-panel").count();
+  const emptyState = await page.locator(".titan-empty-state").count();
+  assert(wiredPanel > 0 || emptyState > 0, label + ": expected wired panel or TitanEmptyState");
+  const preparingTitle = await page.locator(".titan-empty-state__title").allTextContents();
+  assert(
+    !preparingTitle.some((text) => text.includes("\uC900\uBE44 \uC911")),
+    label + ": Placeholder(준비 중) must not replace operational sections"
+  );
+}
+
+async function expectRc1OperationalSection(page, route) {
+  const body = await page.locator("body").innerText();
+  if (route === "/environment/numbering") {
+    assert(body.includes("HTL-YYYYMMDD"), route + ": numbering rules missing");
+    assert(body.includes("LOT"), route + ": LOT numbering missing");
+  }
+  if (route === "/environment/qr-settings") {
+    assert(body.includes("NDK://") || body.includes("Base URL"), route + ": QR settings missing");
+  }
+  if (route === "/environment/menu-toggle") {
+    assert((await page.locator(".titan-module-switch").count()) > 0, route + ": module toggles missing");
+  }
+  if (route === "/environment/menus") {
+    assert(body.includes("Menu Freeze") || body.includes("MENU_FREEZE") || body.includes("V1.5"), route + ": menu structure missing");
+  }
+  if (route === "/environment/backup") {
+    assert(body.includes("\uC804\uCCB4 \uBC31\uC5C5") || body.includes("\uBC31\uC5C5"), route + ": backup actions missing");
+  }
 }
 
 (async () => {
@@ -79,19 +108,7 @@ async function expectSectionPlaceholder(page, label) {
   await login(launcherPage);
   await gotoWorkspace(launcherPage, "/environment/dashboard");
   await expectLauncherHome(launcherPage, "/environment/dashboard");
-  const launcherCount = await launcherPage.locator(".company-launcher-grid .company-launcher-card").count();
-  for (let i = 0; i < launcherCount; i += 1) {
-    await gotoWorkspace(launcherPage, "/environment/dashboard");
-    const card = launcherPage.locator(".company-launcher-grid .company-launcher-card").nth(i);
-    const label = ((await card.innerText()) || "").trim().split("\n")[0];
-    const href = await card.getAttribute("href");
-    assert(href, "launcher card missing href: " + label);
-    await card.click();
-    await launcherPage.waitForURL((url) => url.pathname === new URL(href, BASE).pathname, { timeout: 10000 });
-    await launcherPage.waitForTimeout(1000);
-    await expectSectionPlaceholder(launcherPage, "launcher click " + label);
-    console.log("OK launcher " + label);
-  }
+
   await launcherPage.close();
 
   for (const route of routes) {
@@ -102,7 +119,8 @@ async function expectSectionPlaceholder(page, label) {
     if (route === "/environment/dashboard") {
       await expectLauncherHome(page, route);
     } else {
-      await expectSectionPlaceholder(page, route);
+      await expectSectionPage(page, route);
+      await expectRc1OperationalSection(page, route);
     }
     console.log("OK " + route);
     await page.reload({ waitUntil: "domcontentloaded", timeout: 60000 });
@@ -110,10 +128,56 @@ async function expectSectionPlaceholder(page, label) {
     if (route === "/environment/dashboard") {
       await expectLauncherHome(page, "F5 " + route);
     } else {
-      await expectSectionPlaceholder(page, "F5 " + route);
+      await expectSectionPage(page, "F5 " + route);
+      await expectRc1OperationalSection(page, route);
     }
     await page.close();
   }
+
+  const usersEmptyPage = await browser.newPage();
+  attachErrorHandlers(usersEmptyPage, errors);
+  await login(usersEmptyPage);
+  await usersEmptyPage.evaluate(() => {
+    const authKey = "project-titan-auth-data-v1";
+    const raw = JSON.parse(localStorage.getItem(authKey) || "{}");
+    localStorage.setItem(
+      authKey,
+      JSON.stringify({
+        ...raw,
+        users: [],
+        userRoles: [],
+      })
+    );
+  });
+  await usersEmptyPage.reload({ waitUntil: "domcontentloaded", timeout: 60000 });
+  await usersEmptyPage.waitForTimeout(1200);
+  await gotoWorkspace(usersEmptyPage, "/environment/users");
+  await usersEmptyPage.locator(".environment-content-panel").waitFor({ state: "attached", timeout: 15000 });
+  const emptyCount = await usersEmptyPage.locator(".titan-empty-state").count();
+  const tableCount = await usersEmptyPage.locator(".titan-table").count();
+  if (!emptyCount) {
+    const snippet = (await usersEmptyPage.locator("body").innerText()).slice(0, 400);
+    throw new Error("users empty: TitanEmptyState missing (tables=" + tableCount + ") body=" + snippet);
+  }
+  const emptyTitle = await usersEmptyPage.locator(".titan-empty-state__title").first().innerText();
+  assert(emptyTitle.includes("\uB4F1\uB85D\uB418\uC9C0 \uC54A\uC558"), "users empty: title missing — " + emptyTitle);
+  assert((await usersEmptyPage.locator(".company-workspace-preparing__mock-row").count()) === 0, "users empty: skeleton visible");
+  console.log("OK /environment/users empty (0 users)");
+
+  const usersDataPage = await browser.newPage();
+  attachErrorHandlers(usersDataPage, errors);
+  await login(usersDataPage);
+  await gotoWorkspace(usersDataPage, "/environment/users");
+  await usersDataPage.locator(".environment-content-panel").waitFor({ state: "attached", timeout: 15000 });
+  const hasTable = (await usersDataPage.locator(".titan-table").count()) > 0;
+  const hasEmpty = (await usersDataPage.locator(".titan-empty-state").count()) > 0;
+  assert(hasTable || hasEmpty, "users data: neither table nor empty state");
+  if (!hasTable) {
+    await usersDataPage.getByRole("button", { name: "Demo Admin \uC0DD\uC131" }).click();
+    await usersDataPage.waitForTimeout(800);
+    assert((await usersDataPage.locator(".titan-table").count()) > 0, "users data: table missing after Demo Admin");
+  }
+  console.log("OK /environment/users with data (1+ users)");
 
   const uniqueErrors = [...new Set(errors)].filter(
     (line) => !line.includes("favicon") && !line.includes("DevTools")

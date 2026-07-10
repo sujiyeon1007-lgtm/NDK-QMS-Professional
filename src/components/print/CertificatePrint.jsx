@@ -1,6 +1,10 @@
 import { formatQtyWithUnit } from "../../utils/productUnits";
 import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
 import { getProductionProcessName } from "../../config/productionProcessCodes";
+import {
+  getCompanyBrandingSignatureUrl,
+  getCompanyBrandingStampUrl,
+} from "../../utils/companyWorkspaceService";
 import TitanPrintPage from "./TitanPrintPage";
 import TitanPrintPageHeader from "./TitanPrintPageHeader";
 import TitanPrintOfficialFooter from "./TitanPrintOfficialFooter";
@@ -10,6 +14,8 @@ import "./titan-print.css";
 function CertificatePrint({ record, printDateTime = "", printUser = "" }) {
   const resolvedPrintDateTime = printDateTime || getPrintDateTime();
   const resolvedPrintUser = printUser || getPrintUser();
+  const stampUrl = getCompanyBrandingStampUrl();
+  const signatureUrl = getCompanyBrandingSignatureUrl();
 
   return (
     <div className="titan-print-document certificate-print" aria-label="성적서">
@@ -69,6 +75,20 @@ function CertificatePrint({ record, printDateTime = "", printUser = "" }) {
               </p>
             </section>
 
+            {(stampUrl || signatureUrl) ? (
+              <div className="titan-print-branding-block" aria-label="Company Branding">
+                {stampUrl ? (
+                  <img className="titan-print-branding-seal" src={stampUrl} alt="회사 직인" />
+                ) : null}
+                {signatureUrl ? (
+                  <img
+                    className="titan-print-branding-signature"
+                    src={signatureUrl}
+                    alt="대표이사 서명"
+                  />
+                ) : null}
+              </div>
+            ) : null}
             <TitanPrintOfficialFooter documentCode="DOC-03" notes={[]} useCompanyFooter />
           </>
         ) : (

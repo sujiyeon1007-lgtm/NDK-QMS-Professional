@@ -228,6 +228,7 @@ export function cancelInspectionRegistration(id) {
 
 export function buildInspectionLogFromRecord(record, overrides = {}) {
   if (!record) return null;
+  const { assignee: overrideAssignee, ...restOverrides } = overrides;
   const base = {
     inspectionDate: getJournalReferenceDate(),
     category: "양산",
@@ -243,7 +244,7 @@ export function buildInspectionLogFromRecord(record, overrides = {}) {
     qty: record.qty,
     unit: record.unit || "EA",
     process: record.heatTreatment || "",
-    assignee: getCurrentTitanUser(),
+    assignee: overrideAssignee ?? getCurrentTitanUser(),
     judgment: "합격",
     inspectionItems: [],
     hardeningDepthHv: [],
@@ -253,7 +254,7 @@ export function buildInspectionLogFromRecord(record, overrides = {}) {
     hardnessMeasurements: [],
     dimensionMeasurements: [],
     appearanceMeasurements: [],
-    ...overrides,
+    ...restOverrides,
   };
   const product = getProductByPartNo(base.partNo);
   return product ? applyProductDefaultsToForm(base, product) : base;

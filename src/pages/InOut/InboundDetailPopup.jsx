@@ -14,6 +14,7 @@ export default function InboundDetailPopup({
   listRow,
   initialTabId,
   onSelectCoLotProduct,
+  footerActions,
 }) {
   const detailRow = useMemo(() => resolveStandardDetailListRow(listRow), [listRow]);
   const record = detailRow?.record ?? detailRow ?? null;
@@ -41,6 +42,7 @@ export default function InboundDetailPopup({
       tabs={INBOUND_DETAIL_POPUP_TABS}
       summary={summary}
       renderTabContent={renderTabContent}
+      footerActions={footerActions}
       initialTabId={initialTabId}
       ariaLabel="입고관리 상세보기"
     />

@@ -253,7 +253,11 @@ function migrateRoles(roles = []) {
 
 function normalizeAuthData(raw = {}) {
   const seed = buildSeedUsers();
-  const users = Array.isArray(raw.users) && raw.users.length > 0 ? raw.users : seed.users;
+  const users = Array.isArray(raw.users)
+    ? raw.users.length > 0
+      ? raw.users
+      : []
+    : seed.users;
   const roles = migrateRoles(Array.isArray(raw.roles) && raw.roles.length > 0 ? raw.roles : seed.roles);
   return {
     users,
@@ -289,7 +293,18 @@ function persistAuthData() {
 }
 
 export function getAuthData() {
-  authData = normalizeAuthData(authData);
+  authData = loadAuthData();
+  return authData;
+}
+
+/** QA · storage sync — reload in-memory auth from localStorage */
+export function reloadAuthDataFromStorage() {
+  authData = loadAuthData();
+  try {
+    window.dispatchEvent(new CustomEvent(TITAN_LOGIN_STORAGE.authChanged, { detail: authData }));
+  } catch {
+    /* SSR */
+  }
   return authData;
 }
 
@@ -502,6 +517,21 @@ export function resetUserPasswordToDefault(userId) {
   };
   persistAuthData();
   return { ok: true, message: `비밀번호가 ${TITAN_DEFAULT_ADMIN.defaultPassword}(으)로 초기화되었습니다.` };
+}
+
+export function ensureDefaultAdminUser() {
+  const existing = getUserByLoginId(TITAN_DEFAULT_ADMIN.loginId);
+  if (existing) {
+    return { ok: true, created: false, user: existing, message: "기본 관리자 계정이 이미 등록되어 있습니다." };
+  }
+  const result = createAuthUser({
+    loginId: TITAN_DEFAULT_ADMIN.loginId,
+    name: TITAN_DEFAULT_ADMIN.name,
+    department: TITAN_DEFAULT_ADMIN.department,
+    rank: TITAN_DEFAULT_ADMIN.rank,
+    roleIds: [TITAN_DEFAULT_ADMIN.roleId],
+  });
+  return { ...result, created: true };
 }
 
 export function createAuthUser(payload) {

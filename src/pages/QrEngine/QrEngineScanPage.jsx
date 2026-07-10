@@ -40,13 +40,28 @@ export default function QrEngineScanPage() {
         return;
       }
 
-      if (result.navigationPath) {
-        navigate(result.navigationPath, { replace: true });
+      const targetPath = String(result.navigationPath ?? "").trim();
+      if (!targetPath) {
+        setPhase("idle");
+        setError("이동할 화면을 찾을 수 없습니다.");
         return;
       }
 
-      setPhase("idle");
-      setError("이동할 화면을 찾을 수 없습니다.");
+      // Full URL payloads — stay on current origin; use pathname+search only
+      if (/^https?:\/\//i.test(targetPath)) {
+        try {
+          const url = new URL(targetPath);
+          navigate(`${url.pathname}${url.search}`, { replace: true });
+          return;
+        } catch {
+          setPhase("idle");
+          setError("QR URL을 해석할 수 없습니다.");
+          return;
+        }
+      }
+
+      navigate(targetPath, { replace: true });
+      return;
     },
     [navigate]
   );

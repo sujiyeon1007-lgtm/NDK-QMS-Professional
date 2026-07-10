@@ -1,5 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { PrimaryButton } from "../../foundation/components/Button";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel, {
@@ -30,13 +32,19 @@ import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
   addInspectionLogAttachments,
+  cancelInspectionRegistration,
   removeInspectionLogAttachment,
 } from "../../utils/inspectionLogSession";
 import {
   getMassProductionInspectionRows,
   matchesMassProductionInspectionSearch,
 } from "../../utils/massProductionInspection";
+import {
+  isMassInspectionRegisterEligible,
+  navigateToInspectionRegister,
+} from "../../utils/inspectionRegisterNavigation";
 import { getInspectionMassScreenData } from "../../utils/qualityWorkspaceData";
+import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import FoundationAttachment, {
   FoundationAttachmentBadge,
@@ -47,6 +55,7 @@ import "../InOut/InboundManagement.css";
 import "./QualityManagement.css";
 
 export default function MassProductionInspection() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [refreshKey, setRefreshKey] = useState(0);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
@@ -117,6 +126,60 @@ export default function MassProductionInspection() {
     openRowDetailPopup(row, { setActiveId, setDetailPopupRow, getRowId: (r) => r.rowKey });
   }, []);
 
+  const handleRegister = useCallback(
+    (row) => {
+      const managementId = String(row?.managementId ?? row?.record?.id ?? "").trim();
+      if (!managementId || managementId === "—") {
+        window.alert("관리번호가 없어 검사등록을 진행할 수 없습니다.");
+        return;
+      }
+      if (!isMassInspectionRegisterEligible(row)) {
+        window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
+        return;
+      }
+      navigateToInspectionRegister(navigate, { managementId, category: "양산" });
+    },
+    [navigate]
+  );
+
+  const openToolbarRegister = useCallback(() => {
+    const selectedRows = rows.filter((row) => selectedIds.includes(row.rowKey));
+    let target = null;
+
+    if (activeRow && isMassInspectionRegisterEligible(activeRow)) {
+      target = activeRow;
+    } else if (selectedRows.length === 1 && isMassInspectionRegisterEligible(selectedRows[0])) {
+      target = selectedRows[0];
+    } else if (selectedRows.length > 1) {
+      window.alert("등록할 제품을 한 건만 선택해 주세요.");
+      return;
+    } else if (activeRow?.managementId && activeRow.managementId !== "—") {
+      window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
+      return;
+    } else {
+      navigateToInspectionRegister(navigate, { category: "양산" });
+      return;
+    }
+
+    handleRegister(target);
+  }, [activeRow, handleRegister, navigate, rows, selectedIds]);
+
+  const handleEdit = useCallback(
+    (row) => {
+      if (!row?.logId) return;
+      navigate(`/quality/inspection/${row.logId}/report`);
+    },
+    [navigate]
+  );
+
+  const handleDelete = useCallback((row) => {
+    if (!row?.logId) return;
+    const confirmed = globalThis.confirm?.("검사 등록을 취소하고 검사대기 상태로 되돌리시겠습니까?");
+    if (!confirmed) return;
+    cancelInspectionRegistration(row.logId);
+    setRefreshKey((value) => value + 1);
+  }, []);
+
   const handleUploadAttachments = useCallback((files) => {
     if (!detailPopupRow?.logId) return;
     const updated = addInspectionLogAttachments(detailPopupRow.logId, files);
@@ -167,12 +230,33 @@ export default function MassProductionInspection() {
             }}
           />
         ),
+        renderActions: (row) => {
+          const canRegister = isMassInspectionRegisterEligible(row);
+          const isDone = Boolean(row.logId);
+          return (
+            <InspectionRegisterRowActions
+              canRegister={canRegister}
+              canEdit={isDone}
+              canDelete={isDone}
+              onRegister={() => handleRegister(row)}
+              onEdit={() => handleEdit(row)}
+              onDelete={() => handleDelete(row)}
+            />
+          );
+        },
       }),
-    []
+    [handleRegister, handleEdit, handleDelete]
   );
 
   return (
     <div className="inbound-page quality-page">
+      <div className="titan-section-page__inline-actions" role="toolbar" aria-label="양산검사 작업">
+        <PrimaryButton type="button" onClick={openToolbarRegister}>
+          <Plus size={14} aria-hidden="true" />
+          등록
+        </PrimaryButton>
+      </div>
+
       <TitanKpiBarSlot ariaLabel="검사 현황" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
           chipSetId="inspection"

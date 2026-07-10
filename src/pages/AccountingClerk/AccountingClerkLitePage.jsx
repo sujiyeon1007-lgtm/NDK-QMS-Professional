@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Building2, ClipboardCheck, FileText, PackageSearch, Truck } from "lucide-react";
+import { BarChart3, Building2, ClipboardCheck, FileText, PackageSearch, Pencil, Plus, Trash2, Truck } from "lucide-react";
 
 import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModal";
 import TransactionStatementPrintDocument from "../../components/print/TransactionStatementPrintDocument";
@@ -25,11 +25,13 @@ import { useTransactionStatementDocumentOutput } from "../../foundation/hooks/us
 import {
   buildAccountingCompanyRows,
   buildAccountingClosingSummary,
+  deleteAccountingInternalItem,
   getAccountingInternalItemRows,
   buildAccountingShipmentStatistics,
   buildAccountingStatementRows,
   saveAccountingInternalItem,
 } from "../../utils/accountingClerkLiteService";
+import MasterDataDeleteDialog from "../Settings/MasterDataDeleteDialog";
 import {
   getTitanStandardDefaultDateRange,
 } from "../../config/listSearchStandard";
@@ -63,6 +65,7 @@ const TEXT = {
   closingManagement: "마감관리",
   registerItem: "물품 등록",
   editItem: "물품 수정",
+  deleteItem: "물품 삭제",
   searchPlaceholder: "\uac70\ub798\ucc98",
   reset: "\ucd08\uae30\ud654",
   monthlyShipment: "\uc6d4\ubcc4 \ucd9c\uace0 \uac74\uc218",
@@ -398,6 +401,7 @@ export default function AccountingClerkLitePage({ featureId = "statementManageme
   const [filters, setFilters] = useState(() => createClerkSearchFilters());
   const [activeRow, setActiveRow] = useState(null);
   const [internalItemPopupRow, setInternalItemPopupRow] = useState(null);
+  const [internalItemDeleteTarget, setInternalItemDeleteTarget] = useState(null);
   const [attachmentPopup, setAttachmentPopup] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const transactionStatementOutput = useTransactionStatementDocumentOutput({
@@ -446,6 +450,28 @@ export default function AccountingClerkLitePage({ featureId = "statementManageme
     setRefreshKey((key) => key + 1);
   };
 
+  const selectedInternalItem =
+    isInternalItemsView && activeRow?.id
+      ? internalItemRows.find((row) => row.id === activeRow.id) ?? activeRow
+      : null;
+
+  const openInternalItemRegister = () => setInternalItemPopupRow(createInternalItemDraft());
+
+  const openInternalItemEdit = () => {
+    if (!selectedInternalItem) return;
+    setInternalItemPopupRow(createInternalItemDraft(selectedInternalItem));
+  };
+
+  const handleDeleteInternalItem = () => {
+    if (!internalItemDeleteTarget?.id) return;
+    deleteAccountingInternalItem(internalItemDeleteTarget.id);
+    if (activeRow?.id === internalItemDeleteTarget.id) {
+      setActiveRow(null);
+    }
+    setInternalItemDeleteTarget(null);
+    setRefreshKey((key) => key + 1);
+  };
+
   if (isInternalItemsView) {
     const internalSummary = [
       { id: "items", label: "구매/자산", value: `${internalItemRows.length}건` },
@@ -464,24 +490,36 @@ export default function AccountingClerkLitePage({ featureId = "statementManageme
           ))}
         </section>
 
-        <TitanDashboardCard
-          title={TEXT.internalItems}
-          icon={PackageSearch}
-          headerAction={
-            <PrimaryButton type="button" onClick={() => setInternalItemPopupRow(createInternalItemDraft())}>
-              {TEXT.registerItem}
-            </PrimaryButton>
-          }
-        >
+        <TitanDashboardCard title={TEXT.internalItems} icon={PackageSearch}>
           <TitanDataTable
             layout="compact"
             columns={internalItemColumns}
             rows={internalItemRows}
             getRowId={(row) => row.id}
+            activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveRow(row)}
-            onRowDoubleClick={(row) => setInternalItemPopupRow(row)}
+            onRowDoubleClick={(row) => setInternalItemPopupRow(createInternalItemDraft(row))}
             emptyMessage="등록된 사내 물품이 없습니다."
           />
+
+          <div className="accounting-internal-items__actions">
+            <PrimaryButton type="button" onClick={openInternalItemRegister}>
+              <Plus size={14} aria-hidden="true" />
+              {TEXT.registerItem}
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={openInternalItemEdit} disabled={!selectedInternalItem}>
+              <Pencil size={14} aria-hidden="true" />
+              {TEXT.editItem}
+            </SecondaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => setInternalItemDeleteTarget(selectedInternalItem)}
+              disabled={!selectedInternalItem}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+              {TEXT.deleteItem}
+            </SecondaryButton>
+          </div>
         </TitanDashboardCard>
 
         <InternalItemModal
@@ -498,6 +536,15 @@ export default function AccountingClerkLitePage({ featureId = "statementManageme
           attachments={attachmentPopup?.attachments ?? []}
           onClose={() => setAttachmentPopup(null)}
         />
+
+        {internalItemDeleteTarget ? (
+          <MasterDataDeleteDialog
+            row={{ code: internalItemDeleteTarget.id, name: internalItemDeleteTarget.itemName }}
+            categoryLabel={TEXT.internalItems}
+            onConfirm={handleDeleteInternalItem}
+            onClose={() => setInternalItemDeleteTarget(null)}
+          />
+        ) : null}
       </div>
     );
   }

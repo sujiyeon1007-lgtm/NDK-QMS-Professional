@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { createEmptyCertificateRegister } from "../../config/listSearchStandard";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
-import { getMasterDataByCategory } from "../../utils/masterData";
+import { getActiveMasterNames } from "../../utils/masterData";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { buildCertificateEntryFromRecord } from "../../utils/certificateSession";
@@ -29,7 +30,7 @@ const emptyProductFields = {
 export default function CertificateRegisterModal({ open, onClose, onRegister, initialData = null }) {
   const [form, setForm] = useState(createEmptyCertificateRegister());
 
-  const companies = getMasterDataByCategory("companies");
+  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,17 +145,14 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
           <span>LOT.NO</span>
           <Input value={form.lotNo} onChange={(e) => updateField("lotNo", e.target.value)} />
         </label>
-        <label className="titan-modal__field">
-          <span>업체명</span>
-          <select value={form.company} onChange={(e) => handleCompanyChange(e.target.value)}>
-            <option value="">선택</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.name}>
-                {company.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <TitanSearchableSelect
+          className="titan-modal__field"
+          label="업체명"
+          value={form.company}
+          onChange={handleCompanyChange}
+          options={companyOptions}
+          placeholder="거래처 선택"
+        />
 
         <TitanCascadeProductPicker
           inline

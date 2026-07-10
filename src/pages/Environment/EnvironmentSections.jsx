@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Download, FolderOpen, RefreshCw, RotateCcw, Upload } from "lucide-react";
+import { Download, FolderOpen, RefreshCw, RotateCcw, Upload, Users } from "lucide-react";
 
-import { PrimaryButton, SecondaryButton, TitanDataTable } from "../../foundation/uiKit";
+import { PrimaryButton, SecondaryButton, TitanDataTable, TitanEmptyState } from "../../foundation/uiKit";
 import TitanComingSoonPlaceholder from "../../foundation/pages/TitanComingSoonPlaceholder";
 import {
   APP_NAME,
@@ -53,6 +53,7 @@ import {
   createAuthUser,
   deleteAuthRole,
   deleteAuthUser,
+  ensureDefaultAdminUser,
   getAuthRoles,
   getAuthUsers,
   getLoginHistory,
@@ -82,7 +83,36 @@ import {
 } from "../../utils/titanEditionSession";
 import MesIntegrationPocPanel from "./MesIntegrationPocPanel";
 import ModuleManagementSection from "./ModuleManagementSection";
+import QrPrintCenterSection from "./QrPrintCenterSection";
 import StorageManagementSection from "./StorageManagementSection";
+import { TITAN_LIST_DOCUMENT_CODES } from "../../config/titanListPrintStandard";
+import { NDK_PRODUCTION_LOT_PATTERN } from "../../utils/productionLotNumber";
+import { getMasterDataByCategory } from "../../utils/masterData";
+import {
+  QR_BROWSER_BASE_URL_DEFAULT_DEV,
+  buildQrBrowserUrl,
+  getQrBrowserBaseUrl,
+  setQrBrowserBaseUrl,
+} from "../../config/qrBrowserUrlConfig";
+import { RC1_QR_BASE_URL_REPRINT_NOTICE } from "../../config/rc1OperationalPolicy";
+import {
+  EQUIPMENT_QR_RULES,
+  OFFICIAL_EQUIPMENT_QR_CODES,
+  QR_PRINT_CENTER_OFFICIAL,
+  SMART_ACCESS_ID_REGISTRY,
+  SMART_ACCESS_ID_SCHEME,
+} from "../../config/titanOfficialArchitecture";
+import { TITAN_QR_PHILOSOPHY } from "../../config/titanQrArchitectureV17";
+import { TITAN_MENU_CATALOG } from "../../config/menuConfig";
+import {
+  MENU_FREEZE_CHANGE_POLICY,
+  MENU_FREEZE_DATE,
+  MENU_FREEZE_LOCKED,
+  MENU_FREEZE_SIDEBAR,
+  MENU_FREEZE_SIDEBAR_GROUPS,
+  MENU_FREEZE_VERSION,
+  PQMS_DEVELOPMENT_PHILOSOPHY,
+} from "../../config/menuFreezeV1";
 
 function SettingsPanel({ title, desc, children }) {
   return (
@@ -377,38 +407,63 @@ export function UsersSection({ refreshKey, onRefresh }) {
       ) : null}
 
       <div className="environment-table-wrap">
-        <TitanDataTable
-          columns={columns}
-          rows={users}
-          getRowId={(row) => row.id}
-          expandedRowId={expandedRowId}
-          onExpandedRowChange={setExpandedRowId}
-          renderExpandedRow={(row) => (
-            <div className="titan-list-expand">
-              <dl className="inbound-detail titan-list-expand__detail">
-                <div><dt>아이디</dt><dd>{row.loginId}</dd></div>
-                <div><dt>이름</dt><dd>{row.name}</dd></div>
-                <div><dt>부서</dt><dd>{row.department || "—"}</dd></div>
-                <div><dt>직급</dt><dd>{row.rank || "—"}</dd></div>
-                <div><dt>상태</dt><dd>{row.active === false ? "미사용" : "사용"}</dd></div>
-              </dl>
-              <label className="environment-user-qr-perm">
-                <input
-                  type="checkbox"
-                  checked={hasQrCreatePermission(row.id)}
-                  onChange={(e) => {
-                    setUserPermissionOverride(row.id, "qrCreate", e.target.checked);
-                    setMessage(`${row.name} — QR 생성 권한이 ${e.target.checked ? "부여" : "해제"}되었습니다.`);
+        {users.length === 0 ? (
+          <TitanEmptyState
+            icon={Users}
+            title="사용자가 아직 등록되지 않았습니다."
+            description="관리자가 사용자 계정을 생성하면 목록에 표시됩니다."
+            action={
+              <div className="environment-empty-state-actions">
+                <PrimaryButton type="button" onClick={() => setFormOpen(true)}>
+                  사용자 등록
+                </PrimaryButton>
+                <SecondaryButton
+                  type="button"
+                  onClick={() => {
+                    const result = ensureDefaultAdminUser();
+                    setMessage(result.message ?? "기본 관리자 계정이 생성되었습니다.");
                     onRefresh?.();
                   }}
-                />
-                QR 생성 권한
-              </label>
-            </div>
-          )}
-          emptyMessage="등록된 사용자가 없습니다."
-          ariaLabel="사용자 목록"
-        />
+                >
+                  Demo Admin 생성
+                </SecondaryButton>
+              </div>
+            }
+          />
+        ) : (
+          <TitanDataTable
+            columns={columns}
+            rows={users}
+            getRowId={(row) => row.id}
+            expandedRowId={expandedRowId}
+            onExpandedRowChange={setExpandedRowId}
+            renderExpandedRow={(row) => (
+              <div className="titan-list-expand">
+                <dl className="inbound-detail titan-list-expand__detail">
+                  <div><dt>아이디</dt><dd>{row.loginId}</dd></div>
+                  <div><dt>이름</dt><dd>{row.name}</dd></div>
+                  <div><dt>부서</dt><dd>{row.department || "—"}</dd></div>
+                  <div><dt>직급</dt><dd>{row.rank || "—"}</dd></div>
+                  <div><dt>상태</dt><dd>{row.active === false ? "미사용" : "사용"}</dd></div>
+                </dl>
+                <label className="environment-user-qr-perm">
+                  <input
+                    type="checkbox"
+                    checked={hasQrCreatePermission(row.id)}
+                    onChange={(e) => {
+                      setUserPermissionOverride(row.id, "qrCreate", e.target.checked);
+                      setMessage(`${row.name} — QR 생성 권한이 ${e.target.checked ? "부여" : "해제"}되었습니다.`);
+                      onRefresh?.();
+                    }}
+                  />
+                  QR 생성 권한
+                </label>
+              </div>
+            )}
+            emptyMessage="등록된 사용자가 없습니다."
+            ariaLabel="사용자 목록"
+          />
+        )}
       </div>
       <ActionMessage message={message} />
     </SettingsPanel>
@@ -469,8 +524,33 @@ export function PermissionsSection({ refreshKey, onRefresh }) {
     onRefresh?.();
   };
 
+  const handleSeedRole = () => {
+    setDraftName("관리자");
+    const result = createAuthRole({ name: "관리자" });
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setDraftName("");
+    setActiveRoleId(result.role.id);
+    setMessage("권한이 추가되었습니다.");
+    onRefresh?.();
+  };
+
   return (
     <SettingsPanel title="권한관리" desc="권한을 자유롭게 추가·수정·삭제하고, 메뉴·기능 접근을 설정합니다. 모듈 OFF 시 해당 메뉴는 모든 사용자에게 숨겨집니다.">
+      {roles.length === 0 ? (
+        <TitanEmptyState
+          title="등록된 권한이 없습니다."
+          description="새 권한을 추가하면 메뉴 · 기능 접근을 설정할 수 있습니다."
+          action={
+            <PrimaryButton type="button" onClick={handleSeedRole}>
+              권한 추가
+            </PrimaryButton>
+          }
+        />
+      ) : (
+        <>
       <div className="environment-permission-toolbar">
         <label>
           <span>권한 선택</span>
@@ -533,7 +613,6 @@ export function PermissionsSection({ refreshKey, onRefresh }) {
         </div>
       ) : null}
 
-      <ActionMessage message={message} />
       <div className="environment-actions">
         <PrimaryButton type="button" onClick={handleSave}>
           저장
@@ -559,6 +638,9 @@ export function PermissionsSection({ refreshKey, onRefresh }) {
           />
         </div>
       </div>
+        </>
+      )}
+      <ActionMessage message={message} />
     </SettingsPanel>
   );
 }
@@ -666,7 +748,10 @@ export function BackupSection({ refreshKey, onRefresh }) {
 
       <h4 className="environment-subtitle">백업 이력</h4>
       {history.length === 0 ? (
-        <p className="environment-empty-note">등록된 백업 이력이 없습니다.</p>
+        <TitanEmptyState
+          title="등록된 백업 이력이 없습니다."
+          description="전체 백업을 실행하면 이력이 여기에 표시됩니다."
+        />
       ) : (
         <ul className="environment-backup-history">
           {history.map((row) => (
@@ -1343,6 +1428,344 @@ export function AboutSection({ refreshKey, onRefresh }) {
   );
 }
 
+const NUMBERING_RULE_ROWS = [
+  {
+    id: "lot",
+    category: "LOT 번호",
+    format: "YYMMDD-설비코드+순번(A-Z)",
+    example: "260626-3S3A",
+    source: "생산일보 · 설비 장입",
+    status: "운영",
+  },
+  {
+    id: "management",
+    category: "관리번호",
+    format: "MES 자동생성 → TITAN 조회",
+    example: "DL260702-016",
+    source: "MES / Session Demo",
+    status: "운영",
+  },
+  {
+    id: "htl",
+    category: `열처리 작업 요청 (${TITAN_LIST_DOCUMENT_CODES.HTL})`,
+    format: "HTL-YYYYMMDD-NNN",
+    example: "HTL-20260710-001",
+    source: "입고 리스트 출력",
+    status: "운영",
+  },
+  {
+    id: "dpr",
+    category: `생산일보 (${TITAN_LIST_DOCUMENT_CODES.DPR})`,
+    format: "DPR-YYYYMMDD-NNN",
+    example: "DPR-20260710-001",
+    source: "생산일보 출력",
+    status: "운영",
+  },
+  {
+    id: "out",
+    category: `출고 리스트 (${TITAN_LIST_DOCUMENT_CODES.OUT})`,
+    format: "OUT-YYYYMMDD-NNN",
+    example: "OUT-20260710-001",
+    source: "출고 리스트 출력",
+    status: "운영",
+  },
+  {
+    id: "coa",
+    category: `검사성적서 (${TITAN_LIST_DOCUMENT_CODES.COA})`,
+    format: "COA-YYYYMMDD-NNN",
+    example: "COA-20260710-001",
+    source: "성적서 발행",
+    status: "향후",
+  },
+  {
+    id: "inv",
+    category: "거래명세서 (DOC-04)",
+    format: "INV-YYYYMMDD-NNN",
+    example: "INV-20260710-001",
+    source: "출고 · 거래명세서",
+    status: "향후",
+  },
+];
+
+export function NumberingSection() {
+  const customCodeRows = useMemo(
+    () => getMasterDataByCategory("other").filter((row) => ["QR-FMT", "MGMT-FMT"].includes(row.code)),
+    []
+  );
+
+  const columns = useMemo(
+    () => [
+      { key: "category", label: "구분" },
+      { key: "format", label: "번호 규칙" },
+      { key: "example", label: "예시" },
+      { key: "source", label: "적용 화면" },
+      {
+        key: "status",
+        label: "상태",
+        render: (row) => (
+          <span className={`status-badge ${row.status === "운영" ? "사용" : "미사용"}`}>{row.status}</span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const customColumns = useMemo(
+    () => [
+      { key: "code", label: "코드" },
+      { key: "name", label: "명칭" },
+      { key: "note", label: "규칙" },
+      {
+        key: "active",
+        label: "상태",
+        render: (row) => (
+          <span className={`status-badge ${row.active === false ? "미사용" : "사용"}`}>
+            {row.active === false ? "미사용" : "사용"}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  return (
+    <SettingsPanel
+      title="번호체계"
+      desc="LOT · 관리번호 · 문서번호 자동채번 규칙 — RC1 운영 기준 (읽기 전용 · Workflow SSoT)"
+    >
+      <p className="environment-form-note">
+        LOT 형식 검증 패턴: <code>{NDK_PRODUCTION_LOT_PATTERN.source}</code>
+      </p>
+
+      <h4 className="environment-subtitle">운영 번호 규칙</h4>
+      <div className="environment-table-wrap">
+        <TitanDataTable
+          columns={columns}
+          rows={NUMBERING_RULE_ROWS}
+          getRowId={(row) => row.id}
+          ariaLabel="번호체계 규칙"
+        />
+      </div>
+
+      <h4 className="environment-subtitle">기준정보 연동 (사용자정의코드 · 기타)</h4>
+      <div className="environment-table-wrap">
+        <TitanDataTable
+          columns={customColumns}
+          rows={customCodeRows}
+          getRowId={(row) => row.id}
+          emptyMessage="QR · 관리번호 규칙 코드가 없습니다."
+          ariaLabel="번호체계 기준정보"
+        />
+      </div>
+
+      <p className="environment-form-note">
+        관리번호는 MES Source of Truth입니다. TITAN은 생성하지 않고 조회·연결만 수행합니다.
+      </p>
+    </SettingsPanel>
+  );
+}
+
+function resolveMenuGroup(menuId) {
+  const group = MENU_FREEZE_SIDEBAR_GROUPS.find((entry) => entry.menuIds.includes(menuId));
+  if (!group) return "—";
+  return [group.emoji, group.label].filter(Boolean).join(" ") || "—";
+}
+
+export function MenuStructureSection() {
+  const rows = useMemo(
+    () =>
+      MENU_FREEZE_SIDEBAR.map((item) => ({
+        ...item,
+        group: resolveMenuGroup(item.id),
+        path: TITAN_MENU_CATALOG[item.id]?.path ?? "—",
+        state: MENU_FREEZE_LOCKED ? "고정" : "편집 가능",
+      })),
+    []
+  );
+
+  const columns = useMemo(
+    () => [
+      { key: "order", label: "순서" },
+      { key: "group", label: "그룹" },
+      { key: "label", label: "메뉴" },
+      { key: "path", label: "경로" },
+      {
+        key: "state",
+        label: "상태",
+        render: (row) => (
+          <span className={`status-badge ${row.state === "고정" ? "사용" : "미사용"}`}>{row.state}</span>
+        ),
+      },
+    ],
+    []
+  );
+
+  return (
+    <SettingsPanel
+      title="메뉴 관리"
+      desc={`Sidebar · Launcher 구조 조회 — ${MENU_FREEZE_VERSION} (${MENU_FREEZE_DATE})`}
+    >
+      <p className="environment-form-note">{MENU_FREEZE_CHANGE_POLICY}</p>
+      <p className="environment-form-note">{PQMS_DEVELOPMENT_PHILOSOPHY}</p>
+
+      <div className="environment-table-wrap">
+        <TitanDataTable columns={columns} rows={rows} getRowId={(row) => row.id} ariaLabel="메뉴 구조" />
+      </div>
+
+      <p className="environment-form-note">
+        메뉴 ON/OFF(모듈)는 <strong>메뉴 ON/OFF</strong> Workspace에서 설정합니다. Sidebar 구조 변경은 PM 승인 후에만
+        가능합니다.
+      </p>
+    </SettingsPanel>
+  );
+}
+
+export function QrSettingsSection() {
+  const [baseUrlDraft, setBaseUrlDraft] = useState(() => getQrBrowserBaseUrl());
+  const [message, setMessage] = useState("");
+
+  const registryRows = useMemo(
+    () =>
+      Object.values(SMART_ACCESS_ID_REGISTRY).map((entry) => ({
+        id: entry.id,
+        label: entry.labelKo ?? entry.label,
+        canonicalId: entry.canonicalId ?? entry.canonicalPattern ?? "—",
+        legacyAlias: entry.legacyPayload ?? entry.legacyPattern ?? "—",
+      })),
+    []
+  );
+
+  const equipmentColumns = useMemo(
+    () => [
+      { key: "code", label: "설비 코드" },
+      { key: "process", label: "공정" },
+      { key: "label", label: "설비명" },
+      {
+        key: "smartAccess",
+        label: "Smart Access ID",
+        render: (row) => `${SMART_ACCESS_ID_SCHEME.canonicalPrefix}EQ/${row.code}`,
+      },
+    ],
+    []
+  );
+
+  const registryColumns = useMemo(
+    () => [
+      { key: "label", label: "대상" },
+      { key: "canonicalId", label: "Registry ID" },
+      { key: "legacyAlias", label: "Legacy Alias" },
+    ],
+    []
+  );
+
+  const handleSaveBaseUrl = () => {
+    const saved = setQrBrowserBaseUrl(baseUrlDraft);
+    setBaseUrlDraft(saved);
+    setMessage(`QR Base URL이 저장되었습니다: ${saved}`);
+  };
+
+  const handleResetBaseUrl = () => {
+    setQrBrowserBaseUrl("");
+    const resolved = getQrBrowserBaseUrl();
+    setBaseUrlDraft(resolved);
+    setMessage(`기본값으로 복원되었습니다: ${resolved}`);
+  };
+
+  return (
+    <>
+      <SettingsPanel title="QR 설정" desc="Smart Access · QR Prefix · Base URL · 출력 정책 — RC1 운영 기준">
+        <h4 className="environment-subtitle">QR Prefix · Smart Access ID</h4>
+        <dl className="environment-info-list">
+          <div>
+            <dt>Canonical Prefix</dt>
+            <dd>
+              <code>{SMART_ACCESS_ID_SCHEME.canonicalPrefix}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>설비 패턴</dt>
+            <dd>
+              <code>{SMART_ACCESS_ID_SCHEME.canonicalEquipmentPattern}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>Legacy Prefix</dt>
+            <dd>
+              <code>{SMART_ACCESS_ID_SCHEME.legacyEquipmentPrefix}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>정책</dt>
+            <dd>{SMART_ACCESS_ID_SCHEME.note}</dd>
+          </div>
+        </dl>
+
+        <h4 className="environment-subtitle">QR Base URL</h4>
+        <div className="environment-form-grid">
+          <label className="span-2">
+            <span>Base URL (모바일 · 브라우저 QR 스캔)</span>
+            <input
+              value={baseUrlDraft}
+              onChange={(e) => setBaseUrlDraft(e.target.value)}
+              placeholder={QR_BROWSER_BASE_URL_DEFAULT_DEV}
+            />
+          </label>
+          <label className="span-2">
+            <span>미리보기 URL (설비 ION-01)</span>
+            <input readOnly value={buildQrBrowserUrl("/qr/equipment/ION-01")} />
+          </label>
+        </div>
+        <div className="environment-actions">
+          <PrimaryButton type="button" onClick={handleSaveBaseUrl}>
+            저장
+          </PrimaryButton>
+          <SecondaryButton type="button" onClick={handleResetBaseUrl}>
+            기본값 복원
+          </SecondaryButton>
+        </div>
+        <ActionMessage message={message} />
+        <p className="environment-form-note" role="note">
+          <strong>운영 주의:</strong> {RC1_QR_BASE_URL_REPRINT_NOTICE} 운영 도메인·Host 주소 변경 이전에 인쇄한 QR에는
+          이전 URL이 포함되어 있어 스캔이 실패할 수 있습니다.
+        </p>
+
+        <h4 className="environment-subtitle">QR 출력 · Label 정책</h4>
+        <ul className="environment-toggle-list environment-toggle-list--readonly">
+          <li>내부 출력물: QR 자동 포함 (DOC-01 · DOC-02 · DOC-03)</li>
+          <li>거래명세서: 공급처 QR만 (내부 Workflow QR 제외)</li>
+          <li>설비 QR: 설비당 1개 · 다매 출력 허용 — {EQUIPMENT_QR_RULES.multiCopyNote}</li>
+          <li>Traceability: {TITAN_QR_PHILOSOPHY.oneLotOneTraceabilityQr}</li>
+        </ul>
+        <p className="environment-form-note">
+          QR 출력센터 카테고리: {QR_PRINT_CENTER_OFFICIAL.categories.map((item) => item.label).join(" · ")}
+        </p>
+
+        <h4 className="environment-subtitle">공식 설비 QR 코드</h4>
+        <div className="environment-table-wrap">
+          <TitanDataTable
+            columns={equipmentColumns}
+            rows={OFFICIAL_EQUIPMENT_QR_CODES}
+            getRowId={(row) => row.code}
+            ariaLabel="공식 설비 QR"
+          />
+        </div>
+
+        <h4 className="environment-subtitle">Smart Access Registry</h4>
+        <div className="environment-table-wrap">
+          <TitanDataTable
+            columns={registryColumns}
+            rows={registryRows}
+            getRowId={(row) => row.id}
+            ariaLabel="Smart Access Registry"
+          />
+        </div>
+      </SettingsPanel>
+
+      <QrPrintCenterSection />
+    </>
+  );
+}
+
 export function renderEnvironmentSection(tabId, props) {
   switch (tabId) {
     case "company":
@@ -1365,6 +1788,12 @@ export function renderEnvironmentSection(tabId, props) {
       return <StatusSection {...props} />;
     case "modules":
       return <ModuleManagementSection {...props} />;
+    case "numbering":
+      return <NumberingSection {...props} />;
+    case "qrSettings":
+      return <QrSettingsSection {...props} />;
+    case "menus":
+      return <MenuStructureSection {...props} />;
     case "storage":
       return <StorageManagementSection {...props} />;
     case "mes-poc":

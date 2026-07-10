@@ -750,41 +750,69 @@ export const TITAN_DEMO_QR_TRACEABILITY_SEED = {
   },
 };
 
-/** QA Demo Seed V1.0-P0 — 배포 전 Workflow 검증 (운영 데이터와 분리) */
+function buildRc1DemoSvgDataUrl(label, width = 140, height = 48, fill = "#e8eef5") {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" rx="6" fill="${fill}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Malgun Gothic, sans-serif" font-size="13" fill="#1e3a5f">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** RC1 CEO Demo — Company Branding (Preview/Print/QR 공통) */
+export const RC1_DEMO_BRANDING_PATCH = {
+  companyMaster: {
+    companyName: "주식회사 NDK",
+    representative: "대표이사",
+    businessNumber: "605-81-12345",
+    address: "부산광역시 강서구 공항로 123",
+    phone: "051-123-4567",
+    email: "quality@ndk.co.kr",
+  },
+  branding: {
+    logo: buildRc1DemoSvgDataUrl("NDK LOGO", 160, 48, "#dbeafe"),
+    stamp: buildRc1DemoSvgDataUrl("NDK 직인", 96, 96, "#fef3c7"),
+    signature: buildRc1DemoSvgDataUrl("대표이사", 120, 40, "#f8fafc"),
+  },
+  documentFooter: {
+    companyName: "주식회사 NDK",
+    address: "부산광역시 강서구 공항로 123",
+    phone: "051-123-4567",
+    email: "quality@ndk.co.kr",
+    copyright: "Copyright © NDK. All rights reserved.",
+  },
+};
+
+/** RC1 Demo Seed — CEO 시연용 거래처·제품 (PM Official 2026-07-10) */
 export const TITAN_QA_DEMO_COMPANIES = [
-  { id: "qa-c1", code: "SE", name: "서암기계공업", active: true, contacts: [], ndkAssignees: [] },
-  { id: "qa-c2", code: "TS", name: "태성정공", active: true, contacts: [], ndkAssignees: [] },
-  { id: "qa-c3", code: "HJ", name: "한진산업", active: true, contacts: [], ndkAssignees: [] },
-  { id: "qa-c4", code: "DY", name: "동양정밀", active: true, contacts: [], ndkAssignees: [] },
-  { id: "qa-c5", code: "KS", name: "KSM", active: true, contacts: [], ndkAssignees: [] },
-  { id: "qa-c6", code: "SH", name: "신한울 프로젝트", active: true, contacts: [], ndkAssignees: [] },
+  { id: "qa-c1", code: "HA", name: "한화에어로스페이스", active: true, contacts: [], ndkAssignees: [] },
+  { id: "qa-c2", code: "HL", name: "현대로템", active: true, contacts: [], ndkAssignees: [] },
+  { id: "qa-c3", code: "DE", name: "두산에너빌리티", active: true, contacts: [], ndkAssignees: [] },
+  { id: "qa-c4", code: "SE", name: "서암기계공업", active: true, contacts: [], ndkAssignees: [] },
+  { id: "qa-c5", code: "SC", name: "세아창원특수강", active: true, contacts: [], ndkAssignees: [] },
 ];
 
 export const TITAN_QA_DEMO_PRODUCTS = [
-  { id: "qa-p1", company: "서암기계공업", partName: "SHAFT", partNo: "SFT-001", material: "SCM440", drawingNo: "", active: true },
-  { id: "qa-p2", company: "태성정공", partName: "GEAR", partNo: "GR-002", material: "SNCM439", drawingNo: "", active: true },
-  { id: "qa-p3", company: "한진산업", partName: "VALVE STEM", partNo: "VS-003", material: "SACM645", drawingNo: "", active: true },
-  { id: "qa-p4", company: "동양정밀", partName: "PIN", partNo: "PN-004", material: "SNACM220", drawingNo: "", active: true },
-  { id: "qa-p5", company: "KSM", partName: "BUSH", partNo: "BS-005", material: "F22 Cl.3", drawingNo: "", active: true },
-  { id: "qa-p6", company: "신한울 프로젝트", partName: "FLANGE", partNo: "FL-006", material: "42CrMo4", drawingNo: "", active: true },
+  { id: "qa-p1", company: "한화에어로스페이스", partName: "SHAFT", partNo: "HA-SFT-001", material: "SCM440", drawingNo: "", active: true },
+  { id: "qa-p2", company: "현대로템", partName: "GEAR", partNo: "HL-GR-002", material: "SNCM439", drawingNo: "", active: true },
+  { id: "qa-p3", company: "두산에너빌리티", partName: "VALVE STEM", partNo: "DE-VS-003", material: "SACM645", drawingNo: "", active: true },
+  { id: "qa-p4", company: "서암기계공업", partName: "RING", partNo: "SE-RG-004", material: "SNACM220", drawingNo: "", active: true },
+  { id: "qa-p5", company: "세아창원특수강", partName: "BUSH", partNo: "SC-BS-005", material: "F22 Cl.3", drawingNo: "", active: true },
+  { id: "qa-p6", company: "서암기계공업", partName: "SHAFT", partNo: "SE-SFT-006", material: "SCM440", drawingNo: "", active: true },
 ];
 
 export const TITAN_QA_DEMO_PRODUCTION_RECORDS = [
-  { id: "SE_20260709_001", company: "서암기계공업", partName: "SHAFT", partNo: "SFT-001", material: "SCM440", qty: 50, incomingDate: "2026-07-09", incomingRegistered: true, shippedQty: 0, workflowStatus: "", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT },
-  { id: "TS_20260709_002", company: "태성정공", partName: "GEAR", partNo: "GR-002", material: "SNCM439", qty: 80, incomingDate: "2026-07-08", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260708-001", workflowStatus: "작업대기", completionStatus: "작업대기", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
-  { id: "HJ_20260709_003", company: "한진산업", partName: "VALVE STEM", partNo: "VS-003", material: "SACM645", qty: 40, incomingDate: "2026-07-07", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260707-002", lotNo: "LOT-20260707-A", workDate: "2026-07-09", equipment: "3S-1", workflowStatus: "생산중", registered: true, heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
-  { id: "DY_20260709_004", company: "동양정밀", partName: "PIN", partNo: "PN-004", material: "SNACM220", qty: 120, incomingDate: "2026-07-06", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260706-001", lotNo: "LOT-20260706-B", workDate: "2026-07-08", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, certificateStatus: "미발행", shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
-  { id: "KS_20260709_005", company: "KSM", partName: "BUSH", partNo: "BS-005", material: "F22 Cl.3", qty: 60, incomingDate: "2026-07-05", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260705-003", lotNo: "LOT-20260705-C", workDate: "2026-07-07", equipment: "3S-2", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
-  { id: "SH_20260709_006", company: "신한울 프로젝트", partName: "FLANGE", partNo: "FL-006", material: "42CrMo4", qty: 100, shippedQty: 35, incomingDate: "2026-07-04", incomingRegistered: true, htlNo: "HTL-20260704-001", lotNo: "LOT-20260704-D", workDate: "2026-07-06", equipment: "61", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "부분출고", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료", stockQty: 65 },
-  { id: "SE_20260709_007", company: "서암기계공업", partName: "SHAFT", partNo: "SFT-002", material: "SCM440", qty: 30, shippedQty: 30, incomingDate: "2026-07-02", incomingRegistered: true, htlNo: "HTL-20260702-001", lotNo: "LOT-20260702-E", workDate: "2026-07-04", equipment: "3S-1", workflowStatus: "출고완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고완료", outboundDate: "2026-07-09", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료", stockQty: 0 },
-  { id: "TS_20260709_008", company: "태성정공", partName: "GEAR", partNo: "GR-003", material: "SNCM439", qty: 25, incomingDate: "2026-07-09", incomingRegistered: true, shippedQty: 0, workflowStatus: "", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT },
-  { id: "HJ_20260709_009", company: "한진산업", partName: "VALVE STEM", partNo: "VS-004", material: "SACM645", qty: 20, incomingDate: "2026-07-03", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260703-002", lotNo: "LOT-20260703-F", workDate: "2026-07-05", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
-  { id: "HJ_20260709_010", company: "한진산업", partName: "VALVE STEM", partNo: "VS-005", material: "SACM645", qty: 15, incomingDate: "2026-07-03", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260703-002", lotNo: "LOT-20260703-F", workDate: "2026-07-05", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "SE_20260709_001", company: "서암기계공업", partName: "SHAFT", partNo: "SE-SFT-006", material: "SCM440", qty: 50, incomingDate: "2026-07-09", incomingRegistered: true, shippedQty: 0, workflowStatus: "", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT },
+  { id: "HL_20260709_002", company: "현대로템", partName: "GEAR", partNo: "HL-GR-002", material: "SNCM439", qty: 80, incomingDate: "2026-07-08", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260708-001", workflowStatus: "작업대기", completionStatus: "작업대기", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "DE_20260709_003", company: "두산에너빌리티", partName: "VALVE STEM", partNo: "DE-VS-003", material: "SACM645", qty: 40, incomingDate: "2026-07-07", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260707-002", lotNo: "LOT-20260707-A", workDate: "2026-07-09", equipment: "3S-1", workflowStatus: "생산중", registered: true, heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "HA_20260709_004", company: "한화에어로스페이스", partName: "RING", partNo: "HA-RG-004", material: "SNACM220", qty: 120, incomingDate: "2026-07-06", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260706-001", lotNo: "LOT-20260706-B", workDate: "2026-07-08", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, certificateStatus: "미발행", shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "SC_20260709_005", company: "세아창원특수강", partName: "BUSH", partNo: "SC-BS-005", material: "F22 Cl.3", qty: 60, incomingDate: "2026-07-05", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260705-003", lotNo: "LOT-20260705-C", workDate: "2026-07-07", equipment: "3S-2", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "HA_20260709_006", company: "한화에어로스페이스", partName: "SHAFT", partNo: "HA-SFT-001", material: "SCM440", qty: 100, shippedQty: 35, incomingDate: "2026-07-04", incomingRegistered: true, htlNo: "HTL-20260704-001", lotNo: "LOT-20260704-D", workDate: "2026-07-06", equipment: "61", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "부분출고", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료", stockQty: 65 },
+  { id: "SE_20260709_007", company: "서암기계공업", partName: "SHAFT", partNo: "SE-SFT-002", material: "SCM440", qty: 30, shippedQty: 30, incomingDate: "2026-07-02", incomingRegistered: true, htlNo: "HTL-20260702-001", lotNo: "LOT-20260702-E", workDate: "2026-07-04", equipment: "3S-1", workflowStatus: "출고완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고완료", outboundDate: "2026-07-09", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료", stockQty: 0 },
+  { id: "HL_20260709_008", company: "현대로템", partName: "GEAR", partNo: "HL-GR-003", material: "SNCM439", qty: 25, incomingDate: "2026-07-09", incomingRegistered: true, shippedQty: 0, workflowStatus: "", registered: false, lotNo: "", heatTreatment: HEAT_TREATMENT },
+  { id: "DE_20260709_009", company: "두산에너빌리티", partName: "VALVE STEM", partNo: "DE-VS-004", material: "SACM645", qty: 20, incomingDate: "2026-07-03", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260703-002", lotNo: "LOT-20260703-F", workDate: "2026-07-05", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
+  { id: "DE_20260709_010", company: "두산에너빌리티", partName: "VALVE STEM", partNo: "DE-VS-005", material: "SACM645", qty: 15, incomingDate: "2026-07-03", incomingRegistered: true, shippedQty: 0, htlNo: "HTL-20260703-002", lotNo: "LOT-20260703-F", workDate: "2026-07-05", equipment: "10S-01", workflowStatus: "생산완료", completionStatus: "생산완료", registered: true, shipmentStatus: "출고대기", heatTreatment: HEAT_TREATMENT, htlPrintStatus: "출력완료" },
 ].map((row) => ({ unit: "EA", drawingNo: "", registrar: REGISTRAR, ...row }));
 
 export const TITAN_QA_DEMO_SHIPMENT_EVENTS = [
-  { id: "QA-SH-001", managementId: "SH_20260709_006", lotNo: "LOT-20260704-D", company: "신한울 프로젝트", partName: "FLANGE", partNo: "FL-006", shipQty: 35, shippedAt: "2026-07-09T10:00:00.000Z", shippedBy: REGISTRAR, note: "QA partial" },
-  { id: "QA-SH-002", managementId: "SE_20260709_007", lotNo: "LOT-20260702-E", company: "서암기계공업", partName: "SHAFT", partNo: "SFT-002", shipQty: 30, shippedAt: "2026-07-09T11:00:00.000Z", shippedBy: REGISTRAR, note: "QA shipped" },
+  { id: "QA-SH-001", managementId: "HA_20260709_006", lotNo: "LOT-20260704-D", company: "한화에어로스페이스", partName: "SHAFT", partNo: "HA-SFT-001", shipQty: 35, shippedAt: "2026-07-09T10:00:00.000Z", shippedBy: REGISTRAR, note: "RC1 Demo partial" },
+  { id: "QA-SH-002", managementId: "SE_20260709_007", lotNo: "LOT-20260702-E", company: "서암기계공업", partName: "SHAFT", partNo: "SE-SFT-002", shipQty: 30, shippedAt: "2026-07-09T11:00:00.000Z", shippedBy: REGISTRAR, note: "RC1 Demo shipped" },
 ];
 
 export function buildQaDemoMasterSeed(baseOperationalSeed) {

@@ -60,7 +60,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Users,
     launcherTone: "blue",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "permissions",
@@ -72,7 +72,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Shield,
     launcherTone: "purple",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "menus",
@@ -84,7 +84,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: LayoutGrid,
     launcherTone: "green",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "menuToggle",
@@ -96,7 +96,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: ToggleLeft,
     launcherTone: "mint",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "numbering",
@@ -108,7 +108,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Hash,
     launcherTone: "orange",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "qrSettings",
@@ -120,7 +120,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: QrCode,
     launcherTone: "sky",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "backup",
@@ -132,7 +132,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Archive,
     launcherTone: "amber",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "notifications",
@@ -144,7 +144,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Bell,
     launcherTone: "pink",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
   {
     id: "system",
@@ -156,7 +156,7 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     icon: Settings,
     launcherTone: "blue",
     phase: 12,
-    placeholder: true,
+    placeholder: false,
   },
 ];
 
