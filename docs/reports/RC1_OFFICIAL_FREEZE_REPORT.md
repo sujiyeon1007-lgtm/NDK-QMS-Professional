@@ -1,8 +1,9 @@
 # RC1 Official Freeze Report
 
 **Date:** 2026-07-10
-**Phase:** RC1 Final Approval Gate
+**Phase:** RC1 Official Freeze **Candidate** (PM Final 2026-07-10)
 **Policy:** `src/config/rc1OperationalPolicy.js` · `RC1_FINAL_APPROVAL_GATE`
+**Branch:** `feature/qr-workflow-v1`
 
 ---
 
@@ -10,12 +11,14 @@
 
 | Gate | Result | Script / Evidence |
 |------|--------|-------------------|
-| ① Browser QA | CONDITIONAL PASS | `scripts/verify-rc1-final-browser-qa.mjs` — re-run after cold-load timing fix |
+| ① Browser QA | CONDITIONAL PASS | `scripts/verify-rc1-final-browser-qa.mjs` — core ops PASS; 3 flaky timing items |
 | ② Golden Scenario | **PASS** | `scripts/verify-rc1-golden-scenario.mjs` |
 | ③ LOT Workflow Sync | **PASS** | `scripts/verify-rc1-lot-workflow-sync.mjs` |
-| ④ Field QR (P1) | **PENDING** | `docs/reports/RC1_P1_FIELD_QR_CHECKLIST.md` (manual) |
+| ④ Company Import | **PASS** | `scripts/verify-rc1-company-import-browser.mjs` |
+| ⑤ QR Engine Ops | **PASS** | `scripts/verify-rc1-qr-engine-ops-qa.mjs` |
+| ⑥ Field QR (P1) | **PENDING** | `docs/reports/RC1_P1_FIELD_QR_CHECKLIST.md` (manual · EXE/운영환경) |
 
-**Official Freeze:** Blocked until Gate ① clean PASS and Gate ④ manual PASS.
+**Official Freeze Candidate:** PM Final 2026-07-10 — 신규 기능·구조 변경 중단. 안정화 · Runtime QA · EXE Build · 운영 테스트만 진행.
 
 ---
 
