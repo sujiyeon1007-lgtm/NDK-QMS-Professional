@@ -90,6 +90,8 @@ export function createSessionCertificateRepository() {
   };
 }
 
+import { createSessionDataResetRepository } from "./createSessionDataResetRepository";
+
 /** @returns {import("./repositoryTypes").TitanRepositories} */
 export function createSessionRepositories() {
   return {
@@ -98,5 +100,6 @@ export function createSessionRepositories() {
     incoming: createSessionIncomingRepository(),
     inspections: createSessionInspectionRepository(),
     certificates: createSessionCertificateRepository(),
+    dataReset: createSessionDataResetRepository(),
   };
 }

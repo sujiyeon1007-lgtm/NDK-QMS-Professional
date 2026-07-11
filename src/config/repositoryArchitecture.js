@@ -28,6 +28,7 @@ export const REPOSITORY_REGISTRY = [
   "IncomingRepository",
   "InspectionRepository",
   "CertificateRepository",
+  "DataResetRepository",
   "MicrostructureRepository",
   "QualityHistoryRepository",
   "DocumentRepository",

@@ -25,6 +25,14 @@ export { default as TitanPageSizeSelector } from "./TitanPageSizeSelector";
 export { default as SearchPanel } from "./SearchPanel";
 export { default as TitanSearchPanel } from "./TitanSearchPanel";
 export {
+  default as TitanSearchAutocomplete,
+  TitanSearchField,
+  TitanAutoComplete,
+  TitanAutoCompleteField,
+  TitanMasterAutocomplete,
+  TitanProductFieldAutocomplete,
+} from "./TitanSearchAutocomplete";
+export {
   default as FoundationSearchPanel,
   FoundationSearchPeriodField,
   FOUNDATION_SEARCH_PERIOD_PRESETS,
@@ -80,8 +88,10 @@ export { default as TitanCommonExpandRow } from "./TitanCommonExpandRow";
 export { default as TitanWorkspaceModal } from "./TitanWorkspaceModal";
 export { default as TitanAppDialog } from "./TitanWorkspaceModal";
 export { default as TitanMultilineText } from "./TitanMultilineText";
-export { default as TitanBreadcrumb } from "./TitanBreadcrumb";
+export { default as TitanWorkflowNavigation } from "./TitanWorkflowNavigation";
+export { default as TitanWorkflowNextStepDialog } from "./TitanWorkflowNextStepDialog";
 export { default as TitanWorkspaceShell } from "./TitanWorkspaceShell";
+export { default as TitanBreadcrumb } from "./TitanBreadcrumb";
 export { default as TitanLauncherCard } from "./TitanLauncherCard";
 export {
   default as TitanDashboardCard,

@@ -6,7 +6,12 @@
  * 처리공정 = 이온질화 · 가스질화 … (별도 필드 · 혼용 금지)
  */
 
-import { getCertificateFileStatus, hasCertificateFilesForManagementId } from "./certificateSession";
+import { getCertificateFileStatus } from "./certificateSession";
+import { getSessionProductionRecords } from "./productionRecords";
+import {
+  requiresCertificateIssue,
+  skipsCertificateWaitByDefault,
+} from "./certificateIssuePolicy";
 import { isProductionWaitingStageRecord } from "./titanWorkflowStatus";
 import {
   isHeatTreatmentComplete,
@@ -156,25 +161,31 @@ export function resolveRecordCurrentProcess(record) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIPPED);
   }
 
-  // ⑧ 출고 대기 — 열처리 완료 + 재고 (성적서·검사와 독립 · PM P0)
-  if (isHeatTreatmentComplete(record) && getStockQty(record) > 0) {
-    return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT);
-  }
-
   // ⑧-b 성적서 발행 완료 + 출고 미등록 (품질 완료 건 — 출고 대기 동일)
   if (isCertificateIssued(record) && getStockQty(record) > 0) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT);
   }
 
-  // ⑥ 성적서 대기 / ⑤ 검사 완료 (출고 전 생산 미완료 · 품질 추적)
+  // ⑥ 성적서 대기 / ⑤ 검사 완료 — 성적서 발행 정책 연동 (⑬⑭)
   if (isInspectionComplete(record)) {
-    if (hasCertificateFilesForManagementId(record.id)) {
-      return buildCurrentProcess(CURRENT_PROCESS_KEYS.CERT_WAIT);
+    if (skipsCertificateWaitByDefault(record)) {
+      if (getStockQty(record) > 0) {
+        return buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT);
+      }
+      return buildCurrentProcess(CURRENT_PROCESS_KEYS.INSPECTION_DONE);
     }
-    return buildCurrentProcess(CURRENT_PROCESS_KEYS.INSPECTION_DONE);
+
+    if (requiresCertificateIssue(record)) {
+      if (isCertificateIssued(record)) {
+        return getStockQty(record) > 0
+          ? buildCurrentProcess(CURRENT_PROCESS_KEYS.SHIP_WAIT)
+          : buildCurrentProcess(CURRENT_PROCESS_KEYS.CERT_DONE);
+      }
+      return buildCurrentProcess(CURRENT_PROCESS_KEYS.INSPECTION_DONE);
+    }
   }
 
-  // ④ 검사 대기 — 열처리 완료 · 검사 미등록
+  // ④ 검사 대기 — 열처리 완료 · 검사 미등록 (설비 장입 완료 → 검사대기)
   if (isHeatTreatmentComplete(record)) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.INSPECTION_WAIT);
   }
@@ -260,6 +271,12 @@ export function inferScreenKeyFromListRow(listRow) {
 }
 
 export function getCertificateManagementStatus(entry) {
+  const record = entry?.managementId
+    ? getSessionProductionRecords().find((item) => item.id === entry.managementId)
+    : null;
+  if (record && isCertificateIssued(record)) {
+    return { label: CERTIFICATE_MANAGEMENT_STATUS.DONE, variant: "complete" };
+  }
   const fileStatus = getCertificateFileStatus(entry);
   if (fileStatus.label === "등록완료") {
     return { label: CERTIFICATE_MANAGEMENT_STATUS.DONE, variant: "complete" };

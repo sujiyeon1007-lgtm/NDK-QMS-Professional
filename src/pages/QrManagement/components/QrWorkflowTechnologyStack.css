@@ -1,4 +1,6 @@
 .qr-tech-stack { display: flex; flex-direction: column; gap: 12px; }
+.qr-tech-stack--monitor { gap: 0; }
+.qr-tech-stack__section--monitor { margin: 0; }
 .qr-tech-stack__section { padding: 14px 16px; border: 1px solid var(--titan-table-border, #dde6f0); border-radius: var(--titan-card-radius, 12px); background: var(--titan-surface, #fff); box-shadow: var(--titan-shadow, 0 4px 16px rgba(15, 23, 42, 0.04)); }
 .qr-tech-stack__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .qr-tech-stack__section-head h3 { margin: 0; font-size: 13px; font-weight: 700; color: var(--titan-text-primary, #0f172a); }

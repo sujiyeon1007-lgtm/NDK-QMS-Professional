@@ -30,9 +30,26 @@ export default function TitanLauncherHubPage({
             "titan-hub-card",
             item.emphasis ? "titan-hub-card--emphasis" : "",
             categoryBadge ? "titan-hub-card--badged" : "",
+            item.hold ? "titan-hub-card--hold" : "",
           ]
             .filter(Boolean)
             .join(" ");
+
+          if (item.hold) {
+            return (
+              <div key={item.id} className={cardClass} aria-disabled="true">
+                {categoryBadge ? (
+                  <TitanLauncherCategoryBadge
+                    text={categoryBadge}
+                    color={item.badgeColor ?? item.tone ?? "blue"}
+                  />
+                ) : null}
+                <Icon size={22} aria-hidden="true" />
+                <span className="titan-hub-card__label">{item.label}</span>
+                {desc ? <span className="titan-hub-card__desc">{desc}</span> : null}
+              </div>
+            );
+          }
 
           return (
             <Link key={item.id} to={item.path} className={cardClass}>

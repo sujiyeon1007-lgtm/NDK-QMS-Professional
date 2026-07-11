@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { matchesSearchQuery } from "../../utils/titanSearchMatch";
 
 function highlightMatch(text, query) {
   if (!query) return text;
@@ -37,9 +38,9 @@ export default function TitanSearchableSelect({
 
   const trimmedFilter = filter.trim();
   const filteredOptions = useMemo(() => {
-    const q = trimmedFilter.toLowerCase();
+    const q = trimmedFilter;
     if (!q) return options;
-    return options.filter((option) => option.toLowerCase().includes(q));
+    return options.filter((option) => matchesSearchQuery(option, q));
   }, [options, trimmedFilter]);
 
   const showEmptySearch =

@@ -1,4 +1,4 @@
-import { getEquipmentList, getEquipmentSummary } from "./equipmentWorkflowService";
+import { getEquipmentSummary } from "./equipmentWorkflowService";
 import { getTitanDataEngine } from "../foundation/data";
 import { buildHomeDashboardRuntimeMetrics } from "./homeDashboardRuntimeMetrics";
 import { getHomeWorkspaceRecords } from "./homeWorkspaceData";
@@ -39,15 +39,13 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
   const equipmentSummary = dashboardKpi
     ? {
         running: dashboardKpi.equipmentRunning ?? 0,
-        ready: dashboardKpi.equipmentReady ?? 0,
+        idle: dashboardKpi.equipmentIdle ?? dashboardKpi.equipmentReady ?? 0,
         maintenance: dashboardKpi.equipmentMaintenance ?? 0,
       }
     : getEquipmentSummary();
 
-  const chargeableLotCount = lotSummary?.chargeReady ??
-    getEquipmentList()
-      .filter((item) => item.status === "ready")
-      .reduce((sum, item) => sum + item.chargeableLots.length, 0);
+  const chargeableLotCount =
+    lotSummary?.chargeReady ?? dashboardKpi?.lotChargeReady ?? 0;
 
   const { counts } = runtime;
   const topKpi = runtime.topKpi;
@@ -62,7 +60,7 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
     },
     equipmentStatus: {
       running: equipmentSummary.running,
-      ready: equipmentSummary.ready,
+      idle: equipmentSummary.idle,
       maintenance: equipmentSummary.maintenance,
     },
     productStatus: {
@@ -112,7 +110,7 @@ export function buildHomeWorkLauncherMetrics(records = getHomeWorkspaceRecords()
     equipment: {
       running: equipmentSummary.running,
       maintenance: equipmentSummary.maintenance,
-      ready: equipmentSummary.ready,
+      idle: equipmentSummary.idle,
     },
     masterData: {
       companies: runtime.companies,

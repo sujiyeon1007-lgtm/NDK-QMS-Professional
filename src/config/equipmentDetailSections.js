@@ -3,12 +3,11 @@
  * Domain Master Workspace(2-Panel) — Material / Process Master 패턴 재사용.
  */
 
-/** 좌측 Equipment List 컬럼 */
+/** 좌측 Equipment List 컬럼 — P0 Sprint: 설비명 · 열처리 공정 · 사용여부 */
 export const EQUIPMENT_LIST_COLUMNS = [
-  { key: "name", label: "설비명", widthPercent: 32 },
-  { key: "code", label: "설비코드", widthPercent: 20 },
-  { key: "process", label: "담당 공정", widthPercent: 26, render: "meta" },
-  { key: "activeLabel", label: "상태", widthPercent: 12, render: "active" },
+  { key: "name", label: "설비명", widthPercent: 40 },
+  { key: "equipType", label: "열처리 공정", widthPercent: 32 },
+  { key: "activeLabel", label: "사용여부", widthPercent: 12, render: "active" },
 ];
 
 /** 우측 Detail Workspace 탭 (7탭) */
@@ -23,13 +22,11 @@ export const EQUIPMENT_DETAIL_TABS = [
   { id: "updates", label: "최근 수정" },
 ];
 
-/** ① 기본정보 */
+/** ① 기본정보 — P0 Sprint: 3 fields only */
 export const EQUIPMENT_PROFILE_FIELDS = [
   { key: "name", label: "설비명" },
-  { key: "code", label: "설비코드" },
-  { key: "equipType", label: "설비종류" },
-  { key: "maker", label: "제조사" },
-  { key: "activeLabel", label: "상태", render: "active" },
+  { key: "equipType", label: "열처리 공정" },
+  { key: "activeLabel", label: "사용여부", render: "active" },
 ];
 
 /** ② 담당 공정 테이블 */

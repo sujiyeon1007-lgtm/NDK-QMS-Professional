@@ -18,31 +18,19 @@ import { MASTER_DATA_SESSION_KEY } from "./master/masterConstants";
 
 import { buildEquipmentRecordsFromMasterRows } from "./master/masterEquipmentBuilder";
 
-import { EQUIPMENT_RAW_LIST } from "../../config/equipmentConfig";
-
 
 
 function readMasterEquipmentRowsFromSession() {
 
   const snapshot = readJson(MASTER_DATA_SESSION_KEY, null);
 
-  if (snapshot && Array.isArray(snapshot.equipment) && snapshot.equipment.length > 0) {
+  if (snapshot && Array.isArray(snapshot.equipment)) {
 
     return snapshot.equipment;
 
   }
 
-  return buildEquipmentRecordsFromMasterRows(
-    EQUIPMENT_RAW_LIST.map((row) => ({
-      code: row.id,
-      name: row.name,
-      processName: row.process,
-      process: row.process,
-      active: !row.maintenance,
-      smartAccessId: row.smartAccessId,
-    })),
-    []
-  );
+  return [];
 
 }
 
@@ -69,8 +57,6 @@ const arrayStore = createJsonArrayStore({
   storageKey: TITAN_DATA_STORAGE_KEYS.equipment,
 
   idField: "equipmentId",
-
-  getSeed: buildSeedEquipmentRecords,
 
 });
 
@@ -134,14 +120,6 @@ export const equipmentStore = {
 
 
 
-  seedIfEmpty() {
-
-    return arrayStore.seedIfEmpty();
-
-  },
-
-
-
   clear() {
 
     arrayStore.clear();
@@ -157,13 +135,10 @@ export const equipmentStore = {
     return list.reduce(
 
       (acc, item) => {
-
         acc.total += 1;
-
-        if (acc[item.status] != null) acc[item.status] += 1;
-
+        const key = item.status === "ready" ? "idle" : item.status;
+        if (acc[key] != null) acc[key] += 1;
         return acc;
-
       },
 
       { total: 0, idle: 0, ready: 0, running: 0, maintenance: 0 }

@@ -28,23 +28,32 @@ body,
   overflow-x: visible;
 }
 
-/* ── Header: no compression / overlap ── */
+/* ── Header / Banner: no compression / overlap ── */
+.titan-global-nav {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.titan-banner,
 .titan-header {
   flex-shrink: 0;
   min-width: var(--titan-app-min-width);
 }
 
-.titan-header__title,
-.titan-header__note,
-.titan-header__beta,
-.titan-header__user,
-.titan-header__clock {
+.titan-banner__date,
+.titan-banner__site,
+.titan-banner__user,
+.titan-header__subtitle,
+.titan-header__date,
+.titan-header__site,
+.titan-header__user {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
+.titan-banner__user,
 .titan-header__user {
-  gap: 10px;
+  gap: 6px;
 }
 
 /* ── Toolbar: buttons keep full label, no clipping ── */

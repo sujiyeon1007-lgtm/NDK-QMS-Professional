@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileSpreadsheet, Plus } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
@@ -43,6 +44,9 @@ import { getSessionProductionRecords } from "../../utils/productionRecords";
 import CertificateRegisterModal from "./CertificateRegisterModal";
 import "../InOut/InboundManagement.css";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
+import TitanWorkflowNextStepDialog from "../../foundation/components/TitanWorkflowNextStepDialog";
+import { getWorkflowCompletionDialog } from "../../config/workflowNavigation";
 import "./QualityManagement.css";
 
 function FileMark({ registered }) {
@@ -52,9 +56,11 @@ function FileMark({ registered }) {
 }
 
 export default function CertificateManagement() {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitial, setRegisterInitial] = useState(null);
+  const [workflowNextStep, setWorkflowNextStep] = useState(null);
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyCertificateSearch, { storageKey: "certificate" });
   const [selectedIds, setSelectedIds] = useState([]);
@@ -161,6 +167,8 @@ export default function CertificateManagement() {
     setActiveId(null);
     setRefreshKey((key) => key + 1);
     setPage(1);
+    setRegisterOpen(false);
+    setWorkflowNextStep(getWorkflowCompletionDialog("certificateIssueComplete"));
   };
 
   const buildRegisterInitialFromRow = (row) => {
@@ -291,7 +299,9 @@ export default function CertificateManagement() {
         </SecondaryButton>
       </SectionPageActions>
 
-      <TitanKpiBarSlot ariaLabel="성적서 현황" className="inbound-page__kpi">
+      <TitanWorkflowNavigation stepId="certificateRegister" />
+
+      <TitanKpiBarSlot ariaLabel="성적서 등록" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
           chipSetId="certificate"
           records={chipRecords}
@@ -299,6 +309,10 @@ export default function CertificateManagement() {
           onChipClick={handleChipClick}
         />
       </TitanKpiBarSlot>
+
+      <div className="inbound-page__history-heading" role="heading" aria-level="2">
+        성적서 발행 대상
+      </div>
 
       <TitanSearchPanel
         draft={draft}
@@ -333,7 +347,7 @@ export default function CertificateManagement() {
           activeRowId={activeRow?.id}
           onRowClick={(row) => setActiveId(row.id)}
           onRowDoubleClick={handleRowDoubleClick}
-          emptyMessage="등록된 성적서 파일이 없습니다."
+          emptyMessage="검사완료 · 성적서 발행 대기 제품이 없습니다."
         />
 
         <TitanTableFooter
@@ -367,6 +381,17 @@ export default function CertificateManagement() {
             }
           },
         }}
+      />
+
+      <TitanWorkflowNextStepDialog
+        open={Boolean(workflowNextStep)}
+        step={workflowNextStep}
+        onNavigate={(path) => {
+          navigate(path);
+          setWorkflowNextStep(null);
+        }}
+        onStay={() => setWorkflowNextStep(null)}
+        onClose={() => setWorkflowNextStep(null)}
       />
     </div>
   );

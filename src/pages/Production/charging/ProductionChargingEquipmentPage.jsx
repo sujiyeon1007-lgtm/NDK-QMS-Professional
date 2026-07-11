@@ -1,62 +1,32 @@
 import { useMemo } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { OPERATION_ROUTES } from "../../../config/operationsRouteRegistry";
+import ProcessStepCompleteDialog from "./ProcessStepCompleteDialog";
 import ProductionChargingPageShell from "./ProductionChargingPageShell";
 import TitanListInteractionHint from "../../../foundation/components/TitanListInteractionHint";
-import { QR_CHARGING_PAGE_COPY } from "../../../config/equipmentConfig";
 import { buildProductionChargingBreadcrumb, breadcrumbTrailEnd } from "../../../config/titanBreadcrumbPolicy";
 import { getEquipmentDetailSnapshot } from "../../../utils/equipmentWorkflowService";
-import { buildQrWorkflowTechnologyView } from "../../../utils/qrWorkflowTechnologyBridge";
-import EquipmentChargingActions from "../../QrManagement/components/EquipmentChargingActions";
-import CurrentProcess from "../../QrManagement/components/CurrentProcess";
-import LotTable from "../../QrManagement/components/LotTable";
-import QrWorkflowTechnologyStack from "../../QrManagement/components/QrWorkflowTechnologyStack";
+import EquipmentChargingWorkflowContent from "../../QrManagement/components/EquipmentChargingWorkflowContent";
+import EquipmentMonitorDetailPanel from "../../EquipmentStatus/EquipmentMonitorDetailPanel";
 import { useQRWorkflow } from "../../QrManagement/hooks/useQRWorkflow";
+import TitanWorkflowNextStepDialog from "../../../foundation/components/TitanWorkflowNextStepDialog";
 import "../../QrManagement/QRManagement.css";
-import "../../QrManagement/components/QrWorkflowTechnologyStack.css";
+import "../../QrManagement/components/EquipmentChargingWorkflowContent.css";
+import "../../EquipmentStatus/EquipmentMonitorDetailPanel.css";
 
 /** 설비 상세 — 장입 시작 · 열처리 완료 작업 화면 */
 export default function ProductionChargingEquipmentPage() {
+  const navigate = useNavigate();
   const { equipmentId } = useParams();
-  const {
-    chargingButtons,
-    availableLots,
-    activeLotId,
-    activeSession,
-    selectLot,
-    selectedEquipment,
-    handleStartCharging,
-    handleFinishCharging,
-    workflowError,
-    refreshKey,
-  } = useQRWorkflow(equipmentId);
+  const workflow = useQRWorkflow(equipmentId);
 
-  const detail = useMemo(() => getEquipmentDetailSnapshot(equipmentId), [equipmentId, refreshKey]);
-
-  const selectedLotRow = useMemo(
-    () => availableLots.find((row) => row.id === activeLotId) ?? null,
-    [availableLots, activeLotId]
+  const detail = useMemo(
+    () => getEquipmentDetailSnapshot(equipmentId),
+    [equipmentId, workflow.refreshKey]
   );
 
-  const technologyView = useMemo(
-    () =>
-      buildQrWorkflowTechnologyView({
-        equipmentDetail: detail,
-        equipment: selectedEquipment,
-        activeSession,
-        selectedLotRow,
-      }),
-    [detail, selectedEquipment, activeSession, selectedLotRow, refreshKey]
-  );
-
-  const traceabilityLotNo =
-    selectedLotRow?.lotNo ??
-    activeSession?.lotNo ??
-    detail?.currentLotNo ??
-    "";
-
-  if (!detail || !selectedEquipment) {
+  if (!detail || !workflow.selectedEquipment) {
     return <Navigate to={OPERATION_ROUTES.equipmentStatus} replace />;
   }
 
@@ -74,40 +44,48 @@ export default function ProductionChargingEquipmentPage() {
       <div className="qr-management-page">
         <TitanListInteractionHint />
 
-      <section className="qr-management-page__lot-panel" aria-label="장입 가능 LOT">
-        <h2 className="qr-management-page__section-title">{QR_CHARGING_PAGE_COPY.lotSectionTitle}</h2>
-        <LotTable rows={availableLots} activeRowId={activeLotId} onRowClick={(row) => selectLot(row.id)} />
-      </section>
+        <EquipmentMonitorDetailPanel detail={detail} />
 
-      <QrWorkflowTechnologyStack view={technologyView} />
-
-      {traceabilityLotNo && !technologyView?.hasTechnologyData ? (
-        <p className="home-empty" role="status">
-          LOT {traceabilityLotNo} — Sprint 9 기술 데이터(Recipe · Actual Work · Knowledge)가 아직 연결되지 않았습니다.
-        </p>
-      ) : null}
-
-      {workflowError ? (
-        <p className="home-empty" role="alert">
-          {workflowError}
-        </p>
-      ) : null}
-
-      <div
-        className={`qr-management-page__footer${
-          chargingButtons.showStart || chargingButtons.showComplete
-            ? ""
-            : " qr-management-page__footer--no-actions"
-        }`}
-      >
-        <CurrentProcess session={activeSession} />
-        <EquipmentChargingActions
-          buttonState={chargingButtons}
-          onStart={handleStartCharging}
-          onComplete={handleFinishCharging}
+        <EquipmentChargingWorkflowContent
+          layout="page"
+          availableLots={workflow.availableLots}
+          activeLotId={workflow.activeLotId}
+          activeSession={workflow.activeSession}
+          selectLot={workflow.selectLot}
+          chargingButtons={workflow.chargingButtons}
+          handleStartCharging={workflow.handleStartCharging}
+          handleFinishCharging={workflow.handleFinishCharging}
+          workflowError={workflow.workflowError}
+          draftLotNo={workflow.draftLotNo}
+          autoLotNo={workflow.autoLotNo}
+          lotInputMode={workflow.lotInputMode}
+          setLotInputMode={workflow.setLotInputMode}
+          setDraftLotNo={workflow.setDraftLotNo}
+          restoreAutoLotNo={workflow.restoreAutoLotNo}
+          chargeQtyEnabled={workflow.chargeQtyEnabled}
+          setChargeQtyEnabled={workflow.setChargeQtyEnabled}
+          draftChargeQty={workflow.draftChargeQty}
+          setDraftChargeQty={workflow.setDraftChargeQty}
         />
       </div>
-      </div>
+
+      <ProcessStepCompleteDialog
+        open={workflow.stepCompleteDialog.open}
+        record={workflow.stepCompleteDialog.record}
+        onClose={workflow.closeStepCompleteDialog}
+        onConfirm={workflow.confirmStepComplete}
+      />
+
+      <TitanWorkflowNextStepDialog
+        open={Boolean(workflow.workflowNextStep)}
+        step={workflow.workflowNextStep}
+        onNavigate={(path) => {
+          navigate(path);
+          workflow.setWorkflowNextStep(null);
+        }}
+        onStay={() => workflow.setWorkflowNextStep(null)}
+        onClose={() => workflow.setWorkflowNextStep(null)}
+      />
     </ProductionChargingPageShell>
   );
 }

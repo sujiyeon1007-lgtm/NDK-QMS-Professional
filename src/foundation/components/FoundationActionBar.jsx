@@ -1,4 +1,6 @@
-import { Edit3, FileText, Mail, Paperclip, Printer, QrCode, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, FileText, Mail, Paperclip, Printer, QrCode, Trash2, X } from "lucide-react";
+
+import { resolveMasterDetailNavigation } from "../../config/detailPopupPolicy";
 
 export const FOUNDATION_ACTION_DEFINITIONS = Object.freeze({
   edit: { id: "edit", label: "\uC218\uC815", icon: Edit3, variant: "secondary" },
@@ -171,4 +173,92 @@ export default function FoundationActionBar({
 export function FoundationDocumentAction({ actions = [], onAction, ...props }) {
   const normalizedActions = actions.map(normalizeDocumentAction).filter((action) => action && !action.hidden);
   return <FoundationActionBar actions={normalizedActions} onAction={onAction} {...props} />;
+}
+
+/** /settings master data detail popup footer */
+export function TitanMasterDetailFooter({
+  categoryLabel = "\uD56D\uBAA9",
+  rows = [],
+  currentRowId,
+  onNavigate,
+  onEdit,
+  onDelete,
+  onClose,
+  editDisabled = false,
+  deleteDisabled = false,
+  ariaLabel,
+}) {
+  const navigation = resolveMasterDetailNavigation(rows, currentRowId);
+  const positionText =
+    navigation.position > 0
+      ? `${categoryLabel} ${navigation.position} / ${navigation.total}`
+      : `${categoryLabel} \u2014 / ${navigation.total}`;
+
+  const handlePrev = () => {
+    if (!navigation.hasPrev || !navigation.prevRow) return;
+    onNavigate?.(navigation.prevRow);
+  };
+
+  const handleNext = () => {
+    if (!navigation.hasNext || !navigation.nextRow) return;
+    onNavigate?.(navigation.nextRow);
+  };
+
+  const actions = [
+    {
+      id: "prev",
+      label: "\uC774\uC804",
+      icon: ChevronLeft,
+      variant: "secondary",
+      disabled: !navigation.hasPrev,
+      onClick: handlePrev,
+    },
+    {
+      id: "next",
+      label: "\uB2E4\uC74C",
+      icon: ChevronRight,
+      variant: "secondary",
+      disabled: !navigation.hasNext,
+      onClick: handleNext,
+    },
+    onEdit
+      ? {
+          id: "edit",
+          label: "\uC218\uC815",
+          variant: "secondary",
+          disabled: editDisabled,
+          onClick: onEdit,
+        }
+      : null,
+    onDelete
+      ? {
+          id: "delete",
+          label: "\uC0AD\uC81C",
+          variant: "danger",
+          disabled: deleteDisabled,
+          onClick: onDelete,
+        }
+      : null,
+    {
+      id: "close",
+      label: "\uB2EB\uAE30",
+      variant: "secondary",
+      onClick: onClose,
+    },
+  ].filter(Boolean);
+
+  return (
+    <div className="titan-master-detail-footer">
+      <span className="titan-master-detail-footer__position" aria-live="polite">
+        {positionText}
+      </span>
+      <FoundationActionBar
+        actions={actions}
+        align="end"
+        size="compact"
+        ariaLabel={ariaLabel ?? `${categoryLabel} \uC0C1\uC138 \uC791\uC5C5`}
+        className="titan-master-detail-footer__actions"
+      />
+    </div>
+  );
 }

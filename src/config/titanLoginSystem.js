@@ -14,10 +14,10 @@ export const TITAN_LOGIN_VERSION = "V1.1 Presentation Build";
 /** Footer — 좌 · 가운데 · 우 (Login UI V1.1) */
 export const TITAN_LOGIN_COPYRIGHT = "© NDK Co., Ltd. All rights reserved.";
 export const TITAN_LOGIN_FOOTER_PRODUCT = "Project TITAN";
-export const TITAN_LOGIN_FOOTER_VERSION_LINE = "Version 1.0.0";
+export const TITAN_LOGIN_FOOTER_VERSION_LINE = "Version 1.3.0 RC1";
 export const TITAN_LOGIN_FOOTER_BUILD = "Presentation Build";
 /** @deprecated V1.1 — use TITAN_LOGIN_FOOTER_* split constants */
-export const TITAN_LOGIN_FOOTER_VERSION = "Project TITAN / Version 1.0.0 / Presentation Build";
+export const TITAN_LOGIN_FOOTER_VERSION = "Project TITAN / Version 1.3.0 RC1 / Presentation Build";
 
 export const TITAN_LOGIN_FOOTER_TRUST = [
   { label: "Security First", icon: "shield" },

@@ -47,6 +47,7 @@ export default function TitanStandardDetailPopup({
   summary,
   renderTabContent,
   footerActions,
+  footer,
   initialTabId,
   ariaLabel = "상세보기",
 }) {
@@ -143,13 +144,14 @@ export default function TitanStandardDetailPopup({
         </DialogContent>
 
         <div className="titan-detail-popup__footer titan-standard-detail-popup__footer">
-          {footerActions?.length ? (
-            <FoundationDocumentAction actions={footerActions} ariaLabel={`${ariaLabel} 문서 작업`} />
-          ) : (
-            <SecondaryButton type="button" onClick={onClose}>
-              닫기
-            </SecondaryButton>
-          )}
+          {footer ??
+            (footerActions?.length ? (
+              <FoundationDocumentAction actions={footerActions} ariaLabel={`${ariaLabel} 문서 작업`} />
+            ) : (
+              <SecondaryButton type="button" onClick={onClose}>
+                닫기
+              </SecondaryButton>
+            ))}
         </div>
       </div>
     </Dialog>

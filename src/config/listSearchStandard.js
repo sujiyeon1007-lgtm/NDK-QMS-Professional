@@ -361,6 +361,17 @@ export function createEmptyCertificateSearch() {
   };
 }
 
+/** 성적서현황 — 발행일 기준 · 기본 기간 필터 없음 (전체 이력 조회) */
+export function createEmptyCertificateHistorySearch() {
+  return {
+    ...createEmptyCertificateSearch(),
+    registeredDateFrom: "",
+    registeredDateTo: "",
+    issuedDateFrom: "",
+    issuedDateTo: "",
+  };
+}
+
 export function createEmptyCertificateRegister() {
   return {
     managementId: "",

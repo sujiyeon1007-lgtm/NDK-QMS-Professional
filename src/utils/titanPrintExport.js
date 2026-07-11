@@ -9,11 +9,15 @@ import { getInspectionScope } from "./inspectionScope";
 import {
   findPrintDocument,
   getDocumentOrientation,
-  getPrintPages,
+  getPrintContentMm,
+  getPrintMarginMm,
+  getPrintPreviewPageSizePx,
   mountPrintEngine,
   printViaEngine,
+  resolvePrintCaptureTargets,
   TITAN_PAGE_MM,
   TITAN_PRINT_MARGIN_MM,
+  TITAN_LIST_PRINT_MARGIN_MM,
   unmountPrintEngine,
 } from "./titanPrintEngine";
 
@@ -24,6 +28,76 @@ function downloadBlob(blob, filename) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+async function capturePrintPageCanvas(page, printWindow, contentWidthPx) {
+  const expectedWidth = contentWidthPx || Math.max(page.offsetWidth, page.scrollWidth, 1);
+  const captureWidth = Math.max(expectedWidth, page.offsetWidth, page.scrollWidth, 1);
+  const captureHeight = Math.max(page.offsetHeight, page.scrollHeight, 1);
+
+  return html2canvas(page, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    imageTimeout: 15000,
+    scrollX: 0,
+    scrollY: 0,
+    width: captureWidth,
+    height: captureHeight,
+    windowWidth: captureWidth,
+    windowHeight: captureHeight,
+    window: printWindow,
+  });
+}
+
+/** Tall capture → slice across PDF pages at full content width (top-aligned) */
+function appendCanvasToPdf(pdf, canvas, { margin, contentMm, orientation, addNewPageFirst = false }) {
+  if (!canvas.width || !canvas.height) return;
+
+  const pxPerMm = canvas.width / contentMm.width;
+  const pageHeightPx = Math.max(1, Math.round(contentMm.height * pxPerMm));
+  let sourceY = 0;
+  let pageSlice = 0;
+
+  while (sourceY < canvas.height) {
+    const sliceHeightPx = Math.min(pageHeightPx, canvas.height - sourceY);
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = sliceHeightPx;
+    const ctx = sliceCanvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(
+        canvas,
+        0,
+        sourceY,
+        canvas.width,
+        sliceHeightPx,
+        0,
+        0,
+        canvas.width,
+        sliceHeightPx
+      );
+    }
+
+    const sliceHeightMm = sliceHeightPx / pxPerMm;
+    if (addNewPageFirst || pageSlice > 0) {
+      pdf.addPage(undefined, orientation);
+    }
+
+    pdf.addImage(
+      sliceCanvas.toDataURL("image/png"),
+      "PNG",
+      margin,
+      margin,
+      contentMm.width,
+      sliceHeightMm
+    );
+
+    sourceY += sliceHeightPx;
+    pageSlice += 1;
+  }
 }
 
 /** @deprecated iframe 출력 엔진 사용 — 하위 호환 */
@@ -43,20 +117,23 @@ export async function printTitanDocument(root) {
   await printViaEngine(documentEl);
 }
 
-/** Preview/출력 DOM과 동일 레이아웃으로 PDF 생성 (A4 · 10mm 여백) */
+/** Preview/출력 DOM과 동일 레이아웃으로 PDF 생성 (A4 · 통일 여백) */
 export async function exportTitanPdf(root, filename = "document.pdf") {
   const sourceEl = findPrintDocument(root);
   if (!sourceEl) return;
 
-  const { iframe, document: documentEl, window: printWindow } = await mountPrintEngine(sourceEl);
+  const { iframe, document: documentEl, window: printWindow } = await mountPrintEngine(sourceEl, {
+    forPdf: true,
+  });
 
   try {
     const orientation = getDocumentOrientation(documentEl);
-    const pageMm = TITAN_PAGE_MM[orientation];
-    const margin = TITAN_PRINT_MARGIN_MM;
-    const contentWidth = pageMm.width - margin * 2;
-    const contentHeight = pageMm.height - margin * 2;
-    const pages = getPrintPages(documentEl);
+    const margin = getPrintMarginMm(documentEl, orientation);
+    const contentMm = getPrintContentMm(orientation, margin);
+    const contentWidthPx = getPrintPreviewPageSizePx(orientation).width;
+    const pages = resolvePrintCaptureTargets(documentEl);
+
+    if (!pages.length) return;
 
     const pdf = new jsPDF({
       orientation,
@@ -66,28 +143,16 @@ export async function exportTitanPdf(root, filename = "document.pdf") {
 
     for (let index = 0; index < pages.length; index += 1) {
       const page = pages[index];
-      const canvas = await html2canvas(page, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        width: page.scrollWidth,
-        height: page.scrollHeight,
-        windowWidth: page.scrollWidth,
-        windowHeight: page.scrollHeight,
-        window: printWindow,
+      const canvas = await capturePrintPageCanvas(page, printWindow, contentWidthPx);
+
+      if (!canvas.width || !canvas.height) continue;
+
+      appendCanvasToPdf(pdf, canvas, {
+        margin,
+        contentMm,
+        orientation,
+        addNewPageFirst: index > 0,
       });
-
-      const imgData = canvas.toDataURL("image/png");
-      const imgHeightMm = (canvas.height / canvas.width) * contentWidth;
-      const drawHeight = Math.min(imgHeightMm, contentHeight);
-      const offsetY = margin + Math.max(0, (contentHeight - drawHeight) / 2);
-
-      if (index > 0) {
-        pdf.addPage(undefined, orientation);
-      }
-
-      pdf.addImage(imgData, "PNG", margin, offsetY, contentWidth, drawHeight);
     }
 
     pdf.save(filename);
@@ -435,8 +500,12 @@ export function exportTitanExcel(root, filename = "document.xls") {
 export {
   findPrintDocument,
   getDocumentOrientation,
+  getPrintMarginMm,
+  getPrintPreviewPageSizePx,
   mountPrintEngine,
   printViaEngine,
+  resolvePrintCaptureTargets,
   TITAN_PAGE_MM,
   TITAN_PRINT_MARGIN_MM,
+  TITAN_LIST_PRINT_MARGIN_MM,
 };

@@ -6,7 +6,7 @@ import { getStockQty, getShippedQty } from "./inventory";
 import { SHIPMENT_STATUS } from "./ndkWorkflow";
 import { getProductionProcessName } from "../config/productionProcessCodes";
 import { parseQtyWithUnit } from "./productUnits";
-import { getCurrentUnitPrice, calculateAmounts } from "./unitPriceSession";
+import { resolveRecordUnitPrice, calculateAmounts } from "./unitPriceSession";
 import {
   getSessionProductionRecords,
   processShipment,
@@ -137,7 +137,7 @@ export function applyOutboundRegister(form) {
   }
 
   const updated = result.record;
-  const unitPrice = getCurrentUnitPrice(updated.company, updated.partNo);
+  const unitPrice = resolveRecordUnitPrice(updated);
   const amounts = calculateAmounts(shipQty, unitPrice);
 
   saveShipmentEvent({
@@ -265,7 +265,7 @@ export function recordTransactionStatementPrint(record, payload = {}) {
   if (!record?.id) return null;
 
   const shipQty = Number(payload.shipQty) || 0;
-  const unitPrice = Number(payload.unitPrice) || getCurrentUnitPrice(record.company, record.partNo);
+  const unitPrice = Number(payload.unitPrice) || resolveRecordUnitPrice(record);
   const amounts = payload.amounts ?? calculateAmounts(shipQty, unitPrice);
   const now = new Date().toISOString();
   const history = Array.isArray(record.statementPrintHistory) ? [...record.statementPrintHistory] : [];

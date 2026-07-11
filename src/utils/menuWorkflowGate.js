@@ -12,6 +12,10 @@ import { hasCertificateFilesForManagementId } from "./certificateSession";
 import { isIncomingRegistered } from "./productionRecords";
 import { isProductionComplete } from "./productionComplete";
 import { isHeatTreatmentWorkType, isShotWorkComplete } from "../config/workTypeWorkflow";
+import {
+  CERTIFICATE_ISSUE_POLICY,
+  resolveCertificateIssuePolicy,
+} from "./certificateIssuePolicy";
 
 /** Per-menu task status labels (업무상태) */
 export const MENU_TASK_STATUS = {
@@ -58,13 +62,25 @@ export function isCertificateIssued(record) {
 }
 
 export function isCertificateMenuEligible(record) {
-  return isInspectionComplete(record);
+  if (!isInspectionComplete(record)) return false;
+  const { policy } = resolveCertificateIssuePolicy(record);
+  return policy !== CERTIFICATE_ISSUE_POLICY.NEVER_ISSUE;
 }
 
 export function isOutboundMenuEligible(record) {
   if (!isIncomingRegistered(record)) return false;
   if (getStockQty(record) <= 0) return false;
   if (isShotWorkComplete(record) && !record?.shotInspectionRequired) return true;
+  if (!isInspectionComplete(record)) return false;
+
+  const { policy } = resolveCertificateIssuePolicy(record);
+  if (
+    policy === CERTIFICATE_ISSUE_POLICY.NEVER_ISSUE ||
+    policy === CERTIFICATE_ISSUE_POLICY.ON_REQUEST
+  ) {
+    return true;
+  }
+
   return isCertificateIssued(record);
 }
 

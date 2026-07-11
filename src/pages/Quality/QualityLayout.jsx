@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { getSectionById, getSectionByPathname, getWorkspaceNavigation } from "../../config/menuStructure";
+import { INSPECTION_REGISTER_TABS } from "../../config/inspectionManagement";
 import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbPolicy";
 import { useTitanModuleFlags } from "../../hooks/useTitanModuleFlags";
+import SectionTabs from "../../foundation/layout/SectionTabs";
 import { WorkspaceNavigationTabs } from "../../foundation/layout/SectionTabs";
 import SectionPageLayout from "../../foundation/layout/SectionPageLayout";
 import "../../foundation/styles/titan-hub-page.css";
@@ -11,6 +13,10 @@ const QUALITY_HOME_DESCRIPTION = "검사 · 성적서 · 부적합 · 품질 문
 
 function isQualityHubPath(pathname) {
   return pathname === "/quality" || pathname === "/quality/";
+}
+
+function isInspectionRegisterPath(pathname) {
+  return pathname === "/quality/inspection/register";
 }
 
 function filterSectionTabs(section, isModuleEnabled) {
@@ -54,6 +60,8 @@ export default function QualityLayout() {
     [isHub, location.pathname, workspaceNav.items]
   );
 
+  const registerSectionTabs = isInspectionRegisterPath(location.pathname) ? INSPECTION_REGISTER_TABS : null;
+
   if (!section || !filteredSection) return null;
 
   if (isHub) {
@@ -79,6 +87,9 @@ export default function QualityLayout() {
       breadcrumbItems={breadcrumbItems}
       hidePageHeader
     >
+      {registerSectionTabs ? (
+        <SectionTabs tabs={registerSectionTabs} className="titan-menu-toolbar__tabs" />
+      ) : null}
       <Outlet />
     </SectionPageLayout>
   );

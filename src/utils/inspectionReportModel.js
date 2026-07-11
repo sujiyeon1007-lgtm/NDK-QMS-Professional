@@ -11,6 +11,10 @@ import {
 } from "./specJudgment";
 import { cloneSpecification } from "./productSpecificationModel";
 import {
+  buildDimensionInspectionRowsFromSpec,
+  normalizeDimensionInspectionRows,
+} from "./dimensionInspectionModel";
+import {
   calculateHardeningDepthMetricsFromRows,
   getHardeningDepthChartPoints,
   legacyArraysToRows,
@@ -153,6 +157,11 @@ export function buildInspectionReportFromLog(log) {
   const appearanceRows = buildAppearanceResultRows(appliedSpec, log.appearanceMeasurements);
   const hardnessRows = buildHardnessResultRows(appliedSpec, log.hardnessMeasurements);
   const dimensionRows = buildDimensionResultRows(appliedSpec, log.dimensionMeasurements);
+  const dimensionInspectionRows = normalizeDimensionInspectionRows(
+    log.dimensionInspectionRows?.length
+      ? log.dimensionInspectionRows
+      : buildDimensionInspectionRowsFromSpec(appliedSpec)
+  );
 
   const baseReport = {
     reportNo: log.reportNo || createReportNo(log.id),
@@ -182,7 +191,10 @@ export function buildInspectionReportFromLog(log) {
     hardnessRows: hardnessRows.length ? hardnessRows : DEFAULT_HARDNESS_ROWS,
     hardnessSummary: summarizeJudgments(hardnessRows) || "합격",
     dimensionRows: dimensionRows.length ? dimensionRows : DEFAULT_DIMENSION_ROWS,
-    dimensionSummary: summarizeJudgments(dimensionRows) || "합격",
+    dimensionInspectionRows,
+    dimensionSummary: summarizeJudgments(
+      dimensionInspectionRows.length ? dimensionInspectionRows : dimensionRows
+    ) || "합격",
     hasMicrostructurePhoto: hasMicro,
     microstructureJudgment: log.microstructureJudgment || "이상없음",
     microstructurePhotos: Array.isArray(log.microstructurePhotos) ? log.microstructurePhotos : [],
@@ -192,8 +204,10 @@ export function buildInspectionReportFromLog(log) {
       : DEFAULT_OTHER_ROWS,
     remarks: log.note?.trim() || "특이사항 없음",
     appliedSpecification: appliedSpec,
+    productMasterSpec: log.productMasterSpec ? cloneSpecification(log.productMasterSpec) : null,
     heatTreatmentEdits: log.heatTreatmentEdits || {},
     heatTreatmentCalculations: log.heatTreatmentCalculations || null,
+    coreHardnessHv: log.coreHardnessHv ?? "",
   };
 
   const heatTreatmentCalculations = syncHeatTreatmentCalculations({
@@ -245,6 +259,7 @@ export function normalizeInspectionReport(report) {
     afterGrindingDepthMm: report.afterGrindingDepthMm ?? null,
     heatTreatmentCalculations: report.heatTreatmentCalculations ?? null,
     heatTreatmentEdits: report.heatTreatmentEdits ?? {},
+    coreHardnessHv: report.coreHardnessHv ?? "",
     appearanceRows:
       report.appearanceRows != null
         ? report.appearanceRows
@@ -262,7 +277,12 @@ export function normalizeInspectionReport(report) {
     otherRows: report.otherRows?.length ? report.otherRows : DEFAULT_OTHER_ROWS,
     remarks: report.remarks?.trim() || "특이사항 없음",
     appliedSpecification: report.appliedSpecification ?? null,
+    productMasterSpec: report.productMasterSpec ?? null,
+    dimensionInspectionRows: Array.isArray(report.dimensionInspectionRows)
+      ? report.dimensionInspectionRows
+      : [],
     microstructurePhotos: Array.isArray(report.microstructurePhotos) ? report.microstructurePhotos : [],
+    mainResultRows: Array.isArray(report.mainResultRows) ? report.mainResultRows : [],
     updatedAt: report.updatedAt || new Date().toISOString(),
   };
 }

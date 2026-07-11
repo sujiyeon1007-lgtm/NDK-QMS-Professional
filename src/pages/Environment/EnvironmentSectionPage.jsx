@@ -11,10 +11,14 @@ const ENVIRONMENT_WIRED_SECTION_TAB_MAP = {
   menus: "menus",
   menuToggle: "modules",
   numbering: "numbering",
+  processTemplates: "processTemplates",
+  inspectionTemplates: "inspectionTemplates",
+  certificatePolicies: "certificatePolicies",
   qrSettings: "qrSettings",
   backup: "backup",
   notifications: "notifications",
   system: "status",
+  data: "data",
 };
 
 export default function EnvironmentSectionPage({ sectionId }) {

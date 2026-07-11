@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 
-import { SecondaryButton } from "../../foundation/components/Button";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanWorkspaceModal from "../../foundation/components/TitanWorkspaceModal";
+import { TitanMasterDetailFooter } from "../../foundation/components/FoundationActionBar";
 import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import {
   PRODUCT_CERTIFICATE_COLUMNS,
@@ -138,7 +138,16 @@ function ProductDetailTabBar({ activeTab, onTabChange, counts }) {
 }
 
 /** 제품 Row 더블클릭 — ERP/MES Master 상세 Popup (Sprint 8 · Blueprint V1.0 · 9탭) */
-export default function ProductDetailModal({ open, product, onClose }) {
+export default function ProductDetailModal({
+  open,
+  product,
+  onClose,
+  onEdit,
+  onDelete,
+  onNavigate,
+  categoryLabel = "제품",
+  navigationRows = [],
+}) {
   const [activeTab, setActiveTab] = useState("profile");
   const [attachmentVersion, setAttachmentVersion] = useState(0);
 
@@ -207,9 +216,15 @@ export default function ProductDetailModal({ open, product, onClose }) {
         />
       }
       footer={
-        <SecondaryButton type="button" onClick={handleClose}>
-          닫기
-        </SecondaryButton>
+        <TitanMasterDetailFooter
+          categoryLabel={categoryLabel}
+          rows={navigationRows}
+          currentRowId={product.id}
+          onNavigate={onNavigate}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onClose={handleClose}
+        />
       }
     >
       <div className="company-detail-modal">

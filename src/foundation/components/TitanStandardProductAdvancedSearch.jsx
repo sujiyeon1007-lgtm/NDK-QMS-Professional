@@ -17,7 +17,7 @@ import {
 export default function TitanStandardProductAdvancedSearch({
   draft,
   onDraftChange,
-  getSuggestions,
+  getSuggestions = () => [],
   incomingDateFromKey = "incomingDateFrom",
   incomingDateToKey = "incomingDateTo",
   productionDateFromKey = "productionDateFrom",

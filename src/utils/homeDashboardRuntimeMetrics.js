@@ -16,7 +16,6 @@ export function refreshHomeDashboardMasterSources() {
 }
 
 export function buildHomeDashboardRuntimeMetrics() {
-  refreshHomeDashboardMasterSources();
   const records = getSessionProductionRecords();
   const { counts } = getHomeScreenData(records);
   const master = getMasterStoreSummary();

@@ -4,19 +4,29 @@
  */
 
 import { canDeleteProduct } from "./productUsage";
+import { normalizeInspectionCriteriaSpec } from "./inspectionCriteriaModel";
+import { normalizeSpecification, normalizeDocumentLinks } from "./productSpecificationModel";
 import {
   canDeleteCompany,
   canDeleteEquipment,
   canDeleteWorker,
 } from "./masterUsage";
 import { SEOAM_DEMO_PRODUCTS } from "../data/seoamDemoProducts";
-import { resolveRc1DemoProductMasterSeed } from "../data/rc1DemoProductMasterSeed";
+import {
+  buildRc1EquipmentMasterSeedRows,
+  ensureRc1EquipmentMasterSeed,
+} from "../data/rc1EquipmentMasterSeed.js";
 import {
   buildCompanyAbbreviation,
   getCompanyAbbreviation,
   resolveUniqueAbbreviation,
   shouldAutoUpdateAbbreviation,
 } from "./companyAbbreviation";
+
+import { inferProcessCategoryFromDetail, resolveProductProcessLabel } from "../config/productProcessSelection";
+import { buildProductProcessWorkflowSavePatch } from "./productProcessWorkflow";
+import { resolveProductCertificatePolicyId } from "./certificatePolicySession";
+import { resolveProductUnit } from "./productUnits";
 import { normalizeCompanyNdkAssignees, getCompanyNdkAssigneeLabel } from "./companyNdkAssigneesModel";
 import {
   initMasterDataStoresFromSession,
@@ -34,6 +44,13 @@ import {
   normalizeRecipeRecord,
   resolveRecipeTemplateId,
 } from "../config/recipeTemplateEngine";
+import { persistMasterCategoryToSqlite } from "./masterDataSqlitePersist.js";
+import {
+  TITAN_DOCUMENT_NUMBER_TYPES,
+  TITAN_NUMBERING_STORAGE_KEY,
+  buildNumberingPreview,
+  getDefaultNumberingPrefixes,
+} from "../config/masterDataScreens";
 
 const STORAGE_KEY = "project-titan-master-data-v3";
 
@@ -620,7 +637,12 @@ export const MASTER_DATA = {
   ],
 };
 
-/** V1.0 운영 초기 Master — 거래처·제품 0건 */
+/** RC1/V1.1 — 완전 빈 Master (Fresh install · 전체 초기화) */
+export const TITAN_EMPTY_MASTER_SEED = Object.fromEntries(
+  Object.keys(MASTER_DATA).map((key) => [key, []])
+);
+
+/** V1.0 운영 초기 Master — 거래처·제품 0건 · 구조 코드만 (Demo 로드 시 base) */
 export const TITAN_OPERATIONAL_MASTER_SEED = {
   companies: [],
   products: [],
@@ -633,7 +655,7 @@ export const TITAN_OPERATIONAL_MASTER_SEED = {
     { id: "m-op-5", code: "F22-CL3", name: "F22 Cl.3", spec: "합금강", note: "", active: true },
     { id: "m-op-6", code: "42CrMo4", name: "42CrMo4", spec: "합금강", note: "", active: true },
   ],
-  equipment: MASTER_DATA.equipment.filter((row) => ["e1", "e2", "e5", "e15"].includes(row.id)),
+  equipment: buildRc1EquipmentMasterSeedRows(),
   heatTreatment: MASTER_DATA.heatTreatment,
   recipes: [],
   inspectionCriteria: [],
@@ -660,6 +682,7 @@ function migrateLegacyProducts(rows = []) {
       row.customerDrawingNo?.trim() ||
       "",
     description: row.description ?? "",
+    inspectionType: row.inspectionType === "development" ? "development" : "mass",
   }));
 }
 
@@ -821,14 +844,14 @@ function loadMasterDataFromStorage() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const data = cloneMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+      const data = cloneMasterData(TITAN_EMPTY_MASTER_SEED);
       data.companies = migrateCompanyMaster(data.companies ?? []);
       data.products = migrateLegacyProducts(data.products ?? []);
       data.workers = migrateWorkerMaster(data.workers ?? []);
       return data;
     }
     const parsed = JSON.parse(raw);
-    const merged = cloneMasterData(MASTER_DATA);
+    const merged = cloneMasterData(TITAN_EMPTY_MASTER_SEED);
     Object.keys(merged).forEach((key) => {
       if (Array.isArray(parsed[key])) {
         merged[key] = parsed[key];
@@ -850,11 +873,7 @@ function loadMasterDataFromStorage() {
       merged.employees = migrateLegacyWorkers(merged.employees);
     }
     if (Array.isArray(parsed.equipment)) {
-      const hasNdkLotEquipment = parsed.equipment.some((row) => {
-        const value = String(row.code ?? row.name ?? "").trim();
-        return /^(\d+S-\d+|10S-\d{2}|6[1-7])$/.test(value);
-      });
-      merged.equipment = hasNdkLotEquipment ? parsed.equipment : cloneMasterData(MASTER_DATA).equipment;
+      merged.equipment = parsed.equipment;
     }
     if (Array.isArray(merged.companies)) {
       merged.companies = migrateCompanyMaster(merged.companies);
@@ -864,7 +883,7 @@ function loadMasterDataFromStorage() {
     delete merged.items;
     return merged;
   } catch {
-    const data = cloneMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+    const data = cloneMasterData(TITAN_EMPTY_MASTER_SEED);
     data.companies = migrateCompanyMaster(data.companies ?? []);
     data.products = migrateLegacyProducts(data.products ?? []);
     data.workers = migrateWorkerMaster(data.workers ?? []);
@@ -896,8 +915,8 @@ function hydrateCompaniesFromCustomerStoreIfEmpty() {
 
 hydrateCompaniesFromCustomerStoreIfEmpty();
 
-/** RC1 — boot: seed product master when session + product store are both empty */
-function hydrateProductsFromRc1DemoSeedIfEmpty() {
+/** RC1 — boot: product store → memory (auto Demo seed 없음) */
+function hydrateProductsFromProductStoreIfPresent() {
   if (typeof globalThis.sessionStorage === "undefined") return;
 
   const memoryProducts = Array.isArray(sessionMasterData.products) ? sessionMasterData.products : [];
@@ -923,25 +942,78 @@ function hydrateProductsFromRc1DemoSeedIfEmpty() {
     } catch {
       /* quota */
     }
-    return;
-  }
-
-  const companyNames = (sessionMasterData.companies ?? [])
-    .filter((row) => row.active !== false)
-    .map((row) => row.name)
-    .filter(Boolean);
-  const seeded = resolveRc1DemoProductMasterSeed(companyNames);
-  if (seeded.length === 0) return;
-
-  sessionMasterData.products = migrateLegacyProducts(seeded);
-  try {
-    globalThis.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
-  } catch {
-    /* quota */
   }
 }
 
-hydrateProductsFromRc1DemoSeedIfEmpty();
+hydrateProductsFromProductStoreIfPresent();
+
+const RC1_DEFAULT_HEAT_TREATMENT_ROWS = [
+  {
+    id: "ht-ion",
+    code: "ION",
+    name: "\uC774\uC628\uC9C8\uD654",
+    description: "\uC774\uC628\uC9C8\uD654 \uC5F4\uCC98\uB9AC",
+    active: true,
+  },
+  {
+    id: "ht-soft",
+    code: "SOFT",
+    name: "\uC5F0\uC9C8\uD654",
+    description: "\uC5F0\uC9C8\uD654 \uC5F4\uCC98\uB9AC",
+    active: true,
+  },
+  {
+    id: "ht-gas",
+    code: "GAS",
+    name: "\uAC00\uC2A4\uC9C8\uD654",
+    description: "\uAC00\uC2A4\uC9C8\uD654 \uC5F4\uCC98\uB9AC",
+    active: true,
+  },
+];
+
+function resolveLocalHeatTreatmentProcessCode(labelOrCode) {
+  const raw = String(labelOrCode ?? "").trim();
+  if (!raw) return "";
+  const upper = raw.toUpperCase();
+  if (upper === "ION" || upper === "SOFT" || upper === "GAS") return upper;
+  if (raw === "\uC774\uC628\uC9C8\uD654" || raw === "\uC9C8\uD654") return "ION";
+  if (raw === "\uC5F0\uC9C8\uD654" || raw === "\uAC00\uC2A4\uC5F0\uC9C8\uD654") return "SOFT";
+  if (raw === "\uAC00\uC2A4\uC9C8\uD654") return "GAS";
+  return "";
+}
+
+function getLocalHeatTreatmentProcessLabel(code) {
+  const key = String(code ?? "").trim().toUpperCase();
+  if (key === "ION") return "\uC774\uC628\uC9C8\uD654";
+  if (key === "SOFT") return "\uC5F0\uC9C8\uD654";
+  if (key === "GAS") return "\uAC00\uC2A4\uC9C8\uD654";
+  return String(code ?? "").trim();
+}
+
+/** RC1 — first-install bootstrap: heatTreatment + equipment Master only when empty */
+function bootstrapDefaultMasterIfEmpty() {
+  let changed = false;
+  if (!Array.isArray(sessionMasterData.heatTreatment) || sessionMasterData.heatTreatment.length === 0) {
+    sessionMasterData.heatTreatment = RC1_DEFAULT_HEAT_TREATMENT_ROWS.map((row) => ({ ...row }));
+    changed = true;
+  }
+  const equipmentSeed = ensureRc1EquipmentMasterSeed(
+    Array.isArray(sessionMasterData.equipment) ? sessionMasterData.equipment : []
+  );
+  if (equipmentSeed.changed) {
+    sessionMasterData.equipment = equipmentSeed.rows;
+    changed = true;
+  }
+  if (changed) {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionMasterData));
+    } catch {
+      /* quota */
+    }
+  }
+}
+
+bootstrapDefaultMasterIfEmpty();
 
 function syncMasterStoresAfterPersist(changedCategory = null) {
   MASTER_STORE_CATEGORIES.forEach((categoryKey) => {
@@ -972,6 +1044,11 @@ function persistMasterData(changedCategory = null) {
     /* quota */
   }
   syncMasterStoresAfterPersist(changedCategory);
+  if (resolved && resolved !== "companies") {
+    void persistMasterCategoryToSqlite(resolved, sessionMasterData[resolved] ?? []);
+  } else if (!resolved || resolved === "companies") {
+    void persistMasterCategoryToSqlite("companies", sessionMasterData.companies ?? []);
+  }
 }
 
 /** RC1 bulk import — defer per-row persist; flush once after Import 실행 */
@@ -1246,6 +1323,16 @@ function normalizePayload(categoryKey, payload) {
       unitPriceRaw === "" || unitPriceRaw == null
         ? null
         : Number(String(unitPriceRaw).replace(/,/g, "")) || null;
+    let specification = null;
+    if (payload.specification && typeof payload.specification === "object") {
+      specification = normalizeInspectionCriteriaSpec(normalizeSpecification(payload.specification));
+    }
+    const workflowPatch = buildProductProcessWorkflowSavePatch(payload);
+    const certificatePolicyId = resolveProductCertificatePolicyId({
+      certificatePolicyId: payload.certificatePolicyId,
+      certificateIssuePolicy: payload.certificateIssuePolicy,
+      specification,
+    });
     return {
       ...base,
       company: payload.company?.trim() ?? "",
@@ -1254,14 +1341,31 @@ function normalizePayload(categoryKey, payload) {
       material: payload.material?.trim() ?? "",
       spec: payload.spec?.trim() ?? "",
       unitPrice,
-      unit: payload.unit?.trim() ?? "EA",
-      process: payload.process?.trim() ?? "",
+      unit: resolveProductUnit(payload.unit, payload.unitCustom),
+      processCategory:
+        workflowPatch.processCategory ??
+        payload.processCategory?.trim() ??
+        inferProcessCategoryFromDetail(payload.processDetail, payload.process),
+      processDetail: workflowPatch.processDetail ?? payload.processDetail?.trim() ?? "",
+      process:
+        workflowPatch.process ??
+        resolveProductProcessLabel(payload.processCategory, payload.processDetail, payload.process),
+      processWorkflow: workflowPatch.processWorkflow ?? [],
+      processWorkflowTemplateId: workflowPatch.processWorkflowTemplateId ?? payload.processWorkflowTemplateId ?? "",
+      inspectionTemplateId: String(payload.inspectionTemplateId ?? "").trim(),
+      certificatePolicyId,
       description: payload.description?.trim() ?? "",
+      specification,
+      documentLinks: normalizeDocumentLinks(payload.documentLinks),
     };
   }
   if (categoryKey === "materials") {
-    const description = payload.description?.trim() ?? payload.spec?.trim() ?? "";
-    return { ...base, spec: description };
+    return {
+      code: base.code,
+      name: base.name,
+      active: base.active,
+      qrUuid: base.qrUuid,
+    };
   }
   if (categoryKey === "heatTreatment") {
     return {
@@ -1296,10 +1400,16 @@ function normalizePayload(categoryKey, payload) {
     });
   }
   if (categoryKey === "equipment") {
+    const equipType = payload.equipType?.trim() ?? payload.process?.trim() ?? "";
+    const processCode =
+      resolveLocalHeatTreatmentProcessCode(payload.processCode ?? equipType) ||
+      resolveLocalHeatTreatmentProcessCode(payload.equipType ?? payload.process ?? "");
+    const code = base.code || base.name;
     return {
       ...base,
-      equipType: payload.equipType?.trim() ?? "",
-      location: payload.location?.trim() ?? "",
+      code,
+      equipType: equipType || getLocalHeatTreatmentProcessLabel(processCode),
+      processCode,
     };
   }
   if (categoryKey === "employees" || categoryKey === "workers") {
@@ -1355,16 +1465,37 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
     normalized = syncCompanyContacts(normalized, row, existingRow);
   }
 
+  if (resolvedKey === "products" && mode === "add" && !normalized.code && normalized.company) {
+    normalized.code = generateProductManagementCode(normalized.company);
+  }
+
   if (resolvedKey !== "companies" && !normalized.code) {
-    return {
-      ok: false,
-      message:
-        resolvedKey === "employees"
-          ? "사번을 입력하세요."
-          : resolvedKey === "workers"
-            ? "작업자 코드를 입력하세요."
-            : "코드를 입력하세요.",
-    };
+    if (resolvedKey === "equipment") {
+      const existingRow =
+        existingId != null
+          ? getMasterDataByCategory("equipment").find((item) => item.id === existingId)
+          : null;
+      normalized.code = String(existingRow?.code ?? normalized.name ?? "").trim();
+    }
+    if (!normalized.code) {
+      return {
+        ok: false,
+        message:
+          resolvedKey === "employees"
+            ? "사번을 입력하세요."
+            : resolvedKey === "workers"
+              ? "작업자 코드를 입력하세요."
+              : resolvedKey === "products"
+                ? "업체를 선택하면 관리번호가 자동 생성됩니다."
+                : resolvedKey === "equipment"
+                  ? "설비명을 입력하세요."
+                  : "코드를 입력하세요.",
+      };
+    }
+  }
+
+  if (resolvedKey === "equipment" && !normalized.equipType) {
+    return { ok: false, message: "열처리 공정을 선택하세요." };
   }
 
   if (resolvedKey === "companies" && !normalized.abbreviation) {
@@ -1391,7 +1522,12 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
     if (codeDup) {
       return {
         ok: false,
-        message: resolvedKey === "employees" ? "이미 사용 중인 사번입니다." : "이미 사용 중인 거래처코드입니다.",
+        message:
+          resolvedKey === "employees"
+            ? "이미 사용 중인 사번입니다."
+            : resolvedKey === "equipment"
+              ? "이미 사용 중인 설비입니다."
+              : "이미 사용 중인 거래처코드입니다.",
       };
     }
   }
@@ -1443,6 +1579,17 @@ export function validateMasterRow(categoryKey, row, mode, existingId) {
   return { ok: true, normalized, storageKey, categoryKey: resolvedKey };
 }
 
+const SIMPLIFIED_MASTER_ROW_KEYS = {
+  materials: ["id", "code", "name", "active", "qrUuid"],
+  equipment: ["id", "code", "name", "equipType", "active", "qrUuid"],
+};
+
+function compactSimplifiedMasterRow(categoryKey, row) {
+  const keys = SIMPLIFIED_MASTER_ROW_KEYS[resolveCategoryKey(categoryKey)];
+  if (!keys) return row;
+  return Object.fromEntries(keys.filter((key) => row[key] !== undefined).map((key) => [key, row[key]]));
+}
+
 export function stageMasterAdd(categoryKey, payload, { skipValidation = false, deferPersist = false } = {}) {
   const resolvedKey = resolveCategoryKey(categoryKey);
   const validation = skipValidation
@@ -1457,10 +1604,13 @@ export function stageMasterAdd(categoryKey, payload, { skipValidation = false, d
     return { ok: false, message: validation.message };
   }
 
-  const newRow = ensureMasterQrUuid(resolvedKey, {
-    id: payload.id ?? nextMasterRowId(validation.categoryKey),
-    ...validation.normalized,
-  });
+  const newRow = ensureMasterQrUuid(
+    resolvedKey,
+    compactSimplifiedMasterRow(resolvedKey, {
+      id: payload.id ?? nextMasterRowId(validation.categoryKey),
+      ...validation.normalized,
+    })
+  );
 
   const storageKey = validation.storageKey;
   sessionMasterData[storageKey] = [...(sessionMasterData[storageKey] ?? []), newRow];
@@ -1484,11 +1634,14 @@ export function stageMasterUpdate(categoryKey, rowId, payload, { deferPersist = 
     return { ok: false, message: "수정 대상을 찾을 수 없습니다." };
   }
 
-  const updated = ensureMasterQrUuid(resolvedKey, {
-    ...rows[index],
-    ...validation.normalized,
-    qrUuid: rows[index].qrUuid ?? validation.normalized.qrUuid,
-  });
+  const updated = ensureMasterQrUuid(
+    resolvedKey,
+    compactSimplifiedMasterRow(resolvedKey, {
+      id: rows[index].id,
+      ...validation.normalized,
+      qrUuid: rows[index].qrUuid ?? validation.normalized.qrUuid,
+    })
+  );
   sessionMasterData[storageKey] = rows.map((row, i) => (i === index ? updated : row));
   if (!deferPersist) {
     persistMasterData(resolvedKey);
@@ -1564,8 +1717,11 @@ export function formatMasterRowForDisplay(row) {
   const ndkAssigneeLabel = getCompanyNdkAssigneeLabel(row);
   const phoneLabel = row.phone?.trim() || "—";
   const emailLabel = row.email?.trim() || "—";
+  const processCode =
+    row.processCode ?? resolveLocalHeatTreatmentProcessCode(row.equipType ?? row.process ?? "");
   return {
     ...row,
+    processCode: processCode || row.processCode || "—",
     abbreviation: row.abbreviation ?? abbreviation,
     ceoName,
     ndkAssigneeLabel,
@@ -1581,6 +1737,7 @@ export function formatMasterRowForDisplay(row) {
       row.unitPrice != null && row.unitPrice !== ""
         ? Number(row.unitPrice).toLocaleString()
         : "—",
+    inspectionTypeLabel: row.inspectionType === "development" ? "개발" : "양산",
   };
 }
 
@@ -1636,21 +1793,7 @@ export function findProductByCompanyAndPartNo(company, partNo) {
 
 /** 업체코드_YYYYMMDD_순번 — ProductMaster Excel Import */
 export function generateProductManagementCode(companyName, existingCodes = null) {
-  const codeMap = getCompanyCodeMap();
-  const companyCode =
-    codeMap[companyName] ??
-    buildCompanyAbbreviation(companyName, getMasterDataByCategory("companies"));
-  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const prefix = `${companyCode}_${datePart}_`;
-  const codes =
-    existingCodes ??
-    getMasterDataByCategory("products").map((row) => String(row.code ?? ""));
-  const maxSeq = codes.reduce((max, code) => {
-    if (!code.startsWith(prefix)) return max;
-    const seq = Number(code.slice(prefix.length));
-    return Number.isFinite(seq) ? Math.max(max, seq) : max;
-  }, 0);
-  return `${prefix}${String(maxSeq + 1).padStart(3, "0")}`;
+  return generateTitanDocumentNumberFromSettings("product", companyName, existingCodes);
 }
 
 export function normalizeCompanyBizNo(value) {
@@ -1878,6 +2021,20 @@ export function replaceSessionMasterData(nextData) {
   return sessionMasterData;
 }
 
+/** RC1 데이터 관리 — Master 카테고리 초기화 (Repository 경유) */
+export function clearMasterDataCategories(categoryKeys = []) {
+  const keys = (Array.isArray(categoryKeys) ? categoryKeys : [])
+    .map((key) => resolveCategoryKey(key))
+    .filter((key) => INTEGRATED_MASTER_KEYS.has(key) || sessionMasterData[key] != null);
+
+  keys.forEach((key) => {
+    sessionMasterData[key] = [];
+  });
+
+  persistMasterData(keys[0] ?? "companies");
+  return { clearedCategories: keys };
+}
+
 export const MASTER_FIELD_LINKS = {
   companies: { label: "업체명", screens: ["입고관리", "생산작업계획", "성적서관리"] },
   products: { label: "제품", screens: ["입고관리", "생산관리", "출고관리", "검사기준관리", "거래명세서"] },
@@ -1907,4 +2064,150 @@ export const MASTER_DATA_NAV_KEYS = [
 
 export function getMasterNavCategories() {
   return MASTER_CATEGORIES.filter((item) => MASTER_DATA_NAV_KEYS.includes(item.key));
+}
+
+function safeReadNumberingSettings() {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(TITAN_NUMBERING_STORAGE_KEY);
+    if (!raw) return { prefixes: getDefaultNumberingPrefixes() };
+    const parsed = JSON.parse(raw);
+    return { prefixes: { ...getDefaultNumberingPrefixes(), ...(parsed?.prefixes ?? {}) } };
+  } catch {
+    return { prefixes: getDefaultNumberingPrefixes() };
+  }
+}
+
+function safeWriteNumberingSettings(settings) {
+  try {
+    globalThis.sessionStorage?.setItem(TITAN_NUMBERING_STORAGE_KEY, JSON.stringify(settings));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getNumberingSettings() {
+  return safeReadNumberingSettings();
+}
+
+export function getNumberingPrefixes() {
+  return safeReadNumberingSettings().prefixes;
+}
+
+export function validateNumberingPrefixes(prefixes) {
+  const errors = [];
+  Object.values(TITAN_DOCUMENT_NUMBER_TYPES).forEach((meta) => {
+    const value = String(prefixes?.[meta.id] ?? "").trim().toUpperCase();
+    if (!value) {
+      errors.push(`${meta.label}: 접두어 필수`);
+      return;
+    }
+    if (!/^[A-Z0-9]{1,4}$/.test(value)) {
+      errors.push(`${meta.label}: 1~4자 영숫자만 허용`);
+    }
+  });
+  if (errors.length) {
+    return { ok: false, message: errors.join(" · ") };
+  }
+  return { ok: true };
+}
+
+export function saveNumberingPrefixes(prefixes) {
+  const validation = validateNumberingPrefixes(prefixes);
+  if (!validation.ok) {
+    return { ok: false, message: validation.message };
+  }
+  const current = safeReadNumberingSettings();
+  const next = {
+    ...current,
+    prefixes: {
+      ...current.prefixes,
+      ...Object.fromEntries(
+        Object.entries(prefixes ?? {}).map(([key, value]) => [key, String(value ?? "").trim().toUpperCase()])
+      ),
+    },
+  };
+  safeWriteNumberingSettings(next);
+  return { ok: true, settings: next };
+}
+
+export function resetNumberingPrefixes() {
+  const next = { prefixes: getDefaultNumberingPrefixes() };
+  safeWriteNumberingSettings(next);
+  return next;
+}
+
+export function getNumberingPrefix(type) {
+  const meta = TITAN_DOCUMENT_NUMBER_TYPES[type];
+  if (!meta) return "X";
+  const prefixes = getNumberingPrefixes();
+  return String(prefixes[type] ?? meta.prefix).trim().toUpperCase() || meta.prefix;
+}
+
+function resolveNumberingCompanyAbbreviation(companyNameOrRow) {
+  if (companyNameOrRow && typeof companyNameOrRow === "object") {
+    return getCompanyAbbreviation(companyNameOrRow);
+  }
+  const name = String(companyNameOrRow ?? "").trim();
+  if (!name) return "XX";
+  const company = getMasterDataByCategory("companies").find((row) => row.name === name);
+  if (company) return getCompanyAbbreviation(company);
+  return name.slice(0, 2).toUpperCase() || "XX";
+}
+
+function buildNumberPattern(companyAbbr, prefix) {
+  const abbr = String(companyAbbr ?? "XX").trim().toUpperCase() || "XX";
+  const safePrefix = String(prefix ?? "X").trim().toUpperCase() || "X";
+  return `${abbr}-${safePrefix}-`;
+}
+
+function extractMaxSequence(existingValues, pattern) {
+  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`^${escaped}(\\d+)$`);
+  return existingValues.reduce((max, value) => {
+    const match = String(value ?? "").trim().match(regex);
+    if (!match) return max;
+    const seq = Number(match[1]);
+    return Number.isFinite(seq) ? Math.max(max, seq) : max;
+  }, 0);
+}
+
+export function generateTitanDocumentNumberFromSettings(type, companyAbbrOrName, existingValues = null) {
+  const companyAbbr = resolveNumberingCompanyAbbreviation(companyAbbrOrName);
+  const prefix = getNumberingPrefix(type);
+  const pattern = buildNumberPattern(companyAbbr, prefix);
+  let values = existingValues;
+  if (!values) {
+    if (type === "product") {
+      const companyName =
+        typeof companyAbbrOrName === "object"
+          ? companyAbbrOrName?.name
+          : getMasterDataByCategory("companies").find((row) => getCompanyAbbreviation(row) === companyAbbr)?.name ??
+            companyAbbrOrName;
+      values = getMasterDataByCategory("products")
+        .filter((row) => !companyName || row.company === companyName)
+        .map((row) => row.code);
+    } else if (type === "customer") {
+      values = getMasterDataByCategory("companies").map((row) => row.code);
+    } else {
+      values = [];
+    }
+  }
+  return buildNumberingPreview(companyAbbr, prefix, extractMaxSequence(values, pattern) + 1);
+}
+
+export function getNumberingRuleRows(companyAbbr = "DS") {
+  return Object.values(TITAN_DOCUMENT_NUMBER_TYPES).map((item) => ({
+    id: item.id,
+    category: item.label,
+    prefix: getNumberingPrefix(item.id),
+    format: `{companyAbbr}-${getNumberingPrefix(item.id)}-{seq4}`,
+    example: buildNumberingPreview(companyAbbr, getNumberingPrefix(item.id), 1),
+    source: item.description,
+    status: "\uC6B4\uC601",
+  }));
+}
+
+export function generateTitanDocumentNumber(type, companyAbbrOrName, existingValues = null) {
+  return generateTitanDocumentNumberFromSettings(type, companyAbbrOrName, existingValues);
 }

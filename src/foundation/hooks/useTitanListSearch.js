@@ -32,9 +32,13 @@ export function useTitanListSearch(emptyFactory, options = {}) {
     [applySearch, debounceMs]
   );
 
-  const onSearch = useCallback(() => {
+  const onSearch = useCallback((overrideDraft) => {
     clearTimeout(debounceRef.current);
-    setSearch({ ...draft });
+    const next = overrideDraft ?? draft;
+    setSearch({ ...next });
+    if (overrideDraft) {
+      setDraft({ ...overrideDraft });
+    }
   }, [draft]);
 
   const onReset = useCallback(() => {

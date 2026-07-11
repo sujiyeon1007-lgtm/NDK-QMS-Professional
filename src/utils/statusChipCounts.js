@@ -13,6 +13,7 @@ import {
   getOutboundScreenData,
   getProductionScreenData,
 } from "./titanScreenDataSource";
+import { getInventoryScreenData } from "./inventoryStatusAnalytics";
 import { getSessionProductionRecords } from "./productionRecords";
 
 /**
@@ -28,6 +29,7 @@ export const STATUS_CHIP_COUNT_RESOLVERS = {
   certificate: resolveCertificateStatusChipCounts,
   outbound: resolveOutboundStatusChipCounts,
   statistics: resolveHomeStatusChipCounts,
+  inventory: resolveInventoryStatusChipCounts,
 };
 
 /**
@@ -64,4 +66,8 @@ export function resolveCertificateStatusChipCounts(records) {
 
 export function resolveOutboundStatusChipCounts(records) {
   return getOutboundScreenData(records).counts;
+}
+
+export function resolveInventoryStatusChipCounts(records) {
+  return getInventoryScreenData(records).counts;
 }

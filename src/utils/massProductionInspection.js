@@ -16,7 +16,13 @@ import {
   getMassInspectionManagementStatus,
 } from "./workflowProcessStatus";
 import { getSessionProductionRecords } from "./productionRecords";
+import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 import { formatFoundationAttachmentTypeLabel } from "./foundationAttachmentEngine";
+import {
+  INSPECTION_TYPE,
+  matchesRecordInspectionTypeFilter,
+  resolveLogInspectionType,
+} from "../config/inspectionManagement";
 
 function resolveProductionCompleteDate(record) {
   const raw =
@@ -32,11 +38,20 @@ function resolveMassInspectionStatus(log) {
   return getMassInspectionManagementStatus(log);
 }
 
-function buildMassLogIndex(logs = getInspectionLogs()) {
+function buildMassLogIndex(logs = getInspectionLogs(), inspectionTypeFilter = null) {
   /** @type {Map<string, object>} */
   const index = new Map();
   logs
-    .filter((log) => log.category === "양산" && log.managementId?.trim())
+    .filter((log) => {
+      if (!log.managementId?.trim()) return false;
+      if (log.category === "기타" || log.inspectionCategory === "other") return false;
+      const logType = resolveLogInspectionType(log);
+      if (inspectionTypeFilter === INSPECTION_TYPE.MASS) return logType === INSPECTION_TYPE.MASS;
+      if (inspectionTypeFilter === INSPECTION_TYPE.DEVELOPMENT) {
+        return logType === INSPECTION_TYPE.DEVELOPMENT;
+      }
+      return log.category === "양산" || log.category === "개발";
+    })
     .forEach((log) => {
       const key = log.managementId.trim();
       const existing = index.get(key);
@@ -47,10 +62,22 @@ function buildMassLogIndex(logs = getInspectionLogs()) {
   return index;
 }
 
-export function getMassProductionInspectionRows() {
-  const logIndex = buildMassLogIndex();
+/** P0-OP-006 Phase 1 — memo keyed on production snapshot + inspection log count */
+let massInspectionSnapshot = null;
+let massInspectionLogCount = null;
+let massInspectionCache = null;
+
+export function invalidateMassProductionInspectionCache() {
+  massInspectionSnapshot = null;
+  massInspectionLogCount = null;
+  massInspectionCache = null;
+}
+
+function buildMassProductionInspectionRowsUncached(inspectionTypeFilter = null) {
+  const logIndex = buildMassLogIndex(getInspectionLogs(), inspectionTypeFilter);
   return getSessionProductionRecords()
     .filter(isInspectionMenuEligible)
+    .filter((record) => matchesRecordInspectionTypeFilter(record, inspectionTypeFilter))
     .map((record) => {
       const log = logIndex.get(record.id) ?? null;
       const status = resolveMassInspectionStatus(log);
@@ -91,6 +118,28 @@ export function getMassProductionInspectionRows() {
     })
     .sort((a, b) => b.registeredDate.localeCompare(a.registeredDate));
 }
+
+export function getMassProductionInspectionRows(options = {}) {
+  const inspectionTypeFilter = options.inspectionType ?? null;
+  const snapshot = getSessionProductionRecords();
+  const logCount = getInspectionLogs().length;
+  const cacheKey = `${inspectionTypeFilter ?? "all"}:${logCount}:${snapshot.length}`;
+  if (
+    massInspectionSnapshot === snapshot &&
+    massInspectionLogCount === logCount &&
+    massInspectionCache &&
+    massInspectionCache.__cacheKey === cacheKey
+  ) {
+    return massInspectionCache.rows;
+  }
+
+  const result = buildMassProductionInspectionRowsUncached(inspectionTypeFilter);
+  massInspectionSnapshot = snapshot;
+  massInspectionLogCount = logCount;
+  massInspectionCache = { __cacheKey: cacheKey, rows: result };
+  return result;
+}
+
 export function matchesMassProductionInspectionSearch(row, search) {
   const merged = {
     ...row.record,
@@ -192,3 +241,5 @@ export function matchesMassProductionInspectionSearch(row, search) {
   }
   return true;
 }
+
+registerWorkflowScreenCacheInvalidator(invalidateMassProductionInspectionCache);

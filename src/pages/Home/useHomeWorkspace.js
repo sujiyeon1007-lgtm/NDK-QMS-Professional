@@ -21,6 +21,8 @@ export function useHomeWorkspace() {
   }, []);
 
   useEffect(() => {
+    refreshHomeWorkspaceCache();
+    setRefreshKey((value) => value + 1);
     return subscribeWorkflowDataRefresh(() => {
       refreshHomeWorkspaceCache();
       setRefreshKey((value) => value + 1);

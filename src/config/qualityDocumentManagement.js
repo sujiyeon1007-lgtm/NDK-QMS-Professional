@@ -4,6 +4,8 @@
  * 품질 공지(Quality Notice) = 문서 종류 · 독립 게시판 ❌
  */
 
+import { Archive, FileText, FolderOpen } from "lucide-react";
+
 /** REV.4 — 일반 게시판 미운영 · 품질 공지는 Document Management 하위 */
 export const DOCUMENT_MANAGEMENT_POLICY = {
   revision: "REV.4",
@@ -269,4 +271,92 @@ export function getInspectionAutoLinkDocumentPlan(partNo) {
     const meta = resolveQualityDocumentType(type);
     return { type: meta.value, label: meta.label };
   });
+}
+
+/** RC1 — 업체별 문서관리 type filter options */
+export const BY_COMPANY_DOCUMENT_TYPE_OPTIONS = Object.freeze([
+  { value: "drawing", label: "도면", registryTypes: ["drawing"] },
+  { value: "work_standard", label: "작업표준서", registryTypes: ["work_standard"] },
+  { value: "inspection_standard", label: "검사기준서", registryTypes: ["inspection_standard"] },
+  { value: "isir", label: "ISIR", registryTypes: [] },
+  { value: "approval_drawing", label: "승인도", registryTypes: [] },
+  { value: "customer_spec", label: "고객기준서", registryTypes: ["customer_requirement", "customer_spec"] },
+  { value: "other", label: "기타", registryTypes: ["quality_other", "fmea", "quality_notice"] },
+]);
+
+/** RC1 — 사내문서 category filter */
+export const INTERNAL_DOCUMENT_CATEGORIES = Object.freeze([
+  { value: "notice", label: "공지사항" },
+  { value: "work_guide", label: "업무지침" },
+  { value: "meeting", label: "회의자료" },
+  { value: "training", label: "교육자료" },
+  { value: "other", label: "기타" },
+]);
+
+/** Document management launcher - RC1 menu layout (3 groups) */
+export const DOCUMENT_MANAGEMENT_LAUNCHER_ITEMS = [
+  {
+    id: "quality-certificates",
+    label: "인증서 관리",
+    badge: "품질문서",
+    badgeColor: "green",
+    path: "/documents/quality/certificates",
+    icon: FileText,
+    description: "품질·환경 인증서 · 발급기관 · 만료일",
+    metricKeys: [],
+  },
+  {
+    id: "quality-by-company",
+    label: "업체별 문서관리",
+    badge: "품질문서",
+    badgeColor: "green",
+    path: "/documents/quality/by-company",
+    icon: FileText,
+    description: "업체별 도면 · 작업표준서 · 검사기준서",
+    metricKeys: [],
+  },
+  {
+    id: "purchase-order",
+    label: "발주서",
+    badge: "수신",
+    badgeColor: "blue",
+    path: "/documents/incoming/purchase-orders",
+    icon: Archive,
+    description: "수신 발주서 보관 · 검색",
+    metricKeys: [],
+  },
+  {
+    id: "release-certificate",
+    label: "반출증",
+    badge: "수신",
+    badgeColor: "blue",
+    path: "/documents/incoming/return-slips",
+    icon: Archive,
+    description: "반출증 · 수신 문서 보관",
+    metricKeys: [],
+  },
+  {
+    id: "incoming-other",
+    label: "기타 수신문서",
+    badge: "수신",
+    badgeColor: "blue",
+    path: "/documents/incoming/other",
+    icon: Archive,
+    description: "기타 수신 문서 보관함",
+    metricKeys: [],
+  },
+  {
+    id: "internal-documents",
+    label: "사내문서",
+    badge: "사내",
+    badgeColor: "slate",
+    path: "/documents/internal",
+    icon: FolderOpen,
+    description: "공지 · 업무지침 · 회의 · 교육",
+    metricKeys: [],
+  },
+];
+
+export function getDocumentManagementLauncherItem(id) {
+  return DOCUMENT_MANAGEMENT_LAUNCHER_ITEMS.find((item) => item.id === id) ?? null;
 }

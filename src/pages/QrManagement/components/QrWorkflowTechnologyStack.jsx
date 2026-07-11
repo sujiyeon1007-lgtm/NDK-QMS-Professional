@@ -36,6 +36,35 @@ function FieldGrid({ rows }) {
   );
 }
 
+function MonitorEquipmentSummary({ summary }) {
+  const statusMeta = EQUIPMENT_RUN_STATUS_META[summary?.status] ?? EQUIPMENT_RUN_STATUS_META.idle;
+
+  return (
+    <section className="qr-tech-stack__section qr-tech-stack__section--monitor" aria-label="설비 모니터링">
+      <div className="qr-tech-stack__summary">
+        <div className="qr-tech-stack__summary-head">
+          <strong>{summary?.equipmentName ?? "-"}</strong>
+          <StatusChip variant={statusMeta.variant}>
+            {statusMeta.emoji} {statusMeta.label}
+          </StatusChip>
+        </div>
+        <FieldGrid
+          rows={[
+            { label: "현재 LOT", value: summary?.currentLotNo },
+            { label: "작업상태", value: `${statusMeta.emoji} ${statusMeta.label}` },
+            { label: "시작시간", value: summary?.startTime },
+            { label: "예상종료시간", value: summary?.expectedEndTime },
+          ]}
+        />
+        <div className="qr-tech-stack__progress">
+          <span>진행률</span>
+          <HomeAnimatedProgressBar percent={summary?.progress ?? 0} processKey="production" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function QrWorkflowActionBar({ links, lotNo, buttonState, onStart, onFinish }) {
   const disabledTitle = "Sprint 10 Phase 1 placeholder";
   const hasActions = Boolean(buttonState && (onStart || onFinish));
@@ -82,9 +111,24 @@ function QrWorkflowActionBar({ links, lotNo, buttonState, onStart, onFinish }) {
   );
 }
 
-export default function QrWorkflowTechnologyStack({ view, buttonState, onStart, onFinish }) {
+export default function QrWorkflowTechnologyStack({
+  view,
+  buttonState,
+  onStart,
+  onFinish,
+  variant = "monitor",
+}) {
   if (!view) return null;
   const summary = view.equipmentSummary;
+
+  if (variant === "monitor") {
+    return (
+      <div className="qr-tech-stack qr-tech-stack--monitor" aria-label="설비 모니터링">
+        <MonitorEquipmentSummary summary={summary} />
+      </div>
+    );
+  }
+
   const statusMeta = EQUIPMENT_RUN_STATUS_META[summary?.status] ?? EQUIPMENT_RUN_STATUS_META.idle;
 
   return (

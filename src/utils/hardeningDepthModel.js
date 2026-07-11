@@ -3,6 +3,8 @@
  * 행 추가/삭제 · 자동 정렬 · CORE · 붙여넣기 · 템플릿
  */
 
+import { interpolateDepthAtThreshold } from "./heatTreatmentCalculationEngine";
+
 export const HV_REFERENCE_LINE = 390;
 
 export const HARDENING_DEPTH_TEMPLATES = {
@@ -258,32 +260,14 @@ export function getHardeningDepthChartPoints(rows = []) {
 }
 
 export function calculateHardeningDepthMetricsFromRows(rows = [], threshold = HV_REFERENCE_LINE) {
-  const points = getHardeningDepthChartPoints(rows).sort((a, b) => a.depthNum - b.depthNum);
-
-  let effectiveDepthMm = null;
-  for (let i = 1; i < points.length; i += 1) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    if (prev.isCore || curr.isCore) continue;
-    if (prev.hv >= threshold && curr.hv <= threshold) {
-      const ratio = (prev.hv - threshold) / (prev.hv - curr.hv || 1);
-      effectiveDepthMm = prev.depthNum + (curr.depthNum - prev.depthNum) * ratio;
-      break;
-    }
-  }
-
-  let hardeningDepth390 = null;
-  for (let i = points.length - 1; i >= 0; i -= 1) {
-    if (points[i].isCore) continue;
-    if (points[i].hv >= threshold) {
-      hardeningDepth390 = points[i].depthNum;
-      break;
-    }
-  }
+  const points = getHardeningDepthChartPoints(rows);
+  const result = interpolateDepthAtThreshold(points, threshold);
 
   return {
-    effectiveDepthMm: effectiveDepthMm != null ? Number(effectiveDepthMm.toFixed(2)) : null,
-    hardeningDepth390: hardeningDepth390 != null ? Number(hardeningDepth390.toFixed(2)) : null,
+    effectiveDepthMm: result.depth,
+    hardeningDepth390: result.depth,
+    calcStatus: result.status,
+    calcMessage: result.message ?? null,
   };
 }
 

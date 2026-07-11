@@ -61,11 +61,15 @@ export function assertEquipmentWorkflowTransition(from, to) {
  */
 export function resolveEquipmentWorkflowState(equipment) {
   if (!equipment) return EQUIPMENT_WORKFLOW_STATE.IDLE;
-  if (equipment.workflowState) return /** @type {EquipmentWorkflowState} */ (equipment.workflowState);
-
   if (equipment.maintenance) return EQUIPMENT_WORKFLOW_STATE.IDLE;
-  if (equipment.status === "running") return EQUIPMENT_WORKFLOW_STATE.HEAT_TREATING;
-  if (equipment.status === "ready") return EQUIPMENT_WORKFLOW_STATE.IDLE;
+
+  if (equipment.runningSession) {
+    return EQUIPMENT_WORKFLOW_STATE.HEAT_TREATING;
+  }
+
+  // Stale status=running without runningSession must not block re-charge (partial finish · store sync)
+
+  // Idle/ready without active session — stale 장입중·검사대기·완료 must not block re-charge
   return EQUIPMENT_WORKFLOW_STATE.IDLE;
 }
 
@@ -73,7 +77,7 @@ export function resolveEquipmentWorkflowState(equipment) {
 export function mapWorkflowStateToEquipmentStatus(workflowState) {
   switch (workflowState) {
     case EQUIPMENT_WORKFLOW_STATE.CHARGING:
-      return "ready";
+      return "idle";
     case EQUIPMENT_WORKFLOW_STATE.HEAT_TREATING:
       return "running";
     case EQUIPMENT_WORKFLOW_STATE.INSPECTION_WAIT:

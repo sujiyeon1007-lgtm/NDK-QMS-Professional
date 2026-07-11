@@ -17,6 +17,7 @@ import {
   getEquipmentSummary,
 } from "./equipmentWorkflowService";
 import { getSessionProductionRecords } from "./productionRecords";
+import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 
 /** View Tab 구성 (Blueprint ② — 설비 / LOT / 제품) */
 export const CONTROL_ROOM_VIEWS = Object.freeze([
@@ -43,7 +44,16 @@ export const CONTROL_ROOM_KPI_CARDS = Object.freeze([
 ]);
 
 /** DashboardStore 캐시 갱신 — Workflow 이벤트 · 수동 새로고침 */
+let controlRoomRecordsCache = null;
+let controlRoomRecordsSnapshot = null;
+
+export function invalidateControlRoomWorkspaceCache() {
+  controlRoomRecordsCache = null;
+  controlRoomRecordsSnapshot = null;
+}
+
 export function refreshControlRoomCache() {
+  invalidateControlRoomWorkspaceCache();
   try {
     return getTitanDataEngine().dashboard.refreshCache();
   } catch {
@@ -65,15 +75,27 @@ function mapProductionStoreRowToRecord(row) {
  * @returns {object[]}
  */
 export function getControlRoomRecords() {
+  const sessionSnapshot = getSessionProductionRecords();
+  if (controlRoomRecordsSnapshot === sessionSnapshot && controlRoomRecordsCache) {
+    return controlRoomRecordsCache;
+  }
+
   try {
-    refreshControlRoomCache();
+    getTitanDataEngine().dashboard.refreshCache();
     const rows = getTitanDataEngine().production.list();
     const records = rows.map(mapProductionStoreRowToRecord).filter(Boolean);
-    if (records.length > 0) return records;
+    if (records.length > 0) {
+      controlRoomRecordsCache = records;
+      controlRoomRecordsSnapshot = sessionSnapshot;
+      return records;
+    }
   } catch {
     // legacy fallback below
   }
-  return getSessionProductionRecords();
+
+  controlRoomRecordsCache = sessionSnapshot;
+  controlRoomRecordsSnapshot = sessionSnapshot;
+  return sessionSnapshot;
 }
 
 /**
@@ -492,3 +514,5 @@ export function getControlRoomProductDetail(productKey) {
     lotSummary,
   };
 }
+
+registerWorkflowScreenCacheInvalidator(invalidateControlRoomWorkspaceCache);

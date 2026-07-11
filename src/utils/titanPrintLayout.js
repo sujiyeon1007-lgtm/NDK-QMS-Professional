@@ -5,10 +5,10 @@ export const PRINT_ORIENTATION = {
   LANDSCAPE: "landscape",
 };
 
-/** A4 본문 가용 너비(mm) — padding 제외 */
+/** A4 본문 가용 너비(mm) — @page margin 제외 content box */
 export const PRINT_CONTENT_WIDTH = {
-  [PRINT_ORIENTATION.PORTRAIT]: 182,
-  [PRINT_ORIENTATION.LANDSCAPE]: 269,
+  [PRINT_ORIENTATION.PORTRAIT]: 190,
+  [PRINT_ORIENTATION.LANDSCAPE]: 281,
 };
 
 /** 페이지당 행 줄(line) 예산 — Header/Footer/Meta 제외 (리스트는 titanListPrintStandard) */

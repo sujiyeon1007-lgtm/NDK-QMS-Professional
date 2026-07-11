@@ -22,7 +22,8 @@ import {
   createEmptyInspectionManagementSearch,
   STANDARD_PRODUCT_BASIC_SEARCH_FIELDS,
 } from "../../config/listSearchStandard";
-import { buildMassInspectionListColumns } from "../../config/standardProductList";
+import { buildMassInspectionListColumns, buildInspectionStatusListColumns } from "../../config/standardProductList";
+import { INSPECTION_TYPE } from "../../config/inspectionManagement";
 import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import {
   getProductionProcessCodes,
@@ -43,7 +44,7 @@ import {
   isMassInspectionRegisterEligible,
   navigateToInspectionRegister,
 } from "../../utils/inspectionRegisterNavigation";
-import { getInspectionMassScreenData } from "../../utils/qualityWorkspaceData";
+import { getInspectionMassScreenData, getInspectionStatusScreenData } from "../../utils/qualityWorkspaceData";
 import InspectionRegisterRowActions from "./InspectionRegisterRowActions";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 import FoundationAttachment, {
@@ -51,20 +52,46 @@ import FoundationAttachment, {
   FoundationAttachmentPopup,
 } from "../../foundation/components/FoundationAttachment";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import "../InOut/InboundManagement.css";
 import "./QualityManagement.css";
 
-export default function MassProductionInspection() {
+export default function MassProductionInspection({
+  viewMode = "task",
+  pageHeading = "",
+  sectionHeading = "",
+  inspectionTypeFilter = null,
+  showToolbarRegister = true,
+  showWorkflowNav = true,
+  showKpi = true,
+  registerOnlyActions = false,
+  registerCategory = "양산",
+  searchStorageKey = null,
+} = {}) {
+  const isStatusView = viewMode === "status";
   const navigate = useNavigate();
   const location = useLocation();
   const [refreshKey, setRefreshKey] = useState(0);
+  const listStorageKey =
+    searchStorageKey ??
+    (viewMode === "status"
+      ? "inspection-status"
+      : inspectionTypeFilter === INSPECTION_TYPE.DEVELOPMENT
+        ? "inspection-dev-register"
+        : "inspection-mass-register");
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
-    useTitanListSearch(createEmptyInspectionManagementSearch, { storageKey: "inspection-mass" });
+    useTitanListSearch(createEmptyInspectionManagementSearch, { storageKey: listStorageKey });
   const [selectedIds, setSelectedIds] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [attachmentPopupRow, setAttachmentPopupRow] = useState(null);
-  const screenData = useMemo(() => getInspectionMassScreenData(), [refreshKey]);
+  const screenData = useMemo(
+    () =>
+      viewMode === "status"
+        ? getInspectionStatusScreenData()
+        : getInspectionMassScreenData(undefined, inspectionTypeFilter),
+    [refreshKey, viewMode, inspectionTypeFilter]
+  );
   const chipRecords = screenData.baseRecords;
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -77,7 +104,7 @@ export default function MassProductionInspection() {
       setRefreshKey((value) => value + 1);
       const targetId = location.state?.activeId;
       if (targetId) {
-        const targetRow = getMassProductionInspectionRows().find(
+        const targetRow = getMassProductionInspectionRows({ inspectionType: inspectionTypeFilter }).find(
           (row) => row.rowKey === targetId || row.managementId === targetId || row.logId === targetId
         );
         setActiveId(targetRow?.rowKey ?? targetId);
@@ -137,9 +164,9 @@ export default function MassProductionInspection() {
         window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
         return;
       }
-      navigateToInspectionRegister(navigate, { managementId, category: "양산" });
+      navigateToInspectionRegister(navigate, { managementId, category: registerCategory });
     },
-    [navigate]
+    [navigate, registerCategory]
   );
 
   const openToolbarRegister = useCallback(() => {
@@ -157,12 +184,12 @@ export default function MassProductionInspection() {
       window.alert("검사대기 상태의 제품만 등록할 수 있습니다.");
       return;
     } else {
-      navigateToInspectionRegister(navigate, { category: "양산" });
+      navigateToInspectionRegister(navigate, { category: registerCategory });
       return;
     }
 
     handleRegister(target);
-  }, [activeRow, handleRegister, navigate, rows, selectedIds]);
+  }, [activeRow, handleRegister, navigate, registerCategory, rows, selectedIds, showToolbarRegister]);
 
   const handleEdit = useCallback(
     (row) => {
@@ -215,8 +242,26 @@ export default function MassProductionInspection() {
   }, [detailPopupRow?.logId]);
 
   const columns = useMemo(
-    () =>
-      buildMassInspectionListColumns({
+    () => {
+      if (isStatusView) {
+        return buildInspectionStatusListColumns({
+          renderProcess: (row) => renderWorkflowProcessChip(row),
+          renderResult: (row) => (
+            <StatusChip variant={row.statusVariant}>{row.inspectionResult || row.statusLabel}</StatusChip>
+          ),
+          renderAttachments: (row) => (
+            <FoundationAttachmentBadge
+              count={row.attachmentCount}
+              onClick={(event) => {
+                event.stopPropagation();
+                setAttachmentPopupRow(row);
+              }}
+            />
+          ),
+        });
+      }
+
+      return buildMassInspectionListColumns({
         renderStatus: (row) => (
           <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>
         ),
@@ -233,6 +278,16 @@ export default function MassProductionInspection() {
         renderActions: (row) => {
           const canRegister = isMassInspectionRegisterEligible(row);
           const isDone = Boolean(row.logId);
+          if (registerOnlyActions) {
+            return (
+              <InspectionRegisterRowActions
+                canRegister={canRegister}
+                canEdit={false}
+                canDelete={false}
+                onRegister={() => handleRegister(row)}
+              />
+            );
+          }
           return (
             <InspectionRegisterRowActions
               canRegister={canRegister}
@@ -244,20 +299,36 @@ export default function MassProductionInspection() {
             />
           );
         },
-      }),
-    [handleRegister, handleEdit, handleDelete]
+      });
+    },
+    [handleRegister, handleEdit, handleDelete, isStatusView, registerOnlyActions]
   );
 
   return (
-    <div className="inbound-page quality-page">
-      <div className="titan-section-page__inline-actions" role="toolbar" aria-label="양산검사 작업">
-        <PrimaryButton type="button" onClick={openToolbarRegister}>
-          <Plus size={14} aria-hidden="true" />
-          등록
-        </PrimaryButton>
-      </div>
+    <div className={`inbound-page quality-page${isStatusView ? " quality-page--inquiry" : ""}${sectionHeading ? " quality-page--section" : ""}`}>
+      {sectionHeading ? (
+        <div className="inbound-page__history-heading quality-page__section-heading" role="heading" aria-level="2">
+          {sectionHeading}
+        </div>
+      ) : null}
+      {pageHeading ? (
+        <div className="inbound-page__history-heading" role="heading" aria-level="2">
+          {pageHeading}
+        </div>
+      ) : null}
+      {!isStatusView && showToolbarRegister ? (
+        <div className="titan-section-page__inline-actions" role="toolbar" aria-label={`${sectionHeading || "검사"} 작업`}>
+          <PrimaryButton type="button" onClick={openToolbarRegister}>
+            <Plus size={14} aria-hidden="true" />
+            등록
+          </PrimaryButton>
+        </div>
+      ) : null}
 
-      <TitanKpiBarSlot ariaLabel="검사 현황" className="inbound-page__kpi">
+      {!isStatusView && showWorkflowNav ? <TitanWorkflowNavigation stepId="inspectionRegister" /> : null}
+
+      {showKpi ? (
+      <TitanKpiBarSlot ariaLabel={isStatusView ? "검사 이력" : "검사 등록"} className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
           chipSetId="inspection"
           records={chipRecords}
@@ -265,6 +336,7 @@ export default function MassProductionInspection() {
           onChipClick={handleChipClick}
         />
       </TitanKpiBarSlot>
+      ) : null}
 
       <TitanSearchPanel
         draft={draft}
@@ -312,14 +384,18 @@ export default function MassProductionInspection() {
           columns={columns}
           rows={pagedRows}
           getRowId={(row) => row.rowKey}
-          selectable
-          selectedRowIds={selectedIds}
-          onToggleRow={toggleRow}
-          onToggleAll={toggleAll}
+          selectable={!isStatusView}
+          selectedRowIds={isStatusView ? [] : selectedIds}
+          onToggleRow={isStatusView ? undefined : toggleRow}
+          onToggleAll={isStatusView ? undefined : toggleAll}
           activeRowId={activeRow?.rowKey}
           onRowClick={(row) => setActiveId(row.rowKey)}
           onRowDoubleClick={openDetailPopup}
-          emptyMessage="열처리완료 · 검사대기 제품이 없습니다."
+          emptyMessage={
+            isStatusView
+              ? "등록된 검사 이력이 없습니다."
+              : "열처리완료 · 검사대기 제품이 없습니다."
+          }
         />
 
         <TitanTableFooter
@@ -342,9 +418,9 @@ export default function MassProductionInspection() {
             attachments: (
               <FoundationAttachment
                 attachments={detailPopupRow?.attachments ?? detailPopupRow?.log?.attachments ?? []}
-                disabled={!detailPopupRow?.logId}
-                onUpload={handleUploadAttachments}
-                onDelete={handleDeleteAttachment}
+                disabled={isStatusView || !detailPopupRow?.logId}
+                onUpload={isStatusView ? undefined : handleUploadAttachments}
+                onDelete={isStatusView ? undefined : handleDeleteAttachment}
               />
             ),
           },

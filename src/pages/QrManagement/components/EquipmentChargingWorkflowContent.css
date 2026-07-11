@@ -1,0 +1,99 @@
+.equipment-charging-workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.equipment-charging-workflow__section-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.equipment-charging-workflow__lot-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.equipment-charging-workflow__lot-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.equipment-charging-workflow__lot-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.equipment-charging-workflow__lot-mode legend {
+  width: 100%;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.equipment-charging-workflow__lot-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.equipment-charging-workflow__lot-edit-field {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.equipment-charging-workflow__lot-edit-field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.equipment-charging-workflow__error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.equipment-charging-workflow__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.equipment-charging-workflow__footer--no-actions {
+  grid-template-columns: 1fr;
+}
+
+.equipment-charging-workflow--popup .equipment-charging-workflow__footer {
+  grid-template-columns: 1fr;
+}
+
+.equipment-charging-workflow--popup .qr-equipment-actions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .equipment-charging-workflow__footer {
+    grid-template-columns: 1fr;
+  }
+}

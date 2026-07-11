@@ -1,11 +1,11 @@
 import { useState } from "react";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
-import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
+import { TitanAutoComplete } from "../../foundation/components/TitanSearchAutocomplete";
 import {
   INSPECTION_CATEGORIES,
   INSPECTION_JUDGMENTS,
 } from "../../utils/inspectionLogSession";
-import { getActiveMasterNames, getActiveWorkers } from "../../utils/masterData";
+import { getActiveWorkers } from "../../utils/masterData";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
@@ -46,7 +46,6 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
     initialData ? { ...emptyForm(), ...initialData } : emptyForm()
   );
   const unitOptions = getProductUnitOptions();
-  const companyOptions = getActiveMasterNames("companies");
   const workerOptions = getActiveWorkers();
 
   const handleChange = (key, value) => {
@@ -175,12 +174,13 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
                 onChange={(event) => handleChange("lotNo", event.target.value)}
               />
             </label>
-            <TitanSearchableSelect
+            <TitanAutoComplete
+              fieldType="company"
               label="업체명"
               value={form.company}
-              onChange={handleCompanyChange}
-              options={companyOptions}
-              placeholder="거래처 선택"
+              onChange={(value) => handleChange("company", value)}
+              onSelect={handleCompanyChange}
+              placeholder="거래처 검색"
             />
             <TitanCascadeProductPicker
               inline

@@ -20,14 +20,36 @@ import {
 } from "./productionDailyReportStatus";
 import { buildProductionDailyReportWorkspaceRecords } from "./productionWorkspaceData";
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
+import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 
 /** @typedef {Record<string, number>} StatusChipCounts */
 
-export function getInboundScreenData(records = getSessionProductionRecords()) {
-  const source = records.length ? records : getSessionProductionRecords();
+let inboundScreenSnapshot = null;
+let inboundScreenCache = null;
+let outboundScreenSnapshot = null;
+let outboundScreenCache = null;
+let productionScreenSnapshot = null;
+let productionScreenCache = null;
+
+export function invalidateTitanScreenDataSourceCache() {
+  inboundScreenSnapshot = null;
+  inboundScreenCache = null;
+  outboundScreenSnapshot = null;
+  outboundScreenCache = null;
+  productionScreenSnapshot = null;
+  productionScreenCache = null;
+}
+
+export function getInboundScreenData(records) {
+  const snapshot = records ?? getSessionProductionRecords();
+  if (!records && inboundScreenSnapshot === snapshot && inboundScreenCache) {
+    return inboundScreenCache;
+  }
+
+  const source = snapshot.length ? snapshot : getSessionProductionRecords();
   const taskRecords = buildIncomingTaskWorkspaceRecords(source);
 
-  return {
+  const result = {
     baseRecords: taskRecords,
     counts: {
       productIncomingReg: taskRecords.length,
@@ -38,18 +60,35 @@ export function getInboundScreenData(records = getSessionProductionRecords()) {
       productShipDone: 0,
     },
   };
+
+  if (!records) {
+    inboundScreenSnapshot = snapshot;
+    inboundScreenCache = result;
+  }
+  return result;
 }
 
-export function getProductionScreenData(records = getSessionProductionRecords()) {
-  const source = records?.length ? records : getSessionProductionRecords();
+export function getProductionScreenData(records) {
+  const snapshot = records ?? getSessionProductionRecords();
+  if (!records && productionScreenSnapshot === snapshot && productionScreenCache) {
+    return productionScreenCache;
+  }
+
+  const source = snapshot?.length ? snapshot : getSessionProductionRecords();
   const baseRecords = buildProductionDailyReportWorkspaceRecords(source);
-  return {
+  const result = {
     baseRecords,
     counts: {
       prodProgress: countProductionChipBucket(baseRecords, "prodProgress"),
       prodDone: countProductionChipBucket(baseRecords, "prodDone"),
     },
   };
+
+  if (!records) {
+    productionScreenSnapshot = snapshot;
+    productionScreenCache = result;
+  }
+  return result;
 }
 
 function isMassInspectionRow(record) {
@@ -91,18 +130,29 @@ export function getCertificateScreenData(rows) {
   return getCertificateWorkspaceScreenData();
 }
 
-export function getOutboundScreenData(records = getSessionProductionRecords()) {
-  const source = records.length ? records : getSessionProductionRecords();
+export function getOutboundScreenData(records) {
+  const snapshot = records ?? getSessionProductionRecords();
+  if (!records && outboundScreenSnapshot === snapshot && outboundScreenCache) {
+    return outboundScreenCache;
+  }
+
+  const source = snapshot.length ? snapshot : getSessionProductionRecords();
   const taskRecords = buildOutgoingTaskWorkspaceRecords(source);
   const completedRecords = buildOutgoingCompletedWorkspaceRecords(source);
 
-  return {
+  const result = {
     baseRecords: taskRecords,
     counts: {
       shipNotDone: taskRecords.length,
       shipDone: completedRecords.length,
     },
   };
+
+  if (!records) {
+    outboundScreenSnapshot = snapshot;
+    outboundScreenCache = result;
+  }
+  return result;
 }
 
 export { getHomeScreenData } from "./homeDashboardData";
@@ -117,3 +167,5 @@ export function getProductionBaseRecords(records = getSessionProductionRecords()
 }
 
 export { getProductionDailyReportStatusLabel };
+
+registerWorkflowScreenCacheInvalidator(invalidateTitanScreenDataSourceCache);

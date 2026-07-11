@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import { TitanMasterAutocomplete } from "../../foundation/components/TitanSearchAutocomplete";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { KR_INSPECTION_FIELDS, KR_RESULT_OPTIONS } from "../../config/knowledgeRecordModel";
 import {
   getActualWorkRecordsForKnowledge,
@@ -79,6 +82,34 @@ export default function KnowledgeRecordModal({ open, onClose, onSave, mode = "ad
     [form.actualWorkRecordId]
   );
 
+  const handleCascadeChange = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+    }));
+    setError("");
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+      partNo: "",
+    }));
+    setError("");
+  };
+
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError("");
@@ -152,33 +183,29 @@ export default function KnowledgeRecordModal({ open, onClose, onSave, mode = "ad
       <div className="awr-modal__section">
         <h4 className="awr-modal__subtitle">제품 · 귀속 정보</h4>
         <div className="master-register-modal__grid">
-          <label className="master-register-modal__field">
-            <span>업체</span>
-            <input
-              type="text"
-              value={form.company}
-              onChange={(event) => updateField("company", event.target.value)}
-              placeholder="예) 서암기계공업"
-            />
-          </label>
-          <label className="master-register-modal__field">
-            <span>품명</span>
-            <input
-              type="text"
-              value={form.partName}
-              onChange={(event) => updateField("partName", event.target.value)}
-              placeholder="예) 샤프트"
-            />
-          </label>
-          <label className="master-register-modal__field">
-            <span>품번</span>
-            <input
-              type="text"
-              value={form.partNo}
-              onChange={(event) => updateField("partNo", event.target.value)}
-              placeholder="예) SA-4032"
-            />
-          </label>
+          <TitanMasterAutocomplete
+            field="company"
+            label="업체"
+            className="master-register-modal__field"
+            value={form.company}
+            onChange={(value) => updateField("company", value)}
+            onSelect={handleCompanyChange}
+            placeholder="거래처 검색"
+          />
+          <TitanCascadeProductPicker
+            inline
+            showDrawingNo={false}
+            showAutoFields={false}
+            company={form.company}
+            value={{
+              partName: form.partName,
+              partNo: form.partNo,
+              drawingNo: "",
+            }}
+            onChange={handleCascadeChange}
+            fieldClassName="master-register-modal__field"
+            kicker="기술 데이터"
+          />
           <label className="master-register-modal__field">
             <span>수량</span>
             <input

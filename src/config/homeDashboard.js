@@ -245,8 +245,8 @@ export const HOME_HUB_SHORTCUTS = [
     label: "설비 현황",
     to: OPERATION_ROUTES.equipmentStatus,
     actionLabel: "전체 보기 →",
-    summary: ({ equipmentRunning, equipmentReady, equipmentMaintenance }) =>
-      `운전중 ${equipmentRunning} · 준비 ${equipmentReady} · 점검 ${equipmentMaintenance}`,
+    summary: ({ equipmentRunning, equipmentIdle, equipmentMaintenance }) =>
+      `운전중 ${equipmentRunning} · 대기 ${equipmentIdle} · 점검 ${equipmentMaintenance}`,
   },
   {
     id: "productStatus",

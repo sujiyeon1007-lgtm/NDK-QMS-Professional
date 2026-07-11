@@ -111,9 +111,19 @@ function DetailHistory({ row }) {
   return <ul className="incoming-document-history">{(row.history || []).map((item, index) => <li key={`${item.at}-${index}`}><span>{String(item.at || "").replace("T", " ").slice(0, 16)}</span><strong>{item.action || "-"}</strong><em>{item.user || "-"}</em></li>)}</ul>;
 }
 
-export default function IncomingDocumentArchivePage() {
+export default function IncomingDocumentArchivePage({
+  pageTitle = L.title,
+  pageDescription = L.desc,
+  fixedDocumentType = null,
+  excludeDocumentTypes = [],
+  hideTypeFilter = false,
+  defaultDocumentType = null,
+}) {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [search, setSearch] = useState(emptySearch);
+  const [search, setSearch] = useState(() => ({
+    ...emptySearch(),
+    documentType: fixedDocumentType || defaultDocumentType || "all",
+  }));
   const [activeId, setActiveId] = useState("");
   const [detailRow, setDetailRow] = useState(null);
   const [registerMode, setRegisterMode] = useState(null);
@@ -121,10 +131,26 @@ export default function IncomingDocumentArchivePage() {
   const [attachmentPopupRow, setAttachmentPopupRow] = useState(null);
   const rows = useMemo(() => getIncomingDocumentArchiveRows(), [refreshKey]);
   const companies = useMemo(() => getMasterDataByCategory("companies"), [refreshKey]);
-  const filteredRows = useMemo(() => rows.filter((row) => matchesIncomingDocumentArchiveSearch(row, search)), [rows, search]);
+  const filteredRows = useMemo(() => {
+    return rows
+      .filter((row) => {
+        if (fixedDocumentType && row.documentType !== fixedDocumentType) return false;
+        if (excludeDocumentTypes.length && excludeDocumentTypes.includes(row.documentType)) return false;
+        return true;
+      })
+      .filter((row) => matchesIncomingDocumentArchiveSearch(row, search));
+  }, [rows, search, fixedDocumentType, excludeDocumentTypes]);
   const pagination = useListPagination(filteredRows);
 
-  const openRegister = (row = null) => { setDraft(createDraft(row || {})); setRegisterMode(row ? "edit" : "register"); };
+  const openRegisterWithDefaults = (row = null) => {
+    const base = createDraft(row || {});
+    if (fixedDocumentType) base.documentType = fixedDocumentType;
+    else if (defaultDocumentType) base.documentType = defaultDocumentType;
+    setDraft(base);
+    setRegisterMode(row ? "edit" : "register");
+  };
+
+  const openRegister = (row = null) => openRegisterWithDefaults(row);
   const submit = () => {
     if (!draft.company || !draft.title || !draft.receivedDate) { window.alert(L.requiredAlert); return; }
     const saved = saveIncomingDocumentArchiveRow(draft);
@@ -147,10 +173,10 @@ export default function IncomingDocumentArchivePage() {
   ];
 
   return <div className="incoming-document-archive">
-    <header className="incoming-document-archive__toolbar"><div><h2><FileArchive size={18} aria-hidden="true" />{L.title}</h2><p>{L.desc}</p></div><PrimaryButton type="button" onClick={() => openRegister()}><Plus size={14} aria-hidden="true" />{L.register}</PrimaryButton></header>
+    <header className="incoming-document-archive__toolbar"><div><h2><FileArchive size={18} aria-hidden="true" />{pageTitle}</h2><p>{pageDescription}</p></div><PrimaryButton type="button" onClick={() => openRegisterWithDefaults()}><Plus size={14} aria-hidden="true" />{L.register}</PrimaryButton></header>
     <section className="incoming-document-search" aria-label="incoming document search">
       <label><span>{L.company}</span><input value={search.company} onChange={(event) => setSearch((prev) => ({ ...prev, company: event.target.value }))} /></label>
-      <label><span>{L.type}</span><select value={search.documentType} onChange={(event) => setSearch((prev) => ({ ...prev, documentType: event.target.value }))}><option value="all">{L.all}</option>{INCOMING_DOCUMENT_TYPES.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}</select></label>
+      {!hideTypeFilter ? <label><span>{L.type}</span><select value={search.documentType} onChange={(event) => setSearch((prev) => ({ ...prev, documentType: event.target.value }))}><option value="all">{L.all}</option>{INCOMING_DOCUMENT_TYPES.map((type) => <option key={type.id} value={type.id}>{type.label}</option>)}</select></label> : null}
       <label><span>{L.titleLabel}</span><input value={search.title} onChange={(event) => setSearch((prev) => ({ ...prev, title: event.target.value }))} /></label>
       <label><span>{L.orderNo}</span><input value={search.orderNo} onChange={(event) => setSearch((prev) => ({ ...prev, orderNo: event.target.value }))} /></label>
       <label><span>{L.receivedDate} From</span><input type="date" value={search.receivedDateFrom} onChange={(event) => setSearch((prev) => ({ ...prev, receivedDateFrom: event.target.value }))} /></label>
@@ -158,7 +184,7 @@ export default function IncomingDocumentArchivePage() {
       <label><span>{L.registeredDate} From</span><input type="date" value={search.registeredDateFrom} onChange={(event) => setSearch((prev) => ({ ...prev, registeredDateFrom: event.target.value }))} /></label>
       <label><span>{L.registeredDate} To</span><input type="date" value={search.registeredDateTo} onChange={(event) => setSearch((prev) => ({ ...prev, registeredDateTo: event.target.value }))} /></label>
       <label><span>{L.memo}</span><input value={search.memo} onChange={(event) => setSearch((prev) => ({ ...prev, memo: event.target.value }))} /></label>
-      <SecondaryButton type="button" onClick={() => setSearch(emptySearch())}>{L.reset}</SecondaryButton>
+      <SecondaryButton type="button" onClick={() => setSearch({ ...emptySearch(), documentType: fixedDocumentType || defaultDocumentType || "all" })}>{L.reset}</SecondaryButton>
     </section>
     <div className="quality-page__list"><TitanDataTable columns={columns} rows={pagination.pagedItems} activeRowId={activeId} onRowClick={(row) => setActiveId(row.id)} onRowDoubleClick={(row) => { setActiveId(row.id); setDetailRow(row); }} emptyMessage={L.empty} /><TitanTableFooter totalCount={pagination.totalCount} page={pagination.page} totalPages={pagination.totalPages} pageSize={pagination.pageSize} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /></div>
     <TitanRegisterModal open={Boolean(registerMode)} onClose={() => setRegisterMode(null)} onSubmit={submit} title={registerMode === "edit" ? L.editTitle : L.register} submitLabel={registerMode === "edit" ? L.save : L.register}><IncomingDocumentForm draft={draft} setDraft={setDraft} companies={companies} /></TitanRegisterModal>

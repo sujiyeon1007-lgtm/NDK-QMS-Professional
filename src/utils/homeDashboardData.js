@@ -281,7 +281,7 @@ const TODAY_ACTION_ROUTES = {
   HT_WAIT: { to: OPERATION_ROUTES.productionPending, verb: "LOT 등록", shortTitle: "열처리 대기" },
   HT_RUNNING: { to: OPERATION_ROUTES.dailyWork, verb: "열처리 완료", shortTitle: "열처리 중" },
   INSPECTION_WAIT: { to: "/quality/inspection", verb: "검사 등록", shortTitle: "검사 대기" },
-  CERT_WAIT: { to: "/quality/certificate", verb: "성적서 발행", shortTitle: "성적서 대기" },
+  CERT_WAIT: { to: "/quality/certificate/register", verb: "성적서 발행", shortTitle: "성적서 대기" },
   SHIP_WAIT: { to: OPERATION_ROUTES.shipmentRegister, verb: "출고 처리", shortTitle: "출고 대기" },
 };
 

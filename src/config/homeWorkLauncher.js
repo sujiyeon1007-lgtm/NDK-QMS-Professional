@@ -42,7 +42,7 @@ export const HOME_WORK_LAUNCHER_ITEMS = [
     moduleId: "qrSystem",
     metrics: [
       { key: "running", label: "운전중", suffix: "대" },
-      { key: "ready", label: "장입 준비", suffix: "대" },
+      { key: "idle", label: "대기", suffix: "대" },
       { key: "maintenance", label: "점검중", suffix: "대" },
     ],
   },
@@ -201,7 +201,7 @@ export const HOME_WORK_DASHBOARD_GROUPS = [
     metrics: [
       { key: "running", label: "운전중", suffix: "대" },
       { key: "maintenance", label: "점검중", suffix: "대" },
-      { key: "ready", label: "장입 준비", suffix: "대" },
+      { key: "idle", label: "대기", suffix: "대" },
     ],
   },
   {

@@ -6,11 +6,16 @@ import { getProductionProcessName } from "../config/productionProcessCodes";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getProductByCompanyAndPartNo } from "./productRegistrationSession";
-import { getProductMasterBundle, resolveInspectionSpecification } from "./productInspectionSession";
-import { mergeInspectionSpecification, normalizeInspectionCriteriaSpec } from "./inspectionCriteriaModel";
-import { findProductByPartNo } from "./masterData";
-import { cloneSpecification, createDefaultSpecification } from "./productSpecificationModel";
+import { getProductMasterBundle } from "./productInspectionSession";
 import {
+  resolveProductMasterInspectionSpec,
+  snapshotProductMasterSpec,
+} from "./productMasterInspectionSpec";
+import { normalizeInspectionCriteriaSpec, resolveCriterionItemUnit } from "./inspectionCriteriaModel";
+import { findProductByPartNo } from "./masterData";
+import { cloneSpecification, INSPECTION_HARDNESS_EXCLUDED_KEYS } from "./productSpecificationModel";
+import {
+  buildMainInspectionResultRows,
   buildScopedResultSummary,
   computeFinalJudgmentFromScope,
   getInspectionScope,
@@ -22,6 +27,11 @@ import {
   normalizeInspectionReport,
 } from "./inspectionReportModel";
 import { applyHardeningDepthRows, migrateHardeningDepthRows } from "./hardeningDepthModel";
+import {
+  buildDimensionInspectionRowsFromSpec,
+  normalizeDimensionInspectionRows,
+  syncDimensionInspectionRows,
+} from "./dimensionInspectionModel";
 import {
   applyHeatTreatmentFieldEdit,
   formatDepthMm,
@@ -46,35 +56,57 @@ const APPEARANCE_LABELS = {
   stain: "얼룩",
 };
 
-const HARDNESS_UNIT_BY_KEY = {
-  surface: "hardnessUnit",
-  caseDepth: "mm",
-  effectiveDepth: "mm",
-  compoundLayer: "μm",
-  core: "hardnessUnit",
-};
-
-function resolveHardnessUnit(key, hardnessUnit = "HV") {
-  const mapped = HARDNESS_UNIT_BY_KEY[key];
-  if (mapped === "hardnessUnit") return hardnessUnit;
-  return mapped || hardnessUnit;
+function resolveHardnessUnit(key, hardnessUnit = "HV", item = {}) {
+  return resolveCriterionItemUnit(key, item, hardnessUnit);
 }
 
 function buildHardnessRowsFromSpec(spec) {
   if (!spec?.hardness?.enabled) return [];
   const hardnessUnit = spec.hardness.unit || "HV";
   return spec.hardness.items
-    .filter((item) => !item.disabled && item.spec && item.spec !== "없음")
+    .filter(
+      (item) =>
+        !item.disabled &&
+        item.spec &&
+        item.spec !== "없음" &&
+        !INSPECTION_HARDNESS_EXCLUDED_KEYS.includes(item.key)
+    )
     .map((item) => ({
       key: item.key,
       item: item.label,
       spec: item.spec,
       measured: "",
       measuredRaw: "",
-      unit: resolveHardnessUnit(item.key, hardnessUnit),
+      unit: resolveHardnessUnit(item.key, hardnessUnit, item),
       judgment: "—",
       note: "",
     }));
+}
+
+/** 유효경화깊이만 자동 판정 행 생성 — 경화깊이(caseDepth)는 상세 영역 전용 */
+function buildAutoDepthJudgmentRows(spec, calculations) {
+  if (!spec?.hardness?.enabled || !calculations) return [];
+
+  const item = spec.hardness.items.find((row) => row.key === "effectiveDepth");
+  if (!item || item.disabled || !item.spec || item.spec === "없음") return [];
+
+  const depthValue = calculations.effectiveDepth?.final;
+  if (depthValue == null) return [];
+
+  const measured = formatDepthMm(depthValue);
+  return [
+    {
+      key: "effectiveDepth",
+      item: item.label || "유효경화깊이",
+      spec: item.spec,
+      measured,
+      measuredRaw: measured,
+      unit: "mm",
+      judgment: evaluateMeasurement(item.spec, measured),
+      note: "자동 계산",
+      autoCalculated: true,
+    },
+  ];
 }
 
 function buildDimensionRowsFromSpec(spec) {
@@ -116,7 +148,7 @@ function buildSpecificationsFromSpec(spec) {
         rows.push({
           item: item.label,
           spec: item.spec,
-          unit: resolveHardnessUnit(item.key, spec.hardness.unit || "HV"),
+          unit: resolveHardnessUnit(item.key, spec.hardness.unit || "HV", item),
           note: "—",
         });
       });
@@ -136,28 +168,18 @@ function buildSpecificationsFromSpec(spec) {
   return rows;
 }
 
-function resolveRegisterAppliedSpecification(record, product) {
-  let spec = product?.specification
-    ? cloneSpecification(product.specification)
-    : createDefaultSpecification();
-
+function resolveRegisterAppliedSpecification(record, product, company = "") {
   const partNo = record?.partNo || product?.partNo || "";
-  const company = record?.company || product?.company || "";
+  const companyName = record?.company || product?.company || company || "";
 
-  if (partNo) {
-    const masterSpec = resolveInspectionSpecification(partNo);
-    if (masterSpec) {
-      spec = mergeInspectionSpecification(spec, masterSpec);
-    }
-  }
-
+  let spec = resolveProductMasterInspectionSpec(companyName, partNo);
   spec = normalizeInspectionCriteriaSpec(spec);
 
   const hasSurfaceSpec = (spec.hardness?.items ?? []).some(
     (item) => item.key === "surface" && item.spec && item.spec !== "없음"
   );
 
-  if (!hasSurfaceSpec) {
+  if (!hasSurfaceSpec && spec.hardness?.enabled !== false) {
     spec = normalizeInspectionCriteriaSpec({
       ...spec,
       hardness: {
@@ -176,36 +198,6 @@ function resolveRegisterAppliedSpecification(record, product) {
     });
   }
 
-  const defaultHardnessItemPatches = {
-    caseDepth: { value: "0.30", valueTo: "0.50", condition: "범위", disabled: false, unit: "mm" },
-    effectiveDepth: { value: "0.20", valueTo: "0.40", condition: "범위", disabled: false, unit: "mm" },
-    compoundLayer: { spec: "5~15", disabled: false },
-    core: { value: "250", valueTo: "350", condition: "범위", disabled: false, unit: "HV" },
-  };
-
-  const patchedItems = (spec.hardness?.items ?? []).map((item) => {
-    if (item.spec && item.spec !== "없음") return item;
-    const patch = defaultHardnessItemPatches[item.key];
-    return patch ? { ...item, ...patch } : item;
-  });
-
-  spec = normalizeInspectionCriteriaSpec({
-    ...spec,
-    hardness: {
-      ...spec.hardness,
-      items: patchedItems,
-    },
-  });
-
-  spec = {
-    ...spec,
-    appearance: { ...spec.appearance, enabled: true },
-    hardness: { ...spec.hardness, enabled: true },
-    hardeningDepth: { ...spec.hardeningDepth, enabled: true },
-    microstructure: { ...spec.microstructure, enabled: spec.microstructure?.enabled ?? true },
-    other: { ...spec.other, enabled: spec.other?.enabled ?? true },
-  };
-
   return normalizeInspectionCriteriaSpec(spec);
 }
 
@@ -216,8 +208,15 @@ export function buildInitialRegisterReport({ record = null, product = null } = {
   const masterProduct = record?.partNo ? findProductByPartNo(record.partNo) : null;
   const masterBundle = record?.partNo ? getProductMasterBundle(record.partNo, record.company) : null;
   const appliedSpecification = resolveRegisterAppliedSpecification(record, resolvedProduct);
+  const productMasterSpec = snapshotProductMasterSpec(
+    record?.company || resolvedProduct?.company || "",
+    record?.partNo || resolvedProduct?.partNo || ""
+  );
   const rebuilt = rebuildRowsFromSpecification(appliedSpecification);
   const scope = getInspectionScope(appliedSpecification);
+  const dimensionInspectionRows = scope.dimension
+    ? buildDimensionInspectionRowsFromSpec(appliedSpecification)
+    : [];
 
   const traceRow = record
     ? mapV13ProductListRow(record, { label: "검사대기", variant: "wait" }, { screenKey: "inspection", workQty: record.qty })
@@ -255,14 +254,17 @@ export function buildInitialRegisterReport({ record = null, product = null } = {
     inspector: getCurrentTitanUser(),
     approver: "—",
     appliedSpecification,
+    productMasterSpec,
     hardnessUnit: appliedSpecification?.hardness?.unit || "HV",
     specifications: rebuilt.specifications,
     hardnessRows: rebuilt.hardnessRows,
     dimensionRows: rebuilt.dimensionRows,
+    dimensionInspectionRows,
     appearanceRows: rebuilt.appearanceRows,
     otherRows: rebuilt.otherRows,
     hardeningDepthRows: [],
     hardeningDepthHv: [],
+    coreHardnessHv: "",
     hasMicrostructurePhoto: Boolean(appliedSpecification?.microstructure?.enabled),
     microstructureJudgment: "이상없음",
     microstructurePhotos: [],
@@ -316,44 +318,41 @@ export function loadRegisterReportFromSearchParams(searchParams) {
 
 export function applyProductToReport(report, partNo, company = report.company) {
   const trimmedPartNo = partNo?.trim() || report.partNo;
-  const product = getProductByCompanyAndPartNo(company, trimmedPartNo);
+  const companyName = company?.trim() || report.company;
+  const product = getProductByCompanyAndPartNo(companyName, trimmedPartNo);
   const masterProduct = findProductByPartNo(trimmedPartNo);
-  const masterBundle = getProductMasterBundle(trimmedPartNo);
-  const masterProductSpec = resolveInspectionSpecification(trimmedPartNo);
-  const currentDrawing = masterBundle?.drawing;
+  const masterBundle = getProductMasterBundle(trimmedPartNo, companyName);
 
-  if (!product && !masterProduct && !masterProductSpec) {
-    return syncReportJudgments({ ...report, partNo: trimmedPartNo });
+  if (!product && !masterProduct) {
+    return syncReportJudgments({ ...report, partNo: trimmedPartNo, company: companyName });
   }
 
-  let appliedSpecification = product
-    ? cloneSpecification(product.specification)
-    : createDefaultSpecification();
-
-  if (masterProductSpec) {
-    appliedSpecification = mergeInspectionSpecification(appliedSpecification, masterProductSpec);
-  }
-
+  const productMasterSpec = snapshotProductMasterSpec(companyName, trimmedPartNo);
+  const appliedSpecification = cloneSpecification(productMasterSpec);
   const rebuilt = rebuildRowsFromSpecification(appliedSpecification);
   const scope = getInspectionScope(appliedSpecification);
 
   const next = {
     ...report,
-    company: product?.company || masterProduct?.company || report.company,
+    company: product?.company || masterProduct?.company || companyName || report.company,
     partName: product?.partName || masterProduct?.name || report.partName,
     partNo: product?.partNo || masterProduct?.partNo || trimmedPartNo,
     drawingNo:
-      currentDrawing?.drawingNo ||
+      masterBundle?.drawing?.drawingNo ||
       product?.drawingNo ||
       masterProduct?.drawingNo ||
       report.drawingNo,
     material: product?.material || masterProduct?.material || report.material,
     process: product?.process || masterProduct?.process || report.process,
+    productMasterSpec,
     appliedSpecification,
     hardnessUnit: appliedSpecification.hardness?.unit || "HV",
     specifications: rebuilt.specifications,
     hardnessRows: rebuilt.hardnessRows,
     dimensionRows: rebuilt.dimensionRows,
+    dimensionInspectionRows: scope.dimension
+      ? buildDimensionInspectionRowsFromSpec(appliedSpecification)
+      : [],
     appearanceRows: rebuilt.appearanceRows,
     otherRows: rebuilt.otherRows,
     hasMicrostructurePhoto: Boolean(appliedSpecification?.microstructure?.enabled),
@@ -363,25 +362,14 @@ export function applyProductToReport(report, partNo, company = report.company) {
   return syncReportJudgments(normalizeInspectionReport(next));
 }
 
-function syncHardnessRowsFromHeatTreatment(hardnessRows, calculations) {
-  if (!calculations || !hardnessRows?.length) return hardnessRows;
+function syncHardnessRowsFromHeatTreatment(hardnessRows, calculations, appliedSpecification) {
+  const manualRows = (hardnessRows || []).map((row) => ({
+    ...row,
+    judgment: evaluateMeasurement(row.spec, row.measuredRaw ?? row.measured),
+  }));
 
-  const depthByKey = {
-    effectiveDepth: calculations.effectiveDepth?.final,
-    caseDepth: calculations.caseDepth?.final,
-  };
-
-  return hardnessRows.map((row) => {
-    const depthValue = depthByKey[row.key];
-    if (depthValue == null) return row;
-    const measured = formatDepthMm(depthValue);
-    return {
-      ...row,
-      measured,
-      measuredRaw: measured,
-      judgment: evaluateMeasurement(row.spec, measured),
-    };
-  });
+  const autoDepthRows = buildAutoDepthJudgmentRows(appliedSpecification, calculations);
+  return [...manualRows, ...autoDepthRows];
 }
 
 export function updateHeatTreatmentCalculation(report, fieldKey, rawValue) {
@@ -408,6 +396,18 @@ export function syncReportJudgments(report) {
       }))
     : [];
 
+  const dimensionInspectionRows = scope.dimension
+    ? syncDimensionInspectionRows(report.dimensionInspectionRows || [])
+    : [];
+
+  const dimensionSummary = scope.dimension
+    ? summarizeJudgments(
+        dimensionInspectionRows.length
+          ? dimensionInspectionRows
+          : dimensionRows
+      )
+    : "—";
+
   const appearanceRows = scope.appearance
     ? (report.appearanceRows || []).map((row) => ({
         ...row,
@@ -417,7 +417,6 @@ export function syncReportJudgments(report) {
 
   const appearanceSummary = scope.appearance ? summarizeJudgments(appearanceRows) : "—";
   const hardnessSummary = scope.hardness ? summarizeJudgments(hardnessRows) : "—";
-  const dimensionSummary = scope.dimension ? summarizeJudgments(dimensionRows) : "—";
 
   const microSummary =
     scope.microstructure && report.hasMicrostructurePhoto
@@ -446,13 +445,18 @@ export function syncReportJudgments(report) {
 
   const syncedHardnessRows =
     heatTreatmentCalculations && scope.hardness
-      ? syncHardnessRowsFromHeatTreatment(hardnessRows, heatTreatmentCalculations)
+      ? syncHardnessRowsFromHeatTreatment(
+          hardnessRows,
+          heatTreatmentCalculations,
+          report.appliedSpecification
+        )
       : hardnessRows;
 
   const syncedPartial = {
     ...report,
     hardnessRows: syncedHardnessRows,
     dimensionRows,
+    dimensionInspectionRows,
     appearanceRows,
     appearanceSummary,
     hardnessSummary: scope.hardness ? summarizeJudgments(syncedHardnessRows) : "—",
@@ -469,6 +473,7 @@ export function syncReportJudgments(report) {
   };
 
   const resultSummary = buildScopedResultSummary(syncedPartial, scope);
+  const mainResultRows = buildMainInspectionResultRows(syncedPartial, scope);
   const finalJudgment = computeFinalJudgmentFromScope(
     {
       ...syncedPartial,
@@ -483,9 +488,12 @@ export function syncReportJudgments(report) {
   return normalizeInspectionReport({
     ...syncedPartial,
     resultSummary,
+    mainResultRows,
     finalJudgment,
   });
 }
+
+export { buildMainInspectionResultRows };
 
 export function reportToInspectionLogPayload(report, logId = null) {
   const synced = syncReportJudgments(report);
@@ -508,6 +516,7 @@ export function reportToInspectionLogPayload(report, logId = null) {
     judgment: synced.finalJudgment,
     note: synced.remarks?.trim() || "",
     appliedSpecification: synced.appliedSpecification,
+    productMasterSpec: synced.productMasterSpec ?? null,
     hardnessMeasurements: synced.hardnessRows.map((row) => ({
       key: row.key,
       measured: row.measuredRaw ?? row.measured,
@@ -518,6 +527,7 @@ export function reportToInspectionLogPayload(report, logId = null) {
       measured: row.measuredRaw ?? row.measured,
       judgment: row.judgment,
     })),
+    dimensionInspectionRows: synced.dimensionInspectionRows ?? [],
     appearanceMeasurements: synced.appearanceRows.map((row) => ({
       key: row.key,
       result: row.result,
@@ -529,6 +539,7 @@ export function reportToInspectionLogPayload(report, logId = null) {
     hardeningDepthHv: synced.hardeningDepthHv,
     heatTreatmentCalculations: synced.heatTreatmentCalculations,
     heatTreatmentEdits: synced.heatTreatmentEdits,
+    coreHardnessHv: synced.coreHardnessHv ?? "",
     microstructurePhotos: synced.microstructurePhotos,
   };
 }

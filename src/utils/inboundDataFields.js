@@ -8,6 +8,8 @@ import {
   normalizeShotWorkStatus,
   normalizeWorkTypeId,
 } from "../config/workTypeWorkflow";
+import { normalizeCertificateIssuePolicy } from "./certificateIssuePolicy";
+import { getProductInspectionType, normalizeInspectionType } from "../config/inspectionManagement";
 
 export function normalizeInboundDataFields(record = {}) {
   const workType = normalizeWorkTypeId(record.workType);
@@ -23,7 +25,19 @@ export function normalizeInboundDataFields(record = {}) {
     workTypeLabel: workTypeMeta.label,
     shotStatus,
     shotStatusLabel: shotStatusMeta.label,
+    certificateIssuePolicy: normalizeCertificateIssuePolicy(record.certificateIssuePolicy),
+    certificateIssuePolicySource: record.certificateIssuePolicySource || "product",
+    inspectionType: normalizeInspectionType(record.inspectionType),
+    inspectionTypeSource: record.inspectionTypeSource || "product",
   };
+}
+
+export function resolveInboundInspectionType(form, product = null) {
+  if (form?.inspectionTypeSource === "inbound_override" && form?.inspectionType) {
+    return normalizeInspectionType(form.inspectionType);
+  }
+  if (product) return getProductInspectionType(product);
+  return normalizeInspectionType(form?.inspectionType);
 }
 
 function includesField(value, query) {

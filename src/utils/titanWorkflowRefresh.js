@@ -4,8 +4,23 @@
 
 export const TITAN_WORKFLOW_REFRESH_EVENT = "titan-workflow-data-refreshed";
 
+/** @type {Array<() => void>} */
+const workflowScreenCacheInvalidators = [];
+
+/** @param {() => void} invalidator */
+export function registerWorkflowScreenCacheInvalidator(invalidator) {
+  if (typeof invalidator === "function") {
+    workflowScreenCacheInvalidators.push(invalidator);
+  }
+}
+
+export function invalidateAllWorkflowScreenCaches() {
+  workflowScreenCacheInvalidators.forEach((invalidate) => invalidate());
+}
+
 /** @param {Record<string, unknown>} [detail] */
 export function notifyWorkflowDataRefresh(detail = {}) {
+  invalidateAllWorkflowScreenCaches();
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(TITAN_WORKFLOW_REFRESH_EVENT, { detail }));
 }

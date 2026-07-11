@@ -1,0 +1,187 @@
+/**
+ * Project TITAN RC1 - hardness unit conversion (display only)
+ * PM-calibrated HV hub: 620 HV = 55.5 HRC, 55 HRC = 595 HV, HS = HRC + 20
+ * HRB via simplified ASTM table through HV hub. HB hook returns null.
+ */
+
+export const HARDNESS_UNITS_RC1 = ["HV", "HRC", "HRB", "HS"];
+export const HARDNESS_CONVERSION_UNITS = HARDNESS_UNITS_RC1;
+export const HARDNESS_UNITS_FUTURE = ["HB"];
+export const HARDNESS_CONVERSION_NOTE =
+  "Approximate conversion (display only). May differ from ASTM E140 tables.";
+
+const RC1_UNIT_SET = new Set(HARDNESS_UNITS_RC1.map((unit) => unit.toUpperCase()));
+
+const HRB_TO_HV_TABLE = [
+  [60, 107], [70, 125], [80, 145], [90, 165], [100, 189], [110, 217],
+];
+
+function normalizeUnit(unit) {
+  return String(unit ?? "HV").trim().toUpperCase();
+}
+
+export function normalizeHardnessUnit(unit) {
+  return normalizeUnit(unit);
+}
+
+function parseHardnessValue(value) {
+  if (value == null || value === "") return null;
+  const match = String(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function interpolateTable(table, x, xIndex = 0, yIndex = 1) {
+  if (!table.length) return null;
+  const sorted = [...table].sort((a, b) => a[xIndex] - b[xIndex]);
+  if (x <= sorted[0][xIndex]) return sorted[0][yIndex];
+  if (x >= sorted[sorted.length - 1][xIndex]) return sorted[sorted.length - 1][yIndex];
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const low = sorted[i];
+    const high = sorted[i + 1];
+    if (x >= low[xIndex] && x <= high[xIndex]) {
+      const ratio = (x - low[xIndex]) / (high[xIndex] - low[xIndex]);
+      return low[yIndex] + ratio * (high[yIndex] - low[yIndex]);
+    }
+  }
+  return null;
+}
+
+function invertTable(table, yValue, xIndex = 0, yIndex = 1) {
+  const sorted = [...table].sort((a, b) => a[yIndex] - b[yIndex]);
+  if (yValue <= sorted[0][yIndex]) return sorted[0][xIndex];
+  if (yValue >= sorted[sorted.length - 1][yIndex]) return sorted[sorted.length - 1][xIndex];
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const low = sorted[i];
+    const high = sorted[i + 1];
+    if (yValue >= low[yIndex] && yValue <= high[yIndex]) {
+      const ratio = (yValue - low[yIndex]) / (high[yIndex] - low[yIndex]);
+      return low[xIndex] + ratio * (high[xIndex] - low[xIndex]);
+    }
+  }
+  return null;
+}
+
+export function toCanonicalHv(value, fromUnit) {
+  const num = parseHardnessValue(value);
+  if (num == null) return null;
+  switch (normalizeUnit(fromUnit)) {
+    case "HV": return num;
+    case "HRC": return 595 + (num - 55) * 50;
+    case "HS": return 595 + (num - 75) * 50;
+    case "HRB": return interpolateTable(HRB_TO_HV_TABLE, num, 0, 1);
+    case "HB": return null;
+    default: return num;
+  }
+}
+
+export function toVickersHv(value, fromUnit) {
+  return toCanonicalHv(value, fromUnit);
+}
+
+export function fromCanonicalHv(hv, toUnit) {
+  if (hv == null || !Number.isFinite(hv)) return null;
+  switch (normalizeUnit(toUnit)) {
+    case "HV": return hv;
+    case "HRC": return 55 + (hv - 595) / 50;
+    case "HS": return 20 + (55 + (hv - 595) / 50);
+    case "HRB": return invertTable(HRB_TO_HV_TABLE, hv, 0, 1);
+    case "HB": return null;
+    default: return hv;
+  }
+}
+
+export function fromVickersHv(hv, toUnit) {
+  return fromCanonicalHv(hv, toUnit);
+}
+
+export function convertHardness(value, fromUnit, toUnit) {
+  const from = normalizeUnit(fromUnit);
+  const to = normalizeUnit(toUnit);
+  if (from === to) return parseHardnessValue(value);
+  const hv = toCanonicalHv(value, from);
+  if (hv == null) return null;
+  const converted = fromCanonicalHv(hv, to);
+  if (converted == null) return null;
+  return roundHardnessDisplay(converted, to);
+}
+
+export function convertAllHardnessUnits(value, fromUnit, targetUnits = HARDNESS_UNITS_RC1) {
+  const from = normalizeUnit(fromUnit);
+  const parsed = parseHardnessValue(value);
+  if (parsed == null) return null;
+  const units = targetUnits ?? HARDNESS_UNITS_RC1;
+  const result = { fromUnit: from, value: parsed, conversions: {} };
+  units.forEach((unit) => {
+    const normalized = normalizeUnit(unit);
+    if (normalized === from) return;
+    const converted = convertHardness(parsed, from, normalized);
+    if (converted != null && RC1_UNIT_SET.has(normalized)) {
+      result.conversions[normalized] = converted;
+    }
+  });
+  return result;
+}
+
+export function roundHardnessDisplay(value, unit) {
+  if (value == null || !Number.isFinite(value)) return null;
+  const normalized = normalizeUnit(unit);
+  const places = normalized === "HV" ? 0 : 1;
+  return Number(value.toFixed(places));
+}
+
+export function formatHardnessValue(value, unit) {
+  const rounded = roundHardnessDisplay(value, unit);
+  return rounded == null ? "" : String(rounded);
+}
+
+export function getProductSpecHardnessUnit(spec) {
+  return spec?.hardness?.unit ? normalizeUnit(spec.hardness.unit) : "HV";
+}
+
+export function getDefaultConversionTargets(fromUnit, specUnit = null) {
+  const from = normalizeUnit(fromUnit);
+  const spec = specUnit ? normalizeUnit(specUnit) : null;
+  const ordered = [];
+  if (spec && spec !== from && RC1_UNIT_SET.has(spec)) ordered.push(spec);
+  for (const unit of HARDNESS_UNITS_RC1) {
+    if (unit !== from && !ordered.includes(unit)) ordered.push(unit);
+  }
+  return ordered;
+}
+
+export function formatHardnessConversionDisplay(
+  value,
+  fromUnit,
+  targetUnits = HARDNESS_UNITS_RC1,
+  options = {}
+) {
+  const { specUnit = null, maxTargets = null } = options;
+  const units = targetUnits ?? HARDNESS_UNITS_RC1;
+  const bundle = convertAllHardnessUnits(value, fromUnit, units);
+  if (!bundle || Object.keys(bundle.conversions).length === 0) return "";
+  let entries = Object.entries(bundle.conversions);
+  if (specUnit && bundle.conversions[specUnit]) {
+    const specEntry = entries.find(([unit]) => unit === specUnit);
+    const rest = entries.filter(([unit]) => unit !== specUnit);
+    entries = specEntry ? [specEntry, ...rest] : entries;
+  }
+  if (maxTargets != null && maxTargets > 0) entries = entries.slice(0, maxTargets);
+  const parts = entries.map(([unit, converted]) => "\u2248 " + converted + " " + unit);
+  return "\uC790\uB3D9 \uD658\uC0B0 " + parts.join(" \u00B7 ");
+}
+
+export function formatHardnessMeasurementLine(value, unit) {
+  const parsed = parseHardnessValue(value);
+  if (parsed == null) return "-";
+  return `${roundHardnessDisplay(parsed, unit) ?? parsed} ${normalizeUnit(unit)}`;
+}
+
+export function isRc1HardnessUnit(unit) {
+  return RC1_UNIT_SET.has(normalizeUnit(unit));
+}
+
+export function getHardnessConversionTargets(fromUnit, includeFuture = false) {
+  const from = normalizeUnit(fromUnit);
+  const units = includeFuture ? [...HARDNESS_UNITS_RC1, ...HARDNESS_UNITS_FUTURE] : HARDNESS_UNITS_RC1;
+  return units.filter((unit) => normalizeUnit(unit) !== from);
+}

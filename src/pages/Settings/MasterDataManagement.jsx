@@ -16,6 +16,7 @@ import TitanDetailPanel from "../../foundation/components/TitanDetailPanel";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanCommonExpandRow from "../../foundation/components/TitanCommonExpandRow";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
+import { TitanMasterDetailFooter } from "../../foundation/components/FoundationActionBar";
 import FoundationAttachment from "../../foundation/components/FoundationAttachment";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 
@@ -537,6 +538,8 @@ export default function MasterDataManagement({
 
     setActiveId(null);
 
+    setDetailPopupRow(null);
+
     sessionStorage.removeItem(PRODUCT_SELECTION_KEY);
 
     setRefreshKey((key) => key + 1);
@@ -887,6 +890,18 @@ export default function MasterDataManagement({
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
         record={detailPopupRow}
+        footer={
+          detailPopupRow ? (
+            <TitanMasterDetailFooter
+              onEdit={() => {
+                openRegister("edit", detailPopupRow);
+                setDetailPopupRow(null);
+              }}
+              onDelete={() => setDeleteTarget(detailPopupRow)}
+              onClose={() => setDetailPopupRow(null)}
+            />
+          ) : null
+        }
         context={{
           detailContent: detailPopupRow ? (
             <dl className="inbound-detail">

@@ -66,6 +66,27 @@ select {
   overflow: hidden;
 }
 
+.titan-left-frame {
+  flex: 0 0 var(--titan-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--titan-sidebar-bg);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.titan-right-workspace {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--titan-bg);
+  border-left: 1px solid var(--titan-border);
+}
+
 .titan-main {
   flex: 1 1 auto;
   min-width: 0;
@@ -73,6 +94,14 @@ select {
   overflow-x: visible;
   overflow-y: auto;
   padding: var(--titan-main-py) var(--titan-main-px);
+}
+
+/* Single workspace header — hide duplicate page-level navy title bands */
+.titan-main .titan-section-page__header,
+.titan-main .titan-workspace-header,
+.titan-main .company-workspace-header,
+.titan-main .titan-page-top-bar {
+  display: none !important;
 }
 
 /* ── Placeholder page (Foundation 준비) ── */

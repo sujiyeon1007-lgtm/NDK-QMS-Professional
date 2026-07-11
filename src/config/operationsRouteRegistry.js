@@ -8,6 +8,7 @@ export const OPERATION_ROUTES = {
   inboundHistory: "/operations/inbound-history",
   productionPending: "/operations/production-pending",
   equipmentStatus: "/operations/equipment-status",
+  cleaningProcess: "/operations/cleaning-process",
   dailyWork: "/operations/daily-work",
   shotStatus: "/operations/shot-status",
   shipmentRegister: "/operations/shipment-register",
@@ -15,14 +16,15 @@ export const OPERATION_ROUTES = {
 };
 
 export const OPERATION_ROUTE_LABELS = {
-  inboundPending: "\uC785\uACE0 \uB300\uAE30",
-  inboundHistory: "\uC785\uACE0 \uC774\uB825",
-  productionPending: "\uC0DD\uC0B0 \uB300\uAE30",
-  equipmentStatus: "\uC124\uBE44 \uAC00\uB3D9 \uD604\uD669",
-  dailyWork: "\uC791\uC5C5\uC77C\uBCF4",
-  shotStatus: "\uC1FC\uD2B8 \uC791\uC5C5\uD604\uD669",
-  shipmentRegister: "\uCD9C\uACE0 \uB4F1\uB85D",
-  shipmentHistory: "\uCD9C\uACE0 \uC774\uB825",
+  inboundPending: "입고관리",
+  inboundHistory: "입고이력",
+  productionPending: "생산대기",
+  equipmentStatus: "설비가동현황",
+  cleaningProcess: "세척공정",
+  dailyWork: "작업일보",
+  shotStatus: "쇼트 작업현황",
+  shipmentRegister: "출고관리",
+  shipmentHistory: "출고이력",
 };
 
 export const OPERATION_ROUTE_GROUP = {
@@ -32,6 +34,7 @@ export const OPERATION_ROUTE_GROUP = {
   shipmentHistory: "inoutManagement",
   productionPending: "productionManagement",
   equipmentStatus: "productionManagement",
+  cleaningProcess: "productionManagement",
   dailyWork: "productionManagement",
   shotStatus: "productionManagement",
 };
@@ -41,6 +44,7 @@ export const OPERATION_LEGACY_ROUTE_ALIASES = {
   "/production/equipment-status": OPERATION_ROUTES.equipmentStatus,
   "/production/daily-report": OPERATION_ROUTES.dailyWork,
   "/production/shot": OPERATION_ROUTES.shotStatus,
+  "/production/cleaning-process": OPERATION_ROUTES.cleaningProcess,
 };
 
 export function getOperationRouteKeyByPath(pathname = "") {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import PageTopBar from "../../foundation/layout/PageTopBar";
 import { QR_CHARGING_PAGE_COPY } from "../../config/equipmentConfig";
@@ -6,8 +7,10 @@ import EquipmentCard from "./components/EquipmentCard";
 import EquipmentSummaryBar from "./components/EquipmentSummaryBar";
 import EquipmentChargingActions from "./components/EquipmentChargingActions";
 import LotTable from "./components/LotTable";
+import LotChargeQtyPanel from "./components/LotChargeQtyPanel";
 import CurrentProcess from "./components/CurrentProcess";
 import { useQRWorkflow } from "./hooks/useQRWorkflow";
+import ProcessStepCompleteDialog from "../Production/charging/ProcessStepCompleteDialog";
 import "./QRManagement.css";
 
 const PAGE_META = TITAN_MENU_CATALOG.qrCharging?.pageMeta ?? {
@@ -29,8 +32,20 @@ export default function QRManagement() {
     selectLot,
     handleStartCharging,
     handleFinishCharging,
+    stepCompleteDialog,
+    closeStepCompleteDialog,
+    confirmStepComplete,
     workflowError,
+    chargeQtyEnabled,
+    setChargeQtyEnabled,
+    draftChargeQty,
+    setDraftChargeQty,
   } = useQRWorkflow();
+
+  const selectedLotRow = useMemo(
+    () => availableLots.find((row) => row.id === activeLotId) ?? null,
+    [availableLots, activeLotId]
+  );
 
   return (
     <div className="qr-management-page">
@@ -62,6 +77,13 @@ export default function QRManagement() {
         <section className="qr-management-page__lot-panel" aria-label="장입 가능 LOT">
           <h2 className="qr-management-page__section-title">{QR_CHARGING_PAGE_COPY.lotSectionTitle}</h2>
           <LotTable rows={availableLots} activeRowId={activeLotId} onRowClick={(row) => selectLot(row.id)} />
+          <LotChargeQtyPanel
+            lotRow={selectedLotRow}
+            chargeQtyEnabled={chargeQtyEnabled}
+            onChargeQtyEnabledChange={setChargeQtyEnabled}
+            draftChargeQty={draftChargeQty}
+            onDraftChargeQtyChange={setDraftChargeQty}
+          />
         </section>
       </div>
 
@@ -84,6 +106,13 @@ export default function QRManagement() {
           {workflowError}
         </p>
       ) : null}
+
+      <ProcessStepCompleteDialog
+        open={stepCompleteDialog.open}
+        record={stepCompleteDialog.record}
+        onClose={closeStepCompleteDialog}
+        onConfirm={confirmStepComplete}
+      />
     </div>
   );
 }

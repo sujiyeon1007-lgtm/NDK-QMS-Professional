@@ -5,8 +5,8 @@ import { X, Sparkles } from "lucide-react";
 import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
+import { TitanAutoComplete } from "../../foundation/components/TitanSearchAutocomplete";
 import {
-  getActiveMasterNames,
   getCompanyCodeMap,
 } from "../../utils/masterData";
 import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
@@ -21,7 +21,19 @@ import {
   INBOUND_EDIT_LABEL,
   INBOUND_REGISTER_LABEL,
 } from "../../config/registerModalStandard";
+import {
+  DEFAULT_CERTIFICATE_ISSUE_POLICY,
+  CERTIFICATE_ISSUE_POLICY_OPTIONS,
+  getCertificateIssuePolicyFromProduct,
+  normalizeCertificateIssuePolicy,
+} from "../../utils/certificateIssuePolicy";
+import {
+  INSPECTION_TYPE,
+  INSPECTION_TYPE_OPTIONS,
+} from "../../config/inspectionManagement";
+import { resolveInboundInspectionType } from "../../utils/inboundDataFields";
 import { DEFAULT_WORK_TYPE_ID, WORK_TYPE_OPTIONS } from "../../config/workTypeWorkflow";
+import { INBOUND_HEAT_TREATMENT_PROCESS_OPTIONS } from "../../config/inboundStatusWorkflow";
 import TitanRegisterSummaryText from "../../foundation/components/TitanRegisterSummaryText";
 import "./IncomingRegistrationModal.css";
 
@@ -37,6 +49,7 @@ const emptyProductFields = {
   spec: "",
   unitPrice: "",
   heatTreatment: "",
+  processDetail: "",
 };
 
 const emptyForm = {
@@ -53,6 +66,10 @@ const emptyForm = {
   dueDate: "",
   urgent: false,
   note: "",
+  certificateIssuePolicy: DEFAULT_CERTIFICATE_ISSUE_POLICY,
+  certificateIssuePolicySource: "product",
+  inspectionType: INSPECTION_TYPE.MASS,
+  inspectionTypeSource: "product",
 };
 
 function IncomingRegistrationModal({
@@ -80,10 +97,6 @@ function IncomingRegistrationModal({
   const companyCodeMap = useMemo(
     () => companyCodeMapProp ?? getCompanyCodeMap(),
     [companyCodeMapProp, masterRefreshKey]
-  );
-  const companyOptions = useMemo(
-    () => getActiveMasterNames("companies"),
-    [masterRefreshKey]
   );
   const managerOptions = useMemo(() => resolveAssigneeWorkerOptions(), []);
   const unitOptions = useMemo(() => getProductUnitOptions(), []);
@@ -129,7 +142,18 @@ function IncomingRegistrationModal({
   const submitLabel = isEdit ? "저장" : "등록";
 
   const updateField = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "certificateIssuePolicy") {
+        next.certificateIssuePolicy = normalizeCertificateIssuePolicy(value);
+        next.certificateIssuePolicySource = "inbound_override";
+      }
+      if (key === "inspectionType") {
+        next.inspectionType = value === INSPECTION_TYPE.DEVELOPMENT ? INSPECTION_TYPE.DEVELOPMENT : INSPECTION_TYPE.MASS;
+        next.inspectionTypeSource = "inbound_override";
+      }
+      return next;
+    });
   };
 
   const handleCompanyChange = (value) => {
@@ -143,6 +167,7 @@ function IncomingRegistrationModal({
   const handleCascadeChange = (selection, product) => {
     if (product) {
       const autofill = mapProductToFormAutofill(product);
+      const productPolicy = getCertificateIssuePolicyFromProduct(product);
       setForm((prev) => ({
         ...prev,
         partName: autofill.partName,
@@ -151,8 +176,13 @@ function IncomingRegistrationModal({
         material: autofill.material,
         spec: autofill.spec,
         unitPrice: autofill.unitPrice,
-        heatTreatment: autofill.process || prev.heatTreatment,
+        heatTreatment: autofill.process || autofill.heatTreatment || prev.heatTreatment,
+        processDetail: autofill.processDetail || autofill.heatTreatment || prev.processDetail,
         unit: autofill.unit || prev.unit,
+        inspectionType: autofill.inspectionType || INSPECTION_TYPE.MASS,
+        inspectionTypeSource: "product",
+        certificateIssuePolicy: productPolicy,
+        certificateIssuePolicySource: "product",
       }));
       return;
     }
@@ -301,12 +331,13 @@ function IncomingRegistrationModal({
               <div className="form-field span-2">
                 <span>거래처</span>
                 <div className="admin-select-wrap admin-searchable-select-wrap">
-                  <TitanSearchableSelect
-                    className="admin-searchable-select"
+                  <TitanAutoComplete
+                    fieldType="company"
                     value={form.company}
-                    onChange={handleCompanyChange}
-                    options={companyOptions}
-                    placeholder="거래처 선택"
+                    onChange={(value) => updateField("company", value)}
+                    onSelect={handleCompanyChange}
+                    placeholder="거래처 검색"
+                    className="admin-searchable-select"
                   />
                   <button
                     type="button"
@@ -354,6 +385,34 @@ function IncomingRegistrationModal({
                 </select>
               </label>
 
+              <label className="form-field">
+                <span>검사 유형</span>
+                <select
+                  value={form.inspectionType ?? INSPECTION_TYPE.MASS}
+                  onChange={(event) => updateField("inspectionType", event.target.value)}
+                >
+                  {INSPECTION_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span>{"\uC131\uC801\uC11C \uBC1C\uD589 \uC815\uCC45"}</span>
+                <select
+                  value={form.certificateIssuePolicy ?? DEFAULT_CERTIFICATE_ISSUE_POLICY}
+                  onChange={(event) => updateField("certificateIssuePolicy", event.target.value)}
+                >
+                  {CERTIFICATE_ISSUE_POLICY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <TitanCascadeProductPicker
                 inline
                 partNameOnly
@@ -368,9 +427,25 @@ function IncomingRegistrationModal({
                 autoFields={{
                   material: form.material,
                   spec: form.spec,
+                  unitPrice: form.unitPrice,
                 }}
                 fieldClassName="form-field"
                 kicker="입고 등록"
+              />
+
+              <TitanSearchableSelect
+                className="form-field"
+                label="열처리 공정"
+                value={form.heatTreatment}
+                onChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    heatTreatment: value,
+                    processDetail: value,
+                  }));
+                }}
+                options={INBOUND_HEAT_TREATMENT_PROCESS_OPTIONS}
+                placeholder="공정 선택"
               />
 
               <label className="form-field">

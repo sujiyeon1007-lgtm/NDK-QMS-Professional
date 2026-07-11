@@ -9,13 +9,8 @@ export function createJsonArrayStore({ storageKey, getSeed, idField = "id" }) {
   /** @returns {T[]} */
   function readAll() {
     const stored = readJson(storageKey, null);
-    if (Array.isArray(stored) && stored.length > 0) {
+    if (Array.isArray(stored)) {
       return stored.map((row) => ({ ...row }));
-    }
-    const seed = getSeed?.() ?? [];
-    if (seed.length > 0) {
-      writeJson(storageKey, seed);
-      return seed.map((row) => ({ ...row }));
     }
     return [];
   }
@@ -72,7 +67,10 @@ export function createJsonArrayStore({ storageKey, getSeed, idField = "id" }) {
   }
 
   function seedIfEmpty() {
-    if (hasKey(storageKey)) return readAll();
+    if (!hasKey(storageKey)) {
+      const seed = getSeed?.() ?? [];
+      writeJson(storageKey, Array.isArray(seed) ? seed.map((row) => ({ ...row })) : []);
+    }
     return readAll();
   }
 
@@ -105,9 +103,7 @@ export function createJsonObjectStore({ storageKey, getSeed }) {
     if (stored && typeof stored === "object") {
       return { ...stored };
     }
-    const seed = getSeed?.() ?? /** @type {T} */ ({});
-    writeJson(storageKey, seed);
-    return { ...seed };
+    return /** @type {T} */ ({});
   }
 
   /** @param {Partial<T>} patch */
@@ -125,7 +121,10 @@ export function createJsonObjectStore({ storageKey, getSeed }) {
   }
 
   function seedIfEmpty() {
-    if (hasKey(storageKey)) return read();
+    if (!hasKey(storageKey)) {
+      const seed = getSeed?.() ?? /** @type {T} */ ({});
+      writeJson(storageKey, seed);
+    }
     return read();
   }
 

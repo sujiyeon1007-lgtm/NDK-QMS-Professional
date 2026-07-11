@@ -18,7 +18,7 @@ export function buildInspectionRegisterPath(options = {}) {
   if (otherId) params.set("otherId", otherId);
 
   const query = params.toString();
-  return `/quality/inspection/register${query ? `?${query}` : ""}`;
+  return `/quality/inspection/register/entry${query ? `?${query}` : ""}`;
 }
 
 /**

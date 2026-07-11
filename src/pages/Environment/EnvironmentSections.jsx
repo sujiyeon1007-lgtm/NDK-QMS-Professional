@@ -1,13 +1,26 @@
 import { useMemo, useRef, useState } from "react";
-import { Download, FolderOpen, RefreshCw, RotateCcw, Upload, Users } from "lucide-react";
+import { Download, FolderOpen, Plus, RefreshCw, RotateCcw, Trash2, Upload, Users } from "lucide-react";
 
+import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
+import {
+  PRODUCT_PROCESS_CATEGORIES,
+  getProductProcessDetailOptions,
+} from "../../config/productProcessSelection";
+import { summarizeProcessWorkflowTemplate } from "../../config/processWorkflowTemplates";
+import {
+  addProcessWorkflowTemplate,
+  createProcessWorkflowTemplateId,
+  deleteProcessWorkflowTemplate,
+  getProcessWorkflowTemplates,
+  resetProcessWorkflowTemplates,
+  updateProcessWorkflowTemplate,
+} from "../../utils/processWorkflowTemplateSession";
 import { PrimaryButton, SecondaryButton, TitanDataTable, TitanEmptyState } from "../../foundation/uiKit";
 import TitanComingSoonPlaceholder from "../../foundation/pages/TitanComingSoonPlaceholder";
 import {
   APP_NAME,
   APP_VERSION,
   checkForUpdates,
-  estimateStorageUsage,
   getCombinedLogs,
   getEnvironmentSettings,
   getSystemStatusSummary,
@@ -15,10 +28,7 @@ import {
   readLogoFile,
   resetUserPassword,
   restoreFromBackupFile,
-  runDatabaseOptimize,
   runFullBackup,
-  runSampleDataGeneration,
-  runUnusedDataCleanup,
   saveCompanyInfo,
   saveCompanyLogo,
   saveNotifications,
@@ -43,7 +53,7 @@ import {
 } from "../../config/titanEditionArchitecture";
 import { PLATFORM_ARCHITECTURE_VERSION, TITAN_PLATFORM_VISION, PLATFORM_LAYERS } from "../../config/titanPlatformArchitecture";
 import { DEVELOPMENT_STRATEGY, CURRENT_DEVELOPMENT_VERSION } from "../../config/titanV1DevelopmentDirection";
-import { getRepositoryBackendLabel } from "../../repositories";
+import { getRepositoryBackendLabel, getRepositories, resetRepositoriesForDemo } from "../../repositories";
 import {
   TITAN_FEATURE_PERMISSIONS,
   TITAN_MENU_PERMISSIONS,
@@ -85,8 +95,20 @@ import MesIntegrationPocPanel from "./MesIntegrationPocPanel";
 import ModuleManagementSection from "./ModuleManagementSection";
 import QrPrintCenterSection from "./QrPrintCenterSection";
 import StorageManagementSection from "./StorageManagementSection";
+import {
+  CertificatePoliciesSection,
+  InspectionTemplatesSection,
+} from "./V11MasterAdminSections";
 import { TITAN_LIST_DOCUMENT_CODES } from "../../config/titanListPrintStandard";
 import { NDK_PRODUCTION_LOT_PATTERN } from "../../utils/productionLotNumber";
+import { TITAN_DOCUMENT_NUMBER_TYPES, TITAN_NUMBERING_PATTERN } from "../../config/masterDataScreens";
+import {
+  getNumberingPrefixes,
+  getNumberingRuleRows,
+  resetNumberingPrefixes,
+  saveNumberingPrefixes,
+  validateNumberingPrefixes,
+} from "../../utils/masterData";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import {
   QR_BROWSER_BASE_URL_DEFAULT_DEV,
@@ -95,6 +117,12 @@ import {
   setQrBrowserBaseUrl,
 } from "../../config/qrBrowserUrlConfig";
 import { RC1_QR_BASE_URL_REPRINT_NOTICE } from "../../config/rc1OperationalPolicy";
+import {
+  DATA_RESET_MASTER_CATEGORIES,
+  DATA_RESET_OPERATIONS_TARGETS,
+  DATA_RESET_SCOPES,
+  DATA_RESET_UI,
+} from "../../config/titanDataResetPolicy";
 import {
   EQUIPMENT_QR_RULES,
   OFFICIAL_EQUIPMENT_QR_CODES,
@@ -1012,48 +1040,162 @@ export function ProgramSection({ refreshKey, onRefresh }) {
 }
 
 export function DataSection({ onRefresh }) {
-  const storage = useMemo(() => estimateStorageUsage(), [onRefresh]);
+  const summary = useMemo(() => getRepositories().dataReset.getSummary(), [onRefresh]);
   const [message, setMessage] = useState("");
+  const [running, setRunning] = useState(false);
 
-  const runAction = (fn) => {
-    const result = fn();
-    setMessage(result.message);
-    onRefresh?.();
+  if (!isTitanAdminUser()) {
+    return (
+      <SettingsPanel title={DATA_RESET_UI.title} desc={DATA_RESET_UI.desc}>
+        <div className="environment-poc-access-denied">
+          <strong>접근 권한 없음</strong>
+          <p>{DATA_RESET_UI.accessDenied}</p>
+        </div>
+      </SettingsPanel>
+    );
+  }
+
+  const confirmReset = (label, targetLabels) => {
+    const targetList = targetLabels.map((item) => `- ${item}`).join("\n");
+    const first = window.confirm(
+      `[1/2] ${label}\n\n삭제 대상:\n${targetList}\n\n계속하시겠습니까?`
+    );
+    if (!first) return false;
+    return window.confirm(
+      `[2/2] 최종 확인\n\n${label}을(를) 실행하면 복구할 수 없습니다.\n정말 삭제하시겠습니까?`
+    );
   };
 
-  return (
-    <SettingsPanel title="데이터 관리" desc="샘플 데이터 · 정리 · DB 최적화를 수행합니다.">
-      <dl className="environment-info-list">
-        <div>
-          <dt>DB</dt>
-          <dd>{storage.db}</dd>
-        </div>
-        <div>
-          <dt>도면</dt>
-          <dd>{storage.drawings}</dd>
-        </div>
-        <div>
-          <dt>PDF</dt>
-          <dd>{storage.pdf}</dd>
-        </div>
-        <div>
-          <dt>백업</dt>
-          <dd>{storage.backupCount}개</dd>
-        </div>
-      </dl>
+  const handleReset = (scope, label, targetLabels) => {
+    if (running) return;
+    if (!confirmReset(label, targetLabels)) return;
 
-      <div className="environment-backup-actions">
-        <SecondaryButton type="button" onClick={() => runAction(runSampleDataGeneration)}>
-          샘플 데이터 생성
-        </SecondaryButton>
-        <SecondaryButton type="button" onClick={() => runAction(runUnusedDataCleanup)}>
-          사용하지 않는 데이터 정리
-        </SecondaryButton>
-        <SecondaryButton type="button" onClick={() => runAction(runDatabaseOptimize)}>
-          DB 최적화
-        </SecondaryButton>
-      </div>
-      <ActionMessage message={message} />
+    setRunning(true);
+    try {
+      const result = getRepositories().dataReset.reset(scope);
+      if (!result.ok) {
+        setMessage(result.message);
+        setRunning(false);
+        return;
+      }
+      resetRepositoriesForDemo();
+      window.location.reload();
+    } catch (error) {
+      setMessage(error?.message ?? "데이터 초기화 중 오류가 발생했습니다.");
+      setRunning(false);
+    }
+  };
+
+  const handleLoadDemo = () => {
+    if (running) return;
+    if (
+      !window.confirm(
+        "Demo 데이터를 불러올까요?\n\nDemo Master · Demo 업무 · 시연용 Workflow가 로드됩니다."
+      )
+    ) {
+      return;
+    }
+
+    setRunning(true);
+    try {
+      const result = getRepositories().dataReset.loadDemo();
+      resetRepositoriesForDemo();
+      setMessage(result.message ?? `Demo 데이터 로드 완료 · ${result.recordCount ?? 0}건`);
+      window.location.reload();
+    } catch (error) {
+      setMessage(error?.message ?? "Demo 데이터 로드 중 오류가 발생했습니다.");
+      setRunning(false);
+    }
+  };
+
+  const masterLabels = DATA_RESET_MASTER_CATEGORIES.map((item) => item.label);
+  const operationsLabels = DATA_RESET_OPERATIONS_TARGETS.map((item) => item.label);
+  const allLabels = [...masterLabels, ...operationsLabels, "Demo 데이터"];
+
+  return (
+    <SettingsPanel title={DATA_RESET_UI.title} desc={DATA_RESET_UI.desc}>
+      <section className="environment-data-section">
+        <h4 className="environment-subtitle">① Demo 데이터 불러오기</h4>
+        <p className="environment-form-note">{DATA_RESET_UI.demoDesc}</p>
+        <div className="environment-backup-actions">
+          <PrimaryButton type="button" disabled={running} onClick={handleLoadDemo}>
+            {DATA_RESET_UI.demoButton}
+          </PrimaryButton>
+        </div>
+      </section>
+
+      <section className="environment-data-section">
+        <h4 className="environment-subtitle">② Master 데이터 초기화</h4>
+        <dl className="environment-info-list">
+          {DATA_RESET_MASTER_CATEGORIES.map((item) => (
+            <div key={item.key}>
+              <dt>{item.label}</dt>
+              <dd>{summary.master[item.key] ?? 0}건</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="environment-backup-actions">
+          <SecondaryButton
+            type="button"
+            disabled={running}
+            onClick={() =>
+              handleReset(DATA_RESET_SCOPES.MASTER, DATA_RESET_UI.masterButton, masterLabels)
+            }
+          >
+            {DATA_RESET_UI.masterButton}
+          </SecondaryButton>
+        </div>
+      </section>
+
+      <section className="environment-data-section">
+        <h4 className="environment-subtitle">③ 업무 데이터 초기화</h4>
+        <dl className="environment-info-list">
+          <div>
+            <dt>운영 레코드</dt>
+            <dd>{summary.operations.productionRecords ?? 0}건</dd>
+          </div>
+          <div>
+            <dt>검사</dt>
+            <dd>{summary.operations.inspections ?? 0}건</dd>
+          </div>
+          <div>
+            <dt>성적서</dt>
+            <dd>{summary.operations.certificates ?? 0}건</dd>
+          </div>
+        </dl>
+        <div className="environment-backup-actions">
+          <SecondaryButton
+            type="button"
+            disabled={running}
+            onClick={() =>
+              handleReset(DATA_RESET_SCOPES.OPERATIONS, DATA_RESET_UI.operationsButton, operationsLabels)
+            }
+          >
+            {DATA_RESET_UI.operationsButton}
+          </SecondaryButton>
+        </div>
+      </section>
+
+      <section className="environment-data-section">
+        <h4 className="environment-subtitle">④ 전체 초기화</h4>
+        <p className="environment-form-note">
+          Master · 업무 · Demo 데이터를 모두 삭제합니다. 자동 재생성 없음 · 빈 상태로 시작합니다.
+        </p>
+        <div className="environment-backup-actions">
+          <PrimaryButton
+            type="button"
+            disabled={running}
+            onClick={() => handleReset(DATA_RESET_SCOPES.ALL, DATA_RESET_UI.allButton, allLabels)}
+          >
+            {DATA_RESET_UI.allButton}
+          </PrimaryButton>
+        </div>
+      </section>
+
+      <p className="environment-muted-note">
+        Repository Interface 경유 · RC1(sessionStorage) · V1.1(SQLite) 동일 UI 유지
+      </p>
+      <ActionMessage message={message} tone="danger" />
     </SettingsPanel>
   );
 }
@@ -1487,17 +1629,267 @@ const NUMBERING_RULE_ROWS = [
   },
 ];
 
+function buildTemplateDraft(template = null) {
+  if (!template) {
+    return {
+      id: "",
+      label: "",
+      steps: [{ order: 1, processCategory: "cleaning", processDetail: "세척", requiresDetailPick: false }],
+    };
+  }
+  return {
+    id: template.id,
+    label: template.label,
+    steps: template.steps.map((step, index) => ({
+      order: index + 1,
+      processCategory: step.processCategory,
+      processDetail: step.processDetail ?? "",
+      requiresDetailPick: step.requiresDetailPick === true,
+    })),
+  };
+}
+
+export function ProcessWorkflowTemplatesSection() {
+  const [templates, setTemplates] = useState(() => getProcessWorkflowTemplates());
+  const [message, setMessage] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState("add");
+  const [draft, setDraft] = useState(() => buildTemplateDraft());
+  const [error, setError] = useState("");
+
+  const refresh = (next = getProcessWorkflowTemplates()) => setTemplates(next);
+
+  const columns = useMemo(
+    () => [
+      { key: "label", label: "공정유형" },
+      { key: "id", label: "ID" },
+      {
+        key: "summary",
+        label: "단계",
+        render: (row) => summarizeProcessWorkflowTemplate(row),
+      },
+      {
+        key: "actions",
+        label: "작업",
+        render: (row) => (
+          <div className="environment-table-actions">
+            <SecondaryButton
+              type="button"
+              onClick={() => {
+                setEditorMode("edit");
+                setDraft(buildTemplateDraft(row));
+                setError("");
+                setEditorOpen(true);
+              }}
+            >
+              수정
+            </SecondaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => {
+                const result = deleteProcessWorkflowTemplate(row.id);
+                if (!result.ok) {
+                  setMessage(result.message);
+                  return;
+                }
+                refresh(result.templates);
+                setMessage("템플릿을 삭제했습니다.");
+              }}
+            >
+              <Trash2 size={14} aria-hidden />
+              삭제
+            </SecondaryButton>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  const handleSave = () => {
+    const label = String(draft.label ?? "").trim();
+    if (!label) {
+      setError("공정유형 이름을 입력하세요.");
+      return;
+    }
+    const payload = {
+      id: editorMode === "add" ? createProcessWorkflowTemplateId(label) : draft.id,
+      label,
+      builtIn: editorMode === "edit" ? templates.find((row) => row.id === draft.id)?.builtIn : false,
+      steps: draft.steps.map((step, index) => ({
+        order: index + 1,
+        processCategory: step.processCategory,
+        processDetail: step.requiresDetailPick ? null : step.processDetail || null,
+        requiresDetailPick: step.requiresDetailPick === true,
+        detailOptions: step.requiresDetailPick
+          ? getProductProcessDetailOptions(step.processCategory)
+          : undefined,
+      })),
+    };
+    const result =
+      editorMode === "add"
+        ? addProcessWorkflowTemplate(payload)
+        : updateProcessWorkflowTemplate(draft.id, payload);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    refresh(result.templates);
+    setEditorOpen(false);
+    setMessage(editorMode === "add" ? "공정유형을 등록했습니다." : "공정유형을 수정했습니다.");
+  };
+
+  return (
+    <SettingsPanel
+      title="공정유형 관리"
+      desc="제품 마스터 · 입고 · 생산 Workflow 템플릿 — SessionStorage 저장"
+    >
+      <p className="environment-form-note">
+        세척 · 열처리 · 쇼트 등 공정 순서를 템플릿으로 관리합니다. 코드 배포 없이 유형을 추가할 수 있습니다.
+      </p>
+      <div className="environment-backup-actions">
+        <PrimaryButton
+          type="button"
+          onClick={() => {
+            setEditorMode("add");
+            setDraft(buildTemplateDraft());
+            setError("");
+            setEditorOpen(true);
+          }}
+        >
+          <Plus size={14} aria-hidden />
+          공정유형 추가
+        </PrimaryButton>
+        <SecondaryButton
+          type="button"
+          onClick={() => {
+            refresh(resetProcessWorkflowTemplates());
+            setMessage("기본 공정유형으로 초기화했습니다.");
+          }}
+        >
+          <RotateCcw size={14} aria-hidden />
+          기본값 복원
+        </SecondaryButton>
+      </div>
+      {message ? <p className="environment-form-note">{message}</p> : null}
+      <div className="environment-table-wrap">
+        <TitanDataTable columns={columns} rows={templates} getRowId={(row) => row.id} ariaLabel="공정유형" />
+      </div>
+      <TitanRegisterModal
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        onSubmit={handleSave}
+        kicker="공정유형"
+        title={editorMode === "add" ? "공정유형 등록" : "공정유형 수정"}
+        submitLabel={editorMode === "add" ? "등록" : "저장"}
+        size="wide"
+      >
+        {error ? <p className="master-register-modal__error" role="alert">{error}</p> : null}
+        <label className="master-register-modal__field span-2">
+          <span>공정유형 이름 *</span>
+          <input
+            type="text"
+            value={draft.label}
+            onChange={(event) => setDraft((prev) => ({ ...prev, label: event.target.value }))}
+          />
+        </label>
+        {draft.steps.map((step, index) => (
+          <div key={`tpl-step-${index}`} className="environment-form-grid">
+            <label className="environment-form-field">
+              <span>{`${index + 1}단계 공정`}</span>
+              <select
+                value={step.processCategory}
+                onChange={(event) => {
+                  const processCategory = event.target.value;
+                  const options = getProductProcessDetailOptions(processCategory);
+                  setDraft((prev) => ({
+                    ...prev,
+                    steps: prev.steps.map((row, rowIndex) =>
+                      rowIndex === index
+                        ? {
+                            ...row,
+                            processCategory,
+                            processDetail: options[0] ?? "",
+                            requiresDetailPick: processCategory === "heatTreatment",
+                          }
+                        : row
+                    ),
+                  }));
+                }}
+              >
+                {PRODUCT_PROCESS_CATEGORIES.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="environment-form-field">
+              <span>세부공정</span>
+              {step.requiresDetailPick ? (
+                <em className="environment-form-note">제품 등록 시 선택</em>
+              ) : (
+                <select
+                  value={step.processDetail}
+                  onChange={(event) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      steps: prev.steps.map((row, rowIndex) =>
+                        rowIndex === index ? { ...row, processDetail: event.target.value } : row
+                      ),
+                    }))
+                  }
+                >
+                  {getProductProcessDetailOptions(step.processCategory).map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </label>
+          </div>
+        ))}
+        <SecondaryButton
+          type="button"
+          onClick={() =>
+            setDraft((prev) => ({
+              ...prev,
+              steps: [
+                ...prev.steps,
+                {
+                  order: prev.steps.length + 1,
+                  processCategory: "cleaning",
+                  processDetail: "세척",
+                  requiresDetailPick: false,
+                },
+              ],
+            }))
+          }
+        >
+          단계 추가
+        </SecondaryButton>
+      </TitanRegisterModal>
+    </SettingsPanel>
+  );
+}
+
 export function NumberingSection() {
-  const customCodeRows = useMemo(
-    () => getMasterDataByCategory("other").filter((row) => ["QR-FMT", "MGMT-FMT"].includes(row.code)),
+  const [prefixes, setPrefixes] = useState(() => getNumberingPrefixes());
+  const [message, setMessage] = useState("");
+
+  const ruleRows = useMemo(() => getNumberingRuleRows("DS"), [prefixes]);
+  const prefixRows = useMemo(
+    () => Object.values(TITAN_DOCUMENT_NUMBER_TYPES).map((item) => ({ id: item.id, label: item.label, example: item.example })),
     []
   );
 
   const columns = useMemo(
     () => [
       { key: "category", label: "구분" },
+      { key: "prefix", label: "접두어" },
       { key: "format", label: "번호 규칙" },
-      { key: "example", label: "예시" },
+      { key: "example", label: "예시 (DS)" },
       { key: "source", label: "적용 화면" },
       {
         key: "status",
@@ -1510,57 +1902,68 @@ export function NumberingSection() {
     []
   );
 
-  const customColumns = useMemo(
-    () => [
-      { key: "code", label: "코드" },
-      { key: "name", label: "명칭" },
-      { key: "note", label: "규칙" },
-      {
-        key: "active",
-        label: "상태",
-        render: (row) => (
-          <span className={`status-badge ${row.active === false ? "미사용" : "사용"}`}>
-            {row.active === false ? "미사용" : "사용"}
-          </span>
-        ),
-      },
-    ],
-    []
-  );
+  const handlePrefixChange = (type, value) => {
+    setPrefixes((prev) => ({ ...prev, [type]: String(value ?? "").trim().toUpperCase() }));
+  };
+
+  const handleSave = () => {
+    const validation = validateNumberingPrefixes(prefixes);
+    if (!validation.ok) {
+      setMessage(validation.message);
+      return;
+    }
+    const result = saveNumberingPrefixes(prefixes);
+    if (!result.ok) {
+      setMessage(result.message ?? "번호체계 저장에 실패했습니다.");
+      return;
+    }
+    setMessage("번호체계 접두어를 저장했습니다.");
+  };
+
+  const handleReset = () => {
+    const next = resetNumberingPrefixes();
+    setPrefixes(next.prefixes);
+    setMessage("기본 접두어로 초기화했습니다.");
+  };
 
   return (
     <SettingsPanel
       title="번호체계"
-      desc="LOT · 관리번호 · 문서번호 자동채번 규칙 — RC1 운영 기준 (읽기 전용 · Workflow SSoT)"
+      desc={`문서·관리번호 자동채번 규칙 — 패턴 ${TITAN_NUMBERING_PATTERN}`}
     >
+      <p className="environment-form-note">
+        거래처 약칭 + 접두어 + 4자리 순번 · 제품 등록 시 <strong>DS-P-0001</strong> 형식 자동 생성
+      </p>
       <p className="environment-form-note">
         LOT 형식 검증 패턴: <code>{NDK_PRODUCTION_LOT_PATTERN.source}</code>
       </p>
 
-      <h4 className="environment-subtitle">운영 번호 규칙</h4>
-      <div className="environment-table-wrap">
-        <TitanDataTable
-          columns={columns}
-          rows={NUMBERING_RULE_ROWS}
-          getRowId={(row) => row.id}
-          ariaLabel="번호체계 규칙"
-        />
+      <h4 className="environment-subtitle">접두어 설정</h4>
+      <div className="environment-form-grid">
+        {prefixRows.map((row) => (
+          <label key={row.id} className="environment-form-field">
+            <span>{row.label}</span>
+            <input
+              type="text"
+              value={prefixes[row.id] ?? ""}
+              onChange={(event) => handlePrefixChange(row.id, event.target.value)}
+              placeholder={row.example.split("-")[1] ?? "P"}
+            />
+            <small>{row.example}</small>
+          </label>
+        ))}
       </div>
 
-      <h4 className="environment-subtitle">기준정보 연동 (사용자정의코드 · 기타)</h4>
-      <div className="environment-table-wrap">
-        <TitanDataTable
-          columns={customColumns}
-          rows={customCodeRows}
-          getRowId={(row) => row.id}
-          emptyMessage="QR · 관리번호 규칙 코드가 없습니다."
-          ariaLabel="번호체계 기준정보"
-        />
+      <div className="environment-backup-actions">
+        <PrimaryButton type="button" onClick={handleSave}>저장</PrimaryButton>
+        <SecondaryButton type="button" onClick={handleReset}>기본값 복원</SecondaryButton>
       </div>
+      {message ? <p className="environment-form-note">{message}</p> : null}
 
-      <p className="environment-form-note">
-        관리번호는 MES Source of Truth입니다. TITAN은 생성하지 않고 조회·연결만 수행합니다.
-      </p>
+      <h4 className="environment-subtitle">운영 번호 규칙 미리보기</h4>
+      <div className="environment-table-wrap">
+        <TitanDataTable columns={columns} rows={ruleRows} getRowId={(row) => row.id} ariaLabel="번호체계 규칙" />
+      </div>
     </SettingsPanel>
   );
 }
@@ -1790,6 +2193,12 @@ export function renderEnvironmentSection(tabId, props) {
       return <ModuleManagementSection {...props} />;
     case "numbering":
       return <NumberingSection {...props} />;
+    case "processTemplates":
+      return <ProcessWorkflowTemplatesSection {...props} />;
+    case "inspectionTemplates":
+      return <InspectionTemplatesSection {...props} />;
+    case "certificatePolicies":
+      return <CertificatePoliciesSection {...props} />;
     case "qrSettings":
       return <QrSettingsSection {...props} />;
     case "menus":

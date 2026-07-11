@@ -12,6 +12,7 @@ import ControlRoomViewTabs from "./ControlRoomViewTabs";
 import ControlRoomEquipmentView from "./ControlRoomEquipmentView";
 import ControlRoomLotView from "./ControlRoomLotView";
 import ControlRoomProductView from "./ControlRoomProductView";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import "./EquipmentStatusPage.css";
 
 /**
@@ -87,6 +88,8 @@ export default function EquipmentStatusPage({ embedded = false }) {
 
   return (
     <div className="equipment-status-page control-room">
+      <TitanWorkflowNavigation stepId="equipmentStatus" />
+
       {!embedded ? (
         <>
           <PageTopBar

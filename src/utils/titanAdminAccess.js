@@ -43,6 +43,7 @@ export function isTitanAdminUser() {
   if (DEMO_ADMIN_MODE) return true;
   const session = getAuthSession();
   if (!session?.userId) return false;
+  if (session.isProgramAdministrator) return true;
   return isProgramAdministrator(session.userId) || hasMenuPermission(session.userId, "admin");
 }
 

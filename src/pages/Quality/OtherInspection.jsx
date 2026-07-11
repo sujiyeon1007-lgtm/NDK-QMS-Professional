@@ -53,6 +53,7 @@ import {
   matchesOtherInspectionSearch,
 
   softDeleteOtherInspection,
+  upsertOtherInspection,
 
 } from "../../utils/otherInspectionSession";
 
@@ -65,6 +66,8 @@ import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import TitanScreenDetailPopup from "../../foundation/components/TitanScreenDetailPopup";
 
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import OtherInspectionRegisterModal from "./OtherInspectionRegisterModal";
+import { navigateToInspectionRegister } from "../../utils/inspectionRegisterNavigation";
 
 import "../InOut/InboundManagement.css";
 
@@ -86,7 +89,7 @@ function resolveInspectionStatusVariant(status) {
 
 
 
-export default function OtherInspection() {
+export default function OtherInspection({ embedded = false, sectionHeading = "" } = {}) {
 
   const navigate = useNavigate();
 
@@ -101,6 +104,7 @@ export default function OtherInspection() {
   const [activeId, setActiveId] = useState(null);
 
   const [detailPopupRow, setDetailPopupRow] = useState(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const screenData = useMemo(() => getInspectionOtherScreenData(), [refreshKey]);
 
@@ -179,9 +183,16 @@ export default function OtherInspection() {
 
 
   const openCreateRegister = () => {
+    setRegisterOpen(true);
+  };
 
-    navigate("/quality/inspection/register?category=기타");
-
+  const handleOtherRegister = (form) => {
+    const saved = upsertOtherInspection({
+      ...form,
+      otherInspectionKind: form.category,
+    });
+    setRefreshKey((value) => value + 1);
+    navigateToInspectionRegister(navigate, { category: "기타", otherId: saved.id });
   };
 
 
@@ -279,7 +290,13 @@ export default function OtherInspection() {
 
   return (
 
-    <div className="inbound-page quality-page">
+    <div className={`inbound-page quality-page${embedded ? " quality-page--section" : ""}`}>
+
+      {sectionHeading ? (
+        <div className="inbound-page__history-heading quality-page__section-heading" role="heading" aria-level="2">
+          {sectionHeading}
+        </div>
+      ) : null}
 
       <SectionPageActions>
 
@@ -437,6 +454,12 @@ export default function OtherInspection() {
 
         record={detailPopupRow}
 
+      />
+
+      <OtherInspectionRegisterModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onRegister={handleOtherRegister}
       />
 
     </div>

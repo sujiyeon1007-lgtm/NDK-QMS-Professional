@@ -136,20 +136,57 @@ export function findExactCompanyProduct(company, query) {
   );
 }
 
+import { getCertificateIssuePolicyFromProduct } from "./certificateIssuePolicy";
+import { getProductInspectionType } from "../config/inspectionManagement";
+import { resolveProductProcessWorkflow } from "./productProcessWorkflow";
+import { resolveProductProcessLabel } from "../config/productProcessSelection";
+
 /** 등록 모달 자동입력 필드 */
+function resolveProductUnitPrice(product) {
+  if (!product) return "";
+  const raw =
+    product.unitPrice ??
+    product.defaultUnitPrice ??
+    product.defaultPrice ??
+    product.price ??
+    "";
+  if (raw === "" || raw == null) return "";
+  return String(raw);
+}
+
+/** Product Master unique index for autocomplete (company-scoped optional) */
+export function buildProductMasterIndex(company = "") {
+  const rows = company ? companyProducts(company) : getMasterDataByCategory("products").filter((row) => row.active !== false);
+  const partNames = [...new Set(rows.map((row) => row.name).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, "ko")
+  );
+  const partNos = [...new Set(rows.map((row) => row.partNo).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, "ko")
+  );
+  return { rows, partNames, partNos };
+}
+
 export function mapProductToFormAutofill(product) {
   if (!product) return null;
+  const workflow = resolveProductProcessWorkflow(product);
+  const firstStep = workflow[0];
+  const processDetail = String(firstStep?.processDetail ?? product.processDetail ?? product.process ?? "").trim();
+  const processLabel = firstStep
+    ? resolveProductProcessLabel(firstStep.processCategory, firstStep.processDetail, product.process)
+    : product.process ?? processDetail;
   return {
     partNo: product.partNo ?? "",
     partName: product.name ?? "",
     material: product.material ?? "",
     spec: product.spec ?? "",
-    unitPrice:
-      product.unitPrice != null && product.unitPrice !== ""
-        ? String(product.unitPrice)
-        : "",
+    unitPrice: resolveProductUnitPrice(product),
     drawingNo: product.drawingNo ?? "",
-    process: product.process ?? "",
+    process: processLabel,
+    heatTreatment: processLabel,
+    processDetail,
     unit: product.unit ?? "EA",
+    inspectionType: getProductInspectionType(product),
+    certificateIssuePolicy: getCertificateIssuePolicyFromProduct(product),
+    certificateIssuePolicySource: "product",
   };
 }

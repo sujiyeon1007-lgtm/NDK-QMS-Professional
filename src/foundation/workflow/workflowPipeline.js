@@ -354,6 +354,8 @@ export function pipelineStartCharging(dataEngine, eventBus, input) {
       runningSession: {
         lotNo,
         productionId,
+        equipmentId,
+        sourceRecordId: String(input.managementId ?? input.sourceRecordId ?? "").trim() || undefined,
         startTime: input.startTime ?? now,
         expectedEndTime: input.expectedEndTime ?? null,
         progress: Number(input.progress) || 0,

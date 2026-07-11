@@ -6,6 +6,7 @@
  */
 
 import { getStockQty } from "./inventory";
+import { resolveRemainingChargeQty } from "./equipmentChargingQty";
 import { getPrintOutputDate, toCompactPrintDate } from "./titanPrintDates";
 import { getSessionProductionRecords, updateSessionProductionRecord } from "./productionRecords";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
@@ -151,9 +152,17 @@ export function inferWorkflowStatus(record) {
  */
 export function isProductionWaitingStageRecord(record) {
   if (!record?.incomingRegistered) return false;
-  if (record.registered && record.lotNo?.trim()) return false;
-  if (record.lotNo?.trim()) return false;
-  return getWorkflowStatus(record) === WORKFLOW_STATUS.WORK_WAIT;
+
+  if (
+    record.workflowStatus === WORKFLOW_STATUS.SHIP_DONE ||
+    record.shipmentStatus === SHIPMENT_STATUS.DONE ||
+    (getStockQty(record) <= 0 && (record.shippedQty ?? 0) > 0)
+  ) {
+    return false;
+  }
+
+  // P0-018: 잔여수량 > 0 이면 장입 가능 (공정·설비 무관, 생산중·LOT 여부 무관)
+  return resolveRemainingChargeQty(record) > 0;
 }
 
 /**
@@ -288,9 +297,14 @@ export function applyMoveToProductionWaiting(managementIds = []) {
       }
     }
 
+    const inboundQty = Number(record.inboundQty ?? record.qty) || 0;
+    const remainingQty = resolveRemainingChargeQty(record) || inboundQty;
+
     updateSessionProductionRecord(id, {
       ...patchWorkflowStatus(record, WORKFLOW_STATUS.WORK_WAIT, {
         productionWaitingAt: now,
+        ...(inboundQty > 0 ? { inboundQty } : {}),
+        ...(remainingQty > 0 ? { remainingChargeQty: remainingQty } : {}),
       }),
     });
     moved += 1;
@@ -393,7 +407,7 @@ export function onInspectionCancelled(managementId) {
   });
 }
 
-/** Certificate issued (excel + pdf) → 성적서완료 */
+/** Certificate issued (RC1: attachment optional) → 성적서완료 */
 export function onCertificateIssued(managementId) {
   const id = managementId?.trim();
   if (!id) return;

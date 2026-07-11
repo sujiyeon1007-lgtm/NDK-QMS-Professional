@@ -11,7 +11,6 @@ import { applyProductDefaultsToForm, getProductByPartNo } from "./productRegistr
 import { cloneSpecification } from "./productSpecificationModel";
 import { DEFAULT_HARDENING_HV } from "./inspectionReportModel";
 import { migrateHardeningDepthRows, normalizeHardeningDepthRows } from "./hardeningDepthModel";
-import { getTitanDemoInspectionLogSeeds } from "../data/titanDemoSampleData";
 import {
   FOUNDATION_ATTACHMENT_ACCEPT,
   FOUNDATION_ATTACHMENT_SUPPORTED_EXTENSIONS,
@@ -20,6 +19,13 @@ import {
   normalizeFoundationAttachment,
   normalizeFoundationAttachments,
 } from "./foundationAttachmentEngine";
+import {
+  INSPECTION_CATEGORY,
+  INSPECTION_TYPE,
+  normalizeInspectionType,
+  normalizeOtherInspectionKind,
+  resolveInspectionCategoryFromLegacy,
+} from "../config/inspectionManagement";
 
 const STORAGE_KEY = "project-titan-inspection-log-v3";
 export const INSPECTION_ATTACHMENT_ACCEPT = FOUNDATION_ATTACHMENT_ACCEPT;
@@ -44,16 +50,15 @@ export const normalizeTitanAttachments = normalizeFoundationAttachments;
 function safeRead() {
   try {
     const raw = globalThis.sessionStorage?.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    if (parsed.length > 0) return parsed;
-    return getSeedInspectionLogs();
+    if (raw == null) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    return [];
   } catch {
-    return getSeedInspectionLogs();
+    return [];
   }
-}
-
-function getSeedInspectionLogs() {
-  return getTitanDemoInspectionLogSeeds().map((log) => normalizeLog(log));
 }
 
 function safeWrite(logs) {
@@ -69,10 +74,21 @@ function createInspectionId() {
 }
 
 function normalizeLog(log) {
+  const legacyCategory = log.category?.trim() || "양산";
+  const inspectionCategory =
+    log.inspectionCategory || resolveInspectionCategoryFromLegacy(legacyCategory);
+  const inspectionType =
+    log.inspectionType ||
+    (inspectionCategory === INSPECTION_CATEGORY.DEVELOPMENT
+      ? INSPECTION_TYPE.DEVELOPMENT
+      : INSPECTION_TYPE.MASS);
   return {
     id: log.id,
     inspectionDate: log.inspectionDate?.trim() || getJournalReferenceDate(),
-    category: log.category?.trim() || "양산",
+    category: legacyCategory,
+    inspectionType: normalizeInspectionType(inspectionType),
+    inspectionCategory,
+    otherInspectionKind: normalizeOtherInspectionKind(log.otherInspectionKind, ""),
     managementId: log.managementId?.trim() || "",
     company: log.company?.trim() || "",
     partName: log.partName?.trim() || "",
@@ -96,8 +112,14 @@ function normalizeLog(log) {
     appliedSpecification: log.appliedSpecification
       ? cloneSpecification(log.appliedSpecification)
       : null,
+    productMasterSpec: log.productMasterSpec
+      ? cloneSpecification(log.productMasterSpec)
+      : null,
     hardnessMeasurements: Array.isArray(log.hardnessMeasurements) ? log.hardnessMeasurements : [],
     dimensionMeasurements: Array.isArray(log.dimensionMeasurements) ? log.dimensionMeasurements : [],
+    dimensionInspectionRows: Array.isArray(log.dimensionInspectionRows)
+      ? log.dimensionInspectionRows
+      : [],
     appearanceMeasurements: Array.isArray(log.appearanceMeasurements) ? log.appearanceMeasurements : [],
     hasMicrostructurePhoto: Boolean(log.hasMicrostructurePhoto),
     microstructureJudgment: log.microstructureJudgment?.trim() || "이상없음",
@@ -108,6 +130,7 @@ function normalizeLog(log) {
     hardeningDepthRows: normalizeHardeningDepthRows(migrateHardeningDepthRows(log)),
     heatTreatmentCalculations: log.heatTreatmentCalculations || null,
     heatTreatmentEdits: log.heatTreatmentEdits || {},
+    coreHardnessHv: log.coreHardnessHv ?? "",
     note: log.note?.trim() || "",
     attachments: normalizeTitanAttachments(log.attachments),
     deleted: Boolean(log.deleted),

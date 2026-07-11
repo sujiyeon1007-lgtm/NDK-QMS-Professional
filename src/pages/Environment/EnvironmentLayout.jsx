@@ -3,7 +3,6 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import {
   ENVIRONMENT_WORKSPACE_COPY,
-  ENVIRONMENT_WORKSPACE_NAV,
   ENVIRONMENT_WORKSPACE_ROUTES,
   isEnvironmentWorkspaceShellPath,
 } from "../../config/environmentWorkspaceArchitecture";
@@ -11,27 +10,16 @@ import { buildWorkspaceDrilldownBreadcrumb } from "../../config/titanBreadcrumbP
 import { getSectionById, getSectionByPathname } from "../../config/menuStructure";
 import {
   getEnvironmentDefaultTab,
-  getEnvironmentTabGroups,
   isEnvironmentAdminTab,
 } from "../../config/environmentSettings";
 import { TitanWorkspaceShell } from "../../foundation/uiKit";
 import { SectionPageActionsProvider } from "../../foundation/layout/SectionPageActionsContext";
+import { useTitanAuth } from "../../hooks/useTitanAuth";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
-import EnvironmentGroupedTabs from "./EnvironmentGroupedTabs";
 import "../../foundation/layout/SectionPageLayout.css";
 import "../../foundation/styles/titan-hub-page.css";
 import "../Company/Company.css";
 import "./Environment.css";
-
-function EnvironmentMenuToolbar() {
-  const groups = getEnvironmentTabGroups(isTitanAdminUser());
-
-  return (
-    <div className="titan-menu-toolbar environment-menu-toolbar" role="region" aria-label="환경설정 메뉴">
-      <EnvironmentGroupedTabs groups={groups} />
-    </div>
-  );
-}
 
 function EnvironmentWorkspaceShell() {
   const location = useLocation();
@@ -44,7 +32,7 @@ function EnvironmentWorkspaceShell() {
         : buildWorkspaceDrilldownBreadcrumb({
             hubLabel: "환경설정",
             hubPath: ENVIRONMENT_WORKSPACE_ROUTES.dashboard,
-            items: ENVIRONMENT_WORKSPACE_NAV,
+            items: [],
             pathname: location.pathname,
           }),
     [isWorkspaceHome, location.pathname]
@@ -55,7 +43,7 @@ function EnvironmentWorkspaceShell() {
       kicker={ENVIRONMENT_WORKSPACE_COPY.workspaceKicker}
       title={ENVIRONMENT_WORKSPACE_COPY.workspaceTitle}
       intro={ENVIRONMENT_WORKSPACE_COPY.workspaceIntro}
-      navItems={ENVIRONMENT_WORKSPACE_NAV}
+      navItems={[]}
       homePath={ENVIRONMENT_WORKSPACE_ROUTES.dashboard}
       isHome={isWorkspaceHome}
       breadcrumbItems={breadcrumbItems}
@@ -77,7 +65,6 @@ function EnvironmentLegacyShell() {
         <header className="titan-section-page__header">
           <h1 className="titan-section-page__title">{section.label}</h1>
         </header>
-        <EnvironmentMenuToolbar />
         <div className="titan-section-page__body">
           <Outlet />
         </div>
@@ -88,13 +75,22 @@ function EnvironmentLegacyShell() {
 
 export default function EnvironmentLayout() {
   const location = useLocation();
+  useTitanAuth();
   const isAdmin = isTitanAdminUser();
 
   if (location.pathname === "/environment" || location.pathname === "/environment/") {
     return <Navigate to={ENVIRONMENT_WORKSPACE_ROUTES.dashboard} replace />;
   }
 
+  if (location.pathname === "/environment/status") {
+    return <Navigate to={ENVIRONMENT_WORKSPACE_ROUTES.system} replace />;
+  }
+
   const tabParam = location.pathname.split("/").pop();
+  if (location.pathname === ENVIRONMENT_WORKSPACE_ROUTES.data && !isAdmin) {
+    return <Navigate to={ENVIRONMENT_WORKSPACE_ROUTES.dashboard} replace />;
+  }
+
   if (isEnvironmentAdminTab(tabParam) && !isAdmin) {
     return <Navigate to={`/environment/${getEnvironmentDefaultTab(isAdmin)}`} replace />;
   }

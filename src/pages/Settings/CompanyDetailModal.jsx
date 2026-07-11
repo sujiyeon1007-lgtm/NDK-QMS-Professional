@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package } from "lucide-react";
 
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { PrimaryButton } from "../../foundation/components/Button";
+import { TitanMasterDetailFooter } from "../../foundation/components/FoundationActionBar";
 import TitanCommonToolbar from "../../foundation/components/TitanCommonToolbar";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanWorkspaceModal from "../../foundation/components/TitanWorkspaceModal";
@@ -120,7 +121,16 @@ function DetailTable({ columns, rows, emptyMessage }) {
 }
 
 /** 거래처 Row 더블클릭 — ERP Master 상세 Popup (Sprint 8 · Blueprint V1.0) */
-export default function CompanyDetailModal({ open, company, onClose }) {
+export default function CompanyDetailModal({
+  open,
+  company,
+  onClose,
+  onEdit,
+  onDelete,
+  onNavigate,
+  categoryLabel = "거래처",
+  navigationRows = [],
+}) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -176,9 +186,15 @@ export default function CompanyDetailModal({ open, company, onClose }) {
         />
       }
       footer={
-        <SecondaryButton type="button" onClick={handleClose}>
-          닫기
-        </SecondaryButton>
+        <TitanMasterDetailFooter
+          categoryLabel={categoryLabel}
+          rows={navigationRows}
+          currentRowId={company.id}
+          onNavigate={onNavigate}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onClose={handleClose}
+        />
       }
     >
       <div className="company-detail-modal">

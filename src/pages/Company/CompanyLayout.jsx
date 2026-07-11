@@ -57,7 +57,7 @@ export default function CompanyLayout() {
       kicker={COMPANY_WORKSPACE_COPY.workspaceKicker}
       title={COMPANY_WORKSPACE_COPY.workspaceTitle}
       intro={COMPANY_WORKSPACE_COPY.workspaceIntro}
-      navItems={MAIN_NAV}
+      navItems={[]}
       homePath={COMPANY_WORKSPACE_ROUTES.dashboard}
       isHome={isWorkspaceHome}
       breadcrumbItems={breadcrumbItems}

@@ -9,7 +9,7 @@ import { WORKFLOW_EVENTS } from "../foundation/workflow/workflowEvents";
 import { EQUIPMENT_LOT_PRODUCTS } from "../config/equipmentConfig";
 import { getRecordsForProductionLot, normalizeProductionLotKey } from "./productionDailyReportPrintData";
 import { getSessionProductionRecords, updateSessionProductionRecord } from "./productionRecords";
-import { onDailyReportSaved, onProductionComplete } from "./titanWorkflowStatus";
+import { onDailyReportSaved, onProductionComplete, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { recordQrTraceabilityEvent } from "./qrTraceabilitySession";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
@@ -23,6 +23,23 @@ import {
   updateActualWorkRecord,
 } from "./actualWorkRecordStore";
 import { addKnowledgeRecord, getKnowledgeRecords } from "./knowledgeRecordStore";
+import {
+  appendWorkflowChangeLog,
+  buildWorkflowChangeLogEntry,
+  resolveProcessStepCompletion,
+} from "./productProcessWorkflow";
+import {
+  appendChargeHistory,
+  completeLatestChargeHistoryEntry,
+  resolveRemainingChargeQty,
+  resolveTotalChargedQty,
+  hasOtherInProgressChargeSessions,
+  hasInProgressChargeOnEquipment,
+} from "./equipmentChargingQty";
+import {
+  recordMatchesEquipmentProcess,
+  reconcileAllEquipmentSessionsInStore,
+} from "./equipmentWorkflowService";
 
 /** @type {boolean} */
 let integrationInitialized = false;
@@ -53,19 +70,38 @@ function normalizeWorkConditions(value) {
   );
 }
 
-/**
- * @param {string} lotNo
- * @param {{ partName?: string }} [chargeableRow]
- */
 function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
+  const records = getSessionProductionRecords();
+  const sourceRecordId = String(
+    chargeableRow.sourceRecordId ?? chargeableRow.managementId ?? ""
+  ).trim();
+
+  if (sourceRecordId) {
+    const bySource = records.filter((row) => String(row.id ?? "").trim() === sourceRecordId);
+    if (bySource.length > 0) return bySource;
+    const byMesNo = records.filter(
+      (row) => String(row.mesManagementNo ?? "").trim() === sourceRecordId
+    );
+    if (byMesNo.length > 0) return byMesNo;
+  }
+
   const key = normalizeProductionLotKey(lotNo);
   if (!key) return [];
 
-  const records = getSessionProductionRecords();
   const byLot = records.filter((row) => normalizeProductionLotKey(row.lotNo) === key);
   if (byLot.length > 0) return byLot;
 
   const partName = String(chargeableRow.partName ?? "").trim();
+  if (partName && chargeableRow.source === "production-waiting") {
+    const byWaitingPart = records.filter(
+      (row) =>
+        row.incomingRegistered &&
+        !row.registered &&
+        String(row.partName ?? row.productName ?? "").trim() === partName
+    );
+    if (byWaitingPart.length > 0) return byWaitingPart;
+  }
+
   if (partName) {
     const byPart = records.filter(
       (row) =>
@@ -91,6 +127,44 @@ function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
   return [];
 }
 
+function appendLegacyFinishRecordFallback(legacyRecords, params = {}) {
+  if (legacyRecords.length > 0) return legacyRecords;
+
+  const chargeSourceRecordId = String(
+    params.chargeableRow?.sourceRecordId ?? params.chargeableRow?.managementId ?? ""
+  ).trim();
+  if (chargeSourceRecordId) {
+    const fallback = getSessionProductionRecords().find(
+      (row) =>
+        String(row.id ?? "").trim() === chargeSourceRecordId ||
+        String(row.mesManagementNo ?? "").trim() === chargeSourceRecordId
+    );
+    if (fallback) {
+      legacyRecords.push(fallback);
+      return legacyRecords;
+    }
+  }
+
+  const equipmentId = String(params.equipmentId ?? "").trim();
+  const engineEquipment = equipmentId ? getTitanDataEngine().equipment.getById(equipmentId) : null;
+  const productionWorkflowId = String(
+    params.productionId ??
+      engineEquipment?.runningSession?.productionId ??
+      ""
+  ).trim();
+
+  if (productionWorkflowId) {
+    const byWorkflow = getSessionProductionRecords().filter(
+      (row) => String(row.productionWorkflowId ?? "").trim() === productionWorkflowId
+    );
+    if (byWorkflow.length > 0) {
+      legacyRecords.push(...byWorkflow);
+    }
+  }
+
+  return legacyRecords;
+}
+
 /**
  * @param {object} params
  */
@@ -102,22 +176,100 @@ function bridgeLegacyDailyReportOnStart(params) {
   const productionId = String(params.productionId ?? "").trim();
   const now = new Date().toISOString();
   const workDate = todayWorkDate();
+  const startClock = String(params.startTime ?? formatNowClock()).trim();
+  const startDateTime = `${workDate} ${startClock}`;
 
   const legacyRecords = resolveLegacyRecordsForChargingLot(lotNo, params.chargeableRow ?? {});
   const touchedIds = [];
+  const chargeSourceRecordId = String(
+    params.chargeableRow?.sourceRecordId ?? params.chargeableRow?.managementId ?? ""
+  ).trim();
+
+  if (legacyRecords.length === 0 && chargeSourceRecordId) {
+    const fallback = getSessionProductionRecords().find(
+      (row) =>
+        String(row.id ?? "").trim() === chargeSourceRecordId ||
+        String(row.mesManagementNo ?? "").trim() === chargeSourceRecordId
+    );
+    if (fallback) legacyRecords.push(fallback);
+  }
 
   legacyRecords.forEach((record) => {
-    onDailyReportSaved(record.id, {
-      registered: true,
-      lotNo,
-      equipment: equipmentName,
-      workDate,
-      operator,
-      productionWorkflowId: productionId,
-      dailyReportAutoCreated: true,
-      dailyReportDraftStarted: true,
+    const explicitChargeQty = Number(params.chargeQty ?? params.chargeableRow?.chargeQty);
+    const chargeQty =
+      Number.isFinite(explicitChargeQty) && explicitChargeQty > 0
+        ? explicitChargeQty
+        : Number(record.workQty ?? record.qty) || 0;
+    const inboundQty =
+      Number(params.chargeableRow?.inboundQty ?? record.inboundQty ?? record.qty) || chargeQty;
+    const maxChargeable = resolveRemainingChargeQty(record) || inboundQty;
+    const remainingChargeQty =
+      params.chargeQtyMeta != null && Number.isFinite(Number(params.chargeQtyMeta.remainingQty))
+        ? Math.max(0, Number(params.chargeQtyMeta.remainingQty) || 0)
+        : Math.max(0, maxChargeable - chargeQty);
+    const chargeDetail =
+      chargeQty > 0
+        ? `${equipmentName} · ${lotNo} · 장입 ${chargeQty.toLocaleString("ko-KR")} EA`
+        : `${equipmentName} · ${lotNo}`;
+
+    const alreadyActiveOnEquipment = hasInProgressChargeOnEquipment(record, equipmentId);
+    const otherActiveSessions = hasOtherInProgressChargeSessions(record, equipmentId);
+    const nextChargeHistory = alreadyActiveOnEquipment
+      ? record.chargeHistory
+      : appendChargeHistory(record.chargeHistory, {
+          chargeQty,
+          inboundQty,
+          lotNo,
+          equipmentId,
+          equipmentName,
+          productionId,
+          startedAt: startDateTime,
+          status: "in-progress",
+        });
+
+    const sessionPatch = {
+      inboundQty,
+      workQty: chargeQty,
+      chargeQty,
+      remainingChargeQty,
+      chargeHistory: nextChargeHistory,
+      productionWorkLog: {
+        ...(record.productionWorkLog ?? {}),
+        startAt: startDateTime,
+        worker: operator,
+        equipment: equipmentName,
+        source: "equipment-charging",
+        chargeQty,
+        inboundQty,
+      },
       updatedAt: now,
-    });
+    };
+
+    if (!otherActiveSessions && !alreadyActiveOnEquipment) {
+      Object.assign(sessionPatch, {
+        registered: true,
+        lotNo,
+        equipment: equipmentName,
+        equipmentId,
+        workDate,
+        registrar: operator,
+        worker: operator,
+        operator,
+        productionStartAt: now,
+        chargeStartAt: startDateTime,
+        productionWorkflowId: productionId,
+        dailyReportAutoCreated: true,
+        dailyReportDraftStarted: true,
+        awaitingNextProcessStep: false,
+      });
+    } else if (!alreadyActiveOnEquipment) {
+      Object.assign(sessionPatch, {
+        dailyReportAutoCreated: true,
+        dailyReportDraftStarted: true,
+      });
+    }
+
+    onDailyReportSaved(record.id, sessionPatch);
     touchedIds.push(record.id);
 
     recordQrTraceabilityEvent(record.id, {
@@ -125,7 +277,7 @@ function bridgeLegacyDailyReportOnStart(params) {
       at: now,
       worker: operator,
       source: "workflow",
-      detail: `${equipmentName} · ${lotNo}`,
+      detail: chargeDetail,
     });
   });
 
@@ -140,11 +292,15 @@ function bridgeLegacyProductionCompleteOnFinish(params) {
   const equipmentName = String(params.equipmentName ?? params.equipmentId ?? "").trim();
   const operator = String(params.operator ?? getCurrentTitanUser() ?? "생산부").trim();
   const now = new Date().toISOString();
+  const endClock = String(params.endTime ?? formatNowClock()).trim();
+  const endDateTime = `${todayWorkDate()} ${endClock}`;
 
-  const legacyRecords =
+  const legacyRecords = appendLegacyFinishRecordFallback(
     getRecordsForProductionLot(lotNo, getSessionProductionRecords(), { registeredOnly: false }).length > 0
       ? getRecordsForProductionLot(lotNo, getSessionProductionRecords(), { registeredOnly: false })
-      : resolveLegacyRecordsForChargingLot(lotNo, params.chargeableRow ?? {});
+      : resolveLegacyRecordsForChargingLot(lotNo, params.chargeableRow ?? {}),
+    params
+  );
 
   const touchedIds = [];
 
@@ -158,35 +314,326 @@ function bridgeLegacyProductionCompleteOnFinish(params) {
       });
     }
 
-    onProductionComplete(record.id, {
+    const freshRecord =
+      getSessionProductionRecords().find((row) => row.id === record.id) ?? record;
+    const completion = resolveProcessStepCompletion(
+      freshRecord,
+      params.nextProcessStepIndex ?? null
+    );
+    const productionWorkLogPatch = {
+      productionWorkLog: {
+        ...(freshRecord.productionWorkLog ?? {}),
+        endAt: endDateTime,
+        completedAt: now,
+        worker: operator,
+        equipment: equipmentName,
+        source: "equipment-charging",
+      },
+      updatedAt: now,
+    };
+
+    if (completion?.mode === "advance") {
+      let workflowChangeLog = freshRecord.workflowChangeLog;
+      if (!completion.isAutoAdvance) {
+        workflowChangeLog = appendWorkflowChangeLog(
+          freshRecord,
+          buildWorkflowChangeLogEntry(freshRecord, {
+            fromIndex: completion.fromIndex,
+            toIndex: completion.toIndex,
+            user: operator,
+            note: params.workflowChangeNote,
+          })
+        );
+      }
+
+      const inboundQtyForAdvance = Number(freshRecord.inboundQty ?? freshRecord.qty) || 0;
+      const completedHistory = completeLatestChargeHistoryEntry(freshRecord.chargeHistory, lotNo, {
+        completedAt: now,
+        chargeQty: Number(freshRecord.chargeQty ?? freshRecord.workQty) || 0,
+        equipmentId: params.equipmentId,
+        equipmentName,
+        productionId: params.productionId,
+        status: "completed",
+      });
+
+      updateSessionProductionRecord(freshRecord.id, {
+        ...completion.patch,
+        workflowChangeLog,
+        ...productionWorkLogPatch,
+        lotNo: "",
+        registered: false,
+        workQty: inboundQtyForAdvance,
+        chargeQty: "",
+        remainingChargeQty: inboundQtyForAdvance,
+        chargeHistory: completedHistory,
+        productionWorkflowId: "",
+        productionStartAt: "",
+        chargeStartAt: "",
+      });
+      touchedIds.push(freshRecord.id);
+
+      const advancedRecord =
+        getSessionProductionRecords().find((row) => row.id === freshRecord.id) ?? freshRecord;
+      purgeChargeableStoreRowsForRecord(advancedRecord, params.equipmentId);
+
+      recordQrTraceabilityEvent(freshRecord.id, {
+        type: "processStepComplete",
+        at: now,
+        worker: operator,
+        source: "workflow",
+        detail: `${equipmentName} · ${lotNo} · ${completion.patch.currentProcessDetail ?? ""}`,
+      });
+      return;
+    }
+
+    const inboundQtyForFinish = Number(freshRecord.inboundQty ?? freshRecord.qty) || 0;
+    const sessionChargeQty = Number(freshRecord.chargeQty ?? freshRecord.workQty) || 0;
+    const alreadyCharged = resolveTotalChargedQty(freshRecord);
+    const storedRemaining = Number(freshRecord.remainingChargeQty);
+    const remainingChargeQty =
+      Number.isFinite(storedRemaining) && storedRemaining >= 0
+        ? storedRemaining
+        : Math.max(0, inboundQtyForFinish - alreadyCharged - sessionChargeQty);
+    const otherActiveSessions = hasOtherInProgressChargeSessions(freshRecord, params.equipmentId);
+    const completedHistory = completeLatestChargeHistoryEntry(freshRecord.chargeHistory, lotNo, {
+      completedAt: now,
+      chargeQty: sessionChargeQty,
+      equipmentId: params.equipmentId,
+      equipmentName,
+      productionId: params.productionId,
+    });
+
+    if (otherActiveSessions) {
+      updateSessionProductionRecord(freshRecord.id, {
+        chargeHistory: completedHistory,
+        totalChargedQty: alreadyCharged + sessionChargeQty,
+        productionWorkLog: {
+          ...(freshRecord.productionWorkLog ?? {}),
+          endAt: endDateTime,
+          completedAt: now,
+          chargeQty: sessionChargeQty,
+          inboundQty: inboundQtyForFinish,
+        },
+        updatedAt: now,
+      });
+      touchedIds.push(freshRecord.id);
+
+      recordQrTraceabilityEvent(freshRecord.id, {
+        type: "productionEnd",
+        at: now,
+        worker: operator,
+        source: "workflow",
+        detail:
+          sessionChargeQty > 0
+            ? `${equipmentName} · ${lotNo} · 장입 ${sessionChargeQty.toLocaleString("ko-KR")} EA (다른 설비 운전중)`
+            : `${equipmentName} · ${lotNo}`,
+      });
+      return;
+    }
+
+    if (remainingChargeQty > 0) {
+      const inboundQty = Number(freshRecord.inboundQty ?? freshRecord.qty) || 0;
+
+      updateSessionProductionRecord(freshRecord.id, {
+        workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
+        registered: false,
+        dailyReportAutoCreated: false,
+        dailyReportDraftStarted: false,
+        productionStartAt: "",
+        chargeStartAt: "",
+        productionEndAt: "",
+        productionCompletedAt: "",
+        productionCompletedBy: "",
+        productionWorkflowId: "",
+        awaitingNextProcessStep: true,
+        lotNo: "",
+        workQty: remainingChargeQty,
+        qty: inboundQty,
+        inboundQty,
+        remainingChargeQty,
+        totalChargedQty: alreadyCharged + sessionChargeQty,
+        chargeQty: "",
+        chargeHistory: completedHistory,
+        productionWorkLog: {
+          ...(freshRecord.productionWorkLog ?? {}),
+          endAt: endDateTime,
+          completedAt: now,
+          chargeQty: sessionChargeQty,
+          inboundQty,
+        },
+        updatedAt: now,
+      });
+
+      restorePartialChargeableLot(params.equipmentId, freshRecord, remainingChargeQty);
+      touchedIds.push(freshRecord.id);
+
+      recordQrTraceabilityEvent(freshRecord.id, {
+        type: "productionEnd",
+        at: now,
+        worker: operator,
+        source: "workflow",
+        detail:
+          sessionChargeQty > 0
+            ? `${equipmentName} · ${lotNo} · 장입 ${sessionChargeQty.toLocaleString("ko-KR")} EA (잔량 ${remainingChargeQty.toLocaleString("ko-KR")} EA)`
+            : `${equipmentName} · ${lotNo}`,
+      });
+      return;
+    }
+
+    onProductionComplete(freshRecord.id, {
       productionEndAt: now,
       productionCompletedAt: now,
       productionCompletedBy: operator,
-      updatedAt: now,
+      chargeEndAt: endDateTime,
+      workDate: freshRecord.workDate || todayWorkDate(),
+      remainingChargeQty: 0,
+      totalChargedQty:
+        alreadyCharged + sessionChargeQty ||
+        Number(freshRecord.inboundQty ?? freshRecord.qty) ||
+        sessionChargeQty,
+      chargeHistory: completeLatestChargeHistoryEntry(completedHistory, lotNo, {
+        completedAt: now,
+        chargeQty: sessionChargeQty,
+        equipmentId: params.equipmentId,
+        equipmentName,
+        productionId: params.productionId,
+        status: "completed",
+      }),
+      ...productionWorkLogPatch,
     });
-    touchedIds.push(record.id);
+    purgeChargeableStoreRowsForRecord(freshRecord, params.equipmentId);
+    touchedIds.push(freshRecord.id);
 
-    recordQrTraceabilityEvent(record.id, {
+    recordQrTraceabilityEvent(freshRecord.id, {
       type: "productionEnd",
       at: now,
       worker: operator,
       source: "workflow",
-      detail: `${equipmentName} · ${lotNo}`,
+      detail:
+        sessionChargeQty > 0
+          ? `${equipmentName} · ${lotNo} · 장입 ${sessionChargeQty.toLocaleString("ko-KR")} EA`
+          : `${equipmentName} · ${lotNo}`,
     });
   });
 
   return touchedIds;
 }
 
-function syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo) {
+function syncChargeableStoreRowsForRecord(record, equipmentId = "", { resetFinishingEquipment = false } = {}) {
+  const dataEngine = getTitanDataEngine();
+  if (!record) return;
+
+  const sourceRecordId = String(record.id ?? "").trim();
+  const finishingKey = String(equipmentId ?? "").trim();
+  if (!sourceRecordId) return;
+
+  dataEngine.equipment.list().forEach((equipment) => {
+    const eqId = String(equipment.equipmentId ?? equipment.id ?? "").trim();
+    if (!eqId) return;
+    if (!recordMatchesEquipmentProcess(record, equipment.process, equipment.processCode)) return;
+
+    const currentLots = Array.isArray(equipment.chargeableLots) ? equipment.chargeableLots : [];
+    const nextLots = currentLots.filter(
+      (row) => String(row.sourceRecordId ?? row.id ?? "").trim() !== sourceRecordId
+    );
+    const lotsChanged = nextLots.length !== currentLots.length;
+    const isFinishingEquipment = resetFinishingEquipment && eqId === finishingKey;
+
+    if (!lotsChanged && !isFinishingEquipment) return;
+
+    const patch = { chargeableLots: nextLots };
+    if (isFinishingEquipment) {
+      patch.status = "idle";
+      patch.runningSession = null;
+      patch.currentLot = null;
+      patch.workflowState = undefined;
+    }
+    dataEngine.equipment.update(eqId, patch);
+  });
+}
+
+function purgeChargeableStoreRowsForRecord(record, equipmentId = "") {
+  syncChargeableStoreRowsForRecord(record, equipmentId, { resetFinishingEquipment: true });
+  notifyWorkflowDataRefresh({
+    action: "chargeableStorePurge",
+    equipmentId,
+    sourceRecordId: String(record?.id ?? "").trim(),
+  });
+}
+
+function restorePartialChargeableLot(equipmentId, record, remainingQty) {
+  if (!record || remainingQty <= 0) return;
+
+  syncChargeableStoreRowsForRecord(record, equipmentId, { resetFinishingEquipment: true });
+
+  notifyWorkflowDataRefresh({
+    action: "partialChargeRequeue",
+    equipmentId,
+    sourceRecordId: String(record.id ?? "").trim(),
+    remainingQty,
+  });
+}
+
+function syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo, chargeableRow = {}) {
   const dataEngine = getTitanDataEngine();
   const equipment = dataEngine.equipment.getById(equipmentId);
   if (!equipment?.chargeableLots?.length) return;
 
-  const nextLots = equipment.chargeableLots.filter(
-    (row) => normalizeProductionLotKey(row.lotNo) !== normalizeProductionLotKey(lotNo)
-  );
-  if (nextLots.length !== equipment.chargeableLots.length) {
+  const sourceRecordId = String(chargeableRow?.sourceRecordId ?? chargeableRow?.id ?? "").trim();
+  let remainingQty = Number(chargeableRow?.remainingChargeQty ?? 0);
+  if (sourceRecordId) {
+    const sessionRecord = getSessionProductionRecords().find(
+      (row) => String(row.id ?? "").trim() === sourceRecordId
+    );
+    if (sessionRecord) {
+      remainingQty = resolveRemainingChargeQty(sessionRecord);
+    }
+  }
+  const keepProductRow = remainingQty > 0;
+
+  let nextLots = equipment.chargeableLots;
+
+  if (sourceRecordId) {
+    if (keepProductRow) {
+      // P0-ARCHITECTURE-001: partial charge — keep parent inbound row with remaining qty
+      const updatedRow = {
+        ...chargeableRow,
+        id: sourceRecordId,
+        sourceRecordId,
+        lotNo: "",
+        qty: remainingQty,
+        remainingChargeQty: remainingQty,
+        needsLotCreation: true,
+        statusLabel: "생산대기",
+        source: "production-waiting",
+      };
+      const existingIndex = equipment.chargeableLots.findIndex(
+        (row) => String(row.sourceRecordId ?? row.id ?? "").trim() === sourceRecordId
+      );
+      nextLots =
+        existingIndex >= 0
+          ? equipment.chargeableLots.map((row, index) =>
+              index === existingIndex ? { ...row, ...updatedRow } : row
+            )
+          : [...equipment.chargeableLots, updatedRow];
+    } else {
+      nextLots = equipment.chargeableLots.filter(
+        (row) => String(row.sourceRecordId ?? row.id ?? "").trim() !== sourceRecordId
+      );
+    }
+  } else {
+    const lotKey = normalizeProductionLotKey(lotNo);
+    if (lotKey) {
+      nextLots = equipment.chargeableLots.filter(
+        (row) => normalizeProductionLotKey(row.lotNo) !== lotKey
+      );
+    }
+  }
+
+  const changed =
+    nextLots.length !== equipment.chargeableLots.length ||
+    nextLots.some((row, index) => row !== equipment.chargeableLots[index]);
+  if (changed) {
     dataEngine.equipment.update(equipmentId, { chargeableLots: nextLots });
   }
 }
@@ -327,18 +774,25 @@ export function executeStartCharging(input) {
   const operator = input.operator ?? getCurrentTitanUser() ?? "생산부";
 
   const workflow = getTitanWorkflowEngine();
+  const managementId = String(
+    input.chargeableRow?.managementId ??
+      input.chargeableRow?.sourceRecordId ??
+      input.managementId ??
+      ""
+  ).trim();
   const result = workflow.startCharging({
     ...input,
     equipmentId,
     lotNo,
     operator,
+    managementId,
     startTime: formatNowClock(),
     equipmentName: equipment?.equipmentName ?? equipmentId,
     productName: input.chargeableRow?.partName ?? "",
-    quantity: input.chargeableRow?.qty ?? 0,
+    quantity: input.chargeQty ?? input.chargeableRow?.chargeQty ?? input.chargeableRow?.qty ?? 0,
   });
 
-  syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo);
+  syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo, input.chargeableRow ?? {});
   const actualWorkRecord = syncActualWorkOnStart({
     ...input,
     equipmentId,
@@ -384,6 +838,8 @@ export function executeStartCharging(input) {
  *   productionId?: string,
  *   operator?: string,
  *   chargeableRow?: Record<string, unknown>,
+ *   nextProcessStepIndex?: number,
+ *   workflowChangeNote?: string,
  * }} input
  */
 export function executeFinishCharging(input) {
@@ -443,6 +899,11 @@ export function executeFinishCharging(input) {
   return { ...result, legacyRecordIds: legacyIds, ...knowledgeSync };
 }
 
+/** @deprecated executeFinishCharging — 열처리 완료 (생산 완료 → 검사대기) */
+export function executeCompleteHeatTreatment(input) {
+  return executeFinishCharging(input);
+}
+
 /** @param {string} [equipmentId] @param {string} [lotNo] */
 export function getWorkflowTimelineItems(equipmentId, lotNo) {
   const equipmentKey = String(equipmentId ?? "").trim();
@@ -468,6 +929,8 @@ export { getTimelineByLotNo, getTimelineByEquipmentId, prepareCertificateLinkFor
 export function initTitanWorkflowIntegration() {
   if (integrationInitialized) return;
   integrationInitialized = true;
+
+  reconcileAllEquipmentSessionsInStore();
 
   const workflow = getTitanWorkflowEngine();
 

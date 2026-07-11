@@ -8,8 +8,9 @@ import { appendWorkJournalAutoEntry } from "./workJournalAutoRecord";
 import { WORK_JOURNAL_ACTION_TYPES } from "../config/titanAssigneePolicy";
 import { getJournalReferenceDate } from "./workJournalData";
 import { getProductionProcessName } from "../config/productionProcessCodes";
+import { CERTIFICATE_STATUS } from "./ndkWorkflow";
+import { getSessionProductionRecords } from "./productionRecords";
 import { onCertificateIssued } from "./titanWorkflowStatus";
-import { getTitanDemoCertificateSeeds } from "../data/titanDemoSampleData";
 import { getInspectionLogsByManagementId } from "./inspectionLogSession";
 import { getInspectionReportByLogId } from "./inspectionReportSession";
 
@@ -18,11 +19,14 @@ const STORAGE_KEY = "project-titan-certificate-files-v2";
 function safeRead() {
   try {
     const raw = globalThis.sessionStorage?.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    if (parsed.length > 0) return parsed;
-    return getTitanDemoCertificateSeeds();
+    if (raw == null) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    return [];
   } catch {
-    return getTitanDemoCertificateSeeds();
+    return [];
   }
 }
 
@@ -48,6 +52,16 @@ function normalizeFileMeta(file) {
   };
 }
 
+function normalizeIssueHistoryEntry(item) {
+  if (!item || typeof item !== "object") return null;
+  return {
+    issuedAt: item.issuedAt || new Date().toISOString(),
+    issuedBy: normalizeAssigneeValue(item.issuedBy) || resolveDefaultAssigneeFromAuth(),
+    excelFile: item.excelFile ?? null,
+    pdfFile: item.pdfFile ?? null,
+  };
+}
+
 function normalizeEntry(entry) {
   return {
     id: entry.id,
@@ -66,6 +80,14 @@ function normalizeEntry(entry) {
     pdfFile: entry.pdfFile ?? null,
     registeredDate: entry.registeredDate?.trim() || getJournalReferenceDate(),
     registeredBy: normalizeAssigneeValue(entry.registeredBy) || resolveDefaultAssigneeFromAuth(),
+    issueCount: Number.isFinite(Number(entry.issueCount)) ? Number(entry.issueCount) : 0,
+    lastIssuedDate: entry.lastIssuedDate?.trim() || "",
+    lastIssuedBy: normalizeAssigneeValue(entry.lastIssuedBy) || "",
+    isReissue: Boolean(entry.isReissue),
+    firstIssuedAt: entry.firstIssuedAt || "",
+    issueHistory: Array.isArray(entry.issueHistory)
+      ? entry.issueHistory.map(normalizeIssueHistoryEntry).filter(Boolean)
+      : [],
     deleted: Boolean(entry.deleted),
     createdAt: entry.createdAt || new Date().toISOString(),
     updatedAt: entry.updatedAt || new Date().toISOString(),
@@ -167,48 +189,104 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
 }
 
 export function upsertCertificateFileEntry(payload) {
+  const entries = safeRead();
+  const index = entries.findIndex((entry) => entry.managementId === payload.managementId?.trim());
+  const existingRaw = index >= 0 ? entries[index] : null;
+  const existingEntry = existingRaw ? normalizeEntry(existingRaw) : null;
+
+  const record = getSessionProductionRecords().find((item) => item.id === payload.managementId?.trim());
+  const wasAlreadyIssued =
+    record?.certificateStatus === CERTIFICATE_STATUS.ISSUED ||
+    Number(existingEntry?.issueCount) > 0;
+
+  const issuedAt = new Date().toISOString();
+  const issuedDate = getJournalReferenceDate();
+  const issuedBy =
+    normalizeAssigneeValue(payload.registeredBy) ||
+    existingEntry?.registeredBy ||
+    resolveDefaultAssigneeFromAuth();
+
   const base = normalizeEntry({
+    ...(existingEntry ?? {}),
     ...payload,
-    id: payload.id || createCertificateId(),
-    excelFile: normalizeFileMeta(payload.excelFile) ?? payload.excelFile ?? null,
-    pdfFile: normalizeFileMeta(payload.pdfFile) ?? payload.pdfFile ?? null,
-    updatedAt: new Date().toISOString(),
+    id: payload.id || existingEntry?.id || createCertificateId(),
+    excelFile: normalizeFileMeta(payload.excelFile) ?? payload.excelFile ?? existingEntry?.excelFile ?? null,
+    pdfFile: normalizeFileMeta(payload.pdfFile) ?? payload.pdfFile ?? existingEntry?.pdfFile ?? null,
+    registeredBy: issuedBy,
+    updatedAt: issuedAt,
     deleted: false,
+    createdAt: existingEntry?.createdAt || new Date().toISOString(),
   });
 
-  const entries = safeRead();
-  const index = entries.findIndex((entry) => entry.managementId === base.managementId);
-  if (index >= 0) {
-    entries[index] = normalizeEntry({
-      ...entries[index],
-      ...base,
-      id: entries[index].id,
-      createdAt: entries[index].createdAt,
-    });
-  } else {
-    entries.unshift(
-      normalizeEntry({
-        ...base,
-        createdAt: new Date().toISOString(),
-      })
-    );
-  }
+  const issueSnapshot = {
+    issuedAt,
+    issuedBy,
+    excelFile: base.excelFile ?? null,
+    pdfFile: base.pdfFile ?? null,
+  };
 
+  const nextIssueCount = wasAlreadyIssued
+    ? Math.max(Number(existingEntry?.issueCount) || 1, 1) + 1
+    : 1;
+
+  const persisted = normalizeEntry({
+    ...base,
+    issueCount: nextIssueCount,
+    lastIssuedDate: issuedDate,
+    lastIssuedBy: issuedBy,
+    isReissue: wasAlreadyIssued,
+    firstIssuedAt: wasAlreadyIssued ? existingEntry?.firstIssuedAt || issuedAt : issuedAt,
+    issueHistory: wasAlreadyIssued
+      ? [...(existingEntry?.issueHistory ?? []), issueSnapshot]
+      : [issueSnapshot],
+  });
+
+  if (index >= 0) {
+    entries[index] = persisted;
+  } else {
+    entries.unshift(persisted);
+  }
   safeWrite(entries);
 
-  const saved = getCertificateEntryByManagementId(base.managementId);
-  if (saved && saved.excelFile?.name && saved.pdfFile?.name) {
-    onCertificateIssued(saved.managementId);
+  // RC1: 최초 발행 = workflow 전환 (첨부파일 선택) · 재발행은 이력만 갱신
+  if (!wasAlreadyIssued) {
+    onCertificateIssued(persisted.managementId);
     appendWorkJournalAutoEntry({
       actionType: WORK_JOURNAL_ACTION_TYPES.CERTIFICATE_ISSUE,
-      assignee: saved.registeredBy,
-      managementId: saved.managementId,
-      company: saved.company,
-      lotNo: saved.lotNo,
-      date: saved.registeredDate,
-      title: `성적서 발행 — ${saved.company} ${saved.lotNo || saved.managementId}`,
+      assignee: persisted.lastIssuedBy || persisted.registeredBy,
+      managementId: persisted.managementId,
+      company: persisted.company,
+      lotNo: persisted.lotNo,
+      date: persisted.lastIssuedDate || persisted.registeredDate,
+      title: `성적서 발행 — ${persisted.company} ${persisted.lotNo || persisted.managementId}`,
+    });
+  } else {
+    appendWorkJournalAutoEntry({
+      actionType: WORK_JOURNAL_ACTION_TYPES.CERTIFICATE_ISSUE,
+      assignee: persisted.lastIssuedBy || persisted.registeredBy,
+      managementId: persisted.managementId,
+      company: persisted.company,
+      lotNo: persisted.lotNo,
+      date: persisted.lastIssuedDate || persisted.registeredDate,
+      title: `성적서 재발행 — ${persisted.company} ${persisted.lotNo || persisted.managementId}`,
     });
   }
 
-  return saved;
+  return persisted;
+}
+
+/** 성적서현황 — 발행 완료 이력 (발행 후에도 유지) */
+export function getCertificateHistoryEntries({ includeDeleted = false } = {}) {
+  return getCertificateFileEntries({ includeDeleted }).filter((entry) => {
+    if (Number(entry.issueCount) > 0) return true;
+    const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
+    return record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
+  });
+}
+
+export function isCertificateEntryIssued(entry) {
+  if (!entry) return false;
+  if (Number(entry.issueCount) > 0) return true;
+  const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
+  return record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
 }

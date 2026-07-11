@@ -109,8 +109,9 @@ export const MASTER_DATA_SCREENS = {
       { key: "company", label: "업체명" },
       { key: "partNo", label: "품번" },
       { key: "name", label: "품명" },
-      { key: "spec", label: "규격" },
+      { key: "spec", label: "제품 규격" },
       { key: "material", label: "재질" },
+      { key: "inspectionTypeLabel", label: "검사 유형" },
       { key: "unitPriceLabel", label: "기본단가" },
       { key: "drawingNo", label: "도번" },
       { key: "process", label: "기본 공정" },
@@ -123,24 +124,32 @@ export const MASTER_DATA_SCREENS = {
       { key: "code", label: "관리번호" },
       { key: "partNo", label: "품번" },
       { key: "material", label: "재질" },
-      { key: "spec", label: "규격" },
+      { key: "spec", label: "제품 규격" },
       { key: "unitPriceLabel", label: "기본단가" },
       { key: "activeLabel", label: "상태", render: "active" },
       { key: "note", label: "비고" },
     ],
     formFields: [
-      { key: "code", label: "관리번호", required: true, placeholder: "예: SE_20260702_001" },
-      { key: "company", label: "업체명", required: true, optionsKey: "companies", placeholder: "업체 선택" },
+      { key: "company", label: "업체명", required: true, type: "companyAutocomplete", placeholder: "거래처 검색 · 선택" },
+      { key: "code", label: "관리번호", type: "autoCode", placeholder: "업체 선택 시 자동 생성 (예: DS-P-0001)" },
       { key: "partNo", label: "품번", required: true, placeholder: "예: WS-2210-F" },
       { key: "name", label: "품명", required: true, placeholder: "예: Pinion Gear" },
-      { key: "spec", label: "규격", placeholder: "규격" },
+      { key: "spec", label: "제품 규격", placeholder: "예: Ø25×350, 40×120, M20×150" },
       { key: "material", label: "재질", optionsKey: "materials", placeholder: "재질 선택" },
+      {
+        key: "inspectionType",
+        label: "검사 유형",
+        type: "select",
+        selectOptions: [
+          { value: "mass", label: "양산" },
+          { value: "development", label: "개발" },
+        ],
+      },
       { key: "unitPrice", label: "기본단가", placeholder: "예: 1500" },
       { key: "drawingNo", label: "도번", placeholder: "예: 204B1144P0001" },
-      { key: "process", label: "기본 공정", optionsKey: "heatTreatment", placeholder: "공정 선택" },
-      { key: "unit", label: "기본 단위", optionsKey: "units", placeholder: "단위 선택" },
-      { key: "description", label: "제품 설명", type: "textarea", span: 2 },
-      { key: "note", label: "비고", type: "textarea", span: 2 },
+      { key: "processCategory", label: "공정", type: "processCategory", required: true, placeholder: "공정 분류 선택" },
+      { key: "processDetail", label: "세부공정", type: "processDetail", placeholder: "세부공정 선택" },
+      { key: "unit", label: "기본 단위", type: "productUnit", placeholder: "단위 선택" },
       { key: "active", label: "사용 여부", type: "toggle" },
     ],
   },
@@ -152,24 +161,19 @@ export const MASTER_DATA_SCREENS = {
     kpiTitle: "재질 현황",
     icon: Layers,
     columns: [
-      { key: "name", label: "재질명", widthPercent: 32 },
-      { key: "code", label: "재질코드", widthPercent: 16 },
-      { key: "spec", label: "규격", widthPercent: 28 },
-      { key: "activeLabel", label: "상태", widthPercent: 8, render: "active" },
+      { key: "name", label: "재질명", widthPercent: 40 },
+      { key: "code", label: "재질코드", widthPercent: 32 },
+      { key: "activeLabel", label: "사용여부", widthPercent: 12, render: "active" },
     ],
     detailFields: [
-      { key: "code", label: "재질코드" },
       { key: "name", label: "재질명" },
-      { key: "spec", label: "규격" },
-      { key: "note", label: "비고" },
-      { key: "activeLabel", label: "사용 여부", render: "active" },
+      { key: "code", label: "재질코드" },
+      { key: "activeLabel", label: "사용여부", render: "active" },
     ],
     formFields: [
-      { key: "code", label: "재질코드", required: true, placeholder: "예: SCM440" },
       { key: "name", label: "재질명", required: true, placeholder: "예: SCM440" },
-      { key: "spec", label: "규격", placeholder: "규격" },
-      { key: "note", label: "비고", type: "textarea", span: 2 },
-      { key: "active", label: "사용 여부", type: "toggle" },
+      { key: "code", label: "재질코드", required: true, placeholder: "예: SCM440" },
+      { key: "active", label: "사용여부", type: "toggle" },
     ],
   },
   processes: {
@@ -206,23 +210,28 @@ export const MASTER_DATA_SCREENS = {
     kpiTitle: "설비 현황",
     icon: Wrench,
     columns: [
-      { key: "name", label: "설비명", widthPercent: 38 },
-      { key: "code", label: "설비번호", widthPercent: 18 },
-      { key: "equipType", label: "공정", widthPercent: 28 },
-      { key: "activeLabel", label: "상태", widthPercent: 8, render: "active" },
+      { key: "name", label: "설비명", widthPercent: 40 },
+      { key: "processCode", label: "열처리 공정", widthPercent: 32 },
+      { key: "activeLabel", label: "사용여부", widthPercent: 12, render: "active" },
     ],
     detailFields: [
-      { key: "code", label: "설비코드" },
       { key: "name", label: "설비명" },
-      { key: "equipType", label: "공정" },
+      { key: "processCode", label: "열처리 공정" },
       { key: "activeLabel", label: "사용여부", render: "active" },
-      { key: "note", label: "비고" },
     ],
     formFields: [
-      { key: "code", label: "설비코드", required: true, placeholder: "예: 3S-3" },
       { key: "name", label: "설비명", required: true, placeholder: "예: 3S-3 · 61" },
-      { key: "equipType", label: "공정", placeholder: "예: 이온질화" },
-      { key: "note", label: "비고", type: "textarea", span: 2 },
+      {
+        key: "processCode",
+        label: "열처리 공정",
+        type: "select",
+        required: true,
+        selectOptions: [
+          { value: "ION", label: "이온질화 (ION)" },
+          { value: "SOFT", label: "연질화 (SOFT)" },
+          { value: "GAS", label: "가스질화 (GAS)" },
+        ],
+      },
       { key: "active", label: "사용여부", type: "toggle" },
     ],
   },
@@ -454,4 +463,88 @@ export function resolveMasterDataTab(tabParam) {
   }
   if (tabParam && MASTER_DATA_SCREENS[tabParam]) return tabParam;
   return "companies";
+}
+
+/** Document numbering config — pattern: {companyAbbr}-{prefix}-{seq4} */
+export const TITAN_NUMBERING_STORAGE_KEY = "project-titan-document-numbering-v1";
+
+export const TITAN_DOCUMENT_NUMBER_TYPES = {
+  customer: {
+    id: "customer",
+    label: "\uAC70\uB798\uCC98",
+    prefix: "C",
+    example: "DS-C-0001",
+    description: "\uAC70\uB798\uCC98 Master \uCF54\uB4DC",
+  },
+  product: {
+    id: "product",
+    label: "\uC81C\uD488",
+    prefix: "P",
+    example: "DS-P-0001",
+    description: "\uC81C\uD488 Master \uCF54\uB4DC",
+  },
+  inbound: {
+    id: "inbound",
+    label: "\uC785\uACE0",
+    prefix: "I",
+    example: "DS-I-0001",
+    description: "\uC785\uACE0\uB4F1\uB85D \uAD00\uB9AC\uBC88\uD638",
+  },
+  lot: {
+    id: "lot",
+    label: "LOT",
+    prefix: "L",
+    example: "DS-L-000001",
+    description: "LOT \uBC88\uD638 ({companyAbbr}-L-{seq6})",
+  },
+  production: {
+    id: "production",
+    label: "\uC0DD\uC0B0",
+    prefix: "W",
+    example: "DS-W-0001",
+    description: "\uC0DD\uC0B0\uC77C\uBCF4 \uC791\uC5C5\uBC88\uD638",
+  },
+  inspection: {
+    id: "inspection",
+    label: "\uAC80\uC0AC",
+    prefix: "Q",
+    example: "DS-Q-0001",
+    description: "\uAC80\uC0AC\uB4F1\uB85D \uBC88\uD638",
+  },
+  certificate: {
+    id: "certificate",
+    label: "\uC131\uC801\uC11C",
+    prefix: "CT",
+    example: "DS-CT-0001",
+    description: "\uC131\uC801\uC11C \uBC1C\uD589\uBC88\uD638",
+  },
+  shipment: {
+    id: "shipment",
+    label: "\uCD9C\uACE0",
+    prefix: "S",
+    example: "DS-S-0001",
+    description: "\uCD9C\uACE0\uB4F1\uB85D \uBC88\uD638",
+  },
+  document: {
+    id: "document",
+    label: "\uBB38\uC11C",
+    prefix: "D",
+    example: "DS-D-0001",
+    description: "\uBB38\uC11C\uAD00\uB9AC \uBC88\uD638",
+  },
+};
+
+export const TITAN_NUMBERING_PATTERN = "{companyAbbr}-{prefix}-{seq4}";
+export const TITAN_NUMBERING_SEQ_PAD = 4;
+
+export function getDefaultNumberingPrefixes() {
+  return Object.fromEntries(
+    Object.values(TITAN_DOCUMENT_NUMBER_TYPES).map((item) => [item.id, item.prefix])
+  );
+}
+
+export function buildNumberingPreview(companyAbbr, prefix, seq = 1) {
+  const abbr = String(companyAbbr ?? "XX").trim().toUpperCase() || "XX";
+  const safePrefix = String(prefix ?? "X").trim().toUpperCase() || "X";
+  return `${abbr}-${safePrefix}-${String(seq).padStart(TITAN_NUMBERING_SEQ_PAD, "0")}`;
 }

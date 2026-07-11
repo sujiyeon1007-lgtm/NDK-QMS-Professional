@@ -57,7 +57,7 @@ export const CERTIFICATE_STATUS_CARDS = [
     subLabel: "금일 등록 건",
     icon: FileCheck2,
     tone: "blue",
-    to: "/quality/certificate",
+    to: "/quality/certificate/register",
   },
   {
     id: "weekRegister",
@@ -65,7 +65,7 @@ export const CERTIFICATE_STATUS_CARDS = [
     subLabel: "금주 등록 건",
     icon: ClipboardCheck,
     tone: "green",
-    to: "/quality/certificate",
+    to: "/quality/certificate/register",
   },
   {
     id: "monthRegister",
@@ -73,7 +73,7 @@ export const CERTIFICATE_STATUS_CARDS = [
     subLabel: "금월 등록 건",
     icon: ShieldCheck,
     tone: "purple",
-    to: "/quality/certificate",
+    to: "/quality/certificate/status",
   },
   {
     id: "registerRate",
@@ -81,7 +81,7 @@ export const CERTIFICATE_STATUS_CARDS = [
     subLabel: "엑셀·PDF 완료",
     icon: CircleCheck,
     tone: "orange",
-    to: "/quality/certificate",
+    to: "/quality/certificate/status",
   },
 ];
 

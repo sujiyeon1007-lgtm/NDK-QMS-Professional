@@ -21,7 +21,7 @@
 
   --titan-layout-header-h: 52px;
   --titan-layout-footer-h: 28px;
-  --titan-sidebar-width: 168px;
+  --titan-sidebar-width: 196px;
   --titan-main-padding-y: 12px;
   --titan-main-padding-x: 16px;
   --titan-page-gap: 16px;
@@ -50,8 +50,8 @@
   --titan-card-radius: 12px;
 
   /* Sidebar — official layout tokens (adjust here when menus grow) */
-  --titan-sidebar-brand-max-h: 52px;
-  --titan-sidebar-logo-max-h: 26px;
+  --titan-sidebar-brand-max-h: 58px;
+  --titan-sidebar-logo-max-h: 28px;
   --titan-sidebar-nav-padding-y: 5px;
   --titan-sidebar-nav-padding-x: 6px;
   --titan-sidebar-group-label-h: 22px;

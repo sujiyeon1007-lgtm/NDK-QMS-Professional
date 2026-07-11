@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { TitanMasterAutocomplete } from "../../foundation/components/TitanSearchAutocomplete";
+import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
+import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import {
   addUnitPriceHistory,
   getAllUnitPriceEntries,
@@ -34,6 +37,32 @@ function UnitPricePanel() {
     if (!selectedEntry) return [];
     return getUnitPriceHistory(selectedEntry.company, selectedEntry.partNo);
   }, [selectedEntry]);
+
+  const handleProductSelect = (selection, product) => {
+    if (product) {
+      const autofill = mapProductToFormAutofill(product);
+      setForm((prev) => ({
+        ...prev,
+        partName: autofill.partName,
+        partNo: autofill.partNo,
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      partName: selection.partName,
+      partNo: selection.partNo,
+    }));
+  };
+
+  const handleCompanyChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      company: value,
+      partName: "",
+      partNo: "",
+    }));
+  };
 
   const handleAddPrice = () => {
     const company = form.company || selectedEntry?.company;
@@ -159,30 +188,29 @@ function UnitPricePanel() {
           <div className="unit-price-new">
             <p>신규 품목 단가 등록</p>
             <div className="unit-price-form-grid">
-              <label>
-                <span>업체명</span>
-                <input
-                  type="text"
-                  value={form.company}
-                  onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>품번</span>
-                <input
-                  type="text"
-                  value={form.partNo}
-                  onChange={(e) => setForm((p) => ({ ...p, partNo: e.target.value }))}
-                />
-              </label>
-              <label className="span-2">
-                <span>품명</span>
-                <input
-                  type="text"
-                  value={form.partName}
-                  onChange={(e) => setForm((p) => ({ ...p, partName: e.target.value }))}
-                />
-              </label>
+              <TitanMasterAutocomplete
+                field="company"
+                label="업체명"
+                className="unit-price-form-field"
+                value={form.company}
+                onChange={(value) => setForm((prev) => ({ ...prev, company: value }))}
+                onSelect={handleCompanyChange}
+                placeholder="거래처 검색"
+              />
+              <TitanCascadeProductPicker
+                inline
+                showDrawingNo={false}
+                showAutoFields={false}
+                company={form.company}
+                value={{
+                  partName: form.partName,
+                  partNo: form.partNo,
+                  drawingNo: "",
+                }}
+                onChange={handleProductSelect}
+                fieldClassName="unit-price-form-field"
+                kicker="단가 등록"
+              />
             </div>
           </div>
         </div>

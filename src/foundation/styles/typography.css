@@ -110,15 +110,10 @@ select {
 }
 
 /* ── App Header (최상단 바 — 일반 텍스트) ── */
-.titan-header__title {
+.titan-header__subtitle {
   font-weight: var(--titan-weight-semibold);
 }
 
 .titan-header__user strong {
   font-weight: var(--titan-weight-semibold);
-}
-
-.titan-header__clock {
-  font-weight: var(--titan-weight-bold);
-  font-variant-numeric: tabular-nums;
 }

@@ -237,6 +237,21 @@ export function buildProductHistoryTimeline(record) {
     };
   });
 
+  const workflowChangeLogs = Array.isArray(record?.workflowChangeLog) ? record.workflowChangeLog : [];
+  if (workflowChangeLogs.length > 0) {
+    const changeEntries = workflowChangeLogs.map((entry, index) => ({
+      key: `workflow-change-${index}`,
+      label: entry.action === "WORKFLOW_SKIP" ? "공정 생략" : "공정 변경",
+      detail: entry.note || `${entry.fromLabel ?? ""} → ${entry.toLabel ?? ""}`,
+      status: "done",
+      at: entry.at,
+      user: entry.user,
+    }));
+    const dailyLotIdx = timeline.findIndex((step) => step.key === "dailyLot");
+    const insertAt = dailyLotIdx >= 0 ? dailyLotIdx + 1 : timeline.length;
+    timeline.splice(insertAt, 0, ...changeEntries);
+  }
+
   const partialShipments = resolvePartialShipmentEntries(record);
 
   partialShipments.forEach((entry, index) => {

@@ -13,16 +13,21 @@ import {
 import { getStockQty } from "./inventory";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { getProductionDailyReportStatus } from "./productionDailyReportStatus";
+import { getPrintOutputDate } from "./titanPrintDates";
 import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
-const REFERENCE_DATE = new Date("2026-06-30T12:00:00");
+/** RC1 — 금일 기준 (고정 2026-06-30 사용 시 7월 생산완료 이력이 목록에서 누락됨) */
+export function getReferenceDate(referenceDate) {
+  if (referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime())) {
+    return referenceDate;
+  }
+  const today = getPrintOutputDate();
+  const parsed = new Date(`${today}T12:00:00`);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
 
 /** 설비명 표시 (LOT·마스터 설비명 그대로 사용) */
 const EQUIPMENT_UNIT_MAP = {};
-
-export function getReferenceDate() {
-  return REFERENCE_DATE;
-}
 
 export function getDimensionSelectLabel(dimensionId) {
   const labels = {
@@ -56,7 +61,7 @@ export function getDimensionOptionsWithLabels(records, dimensionField) {
   }));
 }
 
-export function formatAnalysisContextLabel(period, referenceDate = REFERENCE_DATE) {
+export function formatAnalysisContextLabel(period, referenceDate = getReferenceDate()) {
   const y = referenceDate.getFullYear();
   const m = String(referenceDate.getMonth() + 1).padStart(2, "0");
   const d = String(referenceDate.getDate()).padStart(2, "0");
@@ -68,7 +73,7 @@ export function formatAnalysisContextLabel(period, referenceDate = REFERENCE_DAT
   return `${y}-${m}-${d} ${periodLabel}`;
 }
 
-export function buildAnalysisScopeLabel(dimensionField, dimensionValue, period, referenceDate = REFERENCE_DATE) {
+export function buildAnalysisScopeLabel(dimensionField, dimensionValue, period, referenceDate = getReferenceDate()) {
   const dimensionLabels = {
     equipment: "설비",
     company: "업체",
@@ -204,9 +209,9 @@ function isSameYear(date, reference) {
   return date.getFullYear() === reference.getFullYear();
 }
 
-export function isWithinAnalysisPeriod(dateValue, period, referenceDate = REFERENCE_DATE) {
+export function isWithinAnalysisPeriod(dateValue, period, referenceDate = getReferenceDate()) {
   const date = parseDate(dateValue);
-  if (!date) return false;
+  if (!date) return period === "year";
 
   switch (period) {
     case "day":
@@ -248,7 +253,7 @@ export function getDimensionOptions(records, dimensionField) {
   return [...values].sort((a, b) => a.localeCompare(b, "ko"));
 }
 
-export function computeProductionResultMetrics(records = [], referenceDate = REFERENCE_DATE) {
+export function computeProductionResultMetrics(records = [], referenceDate = getReferenceDate()) {
   const completed = getCompletedProductionRecords(records);
   const eligible = records.filter((record) => isIncomingRegistered(record));
   const todayRecords = completed.filter((record) =>
@@ -272,7 +277,7 @@ export function computeProductionResultMetrics(records = [], referenceDate = REF
   };
 }
 
-export function computePeriodQtyForRecords(records, period, referenceDate = REFERENCE_DATE) {
+export function computePeriodQtyForRecords(records, period, referenceDate = getReferenceDate()) {
   return sumRecordQty(
     records.filter((record) => isWithinAnalysisPeriod(getRecordWorkDate(record), period, referenceDate))
   );
@@ -312,7 +317,7 @@ export function mapProductionResultRow(record) {
   };
 }
 
-function bucketLabel(dateValue, period, referenceDate = REFERENCE_DATE) {
+function bucketLabel(dateValue, period, referenceDate = getReferenceDate()) {
   const date = parseDate(dateValue);
   if (!date) return "—";
   if (period === "day") {
@@ -333,7 +338,7 @@ function bucketLabel(dateValue, period, referenceDate = REFERENCE_DATE) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-export function buildProductionTrendSeries(records, period = "month", referenceDate = REFERENCE_DATE) {
+export function buildProductionTrendSeries(records, period = "month", referenceDate = getReferenceDate()) {
   const buckets = new Map();
   records.forEach((record) => {
     const workDate = getRecordWorkDate(record);
@@ -364,7 +369,7 @@ export function buildProductionTrendSeries(records, period = "month", referenceD
   return entries.slice(-12);
 }
 
-export function computeProductionSummaryStats(records = [], period = "month", referenceDate = REFERENCE_DATE) {
+export function computeProductionSummaryStats(records = [], period = "month", referenceDate = getReferenceDate()) {
   const filtered = records.filter((record) =>
     isWithinAnalysisPeriod(getRecordWorkDate(record), period, referenceDate)
   );

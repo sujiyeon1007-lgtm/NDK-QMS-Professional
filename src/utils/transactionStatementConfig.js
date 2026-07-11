@@ -4,6 +4,8 @@
  */
 
 import { getMasterDataByCategory } from "./masterData";
+import { resolveRecordUnit } from "./productUnits";
+import { calculateAmounts } from "./unitPriceSession";
 
 export const NDK_SUPPLIER = {
   regNo: "615-81-86148",
@@ -70,16 +72,20 @@ export function getCustomerProfile(companyName) {
 /** 품목 행 + 빈 행 (양식 10행) */
 export const STATEMENT_ITEM_ROW_COUNT = 10;
 
-export function buildStatementLineItem(record, shipQty, unitPrice, amounts) {
+export function buildStatementLineItem(record, shipQty, unitPrice, amounts, options = {}) {
+  const unit = options.unit ?? resolveRecordUnit(record);
+  const qty = Number(shipQty) || 0;
+  const price = Number(unitPrice) || 0;
+  const calculated = calculateAmounts(qty, price);
   return {
     partNo: record.partNo ?? "",
-    partName: record.partName ?? "",
-    unit: record.unit ?? "EA",
-    qty: Number(shipQty) || 0,
-    unitPrice: Number(unitPrice) || 0,
-    supplyAmount: amounts.supplyAmount,
-    vat: amounts.vat,
-    totalAmount: amounts.totalAmount,
+    partName: record.partName ?? record.name ?? "",
+    unit,
+    qty,
+    unitPrice: price,
+    supplyAmount: calculated.supplyAmount,
+    vat: calculated.vat,
+    totalAmount: calculated.totalAmount,
     note: record.drawingNo ? `도번 ${record.drawingNo}` : "",
   };
 }

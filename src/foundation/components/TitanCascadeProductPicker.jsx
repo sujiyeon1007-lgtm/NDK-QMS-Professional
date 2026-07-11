@@ -1,14 +1,12 @@
 import { useMemo, useState } from "react";
 import { PrimaryButton, SecondaryButton } from "./Button";
 import QuickProductRegisterModal from "./QuickProductRegisterModal";
-import TitanSearchableSelect from "./TitanSearchableSelect";
+import { TitanAutoComplete } from "./TitanSearchAutocomplete";
 import {
   findCompanyProduct,
   findCompanyProductByPartNo,
   findCompanyProductByPartName,
   getCompanyDrawingNoOptions,
-  getCompanyPartNoOptions,
-  getCompanyProductNameOptions,
   mapProductToFormAutofill,
 } from "../../utils/productMasterSearch";
 
@@ -41,19 +39,6 @@ export default function TitanCascadeProductPicker({
 
   const companySelected = Boolean(String(company ?? "").trim());
   const isDisabled = disabled || !companySelected;
-
-  const partNameOptions = useMemo(
-    () => (companySelected ? getCompanyProductNameOptions(company) : []),
-    [company, companySelected]
-  );
-
-  const partNoOptions = useMemo(
-    () =>
-      companySelected && value.partName
-        ? getCompanyPartNoOptions(company, value.partName)
-        : [],
-    [company, companySelected, value.partName]
-  );
 
   const drawingNoOptions = useMemo(() => {
     if (!showDrawingNo || !value.partName || !value.partNo) return [];
@@ -174,42 +159,86 @@ export default function TitanCascadeProductPicker({
   return (
     <>
       <div className={`${gridClassName}${inline ? " titan-cascade-product-picker--inline" : ""}`.trim()}>
-        <TitanSearchableSelect
-          className={fieldClassName}
+        <TitanAutoComplete
+          fieldType="productName"
           label="품명"
+          className={fieldClassName}
+          companyFilter={company}
           value={value.partName}
-          onChange={handlePartNameChange}
-          options={partNameOptions}
-          placeholder={companySelected ? "품명 선택" : "업체를 먼저 선택하세요"}
+          onChange={(partName) => {
+            setUnknownPrompt(null);
+            onChange?.(
+              {
+                partName,
+                partNo: partName ? value.partNo : "",
+                drawingNo: "",
+              },
+              null
+            );
+          }}
+          onSelect={(partName, meta) => {
+            if (meta?.autofill) {
+              emitSelection(
+                {
+                  partName: meta.autofill.partName,
+                  partNo: meta.autofill.partNo,
+                  drawingNo: meta.autofill.drawingNo,
+                },
+                meta.product
+              );
+              return;
+            }
+            handlePartNameChange(partName);
+          }}
+          enableProductAutofill
+          placeholder={companySelected ? "품명 검색" : "업체를 먼저 선택하세요"}
           disabled={isDisabled}
-          emptySearchMessage="등록되지 않은 제품입니다."
-          onEmptySearch={(query) => handleUnknownSearch(query, "partName")}
         />
 
         {!partNameOnly ? (
-          <TitanSearchableSelect
-            className={fieldClassName}
+          <TitanAutoComplete
+            fieldType="partNo"
             label="품번"
+            className={fieldClassName}
+            companyFilter={company}
             value={value.partNo}
-            onChange={handlePartNoChange}
-            options={partNoOptions}
-            placeholder={value.partName ? "품번 선택" : "품명 또는 품번 선택"}
+            onChange={(partNo) => {
+              setUnknownPrompt(null);
+              onChange?.({ ...value, partNo, drawingNo: "" }, null);
+            }}
+            onSelect={(partNo, meta) => {
+              if (meta?.autofill) {
+                emitSelection(
+                  {
+                    partName: meta.autofill.partName,
+                    partNo: meta.autofill.partNo,
+                    drawingNo: meta.autofill.drawingNo,
+                  },
+                  meta.product
+                );
+                return;
+              }
+              handlePartNoChange(partNo);
+            }}
+            enableProductAutofill
+            placeholder={value.partName ? "품번 검색" : "품명 또는 품번 검색"}
             disabled={isDisabled}
-            emptySearchMessage="등록되지 않은 제품입니다."
-            onEmptySearch={(query) => handleUnknownSearch(query, "partNo")}
           />
         ) : (
           renderReadonly("품번", value.partNo)
         )}
 
         {showDrawingSelect ? (
-          <TitanSearchableSelect
-            className={fieldClassName}
+          <TitanAutoComplete
+            fieldType="drawingNo"
             label="도번"
+            className={fieldClassName}
+            companyFilter={company}
             value={value.drawingNo}
-            onChange={handleDrawingNoChange}
-            options={drawingNoOptions}
-            placeholder="도번 선택"
+            onChange={(drawingNo) => onChange?.({ ...value, drawingNo }, null)}
+            onSelect={handleDrawingNoChange}
+            suggestions={drawingNoOptions}
+            placeholder="도번 검색"
             disabled={isDisabled || !value.partNo}
           />
         ) : null}
@@ -236,7 +265,6 @@ export default function TitanCascadeProductPicker({
             {renderReadonly("재질", autoFields.material)}
             {renderReadonly("규격", autoFields.spec)}
             {renderReadonly("기본단가", autoFields.unitPrice)}
-            {renderReadonly("기본 열처리 종류", autoFields.process || autoFields.heatTreatment)}
             {!showDrawingSelect ? renderReadonly("도번", autoFields.drawingNo) : null}
           </>
         ) : null}

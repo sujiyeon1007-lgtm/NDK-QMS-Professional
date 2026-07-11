@@ -62,6 +62,10 @@ export function syncMasterCategoryToStore(categoryKey, rows = []) {
 
   if (resolved === "equipment") {
     const existing = equipmentStore.list();
+    // RC1 — empty session equipment rows must not wipe runtime chargeable/running state
+    if (rows.length === 0 && existing.length > 0) {
+      return existing;
+    }
     const next = buildEquipmentRecordsFromMasterRows(rows, existing);
     equipmentStore.replaceAll(next);
     return next;

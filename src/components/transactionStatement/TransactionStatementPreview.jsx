@@ -4,9 +4,11 @@ import { PrimaryButton, SecondaryButton } from "../../foundation/components/Butt
 import {
   NDK_SUPPLIER,
   buildStatementItemRows,
+  buildStatementLineItem,
   getCustomerProfile,
 } from "../../utils/transactionStatementConfig";
-import { parseQtyWithUnit } from "../../utils/productUnits";
+import { parseQtyWithUnit, resolveRecordUnit } from "../../utils/productUnits";
+import { resolveRecordUnitPrice } from "../../utils/unitPriceSession";
 import {
   getCompanyBrandingForDocuments,
   getCompanyProfile,
@@ -44,7 +46,34 @@ function buildSupplierProfile(companyProfile = {}) {
   };
 }
 
-/** 공급받는자/공급자 — 10열 그리드 (좌 5 + 우 5) */
+function RepresentativeSealCell({ name, showSeal, sealImage, signatureImage, showSignature = false }) {
+  if (!showSeal) return name;
+
+  return (
+    <span className="ts-seal-cell-inner">
+      <span className="ts-representative-name">{name}</span>
+      {showSignature && signatureImage ? (
+        <img className="ts-company-signature-image" src={signatureImage} alt="대표이사 서명" />
+      ) : null}
+      <span className="ts-seal-mark">
+        <span className="ts-seal-label">(인)</span>
+        {sealImage ? (
+          <img className="ts-company-seal-image" src={sealImage} alt="회사 직인" />
+        ) : (
+          <span className="ts-company-seal" aria-hidden="true">
+            印
+          </span>
+        )}
+      </span>
+    </span>
+  );
+}
+
+function sealCellClassName(showSeal, signatureImage, showSignature = false) {
+  return `ts-field-value ts-seal-cell${showSeal ? " has-seal" : ""}${showSeal && showSignature && signatureImage ? " has-signature" : ""}`;
+}
+
+/** 공급자/공급받는자 — 10열 그리드 (좌 공급자 + 우 공급받는자) */
 function PartyInfoTable({ customer, supplier, showSeal, sealImage, signatureImage, totalAmount }) {
   return (
     <table className="ts-form-table ts-party-table">
@@ -63,69 +92,72 @@ function PartyInfoTable({ customer, supplier, showSeal, sealImage, signatureImag
       <tbody>
         <tr>
           <td rowSpan={5} className="ts-party-side-label">
-            공급받는자
-          </td>
-          <td className="ts-field-label">등록번호</td>
-          <td colSpan={3} className="ts-field-value">
-            {customer.regNo}
-          </td>
-          <td rowSpan={5} className="ts-party-side-label">
             공급자
           </td>
           <td className="ts-field-label">등록번호</td>
           <td colSpan={3} className="ts-field-value">
             {supplier.regNo}
           </td>
+          <td rowSpan={5} className="ts-party-side-label">
+            공급받는자
+          </td>
+          <td className="ts-field-label">등록번호</td>
+          <td colSpan={3} className="ts-field-value">
+            {customer.regNo}
+          </td>
         </tr>
-        <tr>
-          <td className="ts-field-label">상호</td>
-          <td className="ts-field-value">{customer.name}</td>
-          <td className="ts-field-label">성명</td>
-          <td className="ts-field-value">{customer.representative}</td>
+        <tr className={showSeal ? "ts-seal-row" : undefined}>
           <td className="ts-field-label">상호</td>
           <td className="ts-field-value">{supplier.name}</td>
           <td className="ts-field-label">성명</td>
-          <td className={`ts-field-value${showSeal ? " has-seal" : ""}${showSeal && signatureImage ? " has-signature" : ""}`}>
-            {supplier.representative}
-            {showSeal && signatureImage ? (
-              <img className="ts-company-signature-image" src={signatureImage} alt="대표이사 서명" />
-            ) : null}
-            {showSeal && sealImage ? (
-              <img className="ts-company-seal-image" src={sealImage} alt="회사 직인" />
-            ) : showSeal ? (
-              <span className="ts-company-seal" aria-hidden="true">印</span>
-            ) : null}
+          <td className={sealCellClassName(showSeal, signatureImage, true)}>
+            <RepresentativeSealCell
+              name={supplier.representative}
+              showSeal={showSeal}
+              sealImage={sealImage}
+              signatureImage={signatureImage}
+              showSignature
+            />
+          </td>
+          <td className="ts-field-label">상호</td>
+          <td className="ts-field-value">{customer.name}</td>
+          <td className="ts-field-label">성명</td>
+          <td className="ts-field-value">
+            <RepresentativeSealCell
+              name={customer.representative}
+              showSeal={false}
+            />
           </td>
         </tr>
         <tr>
-          <td className="ts-field-label">주소</td>
-          <td colSpan={3} className="ts-field-value">
-            {customer.address}
-          </td>
           <td className="ts-field-label">주소</td>
           <td colSpan={3} className="ts-field-value">
             {supplier.address}
           </td>
+          <td className="ts-field-label">주소</td>
+          <td colSpan={3} className="ts-field-value">
+            {customer.address}
+          </td>
         </tr>
         <tr>
-          <td className="ts-field-label">업태</td>
-          <td className="ts-field-value">{customer.businessType}</td>
-          <td className="ts-field-label">종목</td>
-          <td className="ts-field-value">{customer.businessItem}</td>
           <td className="ts-field-label">업태</td>
           <td className="ts-field-value">{supplier.businessType}</td>
           <td className="ts-field-label">종목</td>
           <td className="ts-field-value">{supplier.businessItem}</td>
+          <td className="ts-field-label">업태</td>
+          <td className="ts-field-value">{customer.businessType}</td>
+          <td className="ts-field-label">종목</td>
+          <td className="ts-field-value">{customer.businessItem}</td>
         </tr>
         <tr>
-          <td className="ts-field-label">전화</td>
-          <td className="ts-field-value">{customer.phone}</td>
-          <td className="ts-field-label">FAX</td>
-          <td className="ts-field-value">{customer.fax}</td>
           <td className="ts-field-label">전화</td>
           <td className="ts-field-value">{supplier.phone}</td>
           <td className="ts-field-label">FAX</td>
           <td className="ts-field-value">{supplier.fax}</td>
+          <td className="ts-field-label">전화</td>
+          <td className="ts-field-value">{customer.phone}</td>
+          <td className="ts-field-label">FAX</td>
+          <td className="ts-field-value">{customer.fax}</td>
         </tr>
         <tr className="ts-total-row">
           <td colSpan={2} className="ts-total-label">
@@ -188,8 +220,12 @@ function StatementItemsTable({ itemRows, totals }) {
         ))}
         <tr className="ts-items-footer">
           <td />
-          <td colSpan={2} className="ts-receiver-label">인수자</td>
-          <td className="ts-receiver-sign">( 인 )</td>
+          <td colSpan={3} className="ts-receiver-cell">
+            <div className="ts-receiver-row">
+              <span className="ts-receiver-text">인수자 (인)</span>
+              <span className="ts-receiver-signature-space" aria-hidden="true" />
+            </div>
+          </td>
           <td className="num">{formatQtyNumberCell(totals.qty)}</td>
           <td className="ts-subtotal-label">소계</td>
           <td className="num">{formatNum(totals.supplyAmount)}</td>
@@ -263,43 +299,44 @@ export default function TransactionStatementPreview({
   };
   const supplier = buildSupplierProfile(companyProfile);
   const customer = getCustomerProfile(record.company);
-  const unit = record.unit ?? "EA";
+  const unit = resolveRecordUnit(record);
   const qty = Number.isFinite(Number(shipQtyNumeric))
     ? Number(shipQtyNumeric)
     : parseQtyWithUnit(shipQty, unit).qty;
 
-  const lineItem = {
-    partNo: record.partNo ?? "",
-    partName: record.partName ?? "",
-    unit,
-    qty,
-    unitPrice: Number(unitPrice) || 0,
-    supplyAmount: amounts.supplyAmount,
-    vat: amounts.vat,
-    totalAmount: amounts.totalAmount,
-    note: record.drawingNo ? `도번 ${record.drawingNo}` : "",
-  };
+  const resolvedUnitPrice = Number(unitPrice) || resolveRecordUnitPrice(record);
+  const lineItem = buildStatementLineItem(record, qty, resolvedUnitPrice, amounts, { unit });
 
   const totals = {
     qty: lineItem.qty,
     unit: lineItem.unit,
-    supplyAmount: amounts.supplyAmount,
-    vat: amounts.vat,
-    totalAmount: amounts.totalAmount,
+    supplyAmount: lineItem.supplyAmount,
+    vat: lineItem.vat,
+    totalAmount: lineItem.totalAmount,
   };
 
   return (
     <div className="ts-preview-wrap" aria-label="거래명세서 미리보기">
       <div className="ts-page">
-        <TransactionStatementSheet
-          copyLabel="(공급받는자)"
-          issueDate={issueDate}
-          customer={customer}
-          lineItem={lineItem}
-          totals={totals}
-          supplier={supplier}
-          supplierBranding={supplierBranding}
-        />
+        <div className="ts-customer-copy-block">
+          <TransactionStatementSheet
+            copyLabel="(공급받는자)"
+            issueDate={issueDate}
+            customer={customer}
+            lineItem={lineItem}
+            totals={totals}
+            supplier={supplier}
+            supplierBranding={supplierBranding}
+            showSeal
+          />
+          {companyBranding.footerLines.length ? (
+            <footer className="ts-document-footer" aria-label="문서 Footer">
+              {companyBranding.footerLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </footer>
+          ) : null}
+        </div>
         <div className="ts-page-divider" aria-hidden="true" />
         <TransactionStatementSheet
           copyLabel="(공급자)"
@@ -312,13 +349,6 @@ export default function TransactionStatementPreview({
           showSeal
           highlightDate
         />
-        {companyBranding.footerLines.length ? (
-          <footer className="ts-document-footer" aria-label="문서 Footer">
-            {companyBranding.footerLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </footer>
-        ) : null}
       </div>
     </div>
   );

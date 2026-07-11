@@ -2,17 +2,39 @@
  * Project TITAN V1.6 — Master row ↔ Store record mappers
  */
 
+function resolveLocalHeatTreatmentProcessCode(labelOrCode) {
+  const raw = String(labelOrCode ?? "").trim();
+  if (!raw) return "";
+  const upper = raw.toUpperCase();
+  if (upper === "ION" || upper === "SOFT" || upper === "GAS") return upper;
+  if (raw === "\uC774\uC628\uC9C8\uD654" || raw === "\uC9C8\uD654") return "ION";
+  if (raw === "\uC5F0\uC9C8\uD654" || raw === "\uAC00\uC2A4\uC5F0\uC9C8\uD654") return "SOFT";
+  if (raw === "\uAC00\uC2A4\uC9C8\uD654") return "GAS";
+  return "";
+}
+
+function getLocalHeatTreatmentProcessLabel(code) {
+  const key = String(code ?? "").trim().toUpperCase();
+  if (key === "ION") return "\uC774\uC628\uC9C8\uD654";
+  if (key === "SOFT") return "\uC5F0\uC9C8\uD654";
+  if (key === "GAS") return "\uAC00\uC2A4\uC9C8\uD654";
+  return String(code ?? "").trim();
+}
+
 /**
  * @param {Record<string, unknown>} record
  * @returns {Record<string, unknown>}
  */
 export function equipmentStoreToMasterRow(record) {
   if (!record) return record;
+  const processCode =
+    record.processCode ?? resolveLocalHeatTreatmentProcessCode(record.process ?? record.equipType ?? "");
   return {
     id: record.masterId ?? record.equipmentId,
     code: record.code ?? record.equipmentId,
     name: record.equipmentName ?? record.name ?? record.code,
-    equipType: record.process ?? record.equipType ?? "",
+    equipType: record.process ?? record.equipType ?? getLocalHeatTreatmentProcessLabel(processCode),
+    processCode,
     location: record.location ?? "",
     inspectionCycle: record.inspectionCycle ?? "",
     note: record.note ?? "",
@@ -50,12 +72,18 @@ export function masterRowToEquipmentRecord(row, existing = null, runtime = {}) {
   const status =
     runtime.status ??
     existing?.status ??
-    (maintenance ? "maintenance" : runningSession ? "running" : chargeableLots.length ? "ready" : "idle");
+    (maintenance ? "maintenance" : runningSession ? "running" : "idle");
+
+  const processCode = resolveLocalHeatTreatmentProcessCode(
+    row.processCode ?? row.equipType ?? row.process ?? existing?.processCode ?? existing?.process ?? ""
+  );
+  const processLabel = getLocalHeatTreatmentProcessLabel(processCode) || String(row.equipType ?? row.process ?? "").trim();
 
   return {
     equipmentId,
     equipmentName: String(row.name ?? code).trim(),
-    process: String(row.equipType ?? row.process ?? "").trim(),
+    process: processLabel,
+    processCode,
     code,
     masterId: row.id,
     location: row.location ?? "",

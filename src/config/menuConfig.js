@@ -27,6 +27,30 @@ import {
   LayoutGrid,
   Building2,
   ArrowLeftRight,
+  Shield,
+  Users,
+  Archive,
+  Wrench,
+  Database,
+  Settings,
+  Printer,
+  CalendarDays,
+  ClipboardCheck,
+  AlertTriangle,
+  BookMarked,
+  FlaskConical,
+  ToggleLeft,
+  Hash,
+  Bell,
+  Cog,
+  HardHat,
+  HardDrive,
+  ScrollText,
+  Palette,
+  MapPin,
+  Network,
+  UserCircle,
+  BadgeCheck,
 } from "lucide-react";
 
 import {
@@ -35,6 +59,17 @@ import {
   buildSidebarGroups,
 } from "./menuFreezeV1";
 import { OPERATION_ROUTES } from "./operationsRouteRegistry";
+import { ENVIRONMENT_WORKSPACE_ROUTES } from "./environmentWorkspaceArchitecture";
+import { COMPANY_WORKSPACE_ROUTES } from "./companyWorkspaceArchitecture";
+import {
+  TITAN_GLOBAL_NAV_V2_ITEMS_ALL,
+  GLOBAL_NAV_SIDEBAR_ITEMS_V2,
+  GLOBAL_NAV_SECTION_OVERRIDES,
+  getVisibleGlobalNavV2Items,
+  getGlobalNavSidebarItemsV2,
+  getGlobalNavSectionLabelV2,
+  TITAN_V2_SIDEBAR_OMITTED_NO_ROUTE,
+} from "./titanGlobalNavSidebarV2.js";
 
 /** @typedef {{ id: string, label: string, path: string }} MenuTab */
 /** @typedef {{ id: string, label: string, icon: import("react").ComponentType, path: string, end?: boolean }} SidebarItem */
@@ -110,7 +145,8 @@ export const TITAN_MENU_CATALOG = {
         { id: "hub", label: "생산관리", path: "/production" },
         { id: "production-pending", label: "생산 대기", path: OPERATION_ROUTES.productionPending },
         { id: "equipment-status", label: "설비 가동 현황", path: OPERATION_ROUTES.equipmentStatus },
-        { id: "daily-work", label: "작업일보", path: OPERATION_ROUTES.dailyWork },
+        { id: "daily-work", label: "LOT · 작업일보", path: OPERATION_ROUTES.dailyWork },
+        { id: "production-history", label: "생산 이력", path: "/production/results" },
         { id: "shot-status", label: "쇼트 작업현황", path: OPERATION_ROUTES.shotStatus },
         { id: "results", label: "생산실적관리", path: "/production/results" },
         { id: "print", label: "출력관리", path: "/production/print" },
@@ -179,26 +215,27 @@ export const TITAN_MENU_CATALOG = {
       kicker: "Inventory Inquiry",
       title: "재고관리",
       description:
-        "입고·출고 데이터 기반 자동 계산 — 현재 재고 · 품목/LOT/거래처별 조회 · 재고 PDF (V1.0 조회 중심)",
+        "고객 제품 보관 상태 — 입고~출고 전 구간 Workflow별 조회 · 품목/LOT/거래처별 · 재고 PDF (V1.0 조회 중심)",
     },
     breadcrumb: ["재고관리"],
   },
   workDaily: {
     id: "workDaily",
-    label: "열처리관리",
+    label: "LOT · 작업일보",
     path: OPERATION_ROUTES.dailyWork,
     icon: NotebookPen,
     section: {
       pathPrefix: OPERATION_ROUTES.dailyWork,
       defaultTab: "daily-report",
-      tabs: [{ id: "daily-report", label: "열처리일보", path: OPERATION_ROUTES.dailyWork }],
+      tabs: [{ id: "daily-report", label: "LOT · 작업일보", path: OPERATION_ROUTES.dailyWork }],
     },
     pageMeta: {
-      kicker: "품질 Workflow",
-      title: "열처리관리",
-      description: "LOT 생성 · Traceability 기준 — 작업일·작업자·설비·처리조건·작업수량·작업 완료",
+      kicker: "Production Work Log",
+      title: "LOT · 작업일보",
+      description:
+        "LOT 기준 통합 작업 기록 — 설비 장입 시 자동 생성 · 설비 · 공정 · 작업자 · 시작/종료 시각",
     },
-    breadcrumb: ["열처리관리"],
+    breadcrumb: ["LOT · 작업일보"],
   },
   workJournal: {
     id: "workJournal",
@@ -243,17 +280,20 @@ export const TITAN_MENU_CATALOG = {
   certificateStatus: {
     id: "certificateStatus",
     label: "성적서관리",
-    path: "/quality/certificate",
+    path: "/quality/certificate/register",
     icon: ShieldCheck,
     section: {
       pathPrefix: "/quality/certificate",
-      defaultTab: "certificate",
-      tabs: [{ id: "certificate", label: "성적서관리", path: "/quality/certificate" }],
+      defaultTab: "register",
+      tabs: [
+        { id: "register", label: "성적서등록", path: "/quality/certificate/register" },
+        { id: "status", label: "성적서현황", path: "/quality/certificate/status" },
+      ],
     },
     pageMeta: {
       kicker: "품질관리",
       title: "성적서관리",
-      description: "성적서 등록 · PDF · 출력 · 이력 관리",
+      description: "성적서 등록 · 발행 · 이력 조회",
     },
     breadcrumb: ["성적서관리"],
   },
@@ -679,3 +719,200 @@ export function getApprovedSidebarMenuDefs(order = TITAN_MENU_ORDER) {
 }
 
 export { MENU_FREEZE_SIDEBAR_GROUPS, buildSidebarGroups };
+
+/** @typedef {{ id: string, label: string, path: string, activePrefixes: string[] }} GlobalNavItem */
+
+/** V2 Global Navigation — PM Blueprint (11 sections · module-gated 경리/회계) */
+export { TITAN_GLOBAL_NAV_V2_ITEMS_ALL, TITAN_V2_SIDEBAR_OMITTED_NO_ROUTE };
+export { getVisibleGlobalNavV2Items };
+
+/** @type {GlobalNavItem[]} — default flags (all toggleable modules ON) */
+export const TITAN_GLOBAL_NAV_V2_ITEMS = TITAN_GLOBAL_NAV_V2_ITEMS_ALL;
+
+/** @type {GlobalNavItem[]} */
+export const TITAN_GLOBAL_NAV_V2_UTILITIES = [
+  {
+    id: "notifications",
+    label: "알림",
+    path: "/environment/notifications",
+    activePrefixes: ["/environment/notifications"],
+  },
+  {
+    id: "admin",
+    label: "관리자",
+    path: "/environment/users",
+    activePrefixes: [
+      "/environment/users",
+      "/environment/permissions",
+      "/environment/modules",
+      "/environment/storage",
+      "/environment/backup",
+      "/environment/logs",
+    ],
+  },
+];
+
+/**
+ * @param {GlobalNavItem} item
+ * @param {string} pathname
+ */
+export function isGlobalNavItemActive(item, pathname = "") {
+  const path = String(pathname).split("?")[0];
+  return item.activePrefixes.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+  );
+}
+
+/** @typedef {{ id: string, label: string, path: string, icon: import("react").ComponentType, end?: boolean, catalogId?: string, adminOnly?: boolean, activePrefixes?: string[] }} GlobalNavSidebarItem */
+
+/** @type {Record<string, GlobalNavSidebarItem[]>} */
+export const GLOBAL_NAV_SIDEBAR_ITEMS = GLOBAL_NAV_SIDEBAR_ITEMS_V2;
+
+/**
+ * @param {string} pathname
+ * @returns {string}
+ */
+export function resolveGlobalNavSectionId(pathname = "") {
+  const path = String(pathname).split("?")[0];
+
+  const override = GLOBAL_NAV_SECTION_OVERRIDES.find(
+    (item) => path === item.prefix || path.startsWith(`${item.prefix}/`)
+  );
+  if (override) return override.sectionId;
+
+  const sortedNav = [...TITAN_GLOBAL_NAV_V2_ITEMS_ALL].sort((a, b) => {
+    const maxA = Math.max(...a.activePrefixes.map((p) => p.length));
+    const maxB = Math.max(...b.activePrefixes.map((p) => p.length));
+    return maxB - maxA;
+  });
+
+  for (const item of sortedNav) {
+    if (item.id === "home" && path === "/home") return "home";
+    if (item.id !== "home" && isGlobalNavItemActive(item, path)) {
+      return item.id;
+    }
+  }
+
+  return "home";
+}
+
+/**
+ * @param {GlobalNavSidebarItem} item
+ * @param {string} pathname
+ */
+export function isGlobalNavSidebarItemActive(item, pathname = "") {
+  const path = String(pathname).split("?")[0];
+  const prefixes = item.activePrefixes?.length ? item.activePrefixes : [item.path];
+  if (item.end) {
+    return prefixes.some((prefix) => path === prefix);
+  }
+  return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+/**
+ * @param {string} sectionId
+ * @param {{ isAdmin?: boolean }} [options]
+ * @returns {GlobalNavSidebarItem[]}
+ */
+export function getGlobalNavSidebarItems(sectionId, options = {}) {
+  return getGlobalNavSidebarItemsV2(sectionId, options);
+}
+
+export function getGlobalNavSectionLabel(sectionId) {
+  return getGlobalNavSectionLabelV2(sectionId);
+}
+
+const WORKSPACE_HEADER_EMOJI = {
+  home: "\uD83C\uDFE0",
+  operations: "\uD83D\uDCE6",
+  production: "\uD83C\uDFED",
+  quality: "\uD83E\uDDEA",
+  documents: "\uD83D\uDCC4",
+  statistics: "\uD83D\uDCCA",
+  accountingClerk: "\uD83D\uDCB0",
+  accounting: "\uD83D\uDCC8",
+  masterData: "\uD83D\uDCDA",
+  company: "\uD83C\uDFE2",
+  environment: "\u2699",
+};
+
+const TITAN_WORKSPACE_HEADER_V2 = {
+  home: {
+    id: "home",
+    label: "HOME",
+    description: "Project TITAN Dashboard \u2014 \uAE08\uC77C \uC5C5\uBB34\uC640 \uC804\uCCB4 \uD604\uD669",
+    icon: "home",
+  },
+  operations: {
+    id: "operations",
+    label: "\uC6B4\uC601\uAD00\uB9AC",
+    description: "\uC785\uACE0 \u00B7 \uCD9C\uACE0 \u00B7 \uAC70\uB798\uBA85\uC138\uC11C \u00B7 \uC6B4\uC601 \uC5C5\uBB34",
+    icon: "operations",
+  },
+  production: {
+    id: "production",
+    label: "\uC0DD\uC0B0\uAD00\uB9AC",
+    description: "LOT \u00B7 \uC7A5\uC785 \u00B7 \uC124\uBE44 \u00B7 \uC791\uC5C5\uC77C\uBCF4",
+    icon: "production",
+  },
+  quality: {
+    id: "quality",
+    label: "\uD488\uC9C8\uAD00\uB9AC",
+    description: "\uAC80\uC0AC \u00B7 \uC131\uC801\uC11C \u00B7 NCR \u00B7 \uD488\uC9C8\uC774\uB825",
+    icon: "quality",
+  },
+  documents: {
+    id: "documents",
+    label: "\uBB38\uC11C\uAD00\uB9AC",
+    description: "\uBC1C\uC8FC\uC11C \u00B7 \uB3C4\uBA74 \u00B7 \uBC18\uCD9C\uC99D \u00B7 \uC77C\uBC18 \uBB38\uC11C",
+    icon: "documents",
+  },
+  statistics: {
+    id: "statistics",
+    label: "\uD1B5\uACC4\uAD00\uB9AC",
+    description: "\uC0DD\uC0B0 \u00B7 \uD488\uC9C8 \u00B7 \uCD9C\uACE0 KPI",
+    icon: "statistics",
+  },
+  accountingClerk: {
+    id: "accountingClerk",
+    label: "\uACBD\uB9AC\uAD00\uB9AC",
+    description: "\uB9E4\uCD9C \u00B7 \uAC70\uB798\uBA85\uC138\uC11C \u00B7 \uBBF8\uC218/\uBBF8\uC9C0\uAE09 \u00B7 \uB9C8\uAC10",
+    icon: "accountingClerk",
+  },
+  accounting: {
+    id: "accounting",
+    label: "\uD68C\uACC4\uAD00\uB9AC",
+    description: "\uC6D4\uBCC4 \uB9E4\uCD9C \u00B7 \uC138\uAE08\uACC4\uC0B0\uC11C \u00B7 \uD68C\uACC4\uC790\uB8CC \u00B7 \uACB0\uC0B0",
+    icon: "accounting",
+  },
+  masterData: {
+    id: "masterData",
+    label: "\uAE30\uC900\uC815\uBCF4\uAD00\uB9AC",
+    description: "\uAC70\uB798\uCC98 \u00B7 \uC81C\uD488 \u00B7 \uC7AC\uC9C8 \u00B7 \uC124\uBE44 \u00B7 Master \uB370\uC774\uD130",
+    icon: "master",
+  },
+  company: {
+    id: "company",
+    label: "\uD68C\uC0AC\uAD00\uB9AC",
+    description: "\uD68C\uC0AC\uC815\uBCF4 \u00B7 \uC0AC\uC5C5\uC7A5 \u00B7 \uC870\uC9C1 \u00B7 \uC9C1\uC6D0",
+    icon: "company",
+  },
+  environment: {
+    id: "environment",
+    label: "\uD658\uACBD\uC124\uC815",
+    description: "\uC0AC\uC6A9\uC790 \u00B7 \uAD8C\uD55C \u00B7 QR \u00B7 \uC2DC\uC2A4\uD15C",
+    icon: "environment",
+  },
+};
+
+/** @param {string} sectionId */
+export function getWorkspaceHeaderMetaV2(sectionId) {
+  const base = TITAN_WORKSPACE_HEADER_V2[sectionId] ?? TITAN_WORKSPACE_HEADER_V2.home;
+  const emoji = WORKSPACE_HEADER_EMOJI[base.id] ?? "";
+  return {
+    id: base.id,
+    title: emoji ? `${emoji} ${base.label}` : base.label,
+    description: base.description,
+    icon: base.icon,
+  };
+}

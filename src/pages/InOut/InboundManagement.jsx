@@ -12,6 +12,7 @@ import TitanKpiBarSlot from "../../foundation/components/TitanKpiBarSlot";
 import TitanWorkflowStatusChipBar from "../../foundation/components/TitanWorkflowStatusChipBar";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
+import { TitanMasterAutocomplete } from "../../foundation/components/TitanSearchAutocomplete";
 import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
 import InboundRowActions from "./InboundRowActions";
 import InboundDetailPopup from "./InboundDetailPopup";
@@ -20,7 +21,7 @@ import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPre
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import { createEmptyInboundSearch, STANDARD_PRODUCT_BASIC_SEARCH_FIELDS, matchesBasicSearch } from "../../config/listSearchStandard";
 import { buildInboundListColumns } from "../../config/standardProductList";
-import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
+import { matchesInboundDataSearch, resolveInboundInspectionType } from "../../utils/inboundDataFields";
 import { getProductionProcessCodes, getProductionProcessName } from "../../config/productionProcessCodes";
 import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
@@ -40,7 +41,13 @@ import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { appendWorkJournalAutoEntry } from "../../utils/workJournalAutoRecord";
 import { WORK_JOURNAL_ACTION_TYPES } from "../../config/titanAssigneePolicy";
 import IncomingRegistrationModal from "../Incoming/IncomingRegistrationModal";
+import {
+  DEFAULT_CERTIFICATE_ISSUE_POLICY,
+  normalizeCertificateIssuePolicy,
+} from "../../utils/certificateIssuePolicy";
 import { DEFAULT_WORK_TYPE_ID } from "../../config/workTypeWorkflow";
+import { findCompanyProduct } from "../../utils/productMasterSearch";
+import { buildInboundProcessWorkflowPatch } from "../../utils/productProcessWorkflow";
 import {
   INBOUND_STATUS_LABELS,
   getInboundManagementStatus,
@@ -51,12 +58,15 @@ import {
   buildIncomingTaskWorkspaceRecords,
   isIncomingTaskStageRecord,
 } from "../../utils/operationsWorkspaceData";
+import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "../../utils/workflowProcessStatus";
 import { mapV13ProductListRow } from "../../utils/processFlow";
 import { isHtlFirstPrintTarget, isProductionWaitingOutputTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
-import { OperationsWorkflowNextDialog } from "./OutboundStatementPromptDialog";
+import TitanWorkflowNextStepDialog from "../../foundation/components/TitanWorkflowNextStepDialog";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
+import { getWorkflowCompletionDialog } from "../../config/workflowNavigation";
 import {
   applyInboundHtlDocumentPrinted,
   applyMoveToProductionWaiting,
@@ -166,13 +176,14 @@ function InboundPrintCriteriaModal({
           disabled={criteria.type !== INBOUND_PRINT_CRITERIA.COMPANY}
         />
 
-        <TitanSearchableSelect
-          className="titan-modal__field"
+        <TitanMasterAutocomplete
+          field="partName"
           label="품명"
+          className="titan-modal__field"
           value={criteria.partName}
           onChange={(value) => updateCriteria({ partName: value })}
-          options={partNameOptions}
-          placeholder="품명 선택"
+          companyFilter={criteria.company}
+          placeholder="품명 검색"
           disabled={criteria.type !== INBOUND_PRINT_CRITERIA.PART_NAME}
         />
 
@@ -214,6 +225,25 @@ function isProductionWaitingOutputShortcut(searchParams) {
   return searchParams.get("shortcut") === PRODUCTION_WAITING_OUTPUT_SHORTCUT;
 }
 
+function canEditInboundRecord(record) {
+  if (!record) return false;
+  const processKey = resolveRecordCurrentProcess(record).key;
+  if (processKey === CURRENT_PROCESS_KEYS.RECEIVED) return true;
+  if (processKey === CURRENT_PROCESS_KEYS.HT_WAIT && !record.registered && !record.lotNo?.trim()) {
+    return true;
+  }
+  return false;
+}
+
+function canDeleteInboundRecord(record) {
+  if (!record) return false;
+  return resolveRecordCurrentProcess(record).key === CURRENT_PROCESS_KEYS.RECEIVED;
+}
+
+function canMoveToProductionInboundRecord(record) {
+  return isIncomingTaskStageRecord(record);
+}
+
 function createProductionWaitingOutputSearch() {
   return {
     ...createEmptyInboundSearch(),
@@ -249,6 +279,7 @@ function recordToRegisterForm(record) {
     spec: record.spec || "",
     unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
     heatTreatment: record.heatTreatment || "",
+    processDetail: record.processDetail || "",
     lotNo: record.lotNo || "",
     customerLotNo: record.customerLotNo || "",
     purchaseOrderNo: record.purchaseOrderNo || "",
@@ -259,6 +290,9 @@ function recordToRegisterForm(record) {
     dueDate: record.dueDate || "",
     urgent: record.urgent ?? false,
     note: record.note || "",
+    certificateIssuePolicy:
+      record.certificateIssuePolicy ?? DEFAULT_CERTIFICATE_ISSUE_POLICY,
+    certificateIssuePolicySource: record.certificateIssuePolicySource ?? "product",
   };
 }
 
@@ -453,17 +487,25 @@ export default function InboundManagement({ forcedMode } = {}) {
       }
 
       setRefreshKey((key) => key + 1);
+      setInOutPrintSession({ open: false, props: null });
       if (!isHistoryMode) {
-        setInOutPrintSession({ open: false, props: null });
+        setWorkflowNextStep(getOperationsWorkflowNextStep("inboundListPrinted"));
       }
     },
     [isHistoryMode]
   );
 
+  const handleInboundPrintMarkedComplete = useCallback(
+    (printProps) => {
+      handleInOutPrinted(printProps);
+    },
+    [handleInOutPrinted]
+  );
+
   const moveRowsToProductionWaiting = useCallback((rows) => {
     const moveRows = rows.filter((row) => isIncomingTaskStageRecord(row.record ?? row));
     if (moveRows.length === 0) {
-      window.alert("생산 대기로 이동할 입고 제품이 없습니다.\n(입고 대기 · 생산 미투입 제품만 가능)");
+      window.alert("생산 대기로 이동할 입고 제품이 없습니다.\n(입고 대기· 생산 미투입 제품만 가능)");
       return { moved: 0, skipped: 0, managementIds: [] };
     }
 
@@ -490,17 +532,6 @@ export default function InboundManagement({ forcedMode } = {}) {
     setWorkflowNextStep(getOperationsWorkflowNextStep("inboundMovedToProduction"));
     return { moved, skipped, managementIds };
   }, [detailPopupRow]);
-
-  const handleMoveToProductionWaiting = useCallback(() => {
-    if (isHistoryMode) return;
-
-    if (selectedRows.length === 0) {
-      window.alert("생산 대기로 이동할 입고 제품을 선택하세요.\n(입고 대기 · 생산 미투입 제품만 가능)");
-      return;
-    }
-
-    moveRowsToProductionWaiting(selectedRows);
-  }, [isHistoryMode, moveRowsToProductionWaiting, selectedRows]);
 
   const handleInboundMoveToProduction = useCallback(
     (row) => {
@@ -614,7 +645,11 @@ export default function InboundManagement({ forcedMode } = {}) {
           ? undefined
           : (row) => (
               <InboundRowActions
+                canEdit={canEditInboundRecord(row.record)}
+                canMoveToProduction={canMoveToProductionInboundRecord(row.record)}
+                canDelete={canDeleteInboundRecord(row.record)}
                 onEdit={() => openEditModal(row)}
+                onMoveToProduction={() => handleInboundMoveToProduction(row)}
                 onDelete={() => handleInboundDelete(row)}
               />
             ),
@@ -666,18 +701,46 @@ export default function InboundManagement({ forcedMode } = {}) {
       customerLotNo: form.customerLotNo?.trim() || "",
       purchaseOrderNo: form.purchaseOrderNo?.trim() || "",
       heatTreatment: form.heatTreatment,
+      processDetail: form.processDetail,
       workType: form.workType || DEFAULT_WORK_TYPE_ID,
       note: form.note,
       urgent: form.urgent,
       registrar: form.manager?.trim() || "",
       incomingRegistered: true,
+      certificateIssuePolicy: normalizeCertificateIssuePolicy(form.certificateIssuePolicy),
+      certificateIssuePolicySource: form.certificateIssuePolicySource || "product",
+      inspectionType: resolveInboundInspectionType(form, findCompanyProduct(form.company, form.partName, form.partNo, form.drawingNo)),
+      inspectionTypeSource: form.inspectionTypeSource || "product",
     };
   };
 
   const handleInboundRegister = (form, managementId) => {
+    const product = findCompanyProduct(form.company, form.partName, form.partNo, form.drawingNo);
+    let workflowPatch = buildInboundProcessWorkflowPatch(product);
+    const formProcessDetail = String(form.processDetail ?? "").trim();
+    const formHeatTreatment = String(form.heatTreatment ?? "").trim();
+    if (formProcessDetail || formHeatTreatment) {
+      const detail = formProcessDetail || formHeatTreatment;
+      const heat = formHeatTreatment || detail;
+      workflowPatch = {
+        ...workflowPatch,
+        processDetail: detail,
+        heatTreatment: heat,
+        currentProcessDetail: detail,
+        ...(Array.isArray(workflowPatch.processWorkflow) && workflowPatch.processWorkflow.length
+          ? {
+              processWorkflow: workflowPatch.processWorkflow.map((step, index) =>
+                index === 0 ? { ...step, processDetail: detail } : step
+              ),
+            }
+          : {}),
+      };
+    }
+
     const result = addSessionProductionRecord({
       id: managementId,
       ...buildRecordPatchFromForm(form),
+      ...workflowPatch,
       htlNo: "",
       equipment: "",
       workDate: "",
@@ -706,9 +769,12 @@ export default function InboundManagement({ forcedMode } = {}) {
       title: `입고 등록 — ${form.company} (${managementId})`,
     });
 
+    applyMoveToProductionWaiting([managementId]);
+
     setActiveId(managementId);
     setRefreshKey((k) => k + 1);
     setPage(1);
+    setWorkflowNextStep(getWorkflowCompletionDialog("inboundComplete"));
   };
 
   const handleInboundUpdate = (form, managementId) => {
@@ -740,6 +806,8 @@ export default function InboundManagement({ forcedMode } = {}) {
           엑셀 출력
         </SecondaryButton>
       </SectionPageActions>
+
+      {!isHistoryMode ? <TitanWorkflowNavigation stepId="inboundManagement" /> : null}
 
       <TitanKpiBarSlot ariaLabel={INBOUND_KPI_CONFIG.ariaLabel} className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
@@ -861,6 +929,7 @@ export default function InboundManagement({ forcedMode } = {}) {
         documentType={TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST}
         printProps={inOutPrintSession.props}
         onAfterPrint={handleInOutPrinted}
+        onMarkPrintComplete={!isHistoryMode ? handleInboundPrintMarkedComplete : undefined}
       />
 
       <InboundDetailPopup
@@ -876,7 +945,7 @@ export default function InboundManagement({ forcedMode } = {}) {
         }}
       />
 
-      <OperationsWorkflowNextDialog
+      <TitanWorkflowNextStepDialog
         open={Boolean(workflowNextStep)}
         step={workflowNextStep}
         onNavigate={(path) => {

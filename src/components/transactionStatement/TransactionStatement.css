@@ -1,25 +1,31 @@
 /* Project TITAN — 거래명세서 공식 양식 (A4 2부) */
 
 .ts-preview-wrap {
-  padding: 12px;
-  border-radius: 12px;
-  background: #cbd5e1;
-  overflow-x: auto;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  background: #ffffff;
+  overflow: visible;
 }
 
 .ts-page {
-  width: 210mm;
-  margin: 0 auto;
-  padding: 8mm 10mm;
+  width: 190mm;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   background: #fff;
-  border: 2px solid #111;
+  border: none;
   box-sizing: border-box;
   font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   color: #111;
+  overflow: visible;
 }
 
 .ts-sheet {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 .ts-sheet-top {
@@ -60,11 +66,13 @@
 .ts-title {
   margin: 0;
   text-align: center;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 900;
-  letter-spacing: 0.42em;
+  letter-spacing: 0.28em;
   line-height: 1.1;
-  padding-right: 0.42em;
+  padding-right: 0.28em;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .ts-copy-label {
@@ -95,9 +103,11 @@
 /* ── 공통 테이블 ── */
 .ts-form-table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 10px;
+  font-size: 11px;
+  box-sizing: border-box;
 }
 
 .ts-form-table th,
@@ -108,6 +118,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: keep-all;
+}
+
+.ts-party-table .ts-seal-row td {
+  overflow: visible;
 }
 
 /* ── 공급자/공급받는자 10열 ── */
@@ -142,82 +156,130 @@
   text-align: center;
   font-weight: 700;
   background: #fafafa;
-  font-size: 9px;
+  font-size: 10px;
   white-space: nowrap;
 }
 
 .ts-field-value {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   padding-left: 5px !important;
 }
 
-.ts-field-value.has-seal {
+.ts-seal-cell {
   position: relative;
-  padding-right: 52px !important;
+  overflow: visible !important;
+  padding-right: 4px !important;
+}
+
+.ts-seal-cell-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  width: 100%;
+  min-height: 1.5em;
+  overflow: visible;
+}
+
+.ts-representative-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-seal-mark {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-block;
+  min-width: 2.5em;
+  min-height: 1.4em;
+  text-align: center;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+.ts-seal-label {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .ts-company-seal {
   position: absolute;
-  right: 4px;
+  left: 50%;
   top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
+  transform: translate(-50%, -55%);
+  width: 13mm;
+  height: 13mm;
   border: 2.5px solid #dc2626;
   border-radius: 50%;
   color: #dc2626;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.88;
+  opacity: 0.9;
   pointer-events: none;
+  z-index: 2;
 }
 
 .ts-company-seal-image {
   position: absolute;
-  right: 4px;
+  left: 50%;
   top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
+  transform: translate(-50%, -55%);
+  width: 14mm;
+  height: 14mm;
+  max-width: none;
   object-fit: contain;
+  opacity: 0.95;
   pointer-events: none;
+  z-index: 2;
 }
 
 .ts-company-signature-image {
-  position: absolute;
-  right: 50px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 52px;
-  height: 26px;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 24px;
   object-fit: contain;
   pointer-events: none;
+  z-index: 9;
+  align-self: flex-end;
+  margin-bottom: 1px;
 }
 
-.ts-field-value.has-seal.has-signature {
-  padding-right: 104px !important;
+.ts-customer-copy-block {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
 }
 
 .ts-document-footer {
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 3px;
+  padding-top: 3px;
   border-top: 1px solid #d1d5db;
-  text-align: center;
+  text-align: right;
   font-size: 8px;
   color: #64748b;
   line-height: 1.45;
+  flex: 0 0 auto;
 }
 
 .ts-document-footer p {
   margin: 0;
 }
 
-.ts-total-row td {
+.ts-party-table .ts-total-row td {
   height: 30px;
+  border-bottom: 1px solid #111;
 }
 
 .ts-total-label {
@@ -245,7 +307,7 @@
 
 /* ── 품목표 10열 ── */
 .ts-items-table {
-  margin-top: -1px;
+  margin-top: 0;
 }
 
 .ts-items-table thead th {
@@ -253,15 +315,15 @@
 }
 
 .ts-items-table .ts-i-no {
-  width: 4.5%;
-}
-
-.ts-items-table .ts-i-part-name {
-  width: 16%;
+  width: 5%;
 }
 
 .ts-items-table .ts-i-part-no {
-  width: 13%;
+  width: 14%;
+}
+
+.ts-items-table .ts-i-part-name {
+  width: 17%;
 }
 
 .ts-items-table .ts-i-unit {
@@ -269,11 +331,11 @@
 }
 
 .ts-items-table .ts-i-qty {
-  width: 7%;
+  width: 8%;
 }
 
 .ts-items-table .ts-i-price {
-  width: 9%;
+  width: 10%;
 }
 
 .ts-items-table .ts-i-supply {
@@ -289,24 +351,24 @@
 }
 
 .ts-items-table .ts-i-note {
-  width: 10.5%;
+  width: 6%;
 }
 
 .ts-items-table thead th {
-  height: 22px;
+  height: 24px;
   font-weight: 800;
-  font-size: 9px;
+  font-size: 10px;
   text-align: center;
   background: #fafafa;
-  padding: 2px 2px;
+  padding: 2px 3px;
   white-space: nowrap;
   line-height: 1.2;
 }
 
 .ts-items-table tbody td {
-  height: 22px;
+  height: 24px;
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .ts-items-table tbody td.left {
@@ -321,18 +383,37 @@
 }
 
 .ts-items-footer td {
-  height: 26px;
+  height: 28px;
   font-weight: 700;
 }
 
-.ts-receiver-label {
-  text-align: center !important;
+.ts-receiver-cell {
+  padding: 0 !important;
+  overflow: visible !important;
 }
 
-.ts-receiver-sign {
-  text-align: center !important;
-  letter-spacing: 0.45em;
-  padding-right: 0.45em !important;
+.ts-receiver-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 26px;
+  padding: 2px 6px;
+  box-sizing: border-box;
+}
+
+.ts-receiver-text {
+  flex: 0 0 auto;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.ts-receiver-signature-space {
+  flex: 1 1 auto;
+  min-width: 55%;
+  min-height: 22px;
+  margin-left: 8px;
 }
 
 .ts-subtotal-label {
@@ -342,26 +423,67 @@
 }
 
 .ts-page-divider {
-  margin: 8mm 0;
+  margin: 4mm 0;
   border: none;
   border-top: 1px dashed #666;
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   .ts-preview-wrap {
     padding: 0;
     background: #fff;
     border-radius: 0;
+    overflow: visible;
   }
 
   .ts-page {
     border: none;
     padding: 0;
-    width: 100%;
+    width: 190mm;
+    min-width: 190mm;
+    max-width: 190mm;
+    height: 277mm;
+    max-height: 277mm;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .ts-page-divider {
-    margin: 6mm 0;
+    margin: 4mm 0;
+  }
+
+  .ts-customer-copy-block {
+    flex: 0 0 auto;
+  }
+
+  .ts-document-footer {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .ts-party-table .ts-seal-row td {
+    overflow: visible !important;
+  }
+
+  .ts-seal-cell,
+  .ts-seal-cell-inner,
+  .ts-seal-mark {
+    overflow: visible !important;
+  }
+
+  .ts-company-seal-image,
+  .ts-company-seal {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

@@ -22,7 +22,7 @@ export default function Footer() {
       <span>SQLite : {status.dbStatus}</span>
       <span>백업 : {backupLabel}</span>
       <span>{loginUser} 로그인</span>
-      <span>Project TITAN V1.0</span>
+      <span>Project TITAN {status.version}</span>
     </footer>
   );
 }

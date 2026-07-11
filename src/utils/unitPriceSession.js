@@ -3,6 +3,8 @@
  * 단가 변경 시 기존 이력을 덮어쓰지 않고 적용일 기준 이력을 누적
  */
 
+import { findProductByCompanyAndPartNo, findProductByPartNo } from "./masterData";
+
 function priceKey(company, partNo) {
   return `${company?.trim() ?? ""}|${partNo?.trim() ?? ""}`;
 }
@@ -61,6 +63,35 @@ export function getCurrentUnitPrice(company, partNo) {
   const history = getUnitPriceHistory(company, partNo);
   if (history.length === 0) return 0;
   return history[history.length - 1].price;
+}
+
+function parseNumericPrice(raw) {
+  if (raw === "" || raw == null) return 0;
+  const num = Number(String(raw).replace(/,/g, ""));
+  return Number.isFinite(num) ? num : 0;
+}
+
+/** 거래명세서·출고 — 단가 이력 → 레코드 → 제품 마스터 순 */
+export function resolveRecordUnitPrice(record, company, partNo) {
+  const companyName = company ?? record?.company;
+  const part = partNo ?? record?.partNo;
+
+  const fromHistory = getCurrentUnitPrice(companyName, part);
+  if (fromHistory > 0) return fromHistory;
+
+  const fromRecord = parseNumericPrice(record?.unitPrice);
+  if (fromRecord > 0) return fromRecord;
+
+  const product =
+    findProductByCompanyAndPartNo(companyName, part) ?? findProductByPartNo(part);
+  if (product) {
+    const fromProduct = parseNumericPrice(
+      product.unitPrice ?? product.defaultUnitPrice ?? product.defaultPrice ?? product.price
+    );
+    if (fromProduct > 0) return fromProduct;
+  }
+
+  return 0;
 }
 
 export function getAllUnitPriceEntries() {

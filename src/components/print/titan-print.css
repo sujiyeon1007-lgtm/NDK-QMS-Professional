@@ -1,22 +1,55 @@
 /**
  * Project TITAN — 공통 출력 문서 (A4 Portrait)
  * 모든 출력물: 좌 로고 · 중 제목 · 우 결재란 · 공통 표 · 페이지 번호
+ *
+ * Orientation classes (SSoT):
+ *   .titan-print--portrait  — 거래명세서 · 성적서 · 검사표 (A4 세로 · 10mm)
+ *   .titan-print--landscape — DOC-01 리스트 출력 (A4 가로 · 8mm)
+ *   .titan-print-list        — 리스트 축소 타이포 (landscape와 함께 사용)
  */
 
 .titan-print-document {
+  /* A4 SSoT — @page margin 제외 printable content box */
+  --titan-print-page-portrait-width: 210mm;
+  --titan-print-page-portrait-height: 297mm;
+  --titan-print-margin-portrait: 10mm;
+  --titan-print-content-portrait-width: 190mm;
+  --titan-print-content-portrait-height: 277mm;
+
+  --titan-print-page-landscape-width: 297mm;
+  --titan-print-page-landscape-height: 210mm;
+  --titan-print-margin-landscape: 8mm;
+  --titan-print-content-landscape-width: 281mm;
+  --titan-print-content-landscape-height: 194mm;
+
   display: flex;
   flex-direction: column;
   gap: 14px;
+  width: 100%;
   font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   font-size: 14px;
   color: #0f172a;
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.titan-print-document.titan-print--portrait,
+.titan-print-document:not(.titan-print-landscape):not(.titan-print-list) {
+  --titan-print-margin: var(--titan-print-margin-portrait);
+}
+
+.titan-print-document.titan-print--landscape,
+.titan-print-document.titan-print-landscape,
+.titan-print-document.titan-print-list {
+  --titan-print-margin: var(--titan-print-margin-landscape);
 }
 
 .titan-print-page {
-  width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto;
-  padding: 10mm;
+  width: var(--titan-print-content-portrait-width);
+  min-height: var(--titan-print-content-portrait-height);
+  margin: 0;
+  padding: 0;
   background: #ffffff;
   color: #0f172a;
   box-sizing: border-box;
@@ -322,7 +355,7 @@
 }
 
 .titan-print-list .titan-print-page {
-  padding: var(--titan-list-page-padding);
+  padding: 0;
 }
 
 .titan-print-list .titan-print-header {
@@ -443,9 +476,10 @@
 }
 
 .titan-print-list.titan-print-landscape .titan-print-page,
-.titan-print-document.titan-print-list.titan-print-landscape .titan-print-page {
-  width: 297mm;
-  min-height: 210mm;
+.titan-print-document.titan-print-list.titan-print-landscape .titan-print-page,
+.titan-print-document.titan-print--landscape .titan-print-page {
+  width: var(--titan-print-content-landscape-width);
+  min-height: var(--titan-print-content-landscape-height);
 }
 
 /* 리스트 wrap columns (no ellipsis) */
@@ -531,8 +565,135 @@
 }
 
 .htl-work-list-print.titan-print-landscape .titan-print-page {
-  width: 297mm;
-  min-height: 210mm;
+  width: var(--titan-print-content-landscape-width);
+  min-height: var(--titan-print-content-landscape-height);
+}
+
+/* ── Portrait-only — P0-PRINT-003: footer stays on page 1 (landscape untouched) ── */
+.titan-print-document.titan-print--portrait .titan-print-page,
+.titan-print-document:not(.titan-print-landscape):not(.titan-print--landscape):not(.titan-print-list) .titan-print-page {
+  display: flex;
+  flex-direction: column;
+  height: var(--titan-print-content-portrait-height);
+  max-height: var(--titan-print-content-portrait-height);
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.titan-print-document.titan-print--portrait .titan-print-page-body,
+.titan-print-document:not(.titan-print-landscape):not(.titan-print--landscape):not(.titan-print-list) .titan-print-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.titan-print-document.titan-print--portrait .titan-print-page-footer,
+.titan-print-document:not(.titan-print-landscape):not(.titan-print--landscape):not(.titan-print-list) .titan-print-page-footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 3mm;
+}
+
+.titan-print-document.titan-print--portrait .titan-print-official-footer,
+.titan-print-document:not(.titan-print-landscape):not(.titan-print--landscape):not(.titan-print-list) .titan-print-official-footer {
+  margin-top: 3mm;
+  padding-top: 2mm;
+}
+
+/* ── 거래명세서 Portrait (Transaction Statement · engine/PDF/print) ── */
+.transaction-statement-print.titan-print-document {
+  gap: 0;
+  width: var(--titan-print-content-portrait-width);
+  max-width: 100%;
+}
+
+.transaction-statement-print .ts-page {
+  display: flex;
+  flex-direction: column;
+  height: var(--titan-print-content-portrait-height);
+  max-height: var(--titan-print-content-portrait-height);
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.transaction-statement-print .ts-page-divider {
+  margin: 4mm 0;
+}
+
+.transaction-statement-print .ts-document-footer {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  padding-top: 3px;
+  text-align: right;
+}
+
+.transaction-statement-print .ts-party-table .ts-seal-row td,
+.transaction-statement-print .ts-seal-cell,
+.transaction-statement-print .ts-seal-cell-inner,
+.transaction-statement-print .ts-seal-mark {
+  overflow: visible !important;
+}
+
+.transaction-statement-print .ts-seal-mark {
+  display: inline-block;
+  min-width: 2.5em;
+  text-align: center;
+}
+
+.transaction-statement-print .ts-company-seal-image,
+.transaction-statement-print .ts-company-seal {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -55%);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.transaction-statement-print .ts-company-seal-image {
+  width: 14mm;
+  height: 14mm;
+  opacity: 0.95;
+}
+
+.transaction-statement-print .ts-company-seal {
+  width: 13mm;
+  height: 13mm;
+  opacity: 0.9;
+}
+
+.transaction-statement-print .ts-preview-wrap {
+  padding: 0;
+  margin: 0;
+  background: #ffffff;
+  overflow: visible;
+  border-radius: 0;
+}
+
+body.titan-print-engine-host .transaction-statement-print .ts-page {
+  width: var(--titan-print-content-portrait-width);
+  min-width: var(--titan-print-content-portrait-width);
+  max-width: var(--titan-print-content-portrait-width);
+  height: var(--titan-print-content-portrait-height);
+  max-height: var(--titan-print-content-portrait-height);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body.titan-print-engine-host .transaction-statement-print .ts-sheet,
+body.titan-print-engine-host .transaction-statement-print .ts-form-block,
+body.titan-print-engine-host .transaction-statement-print .ts-form-table {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .titan-print-memo {
@@ -577,7 +738,7 @@
   width: max-content;
   margin: 0 auto;
   transform-origin: top center;
-  transform: scale(var(--titan-preview-scale, 0.42));
+  transform: scale(var(--titan-preview-scale, 1));
 }
 
 .titan-print-preview-scale .titan-print-document {
@@ -637,6 +798,15 @@ body.titan-print-mode .titan-print-preview-frame {
   margin: 0;
   padding: 0;
   background: #ffffff;
+  width: var(--titan-print-content-portrait-width);
+  min-width: var(--titan-print-content-portrait-width);
+  max-width: var(--titan-print-content-portrait-width);
+}
+
+.titan-print-engine-host[data-print-orientation="landscape"] {
+  width: var(--titan-print-content-landscape-width);
+  min-width: var(--titan-print-content-landscape-width);
+  max-width: var(--titan-print-content-landscape-width);
 }
 
 .titan-print-engine-host .titan-print-document {
@@ -645,13 +815,23 @@ body.titan-print-mode .titan-print-preview-frame {
   gap: 0;
   margin: 0;
   padding: 0;
-  width: 100%;
+  width: var(--titan-print-content-portrait-width);
+  min-width: var(--titan-print-content-portrait-width);
+  max-width: var(--titan-print-content-portrait-width);
+  box-sizing: border-box;
+}
+
+.titan-print-engine-host[data-print-orientation="landscape"] .titan-print-document {
+  width: var(--titan-print-content-landscape-width);
+  min-width: var(--titan-print-content-landscape-width);
+  max-width: var(--titan-print-content-landscape-width);
 }
 
 .titan-print-engine-host .titan-print-page {
-  width: 190mm;
-  height: 277mm;
-  max-height: 277mm;
+  width: var(--titan-print-content-portrait-width);
+  height: var(--titan-print-content-portrait-height);
+  max-width: var(--titan-print-content-portrait-width);
+  max-height: var(--titan-print-content-portrait-height);
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -662,10 +842,13 @@ body.titan-print-mode .titan-print-preview-frame {
   box-sizing: border-box;
 }
 
-.titan-print-engine-host .titan-print-document.titan-print-landscape .titan-print-page {
-  width: 281mm;
-  height: 194mm;
-  max-height: 194mm;
+.titan-print-engine-host .titan-print-document.titan-print-landscape .titan-print-page,
+.titan-print-engine-host .titan-print-document.titan-print--landscape .titan-print-page,
+.titan-print-engine-host .titan-print-document.titan-print-list .titan-print-page {
+  width: var(--titan-print-content-landscape-width);
+  height: var(--titan-print-content-landscape-height);
+  max-width: var(--titan-print-content-landscape-width);
+  max-height: var(--titan-print-content-landscape-height);
 }
 
 .titan-print-engine-host .titan-print-page-body {
@@ -676,13 +859,20 @@ body.titan-print-mode .titan-print-preview-frame {
 
 .titan-print-engine-host .titan-print-page-footer {
   flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 3mm;
+}
+
+.titan-print-engine-host[data-print-orientation="landscape"] .titan-print-page-footer {
   margin-top: 0;
+  padding-top: 3mm;
 }
 
 /* ── Landscape (자동 선택) ── */
-.titan-print-document.titan-print-landscape .titan-print-page {
-  width: 297mm;
-  min-height: 210mm;
+.titan-print-document.titan-print-landscape .titan-print-page,
+.titan-print-document.titan-print--landscape .titan-print-page {
+  width: var(--titan-print-content-landscape-width);
+  min-height: var(--titan-print-content-landscape-height);
 }
 
 .titan-print-document.titan-print-landscape .titan-print-col-lot {
@@ -750,13 +940,24 @@ body.titan-print-mode .titan-print-preview-frame {
 
   html,
   body {
-    width: auto;
     height: auto;
     margin: 0;
     padding: 0;
     background: #ffffff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  body.titan-print-engine-host {
+    width: var(--titan-print-content-portrait-width);
+    min-width: var(--titan-print-content-portrait-width);
+    max-width: var(--titan-print-content-portrait-width);
+  }
+
+  body.titan-print-engine-host[data-print-orientation="landscape"] {
+    width: var(--titan-print-content-landscape-width);
+    min-width: var(--titan-print-content-landscape-width);
+    max-width: var(--titan-print-content-landscape-width);
   }
 
   body.titan-print-engine-host,
@@ -768,16 +969,28 @@ body.titan-print-mode .titan-print-preview-frame {
     position: static;
     left: auto;
     top: auto;
-    width: 100%;
+    width: var(--titan-print-content-portrait-width);
+    min-width: var(--titan-print-content-portrait-width);
+    max-width: var(--titan-print-content-portrait-width);
     gap: 0;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+  }
+
+  .titan-print-document.titan-print-landscape,
+  .titan-print-document.titan-print--landscape,
+  .titan-print-document.titan-print-list {
+    width: var(--titan-print-content-landscape-width);
+    min-width: var(--titan-print-content-landscape-width);
+    max-width: var(--titan-print-content-landscape-width);
   }
 
   .titan-print-page {
-    width: 190mm;
-    height: 277mm;
-    max-height: 277mm;
+    width: var(--titan-print-content-portrait-width);
+    height: var(--titan-print-content-portrait-height);
+    max-width: var(--titan-print-content-portrait-width);
+    max-height: var(--titan-print-content-portrait-height);
     min-height: 0;
     margin: 0;
     padding: 0;
@@ -792,10 +1005,13 @@ body.titan-print-mode .titan-print-preview-frame {
     page-break-after: always;
   }
 
-  .titan-print-document.titan-print-landscape .titan-print-page {
-    width: 281mm;
-    height: 194mm;
-    max-height: 194mm;
+  .titan-print-document.titan-print-landscape .titan-print-page,
+  .titan-print-document.titan-print--landscape .titan-print-page,
+  .titan-print-document.titan-print-list .titan-print-page {
+    width: var(--titan-print-content-landscape-width);
+    height: var(--titan-print-content-landscape-height);
+    max-width: var(--titan-print-content-landscape-width);
+    max-height: var(--titan-print-content-landscape-height);
     page: titan-landscape;
   }
 
@@ -810,9 +1026,31 @@ body.titan-print-mode .titan-print-preview-frame {
     overflow: hidden;
   }
 
-  .titan-print-page-footer {
+  .titan-print-document:not(.titan-print-landscape):not(.titan-print--landscape):not(.titan-print-list) .titan-print-page-footer {
     flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 3mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .titan-print-document.titan-print-landscape .titan-print-page-footer,
+  .titan-print-document.titan-print--landscape .titan-print-page-footer,
+  .titan-print-document.titan-print-list .titan-print-page-footer {
     margin-top: 0;
+  }
+
+  .transaction-statement-print .ts-page {
+    height: var(--titan-print-content-portrait-height);
+    max-height: var(--titan-print-content-portrait-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .transaction-statement-print .ts-document-footer {
+    flex: 0 0 auto;
+    margin-top: 3px;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -844,6 +1082,25 @@ body.titan-print-mode .titan-print-preview-frame {
     page-break-inside: avoid;
   }
 
+  .transaction-statement-print .ts-page {
+    width: var(--titan-print-content-portrait-width);
+    min-width: var(--titan-print-content-portrait-width);
+    max-width: var(--titan-print-content-portrait-width);
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .transaction-statement-print .ts-sheet,
+  .transaction-statement-print .ts-form-block,
+  .transaction-statement-print .ts-form-table {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   /* 레거시: 본문 페이지에서 visibility 방식 인쇄 (하위 호환) */
   body:not(.titan-print-engine-host) * {
     visibility: hidden;
@@ -858,7 +1115,17 @@ body.titan-print-mode .titan-print-preview-frame {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    width: var(--titan-print-content-portrait-width);
+    min-width: var(--titan-print-content-portrait-width);
+    max-width: var(--titan-print-content-portrait-width);
+  }
+
+  body:not(.titan-print-engine-host) .titan-print-document.titan-print-landscape,
+  body:not(.titan-print-engine-host) .titan-print-document.titan-print--landscape,
+  body:not(.titan-print-engine-host) .titan-print-document.titan-print-list {
+    width: var(--titan-print-content-landscape-width);
+    min-width: var(--titan-print-content-landscape-width);
+    max-width: var(--titan-print-content-landscape-width);
   }
 
   body.titan-print-mode .titan-print-preview-scale,
@@ -896,7 +1163,7 @@ body.titan-print-mode .titan-print-preview-frame {
 
 @media (max-width: 960px) {
   .titan-print-page {
-    width: min(210mm, 100%);
+    width: min(var(--titan-print-content-portrait-width), 100%);
     min-height: auto;
   }
 }

@@ -7,8 +7,10 @@ import { matchesInboundDataSearch } from "./inboundDataFields";
 import {
   buildCertificateEntryFromRecord,
   getCertificateEntryByManagementId,
+  getCertificateHistoryEntries,
+  isCertificateEntryIssued,
 } from "./certificateSession";
-import { isCertificateMenuEligible, MENU_TASK_STATUS } from "./menuWorkflowGate";
+import { isCertificateIssued, isCertificateMenuEligible, MENU_TASK_STATUS } from "./menuWorkflowGate";
 import { mapV13ProductListRow } from "./processFlow";
 import { getSessionProductionRecords } from "./productionRecords";
 import { formatQtyWithUnit } from "./productUnits";
@@ -21,6 +23,62 @@ function resolveCertificateMenuEntry(record) {
   const existing = getCertificateEntryByManagementId(record.id);
   if (existing) return existing;
   return buildCertificateEntryFromRecord(record);
+}
+
+/** 검사완료 제품 — 성적서등록 대기 (미발행) */
+export function getCertificateRegisterListRows() {
+  return getCertificateMenuListRows().filter((row) => {
+    const record = getSessionProductionRecords().find((item) => item.id === row.entry?.managementId);
+    if (record && isCertificateIssued(record)) return false;
+    if (isCertificateEntryIssued(row.entry)) return false;
+    return true;
+  });
+}
+
+/** 성적서현황 — 발행 완료 이력 (발행 후에도 유지) */
+export function getCertificateHistoryListRows() {
+  const historyEntries = getCertificateHistoryEntries();
+  const historyIds = new Set(historyEntries.map((entry) => entry.managementId));
+
+  const fromEntries = historyEntries.map((entry) => mapCertificateHistoryToListRow(entry));
+
+  const fromRecords = getSessionProductionRecords()
+    .filter((record) => isCertificateIssued(record) && !historyIds.has(record.id))
+    .map((record) => {
+      const entry = buildCertificateEntryFromRecord(record, {
+        issueCount: 1,
+        lastIssuedDate: record.certificateIssuedAt?.slice(0, 10) || record.updatedAt?.slice(0, 10) || "",
+        lastIssuedBy: record.certificateIssuedBy || "",
+        isReissue: false,
+      });
+      return mapCertificateHistoryToListRow({
+        ...entry,
+        id: entry.id || `history-${record.id}`,
+      });
+    });
+
+  return [...fromEntries, ...fromRecords].sort((a, b) =>
+    String(b.issuedDate).localeCompare(String(a.issuedDate))
+  );
+}
+
+export function mapCertificateHistoryToListRow(entry) {
+  const base = mapCertificateEntryToListRow(entry);
+  const issueCount = Number(entry.issueCount) > 0 ? Number(entry.issueCount) : 1;
+  return {
+    ...base,
+    issuedDate: entry.lastIssuedDate || entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",
+    issuedBy: entry.lastIssuedBy || entry.registeredBy || "—",
+    issueCount,
+    isReissue: Boolean(entry.isReissue),
+    reissueLabel: entry.isReissue || issueCount > 1 ? "Y" : "—",
+  };
+}
+
+export function matchesCertificateHistorySearch(row, search) {
+  if (!matchesCertificateSearch(row, search)) return false;
+  if (search.__chipCertReissued && row.reissueLabel !== "Y") return false;
+  return true;
 }
 
 /** 검사완료 제품 — 성적서관리 자동 표시 대상 */
@@ -82,7 +140,8 @@ export function mapCertificateEntryToListRow(entry) {
 }
 
 export function matchesCertificateSearch(row, search) {
-  const entry = row.entry;
+  const entry = row?.entry ?? row;
+  if (!entry || typeof entry !== "object") return false;
   const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
   const merged = {
     ...entry,
@@ -100,8 +159,15 @@ export function matchesCertificateSearch(row, search) {
   if (search.incomingDateTo && row.incomingDate > search.incomingDateTo) return false;
   if (search.qty && !String(entry.qty ?? "").includes(search.qty)) return false;
   if (search.note && !String(entry.note ?? "").includes(search.note)) return false;
-  if (search.registeredDateFrom && row.registeredDate < search.registeredDateFrom) return false;
-  if (search.registeredDateTo && row.registeredDate > search.registeredDateTo) return false;
+  const issuedDate = row.issuedDate && row.issuedDate !== "—" ? row.issuedDate : row.registeredDate;
+  if (search.issuedDateFrom && issuedDate !== "—" && issuedDate < search.issuedDateFrom) return false;
+  if (search.issuedDateTo && issuedDate !== "—" && issuedDate > search.issuedDateTo) return false;
+  if (search.registeredDateFrom && row.registeredDate !== "—" && row.registeredDate < search.registeredDateFrom) {
+    return false;
+  }
+  if (search.registeredDateTo && row.registeredDate !== "—" && row.registeredDate > search.registeredDateTo) {
+    return false;
+  }
   if (search.assignee && !String(entry.registeredBy ?? "").includes(search.assignee)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
   if (

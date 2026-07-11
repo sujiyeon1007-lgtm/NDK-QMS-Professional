@@ -4,12 +4,11 @@
  * ⑤ Process · ⑥ Equipment · ⑦ Worker Master 에서 동일 패턴 재사용.
  */
 
-/** 좌측 Material List 컬럼 — 재질명 · 규격 · 연결 제품 수 · 상태 */
+/** 좌측 Material List 컬럼 — 재질명 · 재질코드 · 사용여부 (P0 Sprint simplified) */
 export const MATERIAL_LIST_COLUMNS = [
-  { key: "name", label: "재질명", widthPercent: 34 },
-  { key: "spec", label: "규격", widthPercent: 30 },
-  { key: "productCount", label: "연결 제품", widthPercent: 18, render: "meta" },
-  { key: "activeLabel", label: "상태", widthPercent: 14, render: "active" },
+  { key: "name", label: "재질명", widthPercent: 40 },
+  { key: "code", label: "재질코드", widthPercent: 32 },
+  { key: "activeLabel", label: "사용여부", widthPercent: 14, render: "active" },
 ];
 
 /** 우측 Detail Workspace 탭 (7탭) */
@@ -24,13 +23,11 @@ export const MATERIAL_DETAIL_TABS = [
   { id: "updates", label: "최근 수정" },
 ];
 
-/** ① 기본정보 필드 (material row) */
+/** ① 기본정보 필드 (material row) — P0 Sprint: 3 fields only */
 export const MATERIAL_PROFILE_FIELDS = [
   { key: "name", label: "재질명" },
   { key: "code", label: "재질코드" },
-  { key: "spec", label: "규격" },
-  { key: "activeLabel", label: "상태", render: "active" },
-  { key: "note", label: "설명", span: 2 },
+  { key: "activeLabel", label: "사용여부", render: "active" },
 ];
 
 /** ② 열처리 조건 필드 (materialMasterDetail.heatTreatment) */

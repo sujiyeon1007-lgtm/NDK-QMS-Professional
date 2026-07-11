@@ -380,6 +380,7 @@ export default function QrEngineEquipmentWorkPage() {
             buttonState={chargingButtons}
             onStart={handleStartCharging}
             onFinish={handleFinishWork}
+            variant="full"
           />
         </div>
         {workflowError ? (

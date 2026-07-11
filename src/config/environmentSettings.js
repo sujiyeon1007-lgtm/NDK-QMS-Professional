@@ -3,6 +3,8 @@
  * @see Menu Freeze V1.3 + V1.2 Admin Architecture
  */
 
+import { MASTER_SSOT_HOLD_ENVIRONMENT_TAB_IDS } from "./masterDataLauncher";
+
 import {
   Building2,
   Users,
@@ -46,6 +48,15 @@ export const ENVIRONMENT_TABS = [
   { id: "program", group: "system", label: "프로그램 설정", path: "/environment/program", icon: Settings, desc: "저장 경로 · 자동 백업" },
   { id: "status", group: "system", label: "시스템 설정", path: "/environment/status", icon: Activity, desc: "라이선스 · 시스템 상태 · 업데이트" },
   {
+    id: "data",
+    group: "system",
+    label: "데이터 관리",
+    path: "/environment/data",
+    icon: Database,
+    desc: "Master · 업무 데이터 초기화",
+    adminOnly: true,
+  },
+  {
     id: "employees",
     group: "info",
     label: "직원정보관리",
@@ -70,14 +81,15 @@ export const ENVIRONMENT_TABS = [
   { id: "debug", group: "dev", label: "Debug", path: "/environment/debug", icon: Bug, desc: "개발·Demo 디버그 정보", adminOnly: true },
   { id: "company", group: "dev", label: "회사정보", path: "/environment/company", icon: Building2, desc: "회사 기본 정보 · 로고", adminOnly: true },
   { id: "notifications", group: "dev", label: "알림설정", path: "/environment/notifications", icon: Bell, desc: "업무 알림", adminOnly: true },
-  { id: "data", group: "dev", label: "데이터 관리", path: "/environment/data", icon: Database, desc: "샘플 · 정리 · 최적화", adminOnly: true },
 ];
 
 /**
  * @param {boolean} [isAdmin]
  */
 export function getVisibleEnvironmentTabs(isAdmin = false) {
-  return ENVIRONMENT_TABS.filter((tab) => !tab.adminOnly || isAdmin);
+  return ENVIRONMENT_TABS.filter(
+    (tab) => !MASTER_SSOT_HOLD_ENVIRONMENT_TAB_IDS.has(tab.id) && (!tab.adminOnly || isAdmin)
+  );
 }
 
 /**

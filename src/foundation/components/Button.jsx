@@ -26,6 +26,14 @@ export function SecondaryButton({ children, className = "", type = "button", ...
   );
 }
 
+export function DangerButton({ children, className = "", type = "button", ...props }) {
+  return (
+    <button type={type} className={`titan-btn titan-btn--danger ${className}`.trim()} {...props}>
+      {renderButtonChildren(children)}
+    </button>
+  );
+}
+
 export default function Button({ variant = "secondary", children, className = "", type = "button", ...props }) {
   const cls = variant === "primary" ? "titan-btn--primary" : "titan-btn--secondary";
   return (

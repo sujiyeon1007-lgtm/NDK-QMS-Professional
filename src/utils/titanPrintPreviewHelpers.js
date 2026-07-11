@@ -1,15 +1,16 @@
 import { getLastOutboundShipQty } from "./outboundRegistration";
-import { getCurrentUnitPrice, calculateAmounts } from "./unitPriceSession";
-import { formatQtyWithUnit } from "./productUnits";
+import { resolveRecordUnitPrice, calculateAmounts } from "./unitPriceSession";
+import { formatQtyWithUnit, resolveRecordUnit } from "./productUnits";
 import { getPrintOutputDate } from "./titanPrintDates";
 
 export function buildTransactionStatementPrintProps(record, options = {}) {
   if (!record) return null;
 
   const shipQtyNumeric = Number(options.shipQty) || getLastOutboundShipQty(record);
-  const shipQty = formatQtyWithUnit(shipQtyNumeric, record.unit || "EA");
+  const unit = resolveRecordUnit(record);
+  const shipQty = formatQtyWithUnit(shipQtyNumeric, unit);
   const issueDate = options.issueDate || getPrintOutputDate();
-  const unitPrice = getCurrentUnitPrice(record.company, record.partNo);
+  const unitPrice = resolveRecordUnitPrice(record);
   const amounts = calculateAmounts(shipQtyNumeric, unitPrice);
 
   return {

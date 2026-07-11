@@ -3,11 +3,10 @@
  * 생산계획 · 장입 · 생산일보 · 생산실적
  */
 
-import { TITAN_DEMO_PRODUCTION_RECORDS } from "../../data/titanDemoSampleData";
 import { TITAN_DATA_STORAGE_KEYS } from "./titanDataStorageKeys";
 import { createJsonArrayStore } from "./storeFactory";
 
-function mapDemoToProductionRecord(record) {
+export function mapDemoToProductionRecord(record) {
   return {
     productionId: record.id ?? record.mesManagementNo ?? `PRD-${Date.now()}`,
     lotNo: record.lotNo ?? "",
@@ -20,14 +19,9 @@ function mapDemoToProductionRecord(record) {
   };
 }
 
-function buildSeedProductionRecords() {
-  return TITAN_DEMO_PRODUCTION_RECORDS.map(mapDemoToProductionRecord);
-}
-
 const arrayStore = createJsonArrayStore({
   storageKey: TITAN_DATA_STORAGE_KEYS.production,
   idField: "productionId",
-  getSeed: buildSeedProductionRecords,
 });
 
 export const productionStore = {
@@ -57,10 +51,6 @@ export const productionStore = {
 
   replaceAll(records) {
     return arrayStore.writeAll(records);
-  },
-
-  seedIfEmpty() {
-    return arrayStore.seedIfEmpty();
   },
 
   clear() {

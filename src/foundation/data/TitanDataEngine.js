@@ -94,15 +94,65 @@ export class TitanDataEngine {
 
 
 
-  /** 모든 Store SessionStorage Seed · Meta 기록 */
+  /** Store 키 보장 · Demo 자동 Seed 없음 (company 프로필만 seedIfEmpty) */
 
   init() {
 
-    Object.values(this.stores).forEach((store) => {
+    const emptyArrayStores = [
 
-      store.seedIfEmpty?.();
+      equipmentStore,
+
+      lotStore,
+
+      productionStore,
+
+      timelineStore,
+
+      customerStore,
+
+      productStore,
+
+      materialStore,
+
+      processStore,
+
+      workerStore,
+
+    ];
+
+    emptyArrayStores.forEach((store) => {
+
+      if (!hasKey(store.storageKey)) {
+
+        writeJson(store.storageKey, []);
+
+      }
 
     });
+
+
+
+    if (!hasKey(qualityStore.storageKey)) {
+
+      writeJson(qualityStore.storageKey, {
+
+        inspections: [],
+
+        certificates: [],
+
+        defects: [],
+
+        documents: [],
+
+      });
+
+    }
+
+
+
+    companyStore.seedIfEmpty?.();
+
+
 
     initMasterDataStoresFromSessionStorage();
 

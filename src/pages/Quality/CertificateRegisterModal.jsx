@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
 import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
-import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
-import { createEmptyCertificateRegister } from "../../config/listSearchStandard";
+import { TitanAutoComplete } from "../../foundation/components/TitanSearchAutocomplete";
 import { CERTIFICATE_FILE_REGISTER_LABEL } from "../../config/registerModalStandard";
-import { getActiveMasterNames } from "../../utils/masterData";
+import { createEmptyCertificateRegister } from "../../config/listSearchStandard";
 import { mapProductToFormAutofill } from "../../utils/productMasterSearch";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { buildCertificateEntryFromRecord } from "../../utils/certificateSession";
@@ -29,8 +28,6 @@ const emptyProductFields = {
 
 export default function CertificateRegisterModal({ open, onClose, onRegister, initialData = null }) {
   const [form, setForm] = useState(createEmptyCertificateRegister());
-
-  const companyOptions = useMemo(() => getActiveMasterNames("companies"), [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,7 +114,6 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
 
   const handleSubmit = () => {
     if (!form.managementId.trim()) return;
-    if (!form.excelFile && !form.pdfFile) return;
     onRegister(form);
     onClose();
   };
@@ -145,13 +141,14 @@ export default function CertificateRegisterModal({ open, onClose, onRegister, in
           <span>LOT.NO</span>
           <Input value={form.lotNo} onChange={(e) => updateField("lotNo", e.target.value)} />
         </label>
-        <TitanSearchableSelect
-          className="titan-modal__field"
+        <TitanAutoComplete
+          fieldType="company"
           label="업체명"
+          className="titan-modal__field"
           value={form.company}
-          onChange={handleCompanyChange}
-          options={companyOptions}
-          placeholder="거래처 선택"
+          onChange={(value) => updateField("company", value)}
+          onSelect={handleCompanyChange}
+          placeholder="거래처 검색"
         />
 
         <TitanCascadeProductPicker

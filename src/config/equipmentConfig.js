@@ -11,9 +11,10 @@ import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
 /**
  * 공식 설비 상태 SSOT — 순서 고정
- * ⚪ 대기 → 🟡 장입 준비 → 🟢 운전중 → 🔴 점검중
+ * ⚪ 대기 → 🟢 운전중 → 🔴 점검중
+ * (장입 가능 LOT는 대기 상태에서 LOT 선택으로 처리 — 별도 ready 단계 없음)
  */
-export const EQUIPMENT_RUN_STATUS_SSOT = ["idle", "ready", "running", "maintenance"];
+export const EQUIPMENT_RUN_STATUS_SSOT = ["idle", "running", "maintenance"];
 
 /**
  * @typedef {{
@@ -34,10 +35,10 @@ export const EQUIPMENT_RUN_STATUS_META = {
     variant: "wait",
   },
   ready: {
-    emoji: "🟡",
-    label: "장입 준비",
-    english: "Ready for Charging",
-    variant: "prod-wait",
+    emoji: "⚪",
+    label: "대기",
+    english: "Idle",
+    variant: "wait",
   },
   running: {
     emoji: "🟢",
@@ -61,7 +62,7 @@ export const EQUIPMENT_RUN_STATUS_META = {
  */
 export const EQUIPMENT_CHARGING_BUTTON_RULES = {
   idle: {
-    showStart: false,
+    showStart: true,
     showComplete: false,
     startEnabled: false,
     completeEnabled: false,
@@ -69,7 +70,7 @@ export const EQUIPMENT_CHARGING_BUTTON_RULES = {
   ready: {
     showStart: true,
     showComplete: false,
-    startEnabled: true,
+    startEnabled: false,
     completeEnabled: false,
   },
   running: {
@@ -187,14 +188,14 @@ export const QR_CHARGING_PAGE_COPY = {
   equipmentSectionTitle: "설비 리스트",
   lotSectionTitle: "장입 가능 LOT",
   currentSectionTitle: "현재 장입 중",
-  startLabel: "장입 시작",
-  completeLabel: "열처리 완료",
+  startLabel: "열처리 시작",
+  completeLabel: "열처리 종료",
   summaryAriaLabel: "설비 장입 현황",
 };
 
 export const HOME_EQUIPMENT_WIDGET_COPY = {
   title: "설비 운영 현황",
-  subtitle: "설비 중심 열처리 운전 · 장입 준비 · 점검 상태",
+  subtitle: "설비 중심 열처리 운전 · 대기 · 점검 상태",
   detailTitle: "설비 상세",
   sameLotTitle: "동일 LOT 제품",
   linkLabel: "설비 가동 현황",

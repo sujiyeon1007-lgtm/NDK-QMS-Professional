@@ -3,6 +3,7 @@
  * ProductMaster · CustomerMaster · MaterialMaster · ProcessMaster
  */
 
+import * as XLSX from "xlsx";
 import { getMasterExcelConfig } from "../config/masterExcelImport";
 import {
   compareCompanyMasterChanges,
@@ -289,7 +290,6 @@ export async function parseMasterExcelFile(masterType, file) {
   }
 
   try {
-    const XLSX = await import("xlsx");
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
     const sheetName = workbook.SheetNames[0];
@@ -317,7 +317,6 @@ export async function parseMasterExcelBuffer(masterType, buffer, fileName = "imp
   }
 
   try {
-    const XLSX = await import("xlsx");
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) return { ok: false, message: "시트를 찾을 수 없습니다." };
@@ -349,6 +348,15 @@ function findConflict(masterType, payload) {
 export function analyzeMasterImport(masterType, rows = []) {
   const config = getMasterExcelConfig(masterType);
   const compareFn = COMPARE_FN[masterType] ?? (() => []);
+
+  const companyByBizNo =
+    masterType === "companies"
+      ? new Map(
+          getMasterDataByCategory("companies")
+            .map((row) => [normalizeCompanyBizNo(row.bizNo), row])
+            .filter(([bizNo]) => Boolean(bizNo))
+        )
+      : null;
 
   const codeDuplicates = [];
   const keyConflicts = [];
@@ -385,7 +393,7 @@ export function analyzeMasterImport(masterType, rows = []) {
       }
       seenCodes.add(bizKey);
 
-      const existingByBizNo = findCompanyByBizNo(row.payload.bizNo);
+      const existingByBizNo = companyByBizNo?.get(bizKey) ?? findCompanyByBizNo(row.payload.bizNo);
       if (existingByBizNo) {
         if (config.conflictPolicy) {
           const changes = compareFn(existingByBizNo, row.payload);
@@ -569,7 +577,6 @@ export async function exportMasterExcel(masterType) {
     })
   );
 
-  const XLSX = await import("xlsx");
   const sheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, sheet, config.title.slice(0, 31));

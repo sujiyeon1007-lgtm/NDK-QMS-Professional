@@ -10,7 +10,7 @@ import {
 
 } from "./oracle/createOracleRepositories";
 
-
+import { createSqliteRepositories } from "./sqlite/createSqliteRepositories.js";
 
 /** @type {import("./repositoryTypes").TitanRepositories | null} */
 
@@ -18,7 +18,7 @@ let cachedRepositories = null;
 
 
 
-/** @type {"session" | "oracle"} */
+/** @type {"session" | "oracle" | "sqlite"} */
 
 let activeBackend = "session";
 
@@ -26,13 +26,13 @@ let activeBackend = "session";
 
 /**
 
- * @param {"session" | "oracle"} backend
+ * @param {"session" | "oracle" | "sqlite"} backend
 
  */
 
 export function setRepositoryBackend(backend) {
 
-  if (backend !== "session" && backend !== "oracle") {
+  if (backend !== "session" && backend !== "oracle" && backend !== "sqlite") {
 
     throw new Error(`Unknown repository backend: ${backend}`);
 
@@ -76,9 +76,13 @@ export function getRepositories() {
 
   if (!cachedRepositories) {
 
-    cachedRepositories =
-
-      activeBackend === "oracle" ? createOracleRepositories() : createSessionRepositories();
+    if (activeBackend === "oracle") {
+      cachedRepositories = createOracleRepositories();
+    } else if (activeBackend === "sqlite") {
+      cachedRepositories = createSqliteRepositories();
+    } else {
+      cachedRepositories = createSessionRepositories();
+    }
 
   }
 
@@ -91,6 +95,9 @@ export function getRepositories() {
 export function getRepositoryBackendLabel() {
   if (activeBackend === "oracle") {
     return REPOSITORY_BACKEND.MES_ORACLE;
+  }
+  if (activeBackend === "sqlite") {
+    return REPOSITORY_BACKEND.STANDALONE_V1_1;
   }
   return REPOSITORY_BACKEND.STANDALONE_V1_0;
 }
@@ -143,3 +150,4 @@ export {
 
 } from "./oracle/createOracleRepositories";
 
+export { createSqliteRepositories } from "./sqlite/createSqliteRepositories.js";

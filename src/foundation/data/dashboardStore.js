@@ -24,7 +24,7 @@ function buildComputedSnapshot() {
     kpi: {
       equipmentTotal: equipmentSummary.total,
       equipmentRunning: equipmentSummary.running,
-      equipmentReady: equipmentSummary.ready,
+      equipmentIdle: equipmentSummary.idle,
       equipmentMaintenance: equipmentSummary.maintenance,
       lotTotal: lots.length,
       lotRunning: runningLots,

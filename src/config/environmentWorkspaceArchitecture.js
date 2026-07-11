@@ -1,7 +1,9 @@
 import {
   Archive,
   Bell,
+  Database,
   Hash,
+  Layers,
   LayoutDashboard,
   LayoutGrid,
   QrCode,
@@ -30,10 +32,14 @@ export const ENVIRONMENT_WORKSPACE_ROUTES = {
   menus: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/menus`,
   menuToggle: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/menu-toggle`,
   numbering: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/numbering`,
+  processTemplates: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/process-templates`,
+  inspectionTemplates: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/inspection-templates`,
+  certificatePolicies: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/certificate-policies`,
   qrSettings: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/qr-settings`,
   backup: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/backup`,
   notifications: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/notifications`,
   system: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/system`,
+  data: `${ENVIRONMENT_WORKSPACE_BASE_PATH}/data`,
 };
 
 export const ENVIRONMENT_WORKSPACE_NAV = [
@@ -43,10 +49,20 @@ export const ENVIRONMENT_WORKSPACE_NAV = [
   { id: "menus", to: ENVIRONMENT_WORKSPACE_ROUTES.menus, label: "메뉴 관리", icon: LayoutGrid },
   { id: "menuToggle", to: ENVIRONMENT_WORKSPACE_ROUTES.menuToggle, label: "메뉴 ON/OFF", icon: ToggleLeft },
   { id: "numbering", to: ENVIRONMENT_WORKSPACE_ROUTES.numbering, label: "번호체계", icon: Hash },
+  { id: "processTemplates", to: ENVIRONMENT_WORKSPACE_ROUTES.processTemplates, label: "\uACF5\uC815\uC720\uD615", icon: Layers },
+  { id: "inspectionTemplates", to: ENVIRONMENT_WORKSPACE_ROUTES.inspectionTemplates, label: "\uAC80\uC0AC Template", icon: Layers },
+  { id: "certificatePolicies", to: ENVIRONMENT_WORKSPACE_ROUTES.certificatePolicies, label: "\uC131\uC801\uC11C \uC815\uCC45", icon: Layers },
   { id: "qrSettings", to: ENVIRONMENT_WORKSPACE_ROUTES.qrSettings, label: "QR 설정", icon: QrCode },
   { id: "backup", to: ENVIRONMENT_WORKSPACE_ROUTES.backup, label: "백업 / 복원", icon: Archive },
   { id: "notifications", to: ENVIRONMENT_WORKSPACE_ROUTES.notifications, label: "알림 설정", icon: Bell },
   { id: "system", to: ENVIRONMENT_WORKSPACE_ROUTES.system, label: "시스템 설정", icon: Settings },
+  {
+    id: "data",
+    to: ENVIRONMENT_WORKSPACE_ROUTES.data,
+    label: "데이터 관리",
+    icon: Database,
+    adminOnly: true,
+  },
 ];
 
 export const ENVIRONMENT_WORKSPACE_SECTIONS = [
@@ -111,6 +127,42 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     placeholder: false,
   },
   {
+    id: "processTemplates",
+    label: "\uACF5\uC815\uC720\uD615",
+    path: ENVIRONMENT_WORKSPACE_ROUTES.processTemplates,
+    description: "\uC81C\uD488 \u00B7 \uC785\uACE0 Workflow \uD15C\uD50C\uB9BF CRUD",
+    badge: "\uACF5\uC815",
+    badgeColor: "teal",
+    icon: Layers,
+    launcherTone: "mint",
+    phase: 12,
+    placeholder: false,
+  },
+  {
+    id: "inspectionTemplates",
+    label: "\uAC80\uC0AC Template",
+    path: ENVIRONMENT_WORKSPACE_ROUTES.inspectionTemplates,
+    description: "\uAC80\uC0AC \uAE30\uC900 \uD15C\uD50C\uB9BF \uAD00\uB9AC",
+    badge: "\uAC80\uC0AC",
+    badgeColor: "green",
+    icon: Layers,
+    launcherTone: "green",
+    phase: 12,
+    placeholder: false,
+  },
+  {
+    id: "certificatePolicies",
+    label: "\uC131\uC801\uC11C \uC815\uCC45",
+    path: ENVIRONMENT_WORKSPACE_ROUTES.certificatePolicies,
+    description: "\uC131\uC801\uC11C \uBC1C\uD589 \uC815\uCC45 Master",
+    badge: "\uC131\uC801\uC11C",
+    badgeColor: "purple",
+    icon: Layers,
+    launcherTone: "purple",
+    phase: 12,
+    placeholder: false,
+  },
+  {
     id: "qrSettings",
     label: "QR 설정",
     path: ENVIRONMENT_WORKSPACE_ROUTES.qrSettings,
@@ -158,6 +210,19 @@ export const ENVIRONMENT_WORKSPACE_SECTIONS = [
     phase: 12,
     placeholder: false,
   },
+  {
+    id: "data",
+    label: "데이터 관리",
+    path: ENVIRONMENT_WORKSPACE_ROUTES.data,
+    description: "Master · 업무 데이터 초기화 (관리자 전용)",
+    badge: "데이터",
+    badgeColor: "red",
+    icon: Database,
+    launcherTone: "red",
+    phase: 12,
+    placeholder: false,
+    adminOnly: true,
+  },
 ];
 
 export const ENVIRONMENT_SECTION_UI = {
@@ -181,6 +246,10 @@ export const ENVIRONMENT_SECTION_UI = {
     layout: "form",
     previewFields: ["문서번호 규칙", "관리번호 규칙", "LOT 규칙", "자동채번", "접두어", "순번"],
   },
+  processTemplates: {
+    layout: "table",
+    previewColumns: ["공정유형", "단계 구성", "단계 수", "상태"],
+  },
   qrSettings: {
     layout: "form",
     previewFields: ["Smart Access ID", "QR 출력 정책", "Portal 연동", "설비 QR", "문서 QR"],
@@ -197,6 +266,10 @@ export const ENVIRONMENT_SECTION_UI = {
     layout: "form",
     previewFields: ["프로그램 버전", "저장 경로", "자동 백업", "라이선스", "시스템 상태"],
   },
+  data: {
+    layout: "form",
+    previewFields: ["거래처", "제품", "재질", "설비", "작업자", "입고", "LOT", "생산", "출고", "문서", "통계"],
+  },
 };
 
 export const ENVIRONMENT_WORKSPACE_COPY = {
@@ -208,16 +281,20 @@ export const ENVIRONMENT_WORKSPACE_COPY = {
   workspaceLauncherDesc: "관리 영역을 선택해 프로그램 설정을 통합 관리합니다.",
   dashboardTitle: "Workspace",
   dashboardWorkflow:
-    "사용자 → 권한 → 메뉴 → 메뉴 ON/OFF → 번호체계 → QR → 백업 → 알림 → 시스템",
+    "사용자 → 권한 → 메뉴 → 메뉴 ON/OFF → 번호체계 → 공정유형 → QR → 백업 → 알림 → 시스템 → 데이터",
   usersTitle: "사용자 관리",
   permissionsTitle: "권한 관리",
   menusTitle: "메뉴 관리",
   menuToggleTitle: "메뉴 ON/OFF",
   numberingTitle: "번호체계",
+  processTemplatesTitle: "\uACF5\uC815\uC720\uD615",
+  inspectionTemplatesTitle: "\uAC80\uC0AC Template",
+  certificatePoliciesTitle: "\uC131\uC801\uC11C \uC815\uCC45",
   qrSettingsTitle: "QR 설정",
   backupTitle: "백업 / 복원",
   notificationsTitle: "알림 설정",
   systemTitle: "시스템 설정",
+  dataTitle: "데이터 관리",
   companySeparationNote:
     "회사정보는 Environment가 아닌 Company Master Workspace에서 관리합니다.",
   uiPreviewBadge: "준비중",
@@ -239,10 +316,14 @@ export const ENVIRONMENT_WORKSPACE_PATH_SEGMENTS = [
   "menus",
   "menu-toggle",
   "numbering",
+  "process-templates",
+  "inspection-templates",
+  "certificate-policies",
   "qr-settings",
   "backup",
   "notifications",
   "system",
+  "data",
 ];
 
 export function isEnvironmentWorkspaceShellPath(pathname) {
@@ -283,10 +364,24 @@ export function resolveEnvironmentWorkspaceSectionId(pathname) {
     menus: "menus",
     "menu-toggle": "menuToggle",
     numbering: "numbering",
+    "process-templates": "processTemplates",
+    "inspection-templates": "inspectionTemplates",
+    "certificate-policies": "certificatePolicies",
     "qr-settings": "qrSettings",
     backup: "backup",
     notifications: "notifications",
     system: "system",
+    data: "data",
   };
   return segmentToId[segment] ?? null;
+}
+
+/** @param {boolean} [isAdmin] */
+export function getVisibleEnvironmentWorkspaceNav(isAdmin = false) {
+  return ENVIRONMENT_WORKSPACE_NAV.filter((item) => !item.adminOnly || isAdmin);
+}
+
+/** @param {boolean} [isAdmin] */
+export function getVisibleEnvironmentWorkspaceSections(isAdmin = false) {
+  return ENVIRONMENT_WORKSPACE_SECTIONS.filter((section) => !section.adminOnly || isAdmin);
 }

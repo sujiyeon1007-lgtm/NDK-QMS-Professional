@@ -1,14 +1,19 @@
 import { TitanLauncherCard } from "../../foundation/uiKit";
 import {
   ENVIRONMENT_WORKSPACE_COPY,
-  ENVIRONMENT_WORKSPACE_SECTIONS,
+  getVisibleEnvironmentWorkspaceSections,
 } from "../../config/environmentWorkspaceArchitecture";
+import { useTitanAuth } from "../../hooks/useTitanAuth";
+import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 
 export default function EnvironmentDashboardPage() {
+  useTitanAuth();
+  const sections = getVisibleEnvironmentWorkspaceSections(isTitanAdminUser());
+
   return (
     <div className="company-workspace-home company-workspace-home--dashboard company-workspace-home--launcher-only">
       <div className="titan-launcher-grid company-launcher-grid" aria-label="Quick Launcher">
-        {ENVIRONMENT_WORKSPACE_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <TitanLauncherCard
             key={section.id}
             to={section.path}

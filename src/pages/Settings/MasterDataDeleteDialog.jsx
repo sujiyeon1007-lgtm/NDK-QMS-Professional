@@ -11,8 +11,8 @@ function MasterDataDeleteDialog({
   blocked = false,
   blockedMessage = "",
   confirmMessage = "정말 삭제하시겠습니까?",
-  confirmLabel = "예",
-  cancelLabel = "아니오",
+  confirmLabel = "삭제",
+  cancelLabel = "취소",
   softDelete = false,
 }) {
   useEffect(() => {

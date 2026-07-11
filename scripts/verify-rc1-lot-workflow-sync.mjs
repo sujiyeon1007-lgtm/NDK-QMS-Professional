@@ -54,6 +54,13 @@ async function login(page, creds) {
 
 async function pickSearchableSelect(page, scope, labelText, optionText) {
   const field = page.locator(scope).locator(".form-field").filter({ hasText: labelText });
+  const acInput = field.locator(".titan-search-ac__input").first();
+  if ((await acInput.count()) > 0) {
+    await acInput.fill(optionText);
+    await page.waitForTimeout(300);
+    await field.locator(".titan-search-ac__option").filter({ hasText: optionText }).first().click();
+    return;
+  }
   await field.locator(".titan-searchable-select__trigger").click();
   await field.locator(".titan-search-ac__option").filter({ hasText: optionText }).first().click();
 }
@@ -141,20 +148,24 @@ async function main() {
     await page.locator(".titan-modal__footer").getByRole("button", { name: "\ub2eb\uae30" }).click();
 
     await page.goto(BASE + "/settings/products");
-    await page.getByRole("button", { name: "\ub4f1\ub85d" }).first().click();
-    await page.locator("label").filter({ hasText: "\uad00\ub9ac\ubc88\ud638" }).locator("input").first().fill(QA.productCode);
-    await page.locator("label").filter({ hasText: "\uc5c5\uccb4\uba85" }).locator("select").first().selectOption({ label: QA.companyName });
-    await page.locator("label").filter({ hasText: "\ud488\ubc88" }).locator("input").first().fill(QA.partNo);
-    await page.locator("label").filter({ hasText: "\ud488\uba85" }).locator("input").first().fill(QA.partName);
-    await page.locator("label").filter({ hasText: "\uc7ac\uc9c8" }).locator("select").first().selectOption({ label: QA.material });
-    await page.getByRole("button", { name: "\ub4f1\ub85d" }).last().click();
+    const productResult = await page.evaluate(async (q) => {
+      const { stageMasterAdd } = await import("/src/utils/masterData.js");
+      return stageMasterAdd("products", {
+        company: q.companyName,
+        partNo: q.partNo,
+        name: q.partName,
+        material: q.material,
+        processCategory: "ion",
+        processDetail: "이온질화",
+        process: "이온질화",
+      });
+    }, QA);
+    if (!productResult?.ok) throw new Error(productResult?.message || "product register failed");
 
     await page.goto(BASE + "/operations/inbound-pending");
     await page.locator(".inbound-page button.titan-btn--primary").filter({ hasText: "\uc785\uace0" }).first().click();
     await pickSearchableSelect(page, ".incoming-modal", "\uAC70\uB798\uCC98", QA.companyName);
-    const partPicker = page.locator(".incoming-modal .titan-searchable-select").filter({ hasText: "\ud488\uba85" });
-    await partPicker.locator(".titan-searchable-select__trigger").click();
-    await partPicker.locator(".titan-search-ac__option").filter({ hasText: QA.partName }).first().click();
+    await pickSearchableSelect(page, ".incoming-modal", "\ud488\uba85", QA.partName);
     await page.locator(".incoming-modal label").filter({ hasText: "\uc218\ub7c9" }).locator("input").fill(String(QA.qty));
     await page.locator(".incoming-modal-footer button").filter({ hasText: "\ub4f1\ub85d" }).last().click();
     await page.waitForTimeout(800);

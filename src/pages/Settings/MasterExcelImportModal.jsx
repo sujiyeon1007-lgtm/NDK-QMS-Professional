@@ -114,8 +114,16 @@ export default function MasterExcelImportModal({ masterType, open, onClose, onCo
 
     setParseError("");
     setIsParsing(true);
-    const parsed = await parseMasterExcelFile(masterType, file);
-    setIsParsing(false);
+    let parsed;
+    try {
+      parsed = await parseMasterExcelFile(masterType, file);
+    } catch (error) {
+      console.error("[MasterExcelImport] file read failed", error);
+      setParseError("Excel 파일을 읽을 수 없습니다.");
+      return;
+    } finally {
+      setIsParsing(false);
+    }
 
     if (!parsed.ok) {
       setParseError(parsed.message);
@@ -124,8 +132,13 @@ export default function MasterExcelImportModal({ masterType, open, onClose, onCo
 
     setFileName(parsed.fileName);
     setParsedRows(parsed.rows);
-    setAnalysis(analyzeMasterImport(masterType, parsed.rows));
-    setStep("preview");
+    try {
+      setAnalysis(analyzeMasterImport(masterType, parsed.rows));
+      setStep("preview");
+    } catch (error) {
+      console.error("[MasterExcelImport] analysis failed", error);
+      setParseError("Excel 데이터 분석 중 오류가 발생했습니다.");
+    }
   };
 
   const handleExecuteImport = async () => {

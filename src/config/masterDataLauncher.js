@@ -1,4 +1,4 @@
-import { Building2, Cog, FlaskConical, HardHat, Layers, Package, Wrench } from "lucide-react";
+import { AlertTriangle, Building2, Cog, FlaskConical, HardHat, Hash, Layers, Package, Wrench } from "lucide-react";
 
 /** 기준정보관리 Launcher — V1.6 (Category Badge 공통) */
 export const MASTER_DATA_LAUNCHER_ITEMS = [
@@ -27,7 +27,7 @@ export const MASTER_DATA_LAUNCHER_ITEMS = [
     badgeColor: "orange",
     path: "/settings/materials",
     icon: Layers,
-    description: "재질코드 · 재질명 · 규격 · 사용 여부",
+    description: "재질명 · 재질코드 · 사용여부",
   },
   {
     id: "processes",
@@ -45,7 +45,7 @@ export const MASTER_DATA_LAUNCHER_ITEMS = [
     badgeColor: "green",
     path: "/settings/equipment",
     icon: Wrench,
-    description: "설비코드 · 설비명 · 공정 · 사용 여부",
+    description: "설비명 · 열처리 공정 · 사용여부",
   },
   {
     id: "workers",
@@ -67,6 +67,53 @@ export const MASTER_DATA_LAUNCHER_ITEMS = [
   },
 ];
 
+/** V1.1 Master First Freeze — Hold (code retained · UI placeholder only) */
+export const MASTER_DATA_HOLD_LAUNCHER_ITEMS = [
+  {
+    id: "defect-codes",
+    label: "불량코드",
+    badge: "Hold",
+    badgeColor: "gray",
+    path: "/settings/hold/defect-codes",
+    icon: AlertTriangle,
+    description: "Master Sprint 이후 활성화",
+    hold: true,
+    holdReason: "\uBCF4\uB958 \u00B7 PM \uAC80\uD1A0 \uC911",
+  },
+  {
+    id: "custom-codes",
+    label: "사용자정의코드",
+    badge: "Hold",
+    badgeColor: "gray",
+    path: "/settings/hold/custom-codes",
+    icon: Hash,
+    description: "Master Sprint 이후 활성화",
+    hold: true,
+    holdReason: "\uBCF4\uB958 \u00B7 PM \uAC80\uD1A0 \uC911",
+  },
+];
+
 export function getMasterDataLauncherItem(id) {
   return MASTER_DATA_LAUNCHER_ITEMS.find((item) => item.id === id) ?? null;
 }
+
+export function getMasterHoldDefinition(holdId) {
+  return MASTER_DATA_HOLD_LAUNCHER_ITEMS.find((item) => item.id === holdId) ?? null;
+}
+
+/** P0 Sprint — sidebar / environment tab hold IDs (data not deleted) */
+export const MASTER_SSOT_HOLD_SIDEBAR_IDS = new Set(["defect-codes", "custom-codes"]);
+
+export const MASTER_SSOT_HOLD_ENVIRONMENT_TAB_IDS = new Set(["customCodes"]);
+
+export const MASTER_SSOT_SPRINT_PRIORITY = Object.freeze([
+  { order: 1, id: "company", label: "\uAC70\uB798\uCC98 Master", status: "ok", note: "\uBCC0\uACBD \uC5C6\uC74C (OK as-is)" },
+  { order: 2, id: "product", label: "\uC81C\uD488 Master", status: "deferred", note: "\uC804\uBA74 \uC7AC\uC124\uACC4 \u2014 \uB2E4\uC74C Sprint" },
+  { order: 3, id: "material", label: "\uC7AC\uC9C8 Master", status: "simplified", note: "\uC7AC\uC9C8\uBA85 \u00B7 \uC7AC\uC9C8\uCF54\uB4DC \u00B7 \uC0AC\uC6A9\uC5EC\uBD80" },
+  { order: 4, id: "equipment", label: "\uC124\uBE44 Master", status: "simplified", note: "\uC124\uBE44\uBA85 \u00B7 \uC5F4\uCC98\uB9AC \uACF5\uC815 \u00B7 \uC0AC\uC6A9\uC5EC\uBD80" },
+  { order: 5, id: "worker", label: "\uC791\uC5C5\uC790 Master", status: "partial", note: "\uAE30\uC874 \uC720\uC9C0" },
+  { order: 6, id: "processType", label: "\uACF5\uC815\uC720\uD615 Master", status: "partial", note: "\uD658\uACBD\uC124\uC815 \uD15C\uD50C\uB9BF" },
+  { order: 7, id: "inspectionTemplate", label: "\uAC80\uC0AC Template Master", status: "partial", note: "\uD658\uACBD\uC124\uC815" },
+  { order: 8, id: "certificatePolicy", label: "\uC131\uC801\uC11C Policy Master", status: "partial", note: "\uD658\uACBD\uC124\uC815" },
+  { order: 9, id: "numbering", label: "\uCC44\uBC88 Master", status: "partial", note: "\uD658\uACBD\uC124\uC815" },
+]);

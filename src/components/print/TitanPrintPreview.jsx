@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
 const PAGE_WIDTH_PX = {
-  portrait: 794,
-  landscape: 1123,
+  portrait: 718,
+  landscape: 1062,
 };
 
 /** 실제 출력 문서를 축소하여 보여주는 WYSIWYG Preview */
 function TitanPrintPreview({ children, className = "" }) {
   const frameRef = useRef(null);
-  const [scale, setScale] = useState(0.42);
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -22,7 +22,7 @@ function TitanPrintPreview({ children, className = "" }) {
       const orientation = documentEl?.dataset.printOrientation ?? "portrait";
       const pageWidth = PAGE_WIDTH_PX[orientation] ?? PAGE_WIDTH_PX.portrait;
 
-      setScale(Math.min(0.78, Math.max(0.32, width / pageWidth)));
+      setScale(Math.min(1, Math.max(0.35, width / pageWidth)));
     };
 
     updateScale();

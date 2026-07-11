@@ -81,8 +81,46 @@
   --titan-data-grid-max-height: min(64vh, 640px);
 
   /* Layout */
-  --titan-sidebar-width: 168px;
-  --titan-header-h: 52px;
+  --titan-sidebar-width: 196px;
+  --titan-global-nav-h: 48px;
+  --titan-sidebar-brand-h: 56px;
+  --titan-banner-h: 34px;
+  --titan-header-h: 48px;
+
+  /* V2 workspace accent — global nav + shell workspace header */
+  --workspace-accent-home: #3b82f6;
+  --workspace-accent-home-bg: rgba(59, 130, 246, 0.1);
+  --workspace-accent-home-border: rgba(59, 130, 246, 0.28);
+  --workspace-accent-operations: #0891b2;
+  --workspace-accent-operations-bg: rgba(8, 145, 178, 0.1);
+  --workspace-accent-operations-border: rgba(8, 145, 178, 0.28);
+  --workspace-accent-production: #d97706;
+  --workspace-accent-production-bg: rgba(217, 119, 6, 0.1);
+  --workspace-accent-production-border: rgba(217, 119, 6, 0.28);
+  --workspace-accent-quality: #16a34a;
+  --workspace-accent-quality-bg: rgba(22, 163, 74, 0.1);
+  --workspace-accent-quality-border: rgba(22, 163, 74, 0.28);
+  --workspace-accent-documents: #7c3aed;
+  --workspace-accent-documents-bg: rgba(124, 58, 237, 0.1);
+  --workspace-accent-documents-border: rgba(124, 58, 237, 0.28);
+  --workspace-accent-statistics: #4f46e5;
+  --workspace-accent-statistics-bg: rgba(79, 70, 229, 0.1);
+  --workspace-accent-statistics-border: rgba(79, 70, 229, 0.28);
+  --workspace-accent-accounting-clerk: #ca8a04;
+  --workspace-accent-accounting-clerk-bg: rgba(202, 138, 4, 0.1);
+  --workspace-accent-accounting-clerk-border: rgba(202, 138, 4, 0.28);
+  --workspace-accent-accounting: #059669;
+  --workspace-accent-accounting-bg: rgba(5, 150, 105, 0.1);
+  --workspace-accent-accounting-border: rgba(5, 150, 105, 0.28);
+  --workspace-accent-master: #475569;
+  --workspace-accent-master-bg: rgba(71, 85, 105, 0.1);
+  --workspace-accent-master-border: rgba(71, 85, 105, 0.28);
+  --workspace-accent-company: #e11d48;
+  --workspace-accent-company-bg: rgba(225, 29, 72, 0.08);
+  --workspace-accent-company-border: rgba(225, 29, 72, 0.24);
+  --workspace-accent-environment: #64748b;
+  --workspace-accent-environment-bg: rgba(100, 116, 139, 0.1);
+  --workspace-accent-environment-border: rgba(100, 116, 139, 0.28);
   --titan-footer-h: 28px;
   --titan-main-px: 16px;
   --titan-main-py: 12px;

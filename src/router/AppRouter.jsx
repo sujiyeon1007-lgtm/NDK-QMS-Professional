@@ -1,4 +1,12 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import {
+  BrowserRouter,
+  HashRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+} from "react-router-dom";
 
 import { OPERATION_MODE_WELCOME_ENABLED } from "../config/titanV1DevelopmentDirection";
 import { OPERATION_ROUTES } from "../config/operationsRouteRegistry";
@@ -12,9 +20,11 @@ import Home from "../pages/Home/Home";
 import InOutLayout from "../pages/InOut/InOutLayout";
 
 import InoutManagementHubPage from "../pages/InOut/InoutManagementHubPage";
-import InboundManagement from "../pages/InOut/InboundManagement";
+import InboundRegisterPage from "../pages/InOut/InboundRegisterPage";
+import InboundHistoryPage from "../pages/InOut/InboundHistoryPage";
 
-import OutboundManagement from "../pages/InOut/OutboundManagement";
+import OutboundRegisterPage from "../pages/InOut/OutboundRegisterPage";
+import OutboundHistoryPage from "../pages/InOut/OutboundHistoryPage";
 
 import ProductionLayout from "../pages/Production/ProductionLayout";
 
@@ -37,10 +47,13 @@ import QualityManagementHubPage from "../pages/Quality/QualityManagementHubPage"
 import InspectionManagementScreen from "../pages/Quality/InspectionManagementScreen";
 
 import CertificateManagement from "../pages/Quality/CertificateManagement";
+import CertificateStatusPage from "../pages/Quality/CertificateStatusPage";
+import InspectionStatusPage from "../pages/Quality/InspectionStatusPage";
+import InspectionRegisterPage, {
+  InspectionRegisterEntryPage,
+} from "../pages/Quality/InspectionRegisterPage";
 
 import InspectionReportView from "../pages/Quality/InspectionReportView";
-
-import InspectionLogRegisterView from "../pages/Quality/InspectionLogRegisterView";
 
 import StatisticsLayout from "../pages/Statistics/StatisticsLayout";
 
@@ -53,6 +66,7 @@ import StatisticsSales from "../pages/Statistics/StatisticsSales";
 import SettingsLayout from "../pages/Settings/SettingsLayout";
 
 import MasterDataHubPage from "../pages/Settings/MasterDataHubPage";
+import MasterHoldPlaceholderPage from "../pages/Settings/MasterHoldPlaceholderPage";
 
 import MasterDashboard from "../pages/Settings/MasterDashboard";
 
@@ -74,10 +88,25 @@ import EnvironmentManagement from "../pages/Environment/EnvironmentManagement";
 import EnvironmentDashboardPage from "../pages/Environment/EnvironmentDashboardPage";
 import EnvironmentSectionPage from "../pages/Environment/EnvironmentSectionPage";
 
-import DocumentsLayout from "../pages/Documents/DocumentsLayout";
+import DocumentsLayout, { DocumentsHubPage } from "../pages/Documents/DocumentsLayout";
 
-import DocumentManagementPage from "../pages/Documents/DocumentManagementPage";
 import IncomingDocumentArchivePage from "../pages/Documents/IncomingDocumentArchivePage";
+import QualityCertificatesPage from "../pages/Documents/QualityCertificatesPage";
+import QualityByCompanyDocumentsPage from "../pages/Documents/QualityByCompanyDocumentsPage";
+import IncomingPurchaseOrdersPage from "../pages/Documents/IncomingPurchaseOrdersPage";
+import IncomingReturnSlipsPage from "../pages/Documents/IncomingReturnSlipsPage";
+import IncomingOtherDocumentsPage from "../pages/Documents/IncomingOtherDocumentsPage";
+import InternalDocumentsPage from "../pages/Documents/InternalDocumentsPage";
+
+import TitanComingSoonPlaceholder from "../foundation/pages/TitanComingSoonPlaceholder";
+import {
+  RC1_ACCOUNTING_CLERK_COMING_SOON,
+  RC1_ACCOUNTING_CLERK_POLICY,
+  RC1_ACCOUNTING_COMING_SOON,
+  RC1_ACCOUNTING_POLICY,
+  RC1_SHOT_PROCESS_COMING_SOON,
+  RC1_SHOT_PROCESS_POLICY,
+} from "../config/rc1OperationalPolicy";
 
 import HistoryLayout from "../pages/History/HistoryLayout";
 
@@ -134,6 +163,24 @@ function LegacyRedirect({ to }) {
 
   return <Navigate to={to} replace />;
 
+}
+
+function Rc1AccountingClerkScreen({ children }) {
+  if (RC1_ACCOUNTING_CLERK_COMING_SOON) {
+    return (
+      <TitanComingSoonPlaceholder title="경리관리" subtitle={RC1_ACCOUNTING_CLERK_POLICY.subtitle} />
+    );
+  }
+  return children;
+}
+
+function Rc1AccountingScreen({ children }) {
+  if (RC1_ACCOUNTING_COMING_SOON) {
+    return (
+      <TitanComingSoonPlaceholder title="회계관리" subtitle={RC1_ACCOUNTING_POLICY.subtitle} />
+    );
+  }
+  return children;
 }
 
 /**
@@ -231,10 +278,10 @@ function AppRoutes() {
 
             {/* RC1 Route Registry — canonical 운영관리 화면 (입고/출고) — InOutLayout 재사용 */}
             <Route element={<InOutLayout />}>
-              <Route path={OPERATION_ROUTES.inboundPending} element={<InboundManagement forcedMode="register" />} />
-              <Route path={OPERATION_ROUTES.inboundHistory} element={<InboundManagement forcedMode="history" />} />
-              <Route path={OPERATION_ROUTES.shipmentRegister} element={<OutboundManagement forcedMode="register" />} />
-              <Route path={OPERATION_ROUTES.shipmentHistory} element={<OutboundManagement forcedMode="history" />} />
+              <Route path={OPERATION_ROUTES.inboundPending} element={<InboundRegisterPage />} />
+              <Route path={OPERATION_ROUTES.inboundHistory} element={<InboundHistoryPage />} />
+              <Route path={OPERATION_ROUTES.shipmentRegister} element={<OutboundRegisterPage />} />
+              <Route path={OPERATION_ROUTES.shipmentHistory} element={<OutboundHistoryPage />} />
             </Route>
 
 
@@ -270,7 +317,8 @@ function AppRoutes() {
               <Route path="equipment-status" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.equipmentStatus} />} />
 
               <Route path="daily-report" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.dailyWork} />} />
-              <Route path="manual-lot" element={<Navigate to={OPERATION_ROUTES.productionPending} replace />} />
+              <Route path="cleaning-process" element={<LegacyOperationsRedirect to={OPERATION_ROUTES.cleaningProcess} />} />
+              <Route path="manual-lot" element={<Navigate to={OPERATION_ROUTES.equipmentStatus} replace />} />
 
               <Route path="print" element={<PrintManagementWorkspace />} />
 
@@ -289,8 +337,21 @@ function AppRoutes() {
             <Route element={<ProductionLayout />}>
               <Route path={OPERATION_ROUTES.productionPending} element={<ProductionPlanWorkspace />} />
               <Route path={OPERATION_ROUTES.equipmentStatus} element={<EquipmentStatusPage embedded />} />
+              <Route path={OPERATION_ROUTES.cleaningProcess} element={<TitanComingSoonPlaceholder title="세척공정" subtitle="세척공정 Workspace는 RC1 이후 Sprint에서 활성화 예정입니다." />} />
               <Route path={OPERATION_ROUTES.dailyWork} element={<DailyProductionReport />} />
-              <Route path={OPERATION_ROUTES.shotStatus} element={<ShotWorkStatusPage />} />
+              <Route
+                path={OPERATION_ROUTES.shotStatus}
+                element={
+                  RC1_SHOT_PROCESS_COMING_SOON ? (
+                    <TitanComingSoonPlaceholder
+                      title="쇼트 작업현황"
+                      subtitle={RC1_SHOT_PROCESS_POLICY.subtitle}
+                    />
+                  ) : (
+                    <ShotWorkStatusPage />
+                  )
+                }
+              />
             </Route>
 
 
@@ -300,13 +361,19 @@ function AppRoutes() {
               <Route index element={<QualityManagementHubPage />} />
 
               <Route path="inspection">
-                <Route index element={<Navigate to="/quality/inspection/mass" replace />} />
-                <Route path="register" element={<InspectionLogRegisterView />} />
+                <Route index element={<Navigate to="/quality/inspection/status" replace />} />
+                <Route path="register" element={<InspectionRegisterPage />} />
+                <Route path="register/entry" element={<InspectionRegisterEntryPage />} />
+                <Route path="status" element={<InspectionStatusPage />} />
                 <Route path=":logId/report" element={<InspectionReportView />} />
                 <Route path=":inspectionTab" element={<InspectionManagementScreen />} />
               </Route>
 
-              <Route path="certificate" element={<CertificateManagement />} />
+              <Route path="certificate">
+                <Route index element={<Navigate to="/quality/certificate/register" replace />} />
+                <Route path="register" element={<CertificateManagement />} />
+                <Route path="status" element={<CertificateStatusPage />} />
+              </Route>
 
               <Route path="defect-history" element={<DefectHistoryManagement />} />
 
@@ -356,10 +423,20 @@ function AppRoutes() {
 
             <Route path="/documents" element={<DocumentsLayout />}>
 
-              <Route index element={<DocumentManagementPage />} />
+              <Route index element={<DocumentsHubPage />} />
+              <Route path="quality/certificates" element={<QualityCertificatesPage />} />
+              <Route path="quality/by-company" element={<QualityByCompanyDocumentsPage />} />
+              <Route path="incoming/purchase-orders" element={<IncomingPurchaseOrdersPage />} />
+              <Route path="incoming/return-slips" element={<IncomingReturnSlipsPage />} />
+              <Route path="incoming/other" element={<IncomingOtherDocumentsPage />} />
+              <Route path="internal" element={<InternalDocumentsPage />} />
+              <Route path="registry" element={<Navigate to="/documents/quality/by-company" replace />} />
               <Route path="incoming-archive" element={<IncomingDocumentArchivePage />} />
-
               <Route path="inspection" element={<ProductInspectionManagement />} />
+              <Route path="drawings" element={<Navigate to="/documents/quality/by-company" replace />} />
+              <Route path="work-standard" element={<Navigate to="/documents/quality/by-company" replace />} />
+              <Route path="control-plan" element={<Navigate to="/documents/quality/by-company" replace />} />
+              <Route path="other" element={<Navigate to="/documents/quality/by-company" replace />} />
 
             </Route>
 
@@ -373,15 +450,50 @@ function AppRoutes() {
 
 
 
-            <Route path="/accounting-clerk" element={<AccountingClerkHubPage />} />
+            <Route
+              path="/accounting-clerk"
+              element={
+                <Rc1AccountingClerkScreen>
+                  <AccountingClerkHubPage />
+                </Rc1AccountingClerkScreen>
+              }
+            />
 
-            <Route path="/accounting-clerk/tax-invoices" element={<AccountingClerkFeaturePage featureIdOverride="taxInvoice" />} />
+            <Route
+              path="/accounting-clerk/tax-invoices"
+              element={
+                <Rc1AccountingClerkScreen>
+                  <AccountingClerkFeaturePage featureIdOverride="taxInvoice" />
+                </Rc1AccountingClerkScreen>
+              }
+            />
 
-            <Route path="/accounting-clerk/:featureId" element={<AccountingClerkFeaturePage />} />
+            <Route
+              path="/accounting-clerk/:featureId"
+              element={
+                <Rc1AccountingClerkScreen>
+                  <AccountingClerkFeaturePage />
+                </Rc1AccountingClerkScreen>
+              }
+            />
 
-            <Route path="/accounting" element={<AccountingHubPage />} />
+            <Route
+              path="/accounting"
+              element={
+                <Rc1AccountingScreen>
+                  <AccountingHubPage />
+                </Rc1AccountingScreen>
+              }
+            />
 
-            <Route path="/accounting/:featureId" element={<AccountingFeaturePage />} />
+            <Route
+              path="/accounting/:featureId"
+              element={
+                <Rc1AccountingScreen>
+                  <AccountingFeaturePage />
+                </Rc1AccountingScreen>
+              }
+            />
 
             <Route path="/qr" element={<QrEngineLayout />}>
               <Route index element={<Navigate to="/qr/dashboard" replace />} />
@@ -451,6 +563,10 @@ function AppRoutes() {
 
               <Route path="recipes" element={<RecipeManagementPage />} />
 
+              <Route path="hold/:holdId" element={<MasterHoldPlaceholderPage />} />
+
+              <Route path="customCodes" element={<Navigate to="/settings/hold/custom-codes" replace />} />
+
               <Route path="company" element={<Navigate to="/settings/companies" replace />} />
 
               <Route path="customers" element={<Navigate to="/settings/companies" replace />} />
@@ -479,6 +595,10 @@ function AppRoutes() {
 
               <Route path="numbering" element={<EnvironmentSectionPage sectionId="numbering" />} />
 
+              <Route path="process-templates" element={<EnvironmentSectionPage sectionId="processTemplates" />} />
+              <Route path="inspection-templates" element={<EnvironmentSectionPage sectionId="inspectionTemplates" />} />
+              <Route path="certificate-policies" element={<EnvironmentSectionPage sectionId="certificatePolicies" />} />
+
               <Route path="qr-settings" element={<EnvironmentSectionPage sectionId="qrSettings" />} />
 
               <Route path="backup" element={<EnvironmentSectionPage sectionId="backup" />} />
@@ -487,9 +607,15 @@ function AppRoutes() {
 
               <Route path="system" element={<EnvironmentSectionPage sectionId="system" />} />
 
+              <Route path="data" element={<EnvironmentSectionPage sectionId="data" />} />
+
+              <Route path="status" element={<Navigate to="system" replace />} />
+
               <Route path="employees" element={<MasterDataManagement forcedTabId="employees" />} />
 
-              <Route path="customCodes" element={<MasterDataManagement forcedTabId="customCodes" />} />
+              <Route path="customCodes" element={<Navigate to="/settings/hold/custom-codes" replace />} />
+
+              <Route path="defect-codes" element={<Navigate to="/settings/hold/defect-codes" replace />} />
 
               <Route path=":tab" element={<EnvironmentManagement />} />
 
@@ -515,18 +641,17 @@ function AppRoutes() {
 
 
 
+/** file:// (Electron packaged) needs hash routing; http(s) keeps browser history. */
+const isFileProtocol =
+  typeof window !== "undefined" && window.location.protocol === "file:";
+const AppHistoryRouter = isFileProtocol ? HashRouter : BrowserRouter;
+
 function AppRouter() {
-
   return (
-
-    <BrowserRouter>
-
+    <AppHistoryRouter>
       <AppRoutes />
-
-    </BrowserRouter>
-
+    </AppHistoryRouter>
   );
-
 }
 
 

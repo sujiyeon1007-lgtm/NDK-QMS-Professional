@@ -9,6 +9,13 @@ a.titan-hub-card {
   max-width: 980px;
 }
 
+.master-data-hub__cards .titan-hub-card--hold {
+  cursor: not-allowed;
+  opacity: 0.72;
+  pointer-events: none;
+  filter: grayscale(0.15);
+}
+
 @media (max-width: 960px) {
   .master-data-hub__cards {
     grid-template-columns: repeat(2, minmax(240px, 1fr));

@@ -45,6 +45,60 @@ export function buildV13ProductListColumns({ renderCurrentProcess, renderActions
   return columns;
 }
 
+/** LOT · 작업일보 통합 리스트 컬럼 */
+export function buildLotWorkLogListColumns({ renderCurrentProcess, renderActions } = {}) {
+  const columns = [
+    titanColumn("lotNo", { key: "lotNo", label: "LOT.NO" }),
+    titanColumn("equipment", { key: "equipmentLabel", label: "설비" }),
+    titanColumn("partName", { key: "partName", label: "품명" }),
+    titanColumn("partNo", { key: "partNo", label: "품번" }),
+    titanColumn("currentProcess", {
+      key: "currentProcess",
+      label: "공정",
+      render: renderCurrentProcess,
+    }),
+    titanColumn("workQty", { key: "workQtyLabel", label: "수량" }),
+    titanColumn("worker", { key: "workerLabel", label: "작업자" }),
+    titanColumn("workStartAt", { key: "workStartAtLabel", label: "시작" }),
+    titanColumn("workEndAt", { key: "workEndAtLabel", label: "종료" }),
+    titanColumn("status", { key: "statusLabel", label: "상태" }),
+  ];
+  if (renderActions) {
+    columns.push(titanColumn("tableActions", { key: "actions", render: renderActions }));
+  }
+  return columns;
+}
+
+/** 생산일보 — RC1 list column order (LOT · 업체 · 품명 · 품번 · 재질 · 장입수량 · 열처리공정 · 현재상태) */
+export function buildProductionDailyReportListColumns({
+  renderHeatTreatmentProcess,
+  renderWorkflowStatus,
+  renderActions,
+} = {}) {
+  const columns = [
+    titanColumn("lotNo", { key: "lotNo", label: "LOT번호" }),
+    titanColumn("company", { key: "company", label: "업체명" }),
+    titanColumn("partName", { key: "partName", label: "품명" }),
+    titanColumn("partNo", { key: "partNo", label: "품번" }),
+    titanColumn("material", { key: "material", label: "재질" }),
+    titanColumn("workQty", { key: "chargeQtyLabel", label: "장입수량" }),
+    titanColumn("currentProcess", {
+      key: "heatTreatmentProcess",
+      label: "열처리공정",
+      render: renderHeatTreatmentProcess,
+    }),
+    titanColumn("status", {
+      key: "currentProcess",
+      label: "현재상태",
+      render: renderWorkflowStatus,
+    }),
+  ];
+  if (renderActions) {
+    columns.push(titanColumn("tableActions", { key: "actions", render: renderActions }));
+  }
+  return columns;
+}
+
 /** @deprecated use buildV13ProductListColumns — V1.3 alias */
 export function buildStandardProductListColumns({ renderStatus, renderProcess, renderActions }) {
   return buildV13ProductListColumns({
@@ -101,6 +155,21 @@ export function buildInspectionLogListColumns({ renderProcess, renderActions }) 
 /** 성적서관리 — V1.3 공통 컬럼 */
 export function buildCertificateListColumns({ renderProcess, renderActions }) {
   return buildV13ProductListColumns({ renderCurrentProcess: renderProcess, renderActions });
+}
+
+/** 성적서현황 — 발행 이력 리스트 */
+export function buildCertificateHistoryListColumns({ renderPdf, renderActions } = {}) {
+  return [
+    titanColumn("incomingDate", { key: "issuedDate", label: "발행일" }),
+    titanColumn("company"),
+    titanColumn("lotNo"),
+    titanColumn("managementId"),
+    titanColumn("manager", { key: "issuedBy", label: "발행자" }),
+    titanColumn("qty", { key: "issueCount", label: "발행횟수", widthPercent: 8 }),
+    titanColumn("status", { key: "reissueLabel", label: "재발행", widthPercent: 7 }),
+    titanColumn("pdfFile", { key: "pdfDownload", label: "PDF", render: renderPdf }),
+    titanColumn("tableActions", { key: "actions", label: "작업", render: renderActions }),
+  ];
 }
 
 /** 문서관리 — V1.3 업체 중심 메인 리스트 */
@@ -201,8 +270,8 @@ export function buildInventoryStatusListColumns({ renderStatus }) {
 }
 
 /** 재고관리 — LOT별 (관리번호) */
-export function buildInventoryByLotListColumns({ renderStatus }) {
-  return [
+export function buildInventoryByLotListColumns({ renderStatus, renderProcess }) {
+  const columns = [
     titanColumn("incomingDate", { key: "incomingDateLabel", label: "입고일" }),
     titanColumn("managementId"),
     titanColumn("lotNo"),
@@ -210,11 +279,19 @@ export function buildInventoryByLotListColumns({ renderStatus }) {
     titanColumn("partName"),
     titanColumn("partNo"),
     titanColumn("material"),
-    titanColumn("currentStock", { key: "currentStockLabel" }),
-    titanColumn("inboundQty", { key: "inboundQtyLabel" }),
-    titanColumn("shippedQty", { key: "shippedQtyLabel" }),
-    titanColumn("status", { key: "statusLabel", render: renderStatus }),
+    titanColumn("currentStock", { key: "currentStockLabel", label: "수량" }),
   ];
+  if (renderProcess) {
+    columns.push(
+      titanColumn("currentProcess", {
+        key: "currentProcess",
+        label: "현재공정",
+        render: renderProcess,
+      })
+    );
+  }
+  columns.push(titanColumn("status", { key: "statusLabel", label: "현재상태", render: renderStatus }));
+  return columns;
 }
 
 /** 재고관리 — 거래처별 */
@@ -249,6 +326,22 @@ export function buildDefectHistoryListColumns({ renderProcess, renderHandlingSta
     titanColumn("defectQty"),
     titanColumn("occurredDate"),
     titanColumn("handlingStatus", { render: renderHandlingStatus }),
+  ];
+}
+
+/** 검사현황 — 완료 이력 조회 (작업 컬럼 없음) */
+export function buildInspectionStatusListColumns({ renderProcess, renderResult, renderAttachments }) {
+  return [
+    titanColumn("incomingDate", { key: "registeredDate", label: "검사등록일" }),
+    titanColumn("managementId"),
+    titanColumn("lotNo"),
+    titanColumn("company"),
+    titanColumn("partName"),
+    titanColumn("partNo"),
+    titanColumn("material"),
+    titanColumn("process", { key: "processName", render: renderProcess }),
+    titanColumn("status", { key: "inspectionResult", label: "검사결과", render: renderResult }),
+    titanColumn("attachments", { key: "attachments", label: "첨부파일", render: renderAttachments }),
   ];
 }
 

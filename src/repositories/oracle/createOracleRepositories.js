@@ -4,6 +4,7 @@ import {
 } from "../../services/mesOracleBridge";
 import { getInspectionLogs } from "../../utils/inspectionLogSession";
 import { getCertificateFileEntries } from "../../utils/certificateSession";
+import { DATA_RESET_SCOPES } from "../../config/titanDataResetPolicy";
 
 function resolveMesManagementNo(record) {
   return record?.mesManagementNo?.trim() || record?.id?.trim() || "";
@@ -153,6 +154,23 @@ export function createOracleCertificateRepository() {
   };
 }
 
+/** @returns {import("../repositoryTypes").DataResetRepository} */
+function createOracleDataResetRepository() {
+  return {
+    getSummary() {
+      return { master: {}, operations: { productionRecords: 0, inspections: 0, certificates: 0 } };
+    },
+    loadDemo() {
+      throw new Error("Demo load is not supported for Oracle backend in RC1");
+    },
+    reset(scope) {
+      void scope;
+      void DATA_RESET_SCOPES;
+      throw new Error("Data reset is not supported for Oracle backend in RC1");
+    },
+  };
+}
+
 /** @returns {import("../repositoryTypes").TitanRepositories} */
 export function createOracleRepositories() {
   return {
@@ -161,6 +179,7 @@ export function createOracleRepositories() {
     incoming: createOracleIncomingRepository(),
     inspections: createOracleInspectionRepository(),
     certificates: createOracleCertificateRepository(),
+    dataReset: createOracleDataResetRepository(),
   };
 }
 

@@ -19,6 +19,7 @@ import TitanListInteractionHint from "../../foundation/components/TitanListInter
 import MasterEntityDetailModal from "./MasterEntityDetailModal";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
+import { resolveMasterDetailPage } from "../../config/detailPopupPolicy";
 
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
@@ -116,6 +117,22 @@ export default function MasterEntityManagementPage({ tabId }) {
     setSelectedRowId(row.id);
     setDetailRow(row);
     setDetailOpen(true);
+  };
+
+  const handleDetailEdit = () => {
+    if (!detailRow) return;
+    openRegister("edit", detailRow);
+  };
+
+  const handleDetailDelete = () => {
+    if (!detailRow) return;
+    setDeleteTarget(detailRow);
+  };
+
+  const handleDetailNavigate = (row) => {
+    setSelectedRowId(row.id);
+    setDetailRow(row);
+    setPage(resolveMasterDetailPage(filteredRows, row.id, pageSize));
   };
 
   const openRegister = (mode, row = null) => {
@@ -234,8 +251,13 @@ export default function MasterEntityManagementPage({ tabId }) {
         open={detailOpen}
         row={detailRow}
         onClose={() => setDetailOpen(false)}
+        onEdit={handleDetailEdit}
+        onDelete={handleDetailDelete}
+        onNavigate={handleDetailNavigate}
         screen={screen}
         pageTitle={pageTitle.replace("관리", "")}
+        categoryLabel={launcherItem?.badge ?? pageTitle.replace("관리", "")}
+        navigationRows={filteredRows}
       />
 
       <MasterDataRegisterModal
@@ -251,6 +273,8 @@ export default function MasterEntityManagementPage({ tabId }) {
         <MasterDataDeleteDialog
           row={deleteTarget}
           categoryLabel={pageTitle}
+          confirmMessage={tabId === "workers" ? "미사용 처리하시겠습니까?" : "정말 삭제하시겠습니까?"}
+          softDelete={tabId === "workers"}
           onConfirm={handleDelete}
           onClose={() => setDeleteTarget(null)}
         />

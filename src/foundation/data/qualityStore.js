@@ -10,10 +10,10 @@ import {
 import { TITAN_DATA_STORAGE_KEYS } from "./titanDataStorageKeys";
 import { createJsonObjectStore } from "./storeFactory";
 
-function buildSeedQualityBundle() {
+export function buildSeedQualityBundle(records) {
   return {
-    inspections: getTitanDemoInspectionLogSeeds().map((row) => ({ ...row })),
-    certificates: getTitanDemoCertificateSeeds().map((row) => ({ ...row })),
+    inspections: getTitanDemoInspectionLogSeeds(records).map((row) => ({ ...row })),
+    certificates: getTitanDemoCertificateSeeds(records).map((row) => ({ ...row })),
     defects: [],
     documents: [],
   };
@@ -21,7 +21,6 @@ function buildSeedQualityBundle() {
 
 const objectStore = createJsonObjectStore({
   storageKey: TITAN_DATA_STORAGE_KEYS.quality,
-  getSeed: buildSeedQualityBundle,
 });
 
 function readBundle() {
@@ -48,10 +47,6 @@ export const qualityStore = {
 
   read() {
     return readBundle();
-  },
-
-  seedIfEmpty() {
-    return objectStore.seedIfEmpty();
   },
 
   clear() {

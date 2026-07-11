@@ -24,7 +24,7 @@ import {
   getProductionProcessCodes,
   getProductionProcessName,
 } from "../../config/productionProcessCodes";
-import { buildV13ProductListColumns } from "../../config/standardProductList";
+import { buildProductionDailyReportListColumns } from "../../config/standardProductList";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
@@ -41,7 +41,7 @@ import {
   getProductionDailyReportStatus,
   matchesProductionChipSearch,
 } from "../../utils/productionDailyReportStatus";
-import { getProcessFlowSteps, mapV13ProductListRow } from "../../utils/processFlow";
+import { getProcessFlowSteps, mapV13ProductListRow, formatWorkQtyLabel } from "../../utils/processFlow";
 import { validateLotNoForDailyReportRegister } from "../../utils/lotFormatValidation";
 import { onDailyReportSaved } from "../../utils/titanWorkflowStatus";
 import {
@@ -90,14 +90,30 @@ import {
   isProductionComplete,
 } from "../../utils/productionComplete";
 import { resolveEquipmentContext } from "../../utils/equipmentQr";
+import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
 import { SMART_WORK_DAILY_QUERY } from "../../config/titanV11Workflow";
 import "../InOut/InboundManagement.css";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
-import { OperationsWorkflowNextDialog } from "../InOut/OutboundStatementPromptDialog";
-import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
+import TitanWorkflowNextStepDialog from "../../foundation/components/TitanWorkflowNextStepDialog";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
+import { getWorkflowCompletionDialog } from "../../config/workflowNavigation";
 import "../../foundation/components/OperationsWorkflowNextDialog.css";
 import "./ProductionManagement.css";
+
+function readProductionDailyReportBaseRecords() {
+  try {
+    return getProductionDailyReportScreenData()?.baseRecords ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function compareProductionDailyReportRows(a, b) {
+  return String(b?.managementId ?? "").localeCompare(String(a?.managementId ?? ""), undefined, {
+    numeric: true,
+  });
+}
 
 function matchesProductionDailyReportSearch(record, row, search) {
   if (!matchesBasicSearch(search, record)) return false;
@@ -139,7 +155,20 @@ function matchesProductionDailyReportSearch(record, row, search) {
 }
 
 function mapRecordToRow(record) {
-  return mapV13ProductListRow(record, getProductionDailyReportStatus(record), { screenKey: "production" });
+  const row = mapV13ProductListRow(record, getProductionDailyReportStatus(record), {
+    screenKey: "production",
+  });
+  const workLog = record.productionWorkLog ?? {};
+  const chargeQty = record.chargeQty ?? record.workQty ?? record.completedQty ?? record.qty;
+  return {
+    ...row,
+    chargeQtyLabel: formatWorkQtyLabel(record, { workQty: chargeQty }),
+    equipmentLabel: String(record.equipment ?? record.equipmentId ?? "").trim() || "—",
+    workerLabel:
+      String(record.registrar ?? record.worker ?? workLog.worker ?? "").trim() || "—",
+    workStartAtLabel: String(workLog.startAt ?? record.chargeStartAt ?? "").trim() || "—",
+    workEndAtLabel: String(workLog.endAt ?? record.chargeEndAt ?? "").trim() || "—",
+  };
 }
 
 function buildManualLotEquipmentLabel(equipment) {
@@ -166,7 +195,6 @@ function resolveManualLotStatusVariant(status) {
 function resolveManualLotEquipmentStatusLabel(status) {
   if (status === "running") return "작업중";
   if (status === "maintenance") return "점검중";
-  if (status === "ready") return "장입 준비";
   return "대기";
 }
 
@@ -520,6 +548,8 @@ export default function DailyProductionReport() {
 
   const smartModeActive = Boolean(smartEquipmentContext);
 
+  useEffect(() => subscribeWorkflowDataRefresh(() => setRefreshKey((key) => key + 1)), []);
+
   useEffect(() => {
     if (!smartEquipmentContext) return;
     onDraftChange({
@@ -548,7 +578,7 @@ export default function DailyProductionReport() {
   const pendingPrintOptionsRef = useRef(null);
   const chipRecords = useMemo(() => {
     void refreshKey;
-    return getProductionDailyReportScreenData().baseRecords;
+    return readProductionDailyReportBaseRecords();
   }, [refreshKey]);
   const { activeChipId, handleChipClick } = useWorkflowChipFilter({
     draft,
@@ -561,7 +591,7 @@ export default function DailyProductionReport() {
   const processCodes = useMemo(() => getProductionProcessCodes(), []);
   const searchRecords = useMemo(() => {
     void refreshKey;
-    return getProductionDailyReportScreenData().baseRecords;
+    return readProductionDailyReportBaseRecords();
   }, [refreshKey]);
   const { getSuggestions } = useSearchSuggestionHelpers(searchRecords, {
     process: processCodes.map((item) => item.name),
@@ -569,18 +599,16 @@ export default function DailyProductionReport() {
   });
 
   const rows = useMemo(() => {
-    const records = getProductionDailyReportScreenData().baseRecords;
+    const records = readProductionDailyReportBaseRecords();
     return records
       .map(mapRecordToRow)
       .filter((row) => matchesProductionDailyReportSearch(row.record, row, search))
-      .sort((a, b) => b.managementId.localeCompare(a.managementId));
+      .sort(compareProductionDailyReportRows);
   }, [search, refreshKey]);
 
   const allListRows = useMemo(() => {
-    const records = getProductionDailyReportScreenData().baseRecords;
-    return records
-      .map(mapRecordToRow)
-      .sort((a, b) => b.managementId.localeCompare(a.managementId));
+    const records = readProductionDailyReportBaseRecords();
+    return records.map(mapRecordToRow).sort(compareProductionDailyReportRows);
   }, [refreshKey]);
 
   const {
@@ -776,8 +804,9 @@ export default function DailyProductionReport() {
 
   const columns = useMemo(
     () =>
-      buildV13ProductListColumns({
-        renderCurrentProcess: renderProcessChip,
+      buildProductionDailyReportListColumns({
+        renderHeatTreatmentProcess: (row) => row.heatTreatmentProcess ?? row.processName ?? "—",
+        renderWorkflowStatus: renderProcessChip,
         renderActions: (row) => {
           const record = row.record ?? row;
           const lotNo = record.lotNo?.trim() ?? "";
@@ -977,6 +1006,10 @@ export default function DailyProductionReport() {
     if (lastId) setActiveId(lastId);
     setRefreshKey((k) => k + 1);
     setPage(1);
+
+    if (!isEdit) {
+      setWorkflowNextStep(getWorkflowCompletionDialog("dailyWorkSaveComplete"));
+    }
   };
 
   const openRegisterModal = (managementId = "") => {
@@ -1038,7 +1071,7 @@ export default function DailyProductionReport() {
     }
 
     setRefreshKey((k) => k + 1);
-    setWorkflowNextStep(getOperationsWorkflowNextStep("shotComplete"));
+    setWorkflowNextStep(getWorkflowCompletionDialog("productionComplete"));
   };
 
   const handleRowCancelComplete = (row) => {
@@ -1072,10 +1105,6 @@ export default function DailyProductionReport() {
   return (
     <div className="inbound-page production-page">
       <SectionPageActions>
-        <PrimaryButton type="button" onClick={() => openRegisterModal()}>
-          <Plus size={14} aria-hidden="true" />
-          {PRODUCTION_DAILY_REGISTER_LABEL}
-        </PrimaryButton>
         <SecondaryButton type="button" onClick={() => openDailyPrintPreview()}>
           <Printer size={14} aria-hidden="true" />
           {PRODUCTION_DAILY_PRINT_LABEL}
@@ -1095,6 +1124,8 @@ export default function DailyProductionReport() {
           </SecondaryButton>
         ) : null}
       </SectionPageActions>
+
+      <TitanWorkflowNavigation stepId="dailyWork" />
 
       <TitanKpiBarSlot ariaLabel="열처리 현황" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
@@ -1149,7 +1180,7 @@ export default function DailyProductionReport() {
             activeRowId={activeRow?.id}
             onRowClick={(row) => setActiveId(row.id)}
             onRowDoubleClick={handleRowDoubleClick}
-            emptyMessage="표시할 열처리일보가 없습니다."
+            emptyMessage="표시할 LOT · 작업일보가 없습니다."
           />
 
           <TitanTableFooter
@@ -1236,7 +1267,7 @@ export default function DailyProductionReport() {
         }}
       />
 
-      <OperationsWorkflowNextDialog
+      <TitanWorkflowNextStepDialog
         open={Boolean(workflowNextStep)}
         step={workflowNextStep}
         onNavigate={(path) => {

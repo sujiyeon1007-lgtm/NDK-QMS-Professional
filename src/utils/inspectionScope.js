@@ -2,7 +2,117 @@
  * Project TITAN V1.0 — 검사 항목 사용 범위 (Optional Inspection Scope)
  */
 
-import { cloneSpecification, normalizeSpecification } from "./productSpecificationModel";
+import { cloneSpecification, normalizeSpecification, INSPECTION_HARDNESS_EXCLUDED_KEYS } from "./productSpecificationModel";
+import { evaluateMeasurement } from "./specJudgment";
+import { resolveCriterionItemUnit } from "./inspectionCriteriaModel";
+import {
+  formatDepthMm,
+  getCaseDepthBasisShortLabel,
+  getEffectiveDepthBasisShortLabel,
+} from "./heatTreatmentCalculationEngine";
+
+/** 검사등록 메인 결과 테이블 행 순서 (항목당 1행) */
+const MAIN_RESULT_ROW_ORDER = [
+  { kind: "hardness", key: "surface" },
+  { kind: "effectiveDepth" },
+  { kind: "caseDepth" },
+  { kind: "hardness", key: "compoundLayer" },
+  { kind: "appearance" },
+  { kind: "dimension" },
+  { kind: "microstructure" },
+];
+
+function findManualHardnessRow(report, key) {
+  return (report.hardnessRows || []).find(
+    (row) => row.key === key && !row.autoCalculated
+  );
+}
+
+function buildHardnessSummaryRow(report, key, spec) {
+  const row = findManualHardnessRow(report, key);
+  if (!row) return null;
+
+  const measured = row.measuredRaw ?? row.measured ?? "";
+  const unit = row.unit || resolveCriterionItemUnit(key, row, spec?.hardness?.unit || "HV");
+  const result = measured
+    ? `${measured}${unit === "HV" ? "HV" : ` ${unit}`}`.replace(/\s+/g, " ").trim()
+    : "";
+
+  return {
+    key: row.key,
+    item: row.item,
+    spec: row.spec || "—",
+    basis: "—",
+    result,
+    resultRaw: measured,
+    judgment: row.judgment || evaluateMeasurement(row.spec, measured),
+    inputType: "hardness",
+    hardnessKey: row.key,
+  };
+}
+
+function buildEffectiveDepthSummaryRow(report, scope, spec, heatCalcs) {
+  const effectiveItem = spec?.hardness?.items?.find((item) => item.key === "effectiveDepth");
+  const hasEffectiveSpec =
+    effectiveItem &&
+    !effectiveItem.disabled &&
+    effectiveItem.spec &&
+    effectiveItem.spec !== "없음";
+
+  if (!hasEffectiveSpec || (!scope.hardeningDepth && !scope.hardness)) return null;
+
+  const depthValue = heatCalcs?.effectiveDepth?.final ?? report.effectiveDepthMm;
+  const basis = spec?.heatTreatment
+    ? getEffectiveDepthBasisShortLabel(spec.heatTreatment)
+    : "—";
+  const measured = depthValue != null ? formatDepthMm(depthValue) : "";
+  const result = measured ? `${measured}mm` : "";
+
+  return {
+    key: "effectiveDepth",
+    item: "유효경화깊이",
+    spec: effectiveItem.spec,
+    basis,
+    result,
+    resultRaw: measured,
+    judgment: measured ? evaluateMeasurement(effectiveItem.spec, measured) : "—",
+    inputType: "readonly",
+  };
+}
+
+function buildCaseDepthSummaryRow(report, scope, spec, heatCalcs) {
+  if (!scope.hardeningDepth && !scope.hardness) return null;
+
+  const depthValue = heatCalcs?.caseDepth?.final ?? report.hardeningDepth390;
+  if (depthValue == null && !scope.hardeningDepth) return null;
+
+  const caseThreshold = heatCalcs?.meta?.caseDepthThresholdHv;
+  const basis = getCaseDepthBasisShortLabel(caseThreshold);
+  const measured = depthValue != null ? formatDepthMm(depthValue) : "";
+  const result = measured ? `${measured}mm` : "";
+  const caseItem = spec?.hardness?.items?.find((item) => item.key === "caseDepth");
+  const caseSpec =
+    caseItem?.spec && caseItem.spec !== "없음" && !caseItem.disabled ? caseItem.spec : "—";
+
+  let judgment = "—";
+  if (measured) {
+    judgment =
+      caseSpec !== "—"
+        ? evaluateMeasurement(caseSpec, measured)
+        : "합격";
+  }
+
+  return {
+    key: "caseDepth",
+    item: "경화깊이",
+    spec: caseSpec,
+    basis,
+    result,
+    resultRaw: measured,
+    judgment,
+    inputType: "readonly",
+  };
+}
 
 export function getInspectionScope(spec) {
   const normalized = spec ? normalizeSpecification(spec) : null;
@@ -14,6 +124,117 @@ export function getInspectionScope(spec) {
     microstructure: Boolean(normalized?.microstructure?.enabled),
     other: Boolean(normalized?.other?.enabled),
   };
+}
+
+/**
+ * 검사등록 — 메인 결과 테이블 (항목당 1행 · 최종 판정만)
+ * @returns {Array<{ key, item, spec, basis, result, resultRaw, judgment, inputType, hardnessKey? }>}
+ */
+export function buildMainInspectionResultRows(report, scope) {
+  const spec = report.appliedSpecification;
+  const heatCalcs = report.heatTreatmentCalculations;
+  const rows = [];
+  const usedKeys = new Set();
+
+  MAIN_RESULT_ROW_ORDER.forEach((entry) => {
+    if (entry.kind === "hardness") {
+      if (!scope.hardness) return;
+      const row = buildHardnessSummaryRow(report, entry.key, spec);
+      if (row) {
+        rows.push(row);
+        usedKeys.add(entry.key);
+      }
+      return;
+    }
+
+    if (entry.kind === "effectiveDepth") {
+      const row = buildEffectiveDepthSummaryRow(report, scope, spec, heatCalcs);
+      if (row) rows.push(row);
+      return;
+    }
+
+    if (entry.kind === "caseDepth") {
+      const row = buildCaseDepthSummaryRow(report, scope, spec, heatCalcs);
+      if (row) rows.push(row);
+      return;
+    }
+
+    if (entry.kind === "appearance" && scope.appearance) {
+      const appSummary = report.appearanceSummary || "—";
+      const hasDefect = (report.appearanceRows || []).some((row) => row.result === "불량");
+      rows.push({
+        key: "appearance",
+        item: "외관",
+        spec: "이상 없음",
+        basis: "—",
+        result: hasDefect ? "불량" : appSummary === "—" ? "—" : "양호",
+        resultRaw: hasDefect ? "불량" : "양호",
+        judgment: appSummary,
+        inputType: "appearance",
+      });
+      return;
+    }
+
+    if (entry.kind === "dimension" && scope.dimension) {
+      const dimSummary = report.dimensionSummary || "—";
+      rows.push({
+        key: "dimension",
+        item: "치수",
+        spec: "도면 기준",
+        basis: "—",
+        result: dimSummary === "합격" ? "적합" : dimSummary === "불합격" ? "부적합" : "—",
+        resultRaw: "",
+        judgment: dimSummary,
+        inputType: "dimension",
+      });
+      return;
+    }
+
+    if (entry.kind === "microstructure" && scope.microstructure) {
+      const photos = report.microstructurePhotos || [];
+      const hasAttachment = photos.some((photo) => Boolean(photo));
+      rows.push({
+        key: "microstructure",
+        item: "조직",
+        spec: "확인",
+        basis: "—",
+        result: hasAttachment ? "첨부" : report.hasMicrostructurePhoto ? "—" : "미실시",
+        resultRaw: "",
+        judgment: report.hasMicrostructurePhoto ? report.microstructureSummary || "—" : "—",
+        inputType: "microstructure",
+        hasAttachment,
+      });
+    }
+  });
+
+  if (scope.hardness) {
+    const manualRows = (report.hardnessRows || []).filter(
+      (row) =>
+        !row.autoCalculated &&
+        !INSPECTION_HARDNESS_EXCLUDED_KEYS.includes(row.key) &&
+        !usedKeys.has(row.key)
+    );
+    manualRows.forEach((row, index) => {
+      const measured = row.measuredRaw ?? row.measured ?? "";
+      const unit = row.unit || resolveCriterionItemUnit(row.key, row, spec?.hardness?.unit || "HV");
+      const result = measured
+        ? `${measured}${unit === "HV" ? "HV" : ` ${unit}`}`.replace(/\s+/g, " ").trim()
+        : "";
+      rows.push({
+        key: row.key || `hardness-${index}`,
+        item: row.item,
+        spec: row.spec || "—",
+        basis: "—",
+        result,
+        resultRaw: measured,
+        judgment: row.judgment || evaluateMeasurement(row.spec, measured),
+        inputType: "hardness",
+        hardnessKey: row.key,
+      });
+    });
+  }
+
+  return rows;
 }
 
 export function buildScopedResultSummary(report, scope) {
@@ -120,7 +341,8 @@ export function rebuildRowsFromSpecification(spec) {
     core: "hardnessUnit",
   };
 
-  const resolveUnit = (key, unit) => {
+  const resolveUnit = (key, unit, item) => {
+    if (key === "compoundLayer" && item?.unit) return item.unit;
     const mapped = HARDNESS_UNIT_BY_KEY[key];
     if (mapped === "hardnessUnit") return unit;
     return mapped || unit;
@@ -142,14 +364,20 @@ export function rebuildRowsFromSpecification(spec) {
 
   const hardnessRows = scope.hardness
     ? normalized.hardness.items
-        .filter((item) => !item.disabled && item.spec && item.spec !== "없음")
+        .filter(
+          (item) =>
+            !item.disabled &&
+            item.spec &&
+            item.spec !== "없음" &&
+            !INSPECTION_HARDNESS_EXCLUDED_KEYS.includes(item.key)
+        )
         .map((item) => ({
           key: item.key,
           item: item.label,
           spec: item.spec,
           measured: "",
           measuredRaw: "",
-          unit: resolveUnit(item.key, hardnessUnit),
+          unit: resolveUnit(item.key, hardnessUnit, item),
           judgment: "—",
           note: "",
         }))
@@ -178,7 +406,7 @@ export function rebuildRowsFromSpecification(spec) {
         specifications.push({
           item: item.label,
           spec: item.spec,
-          unit: resolveUnit(item.key, hardnessUnit),
+          unit: resolveUnit(item.key, hardnessUnit, item),
           note: "—",
         });
       });

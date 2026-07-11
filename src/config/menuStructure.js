@@ -189,9 +189,12 @@ export const MENU_SECTIONS = {
     id: "certificateManagement",
     label: "성적서관리",
     pathPrefix: "/quality/certificate",
-    defaultTab: "certificate",
+    defaultTab: "register",
     deprecated: true,
-    tabs: [{ id: "certificate", label: "성적서관리", path: "/quality/certificate" }],
+    tabs: [
+      { id: "register", label: "성적서등록", path: "/quality/certificate/register" },
+      { id: "status", label: "성적서현황", path: "/quality/certificate/status" },
+    ],
   },
 };
 
@@ -253,10 +256,14 @@ export function matchSidebarActive(item, pathname) {
 }
 
 export function getActiveTab(section, pathname) {
-  const matched = section.tabs.find(
-    (tab) => pathname === tab.path || pathname.startsWith(`${tab.path}/`)
+  const matchedTabs = section.tabs
+    .filter((tab) => pathname === tab.path || pathname.startsWith(`${tab.path}/`))
+    .sort((a, b) => b.path.length - a.path.length);
+  return (
+    matchedTabs[0] ??
+    section.tabs.find((tab) => tab.id === section.defaultTab) ??
+    section.tabs[0]
   );
-  return matched ?? section.tabs.find((tab) => tab.id === section.defaultTab) ?? section.tabs[0];
 }
 
 /** 구 라우트 → QMS 라우트 (호환 리다이렉트) */
@@ -317,16 +324,16 @@ export const LEGACY_ROUTE_REDIRECTS = {
   "/settings/customCodes": "/environment/customCodes",
   "/documents": "/documents",
   "/document": "/documents",
-  "/documents/drawings": "/documents",
+  "/documents/drawings": "/documents/registry",
   "/documents/inspection": "/documents/inspection",
-  "/documents/work-standard": "/documents",
-  "/documents/control-plan": "/documents",
-  "/documents/fmea": "/documents",
-  "/documents/customer-requirements": "/documents",
-  "/documents/concession": "/documents",
-  "/documents/ncr": "/documents",
-  "/documents/quality-notice": "/documents",
-  "/documents/other": "/documents",
+  "/documents/work-standard": "/documents/registry",
+  "/documents/control-plan": "/documents/registry",
+  "/documents/fmea": "/documents/registry",
+  "/documents/customer-requirements": "/documents/registry",
+  "/documents/concession": "/documents/registry",
+  "/documents/ncr": "/documents/registry",
+  "/documents/quality-notice": "/documents/registry",
+  "/documents/other": "/documents/registry",
   "/environment/path": "/environment/program",
   "/environment/user": "/environment/users",
   "/environment/system": "/environment/status",
@@ -342,10 +349,12 @@ export const WORKSPACE_NAVIGATION = {
     homePath: "/inout",
     items: [
       { to: "/inout", label: "홈" },
-      { to: OPERATION_ROUTES.inboundPending, label: "입고 대기" },
-      { to: OPERATION_ROUTES.inboundHistory, label: "입고 이력" },
-      { to: OPERATION_ROUTES.shipmentRegister, label: "출고 등록" },
-      { to: OPERATION_ROUTES.shipmentHistory, label: "출고 이력" },
+      { to: OPERATION_ROUTES.inboundPending, label: "입고관리" },
+      { to: OPERATION_ROUTES.inboundHistory, label: "입고이력" },
+      { to: OPERATION_ROUTES.shipmentRegister, label: "출고관리" },
+      { to: OPERATION_ROUTES.shipmentHistory, label: "출고이력" },
+      { to: "/inventory", label: "재고관리" },
+      { to: "/inout/print", label: "출력관리" },
     ],
   },
   production: {
@@ -353,10 +362,12 @@ export const WORKSPACE_NAVIGATION = {
     homePath: "/production",
     items: [
       { to: "/production", label: "홈" },
-      { to: OPERATION_ROUTES.productionPending, label: "생산 대기" },
-      { to: OPERATION_ROUTES.equipmentStatus, label: "설비 가동 현황" },
+      { to: OPERATION_ROUTES.productionPending, label: "생산대기" },
+      { to: OPERATION_ROUTES.equipmentStatus, label: "설비가동현황" },
+      { to: OPERATION_ROUTES.cleaningProcess, label: "세척공정" },
       { to: OPERATION_ROUTES.dailyWork, label: "작업일보" },
       { to: OPERATION_ROUTES.shotStatus, label: "쇼트 작업현황" },
+      { to: "/production/results", label: "생산이력" },
     ],
   },
   quality: {
@@ -364,13 +375,12 @@ export const WORKSPACE_NAVIGATION = {
     homePath: "/quality",
     items: [
       { to: "/quality", label: "홈" },
-      { to: "/quality/inspection/mass", label: "검사관리" },
-      { to: "/quality/certificate", label: "성적서" },
-      { to: "/quality/defect-history", label: "부적합" },
-      { to: "/quality/knowledge", label: "Knowledge Record" },
-      { to: "/quality/lot-lifecycle", label: "LOT Lifecycle" },
-      { to: "/documents", label: "문서관리" },
-      { to: "/quality/work-journal", label: "품질 업무일지" },
+      { to: "/quality/inspection/register", label: "검사등록" },
+      { to: "/quality/inspection/status", label: "검사현황" },
+      { to: "/quality/certificate/register", label: "성적서등록" },
+      { to: "/quality/certificate/status", label: "성적서현황" },
+      { to: "/quality/defect-history", label: "부적합관리" },
+      { to: "/history", label: "품질이력조회" },
     ],
   },
   master: {

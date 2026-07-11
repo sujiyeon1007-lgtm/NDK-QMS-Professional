@@ -3,6 +3,7 @@
  */
 
 import companyStore from "../foundation/data/master/companyStore";
+import { DEFAULT_COMPANY_STAMP_URL } from "../config/rc1OperationalPolicy";
 import { getEnvironmentSettings } from "./environmentSettingsSession";
 
 function nowIso() {
@@ -120,7 +121,8 @@ export function getCompanyBrandingLogoUrl(profile = getCompanyProfile()) {
 
 /** RC1 — Company Branding SSOT: 직인 PNG (모든 문서 공통) */
 export function getCompanyBrandingStampUrl(profile = getCompanyProfile()) {
-  return String(profile?.branding?.stamp ?? "").trim();
+  const uploaded = String(profile?.branding?.stamp ?? "").trim();
+  return uploaded || DEFAULT_COMPANY_STAMP_URL;
 }
 
 /** RC1 — Company Branding SSOT: 대표이사 서명 PNG (모든 문서 공통) */

@@ -1,40 +1,62 @@
 /**
- * Project TITAN V1.0 — Sidebar
+ * Project TITAN V1.0 — Sidebar (left frame menus)
  */
 
+.titan-sidebar-brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--titan-sidebar-brand-h, 56px);
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
+  flex-shrink: 0;
+}
+
+.titan-sidebar-brand__logo {
+  height: 26px;
+  width: auto;
+  max-width: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.titan-sidebar-brand__logo--fallback {
+  height: 24px;
+}
+
+.titan-sidebar-brand__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.titan-sidebar-brand__text strong {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.titan-sidebar-brand__edition {
+  font-size: 9px;
+  font-weight: 800;
+  color: #93c5fd;
+  white-space: nowrap;
+}
+
 .titan-sidebar {
-  width: var(--titan-sidebar-width);
-  flex: 0 0 var(--titan-sidebar-width);
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: var(--titan-sidebar-bg);
   color: var(--titan-text-inverse);
   overflow: hidden;
-}
-
-.titan-sidebar__brand {
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.titan-sidebar__brand strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.titan-sidebar__brand span {
-  display: block;
-  margin-top: 1px;
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.titan-sidebar__edition {
-  margin-top: 4px;
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  color: #93c5fd !important;
 }
 
 .titan-sidebar__nav {
@@ -81,14 +103,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 12px;
   margin-top: 1px;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.88);
   text-decoration: none;
   font-size: var(--titan-font-menu);
   font-weight: var(--titan-weight-medium);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .titan-sidebar__link:hover {

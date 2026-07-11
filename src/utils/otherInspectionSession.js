@@ -4,20 +4,25 @@
 
 import { getCurrentTitanUser } from "./titanHistorySession";
 import { getJournalReferenceDate } from "./workJournalData";
-import { OTHER_INSPECTION_CATEGORIES, OTHER_INSPECTION_STATUS } from "../config/inspectionManagement";
+import { OTHER_INSPECTION_KIND_OPTIONS, OTHER_INSPECTION_STATUS, getOtherInspectionKindLabel, normalizeOtherInspectionKind } from "../config/inspectionManagement";
 
 const STORAGE_KEY = "project-titan-other-inspection-v1";
 
-const CATEGORY_VALUES = OTHER_INSPECTION_CATEGORIES.map((item) => item.value);
+const CATEGORY_VALUES = OTHER_INSPECTION_KIND_OPTIONS.map((item) => item.value);
 
 function createOtherId() {
   return `OTH-${Date.now()}`;
 }
 
 function normalizeRecord(record) {
+  const otherInspectionKind = normalizeOtherInspectionKind(
+    record.otherInspectionKind ?? record.category,
+    "internal"
+  );
   return {
     id: record.id || createOtherId(),
-    category: CATEGORY_VALUES.includes(record.category) ? record.category : "기타",
+    category: otherInspectionKind,
+    otherInspectionKind,
     company: record.company?.trim() || "",
     partName: record.partName?.trim() || "",
     content: record.content?.trim() || "",
@@ -37,7 +42,8 @@ function getSeedRecords() {
   return [
     normalizeRecord({
       id: "OTH-SEED-001",
-      category: "게이지",
+      category: "equipment_verification",
+      otherInspectionKind: "equipment_verification",
       company: "NDK",
       partName: "경도시험기 Mitutoyo",
       content: "게이지 R&R 정기 점검",
@@ -108,7 +114,8 @@ export function softDeleteOtherInspection(id) {
 
 export function createEmptyOtherInspectionRegister() {
   return {
-    category: "기타",
+    category: OTHER_INSPECTION_KIND_OPTIONS[0]?.value ?? "customer_request",
+    otherInspectionKind: OTHER_INSPECTION_KIND_OPTIONS[0]?.value ?? "customer_request",
     company: "",
     partName: "",
     content: "",
@@ -121,10 +128,11 @@ export function createEmptyOtherInspectionRegister() {
 }
 
 export function mapOtherInspectionToListRow(record) {
+  const kind = record.otherInspectionKind ?? record.category;
   return {
     id: record.id,
     managementId: record.id,
-    category: record.category || "—",
+    category: getOtherInspectionKindLabel(kind) || "—",
     company: record.company || "—",
     partName: record.partName || "—",
     content: record.content || "—",

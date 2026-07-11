@@ -11,12 +11,16 @@ import {
   Printer,
   X,
 } from "lucide-react";
+import { getDocumentOrientation, getPrintPreviewPageSizePx } from "../../utils/titanPrintEngine";
 import "./TitanPrintPreviewModal.css";
 
-const PAGE_SIZE_PX = {
-  portrait: { width: 794, height: 1123 },
-  landscape: { width: 1123, height: 794 },
-};
+function getPrintPageElements(documentEl) {
+  if (!documentEl) return [];
+  const pages = [...documentEl.querySelectorAll(".titan-print-page")];
+  if (pages.length) return pages;
+  const statementPage = documentEl.querySelector(".ts-page");
+  return statementPage ? [statementPage] : [];
+}
 
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 2;
@@ -26,13 +30,8 @@ function clampZoom(value) {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
 }
 
-function getDocumentOrientation(documentEl) {
-  if (documentEl?.classList.contains("titan-print-landscape")) return "landscape";
-  return documentEl?.dataset.printOrientation === "landscape" ? "landscape" : "portrait";
-}
-
 function getPageSizePx(orientation) {
-  return PAGE_SIZE_PX[orientation] ?? PAGE_SIZE_PX.portrait;
+  return getPrintPreviewPageSizePx(orientation);
 }
 
 /** Project TITAN 공통 출력 미리보기 Modal (Excel Print Preview 방식) */
@@ -46,6 +45,11 @@ function TitanPrintPreviewModal({
   onExcel,
   excelEnabled = false,
   busy = false,
+  onMarkComplete,
+  markCompleteLabel = "출력 완료",
+  footerPrintLabel = "인쇄",
+  footerCloseLabel = "닫기",
+  simplifiedFooter = false,
 }) {
   const viewportRef = useRef(null);
   const documentWrapRef = useRef(null);
@@ -59,7 +63,7 @@ function TitanPrintPreviewModal({
   const [orientation, setOrientation] = useState("portrait");
   const [paperSize, setPaperSize] = useState("A4");
   const [margin, setMargin] = useState("normal");
-  const [fitToWidth, setFitToWidth] = useState(false);
+  const [fitToWidth, setFitToWidth] = useState(true);
   const [printBackground, setPrintBackground] = useState(true);
 
   const refreshViewport = useCallback(() => {
@@ -74,7 +78,7 @@ function TitanPrintPreviewModal({
     }
 
     const orient = getDocumentOrientation(documentEl);
-    const pages = [...documentEl.querySelectorAll(".titan-print-page")];
+    const pages = getPrintPageElements(documentEl);
     pageRefs.current = pages;
     setOrientation(orient);
     setTotalPages(Math.max(pages.length, 1));
@@ -447,10 +451,20 @@ function TitanPrintPreviewModal({
               onClick={() => runExport(onPrint)}
             >
               <Printer size={18} />
-              인쇄
+              {footerPrintLabel}
             </button>
           )}
-          {onPdf && (
+          {onMarkComplete && (
+            <button
+              type="button"
+              className="titan-print-modal-footer-btn"
+              disabled={busy}
+              onClick={() => onMarkComplete()}
+            >
+              {markCompleteLabel}
+            </button>
+          )}
+          {!simplifiedFooter && onPdf && (
             <button
               type="button"
               className="titan-print-modal-footer-btn"
@@ -461,7 +475,7 @@ function TitanPrintPreviewModal({
               PDF 저장
             </button>
           )}
-          {excelEnabled && onExcel && (
+          {!simplifiedFooter && excelEnabled && onExcel && (
             <button
               type="button"
               className="titan-print-modal-footer-btn"
@@ -473,7 +487,7 @@ function TitanPrintPreviewModal({
             </button>
           )}
           <button type="button" className="titan-print-modal-footer-btn" onClick={onClose}>
-            닫기
+            {footerCloseLabel}
           </button>
         </footer>
       </div>

@@ -83,6 +83,13 @@ export const RC1_COMPANY_BRANDING_FREEZE = Object.freeze({
   rule: "Branding structure must not change after RC1",
 });
 
+/** RC1 — shared 직인 asset path (PM replaces PNG at this path) */
+export const COMPANY_BRANDING_ASSETS = Object.freeze({
+  stamp: "/assets/stamp/company_stamp.png",
+});
+
+export const DEFAULT_COMPANY_STAMP_URL = COMPANY_BRANDING_ASSETS.stamp;
+
 /** RC1 P0 — operational stabilization (must complete before RC1 exit) */
 export const RC1_P0_EXIT_CHECKLIST = Object.freeze([
   "White Screen 0 (including F5 reload)",
@@ -355,6 +362,86 @@ export const RC1_STATISTICS_POLICY = Object.freeze({
     "Browser QA — /statistics and all sub-routes",
   ]),
   note: "RC1 exposes accurate operational data only — statistics dashboard hidden until V1.1",
+});
+
+/**
+ * RC1 Documents — Coming Soon UI gate (selected sub-routes only)
+ * V1.1 re-enable: set RC1_DOCUMENTS_COMING_SOON = false
+ * Hub · 발주서 · 반출증 · 기타 수신문서 · 검사기준서 routes remain active
+ */
+export const RC1_DOCUMENTS_COMING_SOON = true;
+
+export const RC1_DOCUMENTS_COMING_SOON_ROUTES = Object.freeze([
+  "/documents/quality/certificates",
+  "/documents/quality/by-company",
+  "/documents/incoming-archive",
+  "/documents/internal",
+]);
+
+const RC1_DOCUMENTS_COMING_SOON_SUBTITLE =
+  "RC1 운영 안정화 기간 중 해당 문서 Workspace는 준비 중입니다. V1.1에서 활성화될 예정입니다.";
+
+export function isRc1DocumentsComingSoonPath(pathname = "") {
+  const path = String(pathname).split("?")[0];
+  return RC1_DOCUMENTS_COMING_SOON_ROUTES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+  );
+}
+
+export const RC1_DOCUMENTS_POLICY = Object.freeze({
+  status: "coming-soon-partial",
+  comingSoonEnabled: RC1_DOCUMENTS_COMING_SOON,
+  gatedRoutes: RC1_DOCUMENTS_COMING_SOON_ROUTES,
+  gateComponent: "DocumentsLayout",
+  subtitle: RC1_DOCUMENTS_COMING_SOON_SUBTITLE,
+  reEnableIn: "V1.1",
+  reEnableSteps: Object.freeze([
+    "Set RC1_DOCUMENTS_COMING_SOON = false in rc1OperationalPolicy.js",
+    "Browser QA — /documents and gated sub-routes",
+  ]),
+});
+
+/**
+ * RC1 Accounting Clerk — Coming Soon UI gate (entire menu)
+ * V1.1 re-enable: set RC1_ACCOUNTING_CLERK_COMING_SOON = false
+ */
+export const RC1_ACCOUNTING_CLERK_COMING_SOON = true;
+
+export const RC1_ACCOUNTING_CLERK_POLICY = Object.freeze({
+  status: "coming-soon",
+  comingSoonEnabled: RC1_ACCOUNTING_CLERK_COMING_SOON,
+  gateComponent: "AppRouter",
+  subtitle:
+    "RC1 운영 안정화 기간 중 경리관리는 준비 중입니다. 거래명세서 발행은 출고·출력관리에서 이용해 주세요.",
+  reEnableIn: "V1.1",
+});
+
+/**
+ * RC1 Accounting — Coming Soon UI gate (entire menu)
+ * V1.1 re-enable: set RC1_ACCOUNTING_COMING_SOON = false
+ */
+export const RC1_ACCOUNTING_COMING_SOON = true;
+
+export const RC1_ACCOUNTING_POLICY = Object.freeze({
+  status: "coming-soon",
+  comingSoonEnabled: RC1_ACCOUNTING_COMING_SOON,
+  gateComponent: "AppRouter",
+  subtitle: "RC1 운영 안정화 기간 중 회계관리는 준비 중입니다. V1.1에서 활성화될 예정입니다.",
+  reEnableIn: "V1.1",
+});
+
+/**
+ * RC1 Shot Process — Coming Soon UI gate (생산관리 · 쇼트 작업현황)
+ * V1.1 re-enable: set RC1_SHOT_PROCESS_COMING_SOON = false
+ */
+export const RC1_SHOT_PROCESS_COMING_SOON = true;
+
+export const RC1_SHOT_PROCESS_POLICY = Object.freeze({
+  status: "coming-soon",
+  comingSoonEnabled: RC1_SHOT_PROCESS_COMING_SOON,
+  gateComponent: "AppRouter",
+  subtitle: "RC1 운영 안정화 기간 중 쇼트 공정 Workspace는 준비 중입니다. V1.1에서 활성화될 예정입니다.",
+  reEnableIn: "V1.1",
 });
 
 export const RC1_SWAPPABLE_LAYER = Object.freeze(["Repository", "Data Source"]);

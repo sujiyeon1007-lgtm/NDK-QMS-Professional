@@ -203,7 +203,16 @@
   background: var(--titan-surface, #fff);
   text-align: left;
   cursor: pointer;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  box-sizing: border-box;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.control-room-equipment-card:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .control-room-equipment-card:hover {
@@ -466,6 +475,40 @@
 
 .control-room-equipment-popup__same-lot li {
   font-size: 12px;
+}
+
+.control-room-equipment-popup--full {
+  gap: 18px;
+}
+
+.control-room-equipment-popup__monitor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--titan-table-border, #dde6f0);
+}
+
+.control-room-equipment-popup__workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.control-room-equipment-popup__workflow-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.titan-detail-popup .control-room-equipment-popup--full {
+  min-height: 0;
+}
+
+.titan-detail-popup .equipment-charging-workflow--popup .titan-table-wrap {
+  max-height: 240px;
+  overflow: auto;
 }
 
 /* Control Room — LOT View (Sprint 3C · Blueprint ②) */

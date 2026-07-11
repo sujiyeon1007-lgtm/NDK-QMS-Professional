@@ -10,7 +10,7 @@ export default function SectionTabs({ tabs, className = "" }) {
   return (
     <nav className={`titan-section-tabs ${className}`.trim()} aria-label="하위 메뉴">
       {tabs.map((tab) => {
-        const active = isSectionTabActive(location, tab, exactSearchMatch);
+        const active = isSectionTabActive(location, tab, exactSearchMatch, tabs);
         return (
           <Link
             key={tab.id}
@@ -30,11 +30,23 @@ function splitTarget(to) {
   return { pathname, search: search ? `?${search}` : "" };
 }
 
-function isSectionTabActive(location, tab, exactSearchMatch) {
+function isSectionTabActive(location, tab, exactSearchMatch, tabs = []) {
   const target = splitTarget(tab.path);
   if (target.search) return location.pathname === target.pathname && location.search === target.search;
-  if (location.pathname === target.pathname) return !exactSearchMatch;
-  return location.pathname.startsWith(`${target.pathname}/`);
+  const matches =
+    location.pathname === target.pathname ||
+    location.pathname.startsWith(`${target.pathname}/`);
+  if (!matches) return false;
+  const hasMoreSpecificMatch = tabs.some((candidate) => {
+    if (candidate.id === tab.id) return false;
+    const candidateTarget = splitTarget(candidate.path);
+    if (candidateTarget.search) return false;
+    const candidateMatches =
+      location.pathname === candidateTarget.pathname ||
+      location.pathname.startsWith(`${candidateTarget.pathname}/`);
+    return candidateMatches && candidateTarget.pathname.length > target.pathname.length;
+  });
+  return !hasMoreSpecificMatch && (location.pathname !== target.pathname || !exactSearchMatch);
 }
 
 function isWorkspaceNavigationActive(location, item, homePath, exactSearchMatch) {
@@ -46,30 +58,7 @@ function isWorkspaceNavigationActive(location, item, homePath, exactSearchMatch)
 }
 
 export function WorkspaceNavigationTabs({ nav, className = "" }) {
-  const location = useLocation();
-  const items = nav?.items ?? [];
-  if (!items.length) return null;
-  const exactSearchMatch = items.some((item) => {
-    const target = splitTarget(item.to);
-    return Boolean(target.search) && location.pathname === target.pathname && location.search === target.search;
-  });
-
-  return (
-    <nav className={`titan-workspace-nav company-workspace-nav ${className}`.trim()} aria-label={nav.ariaLabel}>
-      {items.map((item) => {
-        const active = isWorkspaceNavigationActive(location, item, nav.homePath, exactSearchMatch);
-        return (
-          <Link
-            key={`${item.to}-${item.label}`}
-            to={item.to}
-            className={`titan-workspace-nav__link company-workspace-nav__link${
-              active ? " titan-workspace-nav__link--active company-workspace-nav__link--active" : ""
-            }`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  void nav;
+  void className;
+  return null;
 }

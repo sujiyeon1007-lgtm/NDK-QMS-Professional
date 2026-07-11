@@ -23,6 +23,7 @@ export function useStatusChipFilter({
   draft,
   onDraftChange,
   onReset,
+  onSearch,
   statusField = "status",
   onChipApplied,
 }) {
@@ -39,10 +40,15 @@ export function useStatusChipFilter({
         nextDraft[statusField] = chip.filterValue;
       }
 
-      onDraftChange(nextDraft);
+      // Chip click must sync search immediately — skip Live Search debounce when onSearch exists.
+      if (onSearch) {
+        onSearch(nextDraft);
+      } else {
+        onDraftChange(nextDraft);
+      }
       onChipApplied?.(chip, nextDraft);
     },
-    [draft, onDraftChange, onChipApplied, statusField]
+    [draft, onDraftChange, onChipApplied, onSearch, statusField]
   );
 
   const handleChipClick = useCallback(

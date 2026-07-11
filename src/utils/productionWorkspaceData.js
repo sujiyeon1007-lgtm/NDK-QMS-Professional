@@ -43,6 +43,7 @@ import {
 } from "./productionDailyReportStatus";
 
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
+import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 
 import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "./workflowProcessStatus";
 
@@ -59,6 +60,25 @@ import {
   isShotWorkType,
   normalizeShotWorkStatus,
 } from "../config/workTypeWorkflow";
+
+
+
+/** P0-OP-006 Phase 1 — screen data memo keyed on production records snapshot */
+let productionPlanSnapshot = null;
+let productionPlanCache = null;
+let productionDailySnapshot = null;
+let productionDailyCache = null;
+let productionChargingSnapshot = null;
+let productionChargingCache = null;
+
+export function invalidateProductionWorkspaceDataCache() {
+  productionPlanSnapshot = null;
+  productionPlanCache = null;
+  productionDailySnapshot = null;
+  productionDailyCache = null;
+  productionChargingSnapshot = null;
+  productionChargingCache = null;
+}
 
 
 
@@ -250,17 +270,28 @@ export function countProductionPlanWorkspace(records = buildProductionPlanWorksp
 
 
 
-export function getProductionPlanScreenData(records = getProductionRecords()) {
+export function getProductionPlanScreenData(records) {
 
-  const baseRecords = buildProductionPlanWorkspaceRecords(records);
+  const snapshot = records ?? getProductionRecords();
+  if (!records && productionPlanSnapshot === snapshot && productionPlanCache) {
+    return productionPlanCache;
+  }
 
-  return {
+  const baseRecords = buildProductionPlanWorkspaceRecords(snapshot);
+
+  const result = {
 
     baseRecords,
 
     counts: countProductionPlanWorkspace(baseRecords),
 
   };
+
+  if (!records) {
+    productionPlanSnapshot = snapshot;
+    productionPlanCache = result;
+  }
+  return result;
 
 }
 
@@ -346,9 +377,14 @@ export function countProductionChargingWorkspace(
 
 
 
-export function getProductionChargingScreenData(records = getProductionRecords()) {
+export function getProductionChargingScreenData(records) {
 
-  const baseRecords = buildProductionChargingWorkspaceRecords(records);
+  const snapshot = records ?? getProductionRecords();
+  if (!records && productionChargingSnapshot === snapshot && productionChargingCache) {
+    return productionChargingCache;
+  }
+
+  const baseRecords = buildProductionChargingWorkspaceRecords(snapshot);
 
   const equipmentSummary = getEquipmentSummary();
 
@@ -356,7 +392,7 @@ export function getProductionChargingScreenData(records = getProductionRecords()
 
 
 
-  return {
+  const result = {
 
     baseRecords,
 
@@ -372,17 +408,25 @@ export function getProductionChargingScreenData(records = getProductionRecords()
 
   };
 
+  if (!records) {
+    productionChargingSnapshot = snapshot;
+    productionChargingCache = result;
+  }
+  return result;
+
 }
 
 
 
-// ─── 생산일보 (HT_RUNNING) ───────────────────────────────────────────────────
+// ─── 작업일보 (생산 이력 원장) ───────────────────────────────────────────────
 
 
 
 /**
 
- * HT_RUNNING — registered + lotNo · 열처리 진행/완료 (일보 UI Freeze V1.3)
+ * 작업일보 등록 완료(registered + lotNo) — workflow stage 무관 · 생산 이력 원장
+
+ * P0-OP-008: 생산완료·검사대기 이후에도 목록 유지 (INSPECTION_WAIT 필터 제외)
 
  * @param {object} record
 
@@ -392,9 +436,8 @@ export function getProductionChargingScreenData(records = getProductionRecords()
 
 export function isProductionDailyReportStageRecord(record) {
   if (!isHeatTreatmentWorkType(record)) return false;
-  if (resolveRecordCurrentProcess(record).key !== PRODUCTION_DAILY_REPORT_STAGE) {
-    return false;
-  }
+  if (!isIncomingRegistered(record)) return false;
+  if (!record?.registered || !record?.lotNo?.trim()) return false;
   return filterProductionDailyReportRecords([record]).length > 0;
 }
 
@@ -432,17 +475,28 @@ export function countProductionDailyReportWorkspace(
 
 
 
-export function getProductionDailyReportScreenData(records = getProductionRecords()) {
+export function getProductionDailyReportScreenData(records) {
 
-  const baseRecords = buildProductionDailyReportWorkspaceRecords(records);
+  const snapshot = records ?? getProductionRecords();
+  if (!records && productionDailySnapshot === snapshot && productionDailyCache) {
+    return productionDailyCache;
+  }
 
-  return {
+  const baseRecords = buildProductionDailyReportWorkspaceRecords(snapshot);
+
+  const result = {
 
     baseRecords,
 
     counts: countProductionDailyReportWorkspace(baseRecords),
 
   };
+
+  if (!records) {
+    productionDailySnapshot = snapshot;
+    productionDailyCache = result;
+  }
+  return result;
 
 }
 
@@ -632,4 +686,4 @@ export function getProductionWorkJournalScreenData(options = {}) {
 
 }
 
-
+registerWorkflowScreenCacheInvalidator(invalidateProductionWorkspaceDataCache);

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import EquipmentSummaryBar from "../QrManagement/components/EquipmentSummaryBar";
 import ControlRoomEquipmentCard from "./ControlRoomEquipmentCard";
 import ControlRoomEquipmentPopup from "./ControlRoomEquipmentPopup";
+import EquipmentMonitorDetailPanel from "./EquipmentMonitorDetailPanel";
 
 /**
  * Control Room — 설비 View (Blueprint ② · Sprint 3B)
@@ -28,13 +29,23 @@ export default function ControlRoomEquipmentView({
     [getEquipmentDetail, popupEquipmentId]
   );
 
+  const selectedDetail = useMemo(
+    () => (selectedEquipmentId ? getEquipmentDetail(selectedEquipmentId) : null),
+    [getEquipmentDetail, selectedEquipmentId]
+  );
+
   const filteredGroups = useMemo(() => {
     if (statusFilter === "total") return equipmentGroups;
 
     return equipmentGroups
       .map((group) => ({
         ...group,
-        items: group.items.filter((equipment) => equipment.status === statusFilter),
+        items: group.items.filter((equipment) => {
+          if (statusFilter === "idle") {
+            return equipment.status === "idle" || equipment.status === "ready";
+          }
+          return equipment.status === statusFilter;
+        }),
       }))
       .filter((group) => group.items.length > 0);
   }, [equipmentGroups, statusFilter]);
@@ -47,7 +58,7 @@ export default function ControlRoomEquipmentView({
         onFilterChange={handleStatusFilterChange}
       />
 
-      <div className="equipment-status-page__workspace equipment-status-page__workspace--single">
+      <div className="equipment-status-page__workspace">
         <div className="equipment-status-page__groups" aria-label="공정별 설비 현황">
           {filteredGroups.map((group) => (
             <section key={group.process} className="equipment-status-page__group">
@@ -72,9 +83,12 @@ export default function ControlRoomEquipmentView({
             </div>
           ) : null}
         </div>
+
+        <EquipmentMonitorDetailPanel detail={selectedDetail} />
       </div>
 
       <ControlRoomEquipmentPopup
+        equipmentId={popupEquipmentId}
         detail={popupDetail}
         open={Boolean(popupEquipmentId)}
         onClose={() => setPopupEquipmentId(null)}

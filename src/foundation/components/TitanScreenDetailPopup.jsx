@@ -29,6 +29,7 @@ export default function TitanScreenDetailPopup({
   record,
   context = {},
   footerActions,
+  footer,
   initialTabId,
 }) {
   const config = getDetailPopupConfig(screenKey);
@@ -128,6 +129,7 @@ export default function TitanScreenDetailPopup({
         summary={standardContext.summary}
         renderTabContent={renderStandardTabContent}
         footerActions={footerActions}
+        footer={footer}
         initialTabId={initialTabId}
         ariaLabel={config.title}
       />

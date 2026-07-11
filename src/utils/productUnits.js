@@ -1,29 +1,58 @@
 /**
- * Project TITAN V1.0 — 제품 단위 (확장 가능)
- * 기준정보 units 카테고리와 연동 · 미설정 시 기본 목록 사용
+ * Project TITAN RC1 — 제품 기본단위 (Product Master)
  */
 
-import { getActiveMasterNames } from "./masterData";
+export const PRODUCT_UNIT_OPTIONS = ["EA", "LOT", "KG", "M", "SET", "BOX", "기타"];
+export const PRODUCT_UNIT_OTHER = "기타";
 
+/** @deprecated use PRODUCT_UNIT_OPTIONS */
 export const DEFAULT_UNITS = ["EA", "LOT", "KG", "SET"];
+export const EXTENDED_UNITS = ["M", "BOX"];
 
-/** 향후 확장 단위 (기준정보 등록 시 자동 반영) */
-export const EXTENDED_UNITS = ["M", "MM", "BOX"];
+export function isProductUnitOther(unit) {
+  return String(unit ?? "").trim() === PRODUCT_UNIT_OTHER;
+}
+
+/** 저장용 단위 — 기타 선택 시 unitCustom 사용 */
+export function resolveProductUnit(unit, unitCustom = "", fallback = "EA") {
+  const raw = String(unit ?? "").trim();
+  if (!raw) return fallback;
+
+  if (isProductUnitOther(raw)) {
+    const custom = String(unitCustom ?? "").trim().toUpperCase();
+    return custom || fallback;
+  }
+
+  return normalizeProductUnit(raw, fallback);
+}
+
+/** 폼 로드 — 비표준 단위는 기타 + custom으로 분리 */
+export function splitProductUnitForForm(unit) {
+  const normalized = String(unit ?? "").trim().toUpperCase();
+  if (!normalized) return { unit: "EA", unitCustom: "" };
+
+  const preset = PRODUCT_UNIT_OPTIONS.slice(0, -1);
+  if (preset.includes(normalized)) {
+    return { unit: normalized, unitCustom: "" };
+  }
+
+  return { unit: PRODUCT_UNIT_OTHER, unitCustom: normalized };
+}
 
 export function getProductUnitOptions() {
-  const fromMaster = getActiveMasterNames("units");
-  return fromMaster.length > 0 ? fromMaster : DEFAULT_UNITS;
+  return [...PRODUCT_UNIT_OPTIONS];
 }
 
 export function normalizeProductUnit(unit, fallback = "EA") {
   const trimmed = String(unit ?? "").trim().toUpperCase();
   if (!trimmed) return fallback;
 
-  const options = getProductUnitOptions().map((value) => value.toUpperCase());
+  const options = getProductUnitOptions()
+    .filter((value) => value !== PRODUCT_UNIT_OTHER)
+    .map((value) => value.toUpperCase());
   if (options.includes(trimmed)) return trimmed;
 
-  const defaults = DEFAULT_UNITS.map((value) => value.toUpperCase());
-  if (defaults.includes(trimmed)) return trimmed;
+  if (trimmed.length >= 1 && trimmed.length <= 8) return trimmed;
 
   return fallback;
 }
@@ -59,7 +88,7 @@ export function parseQtyWithUnit(input, fallbackUnit = "EA") {
     return { qty: 0, unit: normalizeProductUnit(fallbackUnit) };
   }
 
-  const match = trimmed.match(/^([\d,]+(?:\.\d+)?)\s*([A-Za-z]+)?$/);
+  const match = trimmed.match(/^([\d,]+(?:\.\d+)?)\s*([A-Za-z가-힣]+)?$/);
   if (!match) {
     const qty = Number(trimmed.replace(/,/g, ""));
     return {
@@ -75,4 +104,13 @@ export function parseQtyWithUnit(input, fallbackUnit = "EA") {
     qty: Number.isFinite(qty) ? qty : 0,
     unit,
   };
+}
+
+/** 거래명세서 · 출고 — record 단위 해석 */
+export function resolveRecordUnit(record, product = null) {
+  const fromRecord = String(record?.unit ?? "").trim();
+  if (fromRecord) return normalizeProductUnit(fromRecord);
+  const fromProduct = String(product?.unit ?? "").trim();
+  if (fromProduct) return normalizeProductUnit(fromProduct);
+  return "EA";
 }

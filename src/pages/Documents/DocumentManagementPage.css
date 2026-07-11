@@ -543,8 +543,15 @@
   font-size: 13px;
 }
 
-.incoming-document-history span,
-.incoming-document-history em {
-  color: var(--titan-text-secondary, #475569);
-  font-style: normal;
+.document-workspace-shell__rc1-note {
+  margin: 0 0 8px;
 }
+
+.document-workspace-shell__empty {
+  padding: 24px 0;
+}
+
+.document-workspace-shell__search {
+  margin-bottom: 10px;
+}
+

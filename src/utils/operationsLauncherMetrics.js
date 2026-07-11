@@ -4,6 +4,7 @@ import { getJournalReferenceDate } from "./workJournalData";
 import { getSessionProductionRecords } from "./productionRecords";
 import { getWorkJournalEntries } from "./workJournalSession";
 import { getQualityWorkspaceSnapshot } from "./qualityWorkspaceData";
+import { getInventoryScreenData } from "./inventoryStatusAnalytics";
 import {
   buildProductionChargingWorkspaceRecords,
   buildProductionDailyReportWorkspaceRecords,
@@ -27,11 +28,7 @@ export function buildInoutLauncherMetrics(records = getSessionProductionRecords(
   const printPending = records.filter(
     (row) => row.workflowStatus === "RECEIVED" || row.printStatus === "미출력"
   ).length;
-  const inventoryCount = records.filter((row) => (row.stockQty ?? row.quantity ?? 0) > 0).length;
-  const shortageCount = records.filter((row) => {
-    const stock = row.stockQty ?? row.quantity ?? 0;
-    return stock > 0 && stock <= 5;
-  }).length;
+  const { counts: inventoryCounts } = getInventoryScreenData(records);
   const inboundHistory = records.filter((row) => row.incomingDate || row.workflowStatus).length;
   const outboundHistory = records.filter((row) => row.shipmentDate || row.workflowStatus === "SHIPPED").length;
   const referenceDate = getJournalReferenceDate();
@@ -48,8 +45,8 @@ export function buildInoutLauncherMetrics(records = getSessionProductionRecords(
     shipWait: `출고 대기 ${counts.SHIP_WAIT ?? 0}건`,
     inboundLookup: `입고 조회 ${inboundHistory}건`,
     outboundLookup: `출고 조회 ${outboundHistory}건`,
-    currentInventory: `현재 재고 ${inventoryCount}건`,
-    shortageItems: `부족 품목 ${shortageCount}건`,
+    currentInventory: `보관 중 ${inventoryCounts.inCustody ?? 0}건`,
+    shipWaitInventory: `출고 대기 ${inventoryCounts.SHIP_WAIT ?? 0}건`,
     htlList: `입고리스트 ${printPending}건`,
     invoiceList: `거래명세서 ${counts.SHIP_WAIT ?? 0}건`,
     operationsJournalToday: `금일 작성 ${operationsJournalToday}건`,
@@ -127,7 +124,7 @@ export function buildQrChargingLauncherMetrics(records = getSessionProductionRec
 
   return {
     equipmentRunning: `운전중 ${equipmentSummary.running}대`,
-    equipmentReady: `장입 준비 ${equipmentSummary.ready}대`,
+    equipmentReady: `장입 가능 LOT ${chargeableLots}건`,
     chargeableLots: `장입 가능 LOT ${chargeableLots}건`,
     activeSessions: `작업중 ${activeSessions}건`,
     lotsInProgress: `진행중 ${lotsInProgress}건`,

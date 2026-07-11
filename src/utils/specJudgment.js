@@ -2,6 +2,9 @@
  * Project TITAN V1.0 — 검사 스펙 자동 합격/불합격 판정
  */
 
+import { INSPECTION_HARDNESS_EXCLUDED_KEYS } from "./productSpecificationModel";
+import { resolveCriterionItemUnit } from "./inspectionCriteriaModel";
+
 function parseNumber(value) {
   if (value == null || value === "") return null;
   const match = String(value).replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
@@ -50,19 +53,26 @@ export function summarizeJudgments(rows = []) {
 
 export function buildHardnessResultRows(specification, measurements = []) {
   if (!specification?.hardness?.enabled) return [];
-  const unit = specification.hardness.unit || "HV";
+  const hardnessUnit = specification.hardness.unit || "HV";
 
   return specification.hardness.items
-    .filter((item) => !item.disabled && item.spec && item.spec !== "없음")
+    .filter(
+      (item) =>
+        !item.disabled &&
+        item.spec &&
+        item.spec !== "없음" &&
+        !INSPECTION_HARDNESS_EXCLUDED_KEYS.includes(item.key)
+    )
     .map((item) => {
       const existing = measurements.find((row) => row.key === item.key);
       const measured = existing?.measured ?? "";
+      const unit = resolveCriterionItemUnit(item.key, item, hardnessUnit);
       const judgment = existing?.judgment || evaluateMeasurement(item.spec, measured);
       return {
         key: item.key,
         item: item.label,
         spec: item.spec,
-        measured: measured ? `${measured} ${unit}`.replace(/\s+/g, " ") : "",
+        measured: measured ? `${measured} ${unit}`.replace(/\s+/g, " ").trim() : "",
         measuredRaw: measured,
         unit,
         note: "",

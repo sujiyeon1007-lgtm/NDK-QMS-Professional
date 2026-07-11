@@ -1,3 +1,331 @@
+.titan-global-nav {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  height: var(--titan-global-nav-h);
+  padding: 0;
+  background: linear-gradient(180deg, #1e3a5f 0%, #1a3354 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  min-width: var(--titan-app-min-width);
+}
+
+.titan-global-nav__brand {
+  flex: 0 0 var(--titan-sidebar-width);
+  display: flex;
+  align-items: center;
+  min-width: var(--titan-sidebar-width);
+  min-height: var(--titan-sidebar-brand-h, 56px);
+  padding: 0 12px;
+  background: var(--titan-sidebar-bg);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.titan-global-nav__brand .titan-sidebar-brand {
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+.titan-global-nav__workflow {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.titan-global-nav__workflow::-webkit-scrollbar {
+  display: none;
+}
+
+.titan-global-nav__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  align-self: center;
+  padding: 0 14px;
+  border-radius: 6px 6px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  border-bottom: 3px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.titan-global-nav__link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.titan-global-nav__link.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.titan-global-nav__link.active[data-section="home"] {
+  border-bottom-color: var(--workspace-accent-home);
+  background: color-mix(in srgb, var(--workspace-accent-home) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="operations"] {
+  border-bottom-color: var(--workspace-accent-operations);
+  background: color-mix(in srgb, var(--workspace-accent-operations) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="production"] {
+  border-bottom-color: var(--workspace-accent-production);
+  background: color-mix(in srgb, var(--workspace-accent-production) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="quality"] {
+  border-bottom-color: var(--workspace-accent-quality);
+  background: color-mix(in srgb, var(--workspace-accent-quality) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="documents"] {
+  border-bottom-color: var(--workspace-accent-documents);
+  background: color-mix(in srgb, var(--workspace-accent-documents) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="statistics"] {
+  border-bottom-color: var(--workspace-accent-statistics);
+  background: color-mix(in srgb, var(--workspace-accent-statistics) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="accountingClerk"] {
+  border-bottom-color: var(--workspace-accent-accounting-clerk);
+  background: color-mix(in srgb, var(--workspace-accent-accounting-clerk) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="accounting"] {
+  border-bottom-color: var(--workspace-accent-accounting);
+  background: color-mix(in srgb, var(--workspace-accent-accounting) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="masterData"] {
+  border-bottom-color: var(--workspace-accent-master);
+  background: color-mix(in srgb, var(--workspace-accent-master) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="company"] {
+  border-bottom-color: var(--workspace-accent-company);
+  background: color-mix(in srgb, var(--workspace-accent-company) 22%, transparent);
+}
+
+.titan-global-nav__link.active[data-section="environment"] {
+  border-bottom-color: var(--workspace-accent-environment);
+  background: color-mix(in srgb, var(--workspace-accent-environment) 22%, transparent);
+}
+
+.titan-global-nav__utilities {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 12px 0 4px;
+  align-self: center;
+}
+
+.titan-global-nav__utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.titan-global-nav__utility:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.titan-global-nav__utility.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.titan-banner {
+  flex: 0 0 auto;
+  height: var(--titan-banner-h);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: #f1f5f9;
+  border-bottom: 1px solid var(--titan-border);
+  flex-shrink: 0;
+  min-width: var(--titan-app-min-width);
+  gap: 8px;
+}
+
+.titan-banner__chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.titan-banner__chips::-webkit-scrollbar {
+  display: none;
+}
+
+.titan-banner__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 8px 0 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.titan-banner__chip--info {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.titan-banner__chip--success {
+  color: #15803d;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.titan-banner__chip--neutral {
+  color: #475569;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.titan-banner__chip-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.titan-banner__chip-dismiss:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.titan-banner__spacer {
+  flex: 1;
+}
+
+.titan-banner__demo-admin {
+  margin-right: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
+.titan-banner__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.titan-banner__date {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.titan-banner__site {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+.titan-banner__user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.titan-banner__user strong {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.titan-banner__notify {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--titan-border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.titan-banner__notify:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.titan-banner__logout {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+/* Legacy header aliases — retained for any residual references */
 .titan-header {
   flex: 0 0 auto;
   height: var(--titan-header-h);
@@ -13,12 +341,12 @@
 .titan-header__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .titan-header__logo {
-  height: 36px;
+  height: 34px;
   width: auto;
   max-width: 120px;
   object-fit: contain;
@@ -26,39 +354,19 @@
 }
 
 .titan-header__logo--fallback {
-  height: 32px;
+  height: 30px;
 }
 
-.titan-header__title {
-  margin: 0;
-  font-size: var(--titan-font-lg);
-  font-weight: 800;
+.titan-header__subtitle {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--titan-text);
-  flex-shrink: 0;
   white-space: nowrap;
-}
-
-.titan-header__note {
-  margin-left: 12px;
-  font-size: var(--titan-font-xs);
-  font-weight: 600;
-  color: var(--titan-text-muted);
+  letter-spacing: 0.01em;
 }
 
 .titan-header__spacer {
   flex: 1;
-}
-
-.titan-header__edition {
-  margin-right: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #1e40af;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  white-space: nowrap;
 }
 
 .titan-header__demo-admin {
@@ -74,34 +382,39 @@
   white-space: nowrap;
 }
 
-.titan-header__beta {
+.titan-header__meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
-  margin-right: 14px;
-  font-size: 9px;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.titan-header__date {
+  font-size: 12px;
   font-weight: 700;
-  line-height: 1.25;
-  color: var(--titan-text-muted);
-  letter-spacing: 0.02em;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.titan-header__site {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   white-space: nowrap;
 }
 
 .titan-header__user {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: #475569;
-  text-align: right;
-}
-
-.titan-header__logout {
-  margin-left: 4px;
-  min-height: 30px;
-  padding: 0 10px;
+  white-space: nowrap;
 }
 
 .titan-header__user strong {
@@ -110,9 +423,212 @@
   color: #0f172a;
 }
 
-.titan-header__clock {
-  min-width: 42px;
-  font-size: 14px;
-  font-weight: 900;
+.titan-header__notify {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--titan-border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.titan-header__notify:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
   color: #1d4ed8;
+}
+
+.titan-header__logout {
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+/* V2 shell workspace header — connected to global nav accent */
+.titan-shell-workspace-header {
+  --workspace-accent: var(--workspace-accent-home, #3b82f6);
+  --workspace-accent-bg: var(--workspace-accent-home-bg, rgba(59, 130, 246, 0.08));
+  --workspace-accent-border: var(--workspace-accent-home-border, rgba(59, 130, 246, 0.35));
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 72px;
+  margin: 0;
+  padding: 12px 20px 12px 16px;
+  background: var(--titan-surface);
+  border: none;
+  border-top: 3px solid var(--workspace-accent);
+  border-bottom: 1px solid var(--workspace-accent-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+.titan-shell-workspace-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.titan-shell-workspace-header__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--workspace-accent-bg);
+  color: var(--workspace-accent);
+  border: 1px solid var(--workspace-accent-border);
+}
+
+.titan-shell-workspace-header__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-left: 0;
+}
+
+.titan-shell-workspace-header__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--titan-text-primary, #0f172a);
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.titan-shell-workspace-header__description {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.titan-shell-workspace-header__kpi {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  flex: 0 1 auto;
+  max-width: 52%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--titan-border);
+  background: linear-gradient(180deg, #fafbfd 0%, #ffffff 100%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--titan-text-secondary, #64748b);
+  line-height: 1.35;
+  overflow-x: auto;
+  scrollbar-width: none;
+  word-break: keep-all;
+}
+
+.titan-shell-workspace-header__kpi::-webkit-scrollbar {
+  display: none;
+}
+
+.titan-shell-workspace-header__kpi-item {
+  white-space: nowrap;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.titan-shell-workspace-header__kpi-item strong {
+  font-weight: 800;
+  color: var(--workspace-accent);
+}
+
+.titan-shell-workspace-header__kpi-sep {
+  margin: 0 10px;
+  color: var(--titan-text-muted, #94a3b8);
+  font-weight: 400;
+  opacity: 0.75;
+  user-select: none;
+}
+
+/* Active global nav tab accent flows into workspace header */
+.titan-global-nav__link.active {
+  margin-bottom: -1px;
+}
+
+.titan-shell-workspace-header[data-section="home"] {
+  --workspace-accent: var(--workspace-accent-home);
+  --workspace-accent-bg: var(--workspace-accent-home-bg);
+  --workspace-accent-border: var(--workspace-accent-home-border);
+}
+
+.titan-shell-workspace-header[data-section="operations"] {
+  --workspace-accent: var(--workspace-accent-operations);
+  --workspace-accent-bg: var(--workspace-accent-operations-bg);
+  --workspace-accent-border: var(--workspace-accent-operations-border);
+}
+
+.titan-shell-workspace-header[data-section="production"] {
+  --workspace-accent: var(--workspace-accent-production);
+  --workspace-accent-bg: var(--workspace-accent-production-bg);
+  --workspace-accent-border: var(--workspace-accent-production-border);
+}
+
+.titan-shell-workspace-header[data-section="quality"] {
+  --workspace-accent: var(--workspace-accent-quality);
+  --workspace-accent-bg: var(--workspace-accent-quality-bg);
+  --workspace-accent-border: var(--workspace-accent-quality-border);
+}
+
+.titan-shell-workspace-header[data-section="documents"] {
+  --workspace-accent: var(--workspace-accent-documents);
+  --workspace-accent-bg: var(--workspace-accent-documents-bg);
+  --workspace-accent-border: var(--workspace-accent-documents-border);
+}
+
+.titan-shell-workspace-header[data-section="statistics"] {
+  --workspace-accent: var(--workspace-accent-statistics);
+  --workspace-accent-bg: var(--workspace-accent-statistics-bg);
+  --workspace-accent-border: var(--workspace-accent-statistics-border);
+}
+
+.titan-shell-workspace-header[data-section="accountingClerk"] {
+  --workspace-accent: var(--workspace-accent-accounting-clerk);
+  --workspace-accent-bg: var(--workspace-accent-accounting-clerk-bg);
+  --workspace-accent-border: var(--workspace-accent-accounting-clerk-border);
+}
+
+.titan-shell-workspace-header[data-section="accounting"] {
+  --workspace-accent: var(--workspace-accent-accounting);
+  --workspace-accent-bg: var(--workspace-accent-accounting-bg);
+  --workspace-accent-border: var(--workspace-accent-accounting-border);
+}
+
+.titan-shell-workspace-header[data-section="masterData"] {
+  --workspace-accent: var(--workspace-accent-master);
+  --workspace-accent-bg: var(--workspace-accent-master-bg);
+  --workspace-accent-border: var(--workspace-accent-master-border);
+}
+
+.titan-shell-workspace-header[data-section="company"] {
+  --workspace-accent: var(--workspace-accent-company);
+  --workspace-accent-bg: var(--workspace-accent-company-bg);
+  --workspace-accent-border: var(--workspace-accent-company-border);
+}
+
+.titan-shell-workspace-header[data-section="environment"] {
+  --workspace-accent: var(--workspace-accent-environment);
+  --workspace-accent-bg: var(--workspace-accent-environment-bg);
+  --workspace-accent-border: var(--workspace-accent-environment-border);
 }

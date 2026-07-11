@@ -8,11 +8,11 @@ import { TITAN_DEMO_PRODUCTION_RECORDS } from "../../data/titanDemoSampleData";
 import { TITAN_DATA_STORAGE_KEYS } from "./titanDataStorageKeys";
 import { createJsonArrayStore } from "./storeFactory";
 
-function buildSeedLotRecords() {
+export function buildSeedLotRecords(records = TITAN_DEMO_PRODUCTION_RECORDS) {
   /** @type {Map<string, import("./titanDataModels").LotRecord>} */
   const lotMap = new Map();
 
-  TITAN_DEMO_PRODUCTION_RECORDS.forEach((record) => {
+  records.forEach((record) => {
     const lotNo = String(record.lotNo ?? "").trim();
     if (!lotNo) return;
 
@@ -67,7 +67,6 @@ function buildSeedLotRecords() {
 const arrayStore = createJsonArrayStore({
   storageKey: TITAN_DATA_STORAGE_KEYS.lots,
   idField: "lotNo",
-  getSeed: buildSeedLotRecords,
 });
 
 export const lotStore = {
@@ -97,10 +96,6 @@ export const lotStore = {
 
   replaceAll(records) {
     return arrayStore.writeAll(records);
-  },
-
-  seedIfEmpty() {
-    return arrayStore.seedIfEmpty();
   },
 
   clear() {

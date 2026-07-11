@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Package, Boxes, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import StatusChip from "../../foundation/components/StatusChip";
 import TitanDataTable from "../../foundation/components/DataTable";
 import TitanSearchPanel from "../../foundation/components/TitanSearchPanel";
@@ -13,27 +13,24 @@ import TitanPrintPreviewModal from "../../components/print/TitanPrintPreviewModa
 import InventoryListPrint from "../../components/print/InventoryListPrint";
 import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
+import { useStatusChipFilter } from "../../foundation/hooks/useStatusChipFilter";
 import { INVENTORY_PRINT, INVENTORY_VIEW_MODES, INVENTORY_KPI_CONFIG } from "../../config/inventoryManagementPolicy";
 import { getMasterDataByCategory } from "../../utils/masterData";
-import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import {
-  buildInventoryRowsByViewMode,
   createEmptyInventoryStatusSearch,
-  matchesInventoryStatusSearch,
-  summarizeInventoryStatus,
+  filterInventoryStatusListRows,
+  getInventoryScreenData,
 } from "../../utils/inventoryStatusAnalytics";
 import { STANDARD_PRODUCT_BASIC_SEARCH_FIELDS } from "../../config/listSearchStandard";
 import {
   buildInventoryByCompanyListColumns,
-  buildInventoryLotProductListColumns,
+  buildInventoryByLotListColumns,
   buildInventoryStatusListColumns,
 } from "../../config/standardProductList";
-import InventoryRowActions from "./InventoryRowActions";
 import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import { renderWorkflowProcessChip } from "../../utils/workflowProcessChip";
 import { getProductionProcessCodes } from "../../config/productionProcessCodes";
-import { buildInventoryWorkspaceRecords } from "../../utils/operationsWorkspaceData";
 import { exportTitanPdf, printTitanDocument } from "../../utils/titanPrintExport";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import "../InOut/InboundManagement.css";
@@ -41,7 +38,7 @@ import "./InventoryStatus.css";
 
 export default function InventoryStatusPage() {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [viewMode, setViewMode] = useState("byItem");
+  const [viewMode, setViewMode] = useState("byLot");
   const [activeId, setActiveId] = useState(null);
   const [detailPopupRow, setDetailPopupRow] = useState(null);
   const [printOpen, setPrintOpen] = useState(false);
@@ -49,85 +46,25 @@ export default function InventoryStatusPage() {
 
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyInventoryStatusSearch, { storageKey: "inventory-status" });
-
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
   const masterProducts = useMemo(() => getMasterDataByCategory("products"), [refreshKey]);
 
-  const sessionRecords = useMemo(() => {
+  const screenData = useMemo(() => {
     void refreshKey;
-    return buildInventoryWorkspaceRecords();
+    return getInventoryScreenData();
   }, [refreshKey]);
 
+  const sessionRecords = screenData.baseRecords;
+
+  const rows = useMemo(
+    () => filterInventoryStatusListRows(viewMode, sessionRecords, search),
+    [viewMode, sessionRecords, search]
+  );
+
   const allRows = useMemo(
-    () => buildInventoryRowsByViewMode(viewMode, sessionRecords),
+    () => filterInventoryStatusListRows(viewMode, sessionRecords, createEmptyInventoryStatusSearch()),
     [viewMode, sessionRecords]
   );
-
-  const filteredRows = useMemo(
-    () => allRows.filter((row) => matchesInventoryStatusSearch(row, search)),
-    [allRows, search]
-  );
-
-  const summary = useMemo(() => summarizeInventoryStatus(filteredRows), [filteredRows]);
-
-  const itemLevelSummary = useMemo(
-    () =>
-      summarizeInventoryStatus(
-        buildInventoryRowsByViewMode("byItem", sessionRecords).filter((row) =>
-          matchesInventoryStatusSearch(row, search)
-        )
-      ),
-    [sessionRecords, search]
-  );
-
-  const inventoryKpiItems = useMemo(() => {
-    const skuLabel = viewMode === "byCompany" ? "거래처" : "품목(SKU)";
-    const cards = [
-      {
-        id: "skuCount",
-        label: skuLabel,
-        value: summary.skuCount,
-        unit: "건",
-        tone: "incoming",
-        icon: Package,
-      },
-      {
-        id: "inStockSkuCount",
-        label: "재고 보유 품목",
-        value: summary.inStockSkuCount,
-        unit: "건",
-        tone: "complete",
-        icon: Boxes,
-      },
-      {
-        id: "totalInboundQty",
-        label: "총 입고 수량",
-        value: summary.totalInboundQty,
-        unit: "",
-        tone: "production",
-        icon: ArrowDownToLine,
-      },
-      {
-        id: "totalCurrentStock",
-        label: "현재 재고",
-        value: summary.totalCurrentStock,
-        unit: "",
-        tone: "certificate",
-        icon: ArrowUpFromLine,
-      },
-      {
-        id: "shortageSkuCount",
-        label: "재고 부족",
-        value: itemLevelSummary.shortageSkuCount,
-        unit: "건",
-        tone: itemLevelSummary.shortageSkuCount > 0 ? "rework" : "hold",
-        icon: AlertTriangle,
-      },
-    ];
-    return buildMetricChipItems(cards);
-  }, [summary, itemLevelSummary, viewMode]);
-
-  const rows = filteredRows;
 
   const viewLabel = INVENTORY_VIEW_MODES.find((mode) => mode.id === viewMode)?.label ?? "품목별";
 
@@ -140,6 +77,14 @@ export default function InventoryStatusPage() {
     setPage,
     setPageSize,
   } = useListPagination(rows);
+
+  const { activeChipId, handleChipClick } = useStatusChipFilter({
+    draft,
+    onDraftChange,
+    onReset,
+    onSearch,
+    onChipApplied: () => setPage(1),
+  });
 
   const renderStatus = useCallback(
     (row) => <StatusChip variant={row.statusVariant}>{row.statusLabel}</StatusChip>,
@@ -183,16 +128,9 @@ export default function InventoryStatusPage() {
 
   const columns = useMemo(() => {
     if (viewMode === "byLot") {
-      return buildInventoryLotProductListColumns({
+      return buildInventoryByLotListColumns({
+        renderStatus,
         renderProcess: renderProcessChip,
-        renderActions: (row) => (
-          <InventoryRowActions
-            onEdit={() => {
-              setActiveId(row.id);
-              setDetailPopupRow(row);
-            }}
-          />
-        ),
       });
     }
     const base =
@@ -248,7 +186,11 @@ export default function InventoryStatusPage() {
     <div className="inventory-status-page inbound-page">
       <TitanKpiBarSlot ariaLabel={INVENTORY_KPI_CONFIG.ariaLabel} className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
-          items={inventoryKpiItems}
+          chipSetId={INVENTORY_KPI_CONFIG.chipSetId}
+          records={sessionRecords}
+          counts={screenData.counts}
+          activeId={activeChipId}
+          onChipClick={handleChipClick}
           ariaLabel={INVENTORY_KPI_CONFIG.ariaLabel}
         />
       </TitanKpiBarSlot>

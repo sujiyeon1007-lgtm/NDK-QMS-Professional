@@ -12,6 +12,7 @@ const routes = [
   "/environment/backup",
   "/environment/notifications",
   "/environment/system",
+  "/environment/data",
 ];
 const ERROR_BOUNDARY_SNIPPET = "\uC77C\uC2DC\uC801\uC778 \uC624\uB958";
 
@@ -61,7 +62,7 @@ async function expectLauncherHome(page, label) {
   await page.locator(".company-launcher-grid").waitFor({ state: "attached", timeout: 30000 });
   await expectHealthyPage(page, label);
   assert((await page.locator(".company-workspace--home").count()) > 0, label + ": launcher home shell missing");
-  assert((await page.locator(".company-launcher-grid .company-launcher-card").count()) === 9, label + ": expected 9 launcher cards");
+  assert((await page.locator(".company-launcher-grid .company-launcher-card").count()) === 10, label + ": expected 10 launcher cards (admin includes 데이터 관리)");
 }
 
 async function expectSectionPage(page, label) {
@@ -97,6 +98,13 @@ async function expectRc1OperationalSection(page, route) {
   if (route === "/environment/backup") {
     assert(body.includes("\uC804\uCCB4 \uBC31\uC5C5") || body.includes("\uBC31\uC5C5"), route + ": backup actions missing");
   }
+  if (route === "/environment/data") {
+    assert(body.includes("\uB370\uC774\uD130 \uAD00\uB9AC"), route + ": data management title missing");
+    assert(body.includes("Master \uB370\uC774\uD130 \uCD08\uAE30\uD654"), route + ": master reset button missing");
+    assert(body.includes("\uC5C5\uBB34 \uB370\uC774\uD130 \uCD08\uAE30\uD654"), route + ": operations reset button missing");
+    assert(body.includes("\uC804\uCCB4 \uCD08\uAE30\uD654"), route + ": full reset button missing");
+    assert((await page.locator(".environment-backup-actions button").count()) >= 3, route + ": reset buttons missing");
+  }
 }
 
 (async () => {
@@ -108,6 +116,13 @@ async function expectRc1OperationalSection(page, route) {
   await login(launcherPage);
   await gotoWorkspace(launcherPage, "/environment/dashboard");
   await expectLauncherHome(launcherPage, "/environment/dashboard");
+  const dashBody = await launcherPage.locator("body").innerText();
+  assert(dashBody.includes("\uB370\uC774\uD130 \uAD00\uB9AC"), "/environment/dashboard: data launcher card missing");
+  const dataNav = await launcherPage.locator(".titan-workspace-nav__link").allTextContents();
+  assert(
+    dataNav.some((t) => t.includes("\uB370\uC774\uD130 \uAD00\uB9AC")),
+    "/environment/dashboard: data nav tab missing — got: " + dataNav.join("|")
+  );
 
   await launcherPage.close();
 

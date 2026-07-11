@@ -1,6 +1,4 @@
 import { SectionPageActionsProvider } from "./SectionPageActionsContext";
-import TitanMenuToolbar from "./TitanMenuToolbar";
-import { WorkspaceNavigationTabs } from "./SectionTabs";
 import TitanBreadcrumb from "../components/TitanBreadcrumb";
 import "./SectionPageLayout.css";
 
@@ -33,16 +31,13 @@ function SectionPageLayoutInner({
   children,
 }) {
   const normalizedBreadcrumbItems = normalizeBreadcrumbItems(breadcrumbItems);
-  const toolbarTabs = sectionTabs ?? section.tabs;
-  const toolbarTabCount = toolbarTabs?.length ?? 0;
+  const toolbarTabCount = 0;
 
   return (
     <SectionPageActionsProvider toolbarTabCount={toolbarTabCount}>
       <div className="titan-section-page">
         {!hidePageHeader ? <SectionPageHeader section={section} description={description} /> : null}
-        <WorkspaceNavigationTabs nav={workspaceNav} />
         {normalizedBreadcrumbItems.length ? <TitanBreadcrumb items={normalizedBreadcrumbItems} /> : null}
-        <TitanMenuToolbar tabs={toolbarTabs} />
         <div className="titan-section-page__body">{children}</div>
       </div>
     </SectionPageActionsProvider>

@@ -4,6 +4,7 @@
 
 import { createDefaultSpecification, normalizeSpecification } from "./productSpecificationModel";
 import { normalizeInspectionCriteriaSpec } from "./inspectionCriteriaModel";
+import { resolveProductMasterInspectionSpec } from "./productMasterInspectionSpec";
 import { findProductByCompanyAndPartNo, findProductByPartNo, getMasterDataByCategory, resolveProductByQuery } from "./masterData";
 import {
   getCurrentDrawingRevision,
@@ -130,8 +131,11 @@ export function getProductAutofillBundle(partNo, company = "") {
 
 export function resolveInspectionSpecification(partNo) {
   const bundle = getProductMasterBundle(partNo);
-  if (!bundle?.inspection?.specification) return null;
-  return bundle.inspection.specification;
+  if (bundle?.product?.specification) {
+    return normalizeInspectionCriteriaSpec(normalizeSpecification(bundle.product.specification));
+  }
+  if (bundle?.inspection?.specification) return bundle.inspection.specification;
+  return resolveProductMasterInspectionSpec(bundle?.product?.company, partNo);
 }
 
 export function upsertProductInspection(payload) {

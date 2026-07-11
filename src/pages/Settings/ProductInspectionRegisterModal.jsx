@@ -263,7 +263,6 @@ export default function ProductInspectionRegisterModal({
   const caseDepth = getDepthItem(spec, "caseDepth");
   const effectiveDepth = getDepthItem(spec, "effectiveDepth");
   const compoundLayer = getSimpleHardnessItem(spec, "compoundLayer");
-  const core = getSimpleHardnessItem(spec, "core");
 
   const updateSpec = (updater) => {
     setForm((prev) => {
@@ -446,15 +445,6 @@ export default function ProductInspectionRegisterModal({
               value={compoundLayer.disabled ? "없음" : compoundLayer.spec ?? ""}
               onChange={(event) => updateSimpleItem("compoundLayer", event.target.value)}
               placeholder="5~15 μm"
-            />
-          </label>
-          <label className="product-inspection-modal__field">
-            <span>심부경도</span>
-            <input
-              type="text"
-              value={core.disabled ? "없음" : core.spec ?? ""}
-              onChange={(event) => updateSimpleItem("core", event.target.value)}
-              placeholder="250~350 HV"
             />
           </label>
 

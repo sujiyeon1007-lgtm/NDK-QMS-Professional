@@ -51,6 +51,9 @@ export const COMPANY_ABBREVIATION_POLICY = {
 export const COMPANY_ABBREVIATION_EXAMPLES = [
   { name: "서암열처리", abbreviation: "SE" },
   { name: "두산에너빌리티", abbreviation: "DS" },
+  { name: "삼성중공업", abbreviation: "SHI" },
+  { name: "한화오션", abbreviation: "HANWHA" },
+  { name: "현대중공업", abbreviation: "HHI" },
   { name: "GE", abbreviation: "GE" },
   { name: "현대로템", abbreviation: "HR" },
 ];

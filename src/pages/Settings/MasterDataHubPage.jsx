@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { MASTER_DATA_LAUNCHER_ITEMS } from "../../config/masterDataLauncher";
+import { MASTER_DATA_HOLD_LAUNCHER_ITEMS, MASTER_DATA_LAUNCHER_ITEMS } from "../../config/masterDataLauncher";
 import TitanLauncherHubPage from "../../foundation/components/TitanLauncherHubPage";
 
 import "../../foundation/styles/titan-hub-page.css";
@@ -16,7 +16,7 @@ export default function MasterDataHubPage() {
 
   return (
     <TitanLauncherHubPage
-      items={MASTER_DATA_LAUNCHER_ITEMS}
+      items={[...MASTER_DATA_LAUNCHER_ITEMS, ...MASTER_DATA_HOLD_LAUNCHER_ITEMS]}
       cardsClassName="master-data-hub__cards"
     />
   );

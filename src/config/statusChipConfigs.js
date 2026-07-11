@@ -208,6 +208,55 @@ export const STATUS_CHIP_SETS = {
       { id: "SHIP_WAIT", label: "출고 대기", icon: "localShipping", tone: "shipment", filterable: false },
     ],
   },
+
+  inventory: {
+    id: "inventory",
+    ariaLabel: "재고관리 KPI",
+    chips: [
+      {
+        id: "inCustody",
+        label: "보관 중 재고",
+        icon: "inventory",
+        tone: "incoming",
+        filterPatch: { __chipInCustody: "1" },
+      },
+      {
+        id: "HT_WAIT",
+        label: "생산 대기",
+        icon: "precisionManufacturing",
+        tone: "production",
+        filterPatch: { __chipHT_WAIT: "1" },
+      },
+      {
+        id: "HT_RUNNING",
+        label: "생산 중",
+        icon: "precisionManufacturing",
+        tone: "production",
+        filterPatch: { __chipHT_RUNNING: "1" },
+      },
+      {
+        id: "INSPECTION_WAIT",
+        label: "검사 대기",
+        icon: "factCheck",
+        tone: "inspection",
+        filterPatch: { __chipINSPECTION_WAIT: "1" },
+      },
+      {
+        id: "CERT_WAIT",
+        label: "성적서 대기",
+        icon: "description",
+        tone: "certificate",
+        filterPatch: { __chipCERT_WAIT: "1" },
+      },
+      {
+        id: "SHIP_WAIT",
+        label: "출고 대기",
+        icon: "localShipping",
+        tone: "shipment",
+        filterPatch: { __chipSHIP_WAIT: "1" },
+      },
+    ],
+  },
 };
 
 /**

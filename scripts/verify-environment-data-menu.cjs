@@ -1,0 +1,28 @@
+const { chromium } = require("playwright");
+const BASE = process.env.TITAN_BASE_URL || "http://127.0.0.1:5180";
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
+  await page.fill('input[name="loginId"]', "admin");
+  await page.fill('input[name="password"]', "1234");
+  await page.click('button[type="submit"]');
+  const modal = page.locator(".titan-login-modal");
+  if (await modal.isVisible().catch(() => false)) await page.getByRole("button", { name: "\uB098\uC911\uC5D0" }).click();
+  await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 20000 });
+  await page.goto(BASE + "/environment/dashboard", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1500);
+  const dashBody = await page.locator("body").innerText();
+  const cards = await page.locator(".company-launcher-grid .company-launcher-card").count();
+  const nav = await page.locator(".titan-workspace-nav__link").allTextContents();
+  const dashOk = dashBody.includes("\uB370\uC774\uD130 \uAD00\uB9AC") && cards === 10 && nav.some((t) => t.includes("\uB370\uC774\uD130 \uAD00\uB9AC"));
+  console.log("DASHBOARD: " + (dashOk ? "PASS" : "FAIL") + " cards=" + cards + " nav=" + nav.join("|"));
+  await page.goto(BASE + "/environment/data", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1500);
+  const dataBody = await page.locator("body").innerText();
+  const buttons = await page.locator(".environment-backup-actions button").count();
+  const dataOk = dataBody.includes("\uB370\uC774\uD130 \uAD00\uB9AC") && dataBody.includes("Master \uB370\uC774\uD130 \uCD08\uAE30\uD654") && dataBody.includes("\uC5C5\uBB34 \uB370\uC774\uD130 \uCD08\uAE30\uD654") && dataBody.includes("\uC804\uCCB4 \uCD08\uAE30\uD654") && buttons >= 3;
+  console.log("DATA_PAGE: " + (dataOk ? "PASS" : "FAIL") + " buttons=" + buttons);
+  await browser.close();
+  if (!dashOk || !dataOk) process.exit(1);
+})().catch((e) => { console.error(e); process.exit(1); });

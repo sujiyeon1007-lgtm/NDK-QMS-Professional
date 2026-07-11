@@ -1,0 +1,82 @@
+.titan-workflow-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 10px;
+  background: var(--titan-surface-muted, #f8fafc);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.titan-workflow-nav__section {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.titan-workflow-nav__section-label {
+  color: var(--titan-text-muted, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.titan-workflow-nav__current-step {
+  color: var(--titan-text, #0f172a);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.titan-workflow-nav__current-dot {
+  color: var(--titan-primary, #2563eb);
+}
+
+.titan-workflow-nav__divider {
+  width: 1px;
+  height: 22px;
+  background: var(--titan-border, #dde6f0);
+  flex-shrink: 0;
+}
+
+.titan-workflow-nav__links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.titan-workflow-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--titan-border, #dde6f0);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--titan-primary, #2563eb);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.titan-workflow-nav__link:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.titan-workflow-nav__link-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.titan-workflow-nav__empty {
+  color: var(--titan-text-muted, #94a3b8);
+  font-size: 12px;
+}

@@ -1,37 +1,53 @@
 import { SecondaryButton } from "../../foundation/components/Button";
 import TitanTableRowActions from "../../foundation/components/TitanTableRowActions";
 
-/** 입고관리 — [수정] [삭제] (상세는 더블클릭) */
+/** 입고관리 — [수정] [삭제] [생산대기로 이동] (상세는 더블클릭) */
 export default function InboundRowActions({
   onEdit,
+  onMoveToProduction,
   onDelete,
   canEdit = true,
+  canMoveToProduction = false,
   canDelete = true,
 }) {
   return (
     <TitanTableRowActions>
-      <SecondaryButton
-        type="button"
-        className="titan-btn--table-action"
-        disabled={!canEdit}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (canEdit) onEdit?.();
-        }}
-      >
-        수정
-      </SecondaryButton>
-      <SecondaryButton
-        type="button"
-        className="titan-btn--table-action"
-        disabled={!canDelete}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (canDelete) onDelete?.();
-        }}
-      >
-        삭제
-      </SecondaryButton>
+      {canEdit ? (
+        <SecondaryButton
+          type="button"
+          className="titan-btn--table-action"
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit?.();
+          }}
+        >
+          수정
+        </SecondaryButton>
+      ) : null}
+      {canDelete ? (
+        <SecondaryButton
+          type="button"
+          className="titan-btn--table-action"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete?.();
+          }}
+        >
+          삭제
+        </SecondaryButton>
+      ) : null}
+      {canMoveToProduction ? (
+        <SecondaryButton
+          type="button"
+          className="titan-btn--table-action"
+          onClick={(event) => {
+            event.stopPropagation();
+            onMoveToProduction?.();
+          }}
+        >
+          생산대기로 이동
+        </SecondaryButton>
+      ) : null}
     </TitanTableRowActions>
   );
 }

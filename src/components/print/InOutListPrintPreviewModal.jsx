@@ -15,7 +15,14 @@ import OutboundListPrint from "./OutboundListPrint";
 import TitanPrintPreviewModal from "./TitanPrintPreviewModal";
 
 /** 입고·출고 리스트 공통 Preview — 동일 Modal·동일 출력 엔진, 양식만 구분 */
-function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, onAfterPrint }) {
+function InOutListPrintPreviewModal({
+  open,
+  onClose,
+  documentType,
+  printProps,
+  onAfterPrint,
+  onMarkPrintComplete,
+}) {
   const [busy, setBusy] = useState(false);
   const meta = getPrintDocumentMeta(documentType);
   const isInbound = documentType === TITAN_PRINT_DOCUMENT_TYPES.INBOUND_LIST;
@@ -23,6 +30,14 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, o
   const notifyAfterPrint = useCallback(() => {
     onAfterPrint?.(printProps);
   }, [onAfterPrint, printProps]);
+
+  const handleMarkPrintComplete = useCallback(() => {
+    if (onMarkPrintComplete) {
+      onMarkPrintComplete(printProps);
+      return;
+    }
+    notifyAfterPrint();
+  }, [notifyAfterPrint, onMarkPrintComplete, printProps]);
 
   const handlePrint = useCallback(async (documentEl) => {
     setBusy(true);
@@ -76,6 +91,11 @@ function InOutListPrintPreviewModal({ open, onClose, documentType, printProps, o
       onExcel={handleExcel}
       excelEnabled
       busy={busy}
+      onMarkComplete={isInbound ? handleMarkPrintComplete : undefined}
+      markCompleteLabel="출력 완료"
+      footerPrintLabel={isInbound ? "출력" : "인쇄"}
+      footerCloseLabel={isInbound ? "취소" : "닫기"}
+      simplifiedFooter={isInbound}
     >
       {isInbound ? (
         <HeatTreatmentWorkListPrint {...printProps} />

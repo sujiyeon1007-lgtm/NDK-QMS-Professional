@@ -1,4 +1,5 @@
 import TitanStandardDetailPopup from "../../foundation/components/detailPopup/TitanStandardDetailPopup";
+import { TitanMasterDetailFooter } from "../../foundation/components/FoundationActionBar";
 
 import "./CompanyManagement.css";
 
@@ -11,8 +12,19 @@ function renderDetailFieldValue(row, field) {
   return String(value);
 }
 
-/** 재질 · 공정 · 설비 · 작업자 Row 클릭 상세 Popup */
-export default function MasterEntityDetailModal({ open, row, onClose, screen, pageTitle }) {
+/** 재질 · 공정 · 설비 · 작업자 Row 더블클릭 상세 Popup */
+export default function MasterEntityDetailModal({
+  open,
+  row,
+  onClose,
+  onEdit,
+  onDelete,
+  onNavigate,
+  screen,
+  pageTitle,
+  categoryLabel,
+  navigationRows = [],
+}) {
   if (!row || !screen) return null;
 
   const title = row.name || row.code || pageTitle || screen.title;
@@ -35,6 +47,17 @@ export default function MasterEntityDetailModal({ open, row, onClose, screen, pa
       tabs={tabs}
       summary={summary}
       ariaLabel={`${pageTitle} 상세정보`}
+      footer={
+        <TitanMasterDetailFooter
+          categoryLabel={categoryLabel ?? pageTitle}
+          rows={navigationRows}
+          currentRowId={row.id}
+          onNavigate={onNavigate}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onClose={onClose}
+        />
+      }
       renderTabContent={() => (
         <div className="company-detail-modal">
           <section className="company-detail-section" aria-label={`${pageTitle} 정보`}>

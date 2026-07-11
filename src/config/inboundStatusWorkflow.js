@@ -41,6 +41,13 @@ export const PURCHASE_ORDER_NO_POLICY = {
   note: "업체마다 발주번호가 있는 경우에만 입력 · 없으면 공란 저장",
 };
 
+/** 입고등록 — 열처리 공정 선택 (이온질화 · 가스질화 · 가스연질화) */
+export const INBOUND_HEAT_TREATMENT_PROCESS_OPTIONS = [
+  "이온질화",
+  "가스질화",
+  "가스연질화",
+];
+
 /** 입고현황 등록 항목 (STEP 1 확정) */
 export const INBOUND_REGISTRATION_FIELDS = [
   { key: "managementId", label: "관리번호", auto: true, required: true },

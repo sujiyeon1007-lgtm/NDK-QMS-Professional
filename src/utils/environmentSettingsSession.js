@@ -9,8 +9,8 @@ import { resetUserPasswordToDefault } from "./titanAuthDataSession";
 const STORAGE_KEY = "project-titan-environment-settings-v1";
 const BACKUP_PREFIX = "project-titan-";
 
-export const APP_VERSION = "V1.0.0";
-export const APP_NAME = "Project TITAN V1.0";
+export const APP_VERSION = "1.3.0 RC1";
+export const APP_NAME = "Project TITAN 1.3.0 RC1";
 
 export const PERMISSION_MENUS = [
   { key: "all", label: "전체" },
@@ -117,7 +117,7 @@ function getSeedSettings() {
       },
     ],
     updateInfo: {
-      latestVersion: "V1.0.0",
+      latestVersion: "1.3.0 RC1",
       available: false,
     },
   };

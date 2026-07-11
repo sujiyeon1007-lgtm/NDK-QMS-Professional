@@ -1,6 +1,7 @@
 import { formatQtyWithUnit } from "../../utils/productUnits";
 import { getPrintDateTime, getPrintUser } from "../../utils/titanPrintContext";
 import { getProductionProcessName } from "../../config/productionProcessCodes";
+import { resolveCriterionItemUnit } from "../../utils/inspectionCriteriaModel";
 import {
   getCompanyBrandingSignatureUrl,
   getCompanyBrandingStampUrl,
@@ -70,9 +71,40 @@ function CertificatePrint({ record, printDateTime = "", printUser = "" }) {
 
             <section className="titan-print-section">
               <h2>검사 결과</h2>
-              <p className="titan-print-placeholder">
-                성적서 양식은 품질 문서 전용 Form 개발 후 이 영역에 연동됩니다.
-              </p>
+              {Array.isArray(record.hardnessRows) && record.hardnessRows.length > 0 ? (
+                <table className="titan-print-info-table">
+                  <thead>
+                    <tr>
+                      <th>항목</th>
+                      <th>스펙</th>
+                      <th>측정값</th>
+                      <th>단위</th>
+                      <th>판정</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {record.hardnessRows.map((row) => (
+                      <tr key={row.key || row.item}>
+                        <td>{row.item || "—"}</td>
+                        <td>{row.spec || "—"}</td>
+                        <td>{row.measuredRaw ?? row.measured ?? "—"}</td>
+                        <td>
+                          {resolveCriterionItemUnit(
+                            row.key,
+                            { unit: row.unit },
+                            record.hardnessUnit || "HV"
+                          )}
+                        </td>
+                        <td>{row.judgment || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="titan-print-placeholder">
+                  성적서 양식은 품질 문서 전용 Form 개발 후 이 영역에 연동됩니다.
+                </p>
+              )}
             </section>
 
             {(stampUrl || signatureUrl) ? (

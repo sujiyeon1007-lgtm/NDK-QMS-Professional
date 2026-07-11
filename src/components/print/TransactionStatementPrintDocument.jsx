@@ -12,7 +12,7 @@ function TransactionStatementPrintDocument({
   if (!record) return null;
 
   return (
-    <div className="titan-print-document transaction-statement-print" aria-label="거래명세서">
+    <div className="titan-print-document transaction-statement-print titan-print--portrait" aria-label="거래명세서">
       <TransactionStatementPreview
         record={record}
         shipQty={shipQty}

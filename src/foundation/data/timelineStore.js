@@ -7,7 +7,7 @@ import { TIMELINE_EVENT_TYPES, createTimelineId } from "./titanDataModels";
 import { TITAN_DATA_STORAGE_KEYS } from "./titanDataStorageKeys";
 import { createJsonArrayStore } from "./storeFactory";
 
-function buildSeedTimelineRecords() {
+export function buildSeedTimelineRecords() {
   return [
     {
       id: createTimelineId(),
@@ -64,7 +64,6 @@ function buildSeedTimelineRecords() {
 const arrayStore = createJsonArrayStore({
   storageKey: TITAN_DATA_STORAGE_KEYS.timeline,
   idField: "id",
-  getSeed: buildSeedTimelineRecords,
 });
 
 export const timelineStore = {
@@ -106,10 +105,6 @@ export const timelineStore = {
 
   replaceAll(records) {
     return arrayStore.writeAll(records);
-  },
-
-  seedIfEmpty() {
-    return arrayStore.seedIfEmpty();
   },
 
   clear() {

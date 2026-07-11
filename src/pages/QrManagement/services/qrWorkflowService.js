@@ -15,4 +15,6 @@ export {
   getLotProducts,
   getRunningSession,
   resolveEquipmentChargingButtons,
+  ensureLotBeforeCharging,
+  recordMatchesEquipmentProcess,
 } from "../../../utils/equipmentWorkflowService";

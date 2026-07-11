@@ -16,7 +16,7 @@
  */
 
 
-import { getCertificateMenuListRows } from "./certificateStatus";
+import { getCertificateMenuListRows, getCertificateRegisterListRows, getCertificateHistoryListRows } from "./certificateStatus";
 import {
   getDevelopmentInspections,
   mapDevelopmentInspectionToListRow,
@@ -35,6 +35,7 @@ import {
   mapOtherInspectionToListRow,
 } from "./otherInspectionSession";
 import { getSessionProductionRecords } from "./productionRecords";
+import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 import {
   buildQualityTraceabilityTimeline,
   searchHistoryInquiryRecords,
@@ -52,11 +53,34 @@ import {
   getInspectionResultLabel,
   resolveRecordCurrentProcess,
 } from "./workflowProcessStatus";
+import { requiresCertificateIssue } from "./certificateIssuePolicy";
 
-/** 검사관리 Task Workspace — HT_COMPLETE · 검사 대기 */
+/** P0-OP-006 Phase 1 — screen data memo keyed on production records snapshot */
+let inspectionMassSnapshot = null;
+let inspectionMassCache = null;
+let certificateWorkspaceSnapshot = null;
+let certificateWorkspaceCache = null;
+
+export function invalidateQualityWorkspaceDataCache() {
+  inspectionMassSnapshot = null;
+  inspectionMassCache = null;
+  certificateWorkspaceSnapshot = null;
+  certificateWorkspaceCache = null;
+}
+
+/** 검사등록 Workspace — 생산완료 · 검사 미완료 */
 export const QUALITY_INSPECTION_WAIT_STAGE = CURRENT_PROCESS_KEYS.INSPECTION_WAIT;
 
-/** 검사관리 Task Workspace — 검사 진행 (파생) */
+/** 검사현황 Workspace — 검사 완료 이력 (INSPECTION_DONE 이후) */
+export const QUALITY_INSPECTION_STATUS_STAGES = Object.freeze([
+  CURRENT_PROCESS_KEYS.INSPECTION_DONE,
+  CURRENT_PROCESS_KEYS.CERT_WAIT,
+  CURRENT_PROCESS_KEYS.CERT_DONE,
+  CURRENT_PROCESS_KEYS.SHIP_WAIT,
+  CURRENT_PROCESS_KEYS.SHIPPED,
+]);
+
+/** 검사관리 Task Workspace — 검사 진행 (파생 · 보류/검사중) */
 export const QUALITY_INSPECTION_IN_PROGRESS_STAGE = "INSPECTION_IN_PROGRESS";
 
 /** 성적서관리 Task Workspace — 검사 완료 · 성적서 미발행 */
@@ -158,26 +182,34 @@ export function isQualityInspectionInProgressRecord(record) {
 }
 
 /**
- * 검사관리 Task Workspace — 검사 대기 · 검사 진행 LOT
+ * P0-QUALITY-009 — 검사등록 Workspace — 생산완료 · 검사대기(INSPECTION_WAIT)만
+ * @param {object} record
+ * @returns {boolean}
+ */
+export function isQualityInspectionRegisterRecord(record) {
+  if (!isInspectionMenuEligible(record)) return false;
+  return resolveRecordCurrentProcess(record).key === QUALITY_INSPECTION_WAIT_STAGE;
+}
+
+/**
+ * P0-QUALITY-009 — 검사현황 Workspace — 검사 완료 · 이력 조회 전용
+ * @param {object} record
+ * @returns {boolean}
+ */
+export function isQualityInspectionStatusRecord(record) {
+  if (!isInspectionMenuEligible(record)) return false;
+  if (!isInspectionComplete(record)) return false;
+  const key = resolveRecordCurrentProcess(record).key;
+  return QUALITY_INSPECTION_STATUS_STAGES.includes(key);
+}
+
+/**
+ * 검사등록 Task Workspace — 검사대기 LOT (등록 화면 SSoT)
  * @param {object} record
  * @returns {boolean}
  */
 export function isQualityInspectionTaskRecord(record) {
-  if (!isInspectionMenuEligible(record)) return false;
-
-  const key = resolveRecordCurrentProcess(record).key;
-  if (key === CURRENT_PROCESS_KEYS.HT_RUNNING || key === CURRENT_PROCESS_KEYS.HT_WAIT) {
-    return false;
-  }
-  if (
-    key === CURRENT_PROCESS_KEYS.SHIP_WAIT ||
-    key === CURRENT_PROCESS_KEYS.SHIPPED ||
-    key === CURRENT_PROCESS_KEYS.CERT_DONE
-  ) {
-    return false;
-  }
-
-  return isQualityInspectionWaitRecord(record) || isQualityInspectionInProgressRecord(record);
+  return isQualityInspectionRegisterRecord(record);
 }
 
 /**
@@ -187,6 +219,7 @@ export function isQualityInspectionTaskRecord(record) {
  */
 export function isQualityCertificateTaskRecord(record) {
   if (!isCertificateMenuEligible(record)) return false;
+  if (!requiresCertificateIssue(record)) return false;
   const key = resolveRecordCurrentProcess(record).key;
   return QUALITY_CERTIFICATE_TASK_STAGES.includes(key);
 }
@@ -218,13 +251,23 @@ export function isQualityHistoryWorkspaceRecord(record) {
 
 // ─── 검사관리 (양산 · 개발 · 기타) ───────────────────────────────────────────
 
-export function buildInspectionMassWorkspaceRows(records = getQualityRecords()) {
+export function buildInspectionMassWorkspaceRows(records = getQualityRecords(), inspectionType = null) {
   const eligibleIds = new Set(
-    dedupeQualityRecords(records, isQualityInspectionTaskRecord).map((record) => record.id)
+    dedupeQualityRecords(records, isQualityInspectionRegisterRecord).map((record) => record.id)
   );
 
-  return getMassProductionInspectionRows().filter(
-    (row) => eligibleIds.has(row.managementId) || Boolean(row.logId)
+  return getMassProductionInspectionRows({ inspectionType }).filter((row) =>
+    eligibleIds.has(row.managementId)
+  );
+}
+
+export function buildInspectionStatusWorkspaceRows(records = getQualityRecords(), inspectionType = null) {
+  const eligibleIds = new Set(
+    dedupeQualityRecords(records, isQualityInspectionStatusRecord).map((record) => record.id)
+  );
+
+  return getMassProductionInspectionRows({ inspectionType }).filter(
+    (row) => eligibleIds.has(row.managementId) && Boolean(row.logId)
   );
 }
 
@@ -244,12 +287,23 @@ export function countInspectionMassWorkspace(rows = buildInspectionMassWorkspace
   };
 }
 
-export function getInspectionMassScreenData(records = getQualityRecords()) {
-  const baseRecords = buildInspectionMassWorkspaceRows(records);
-  return {
+export function getInspectionMassScreenData(records, inspectionType = null) {
+  const snapshot = records ?? getQualityRecords();
+  if (!records && !inspectionType && inspectionMassSnapshot === snapshot && inspectionMassCache) {
+    return inspectionMassCache;
+  }
+
+  const baseRecords = buildInspectionMassWorkspaceRows(snapshot, inspectionType);
+  const result = {
     baseRecords,
     counts: countInspectionMassWorkspace(baseRecords),
   };
+
+  if (!records && !inspectionType) {
+    inspectionMassSnapshot = snapshot;
+    inspectionMassCache = result;
+  }
+  return result;
 }
 
 export function buildInspectionDevWorkspaceRows() {
@@ -309,7 +363,43 @@ export function buildCertificateWorkspaceRows(records = getQualityRecords()) {
     dedupeQualityRecords(records, isQualityCertificateTaskRecord).map((record) => record.id)
   );
 
-  return getCertificateMenuListRows().filter((row) => eligibleIds.has(row.entry?.managementId));
+  return getCertificateRegisterListRows().filter((row) => eligibleIds.has(row.entry?.managementId));
+}
+
+export function buildCertificateHistoryWorkspaceRows() {
+  return getCertificateHistoryListRows();
+}
+
+export function countCertificateHistoryWorkspace(rows = buildCertificateHistoryWorkspaceRows()) {
+  return {
+    certIssued: rows.length,
+    certReissued: rows.filter((row) => row.reissueLabel === "Y").length,
+  };
+}
+
+export function getCertificateHistoryScreenData() {
+  const baseRecords = buildCertificateHistoryWorkspaceRows();
+  return {
+    baseRecords,
+    counts: countCertificateHistoryWorkspace(baseRecords),
+  };
+}
+
+export function countInspectionStatusWorkspace(rows = buildInspectionStatusWorkspaceRows()) {
+  return {
+    inspectNotDone: 0,
+    inspectDone: rows.filter((row) => row.statusLabel === MENU_TASK_STATUS.INSPECT_DONE).length,
+    inspectionWait: 0,
+    inspectionInProgress: 0,
+  };
+}
+
+export function getInspectionStatusScreenData(records, inspectionType = null) {
+  const baseRecords = buildInspectionStatusWorkspaceRows(records, inspectionType);
+  return {
+    baseRecords,
+    counts: countInspectionStatusWorkspace(baseRecords),
+  };
 }
 
 export function countCertificateWorkspace(rows = buildCertificateWorkspaceRows()) {
@@ -323,12 +413,23 @@ export function countCertificateWorkspace(rows = buildCertificateWorkspaceRows()
   };
 }
 
-export function getCertificateWorkspaceScreenData(records = getQualityRecords()) {
-  const baseRecords = buildCertificateWorkspaceRows(records);
-  return {
+export function getCertificateWorkspaceScreenData(records) {
+  const snapshot = records ?? getQualityRecords();
+  if (!records && certificateWorkspaceSnapshot === snapshot && certificateWorkspaceCache) {
+    return certificateWorkspaceCache;
+  }
+
+  const baseRecords = buildCertificateWorkspaceRows(snapshot);
+  const result = {
     baseRecords,
     counts: countCertificateWorkspace(baseRecords),
   };
+
+  if (!records) {
+    certificateWorkspaceSnapshot = snapshot;
+    certificateWorkspaceCache = result;
+  }
+  return result;
 }
 
 /** @deprecated alias — titanScreenDataSource 호환 */
@@ -450,6 +551,7 @@ export function getQualityWorkJournalScreenData(options = {}) {
 export function getQualityWorkspaceSnapshot(records = getQualityRecords()) {
   const inspection = getInspectionMassScreenData(records);
   const certificate = getCertificateWorkspaceScreenData(records);
+  const certificateHistory = getCertificateHistoryScreenData();
   const history = getQualityHistoryScreenData();
   const ncr = getNcrWorkspaceScreenData(records);
   const referenceDate = getJournalReferenceDate();
@@ -463,6 +565,7 @@ export function getQualityWorkspaceSnapshot(records = getQualityRecords()) {
   return {
     inspection,
     certificate,
+    certificateHistory,
     history,
     ncr,
     journal,
@@ -470,9 +573,11 @@ export function getQualityWorkspaceSnapshot(records = getQualityRecords()) {
       inspectionWait: inspection.counts.inspectionWait,
       inspectionInProgress: inspection.counts.inspectionInProgress,
       certNotIssued: certificate.counts.certNotIssued,
-      certIssued: certificate.counts.certIssued,
+      certIssued: certificateHistory.counts.certIssued,
       defectTotal: ncr.counts.defectTotal,
       qualityJournalToday: journal.counts.today,
     },
   };
 }
+
+registerWorkflowScreenCacheInvalidator(invalidateQualityWorkspaceDataCache);

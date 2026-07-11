@@ -32,7 +32,7 @@ export function buildEquipmentRecordsFromMasterRows(masterRows = [], existingRec
       let status = existing?.status ?? "idle";
       if (maintenance) status = "maintenance";
       else if (runningSession) status = "running";
-      else if (!existing && chargeableLots.length > 0) status = "ready";
+      else if (!existing && chargeableLots.length > 0) status = "idle";
 
       return masterRowToEquipmentRecord(row, existing, {
         runningSession,

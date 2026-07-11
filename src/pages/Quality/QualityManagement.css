@@ -77,6 +77,30 @@
   color: #94a3b8;
 }
 
+.quality-register-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.quality-register-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quality-register-page__tabs {
+  margin-bottom: 4px;
+}
+
+.quality-page--section {
+  padding-top: 0;
+}
+
+.quality-page__section-heading {
+  margin-bottom: 8px;
+}
+
 .quality-page .production-kpi-panel__grid--4 .production-metric-card__value small {
   margin-left: 2px;
   font-size: 14px;

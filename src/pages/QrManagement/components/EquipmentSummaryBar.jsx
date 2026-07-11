@@ -1,4 +1,4 @@
-import { Factory, Clock, PauseCircle, PlayCircle, Wrench } from "lucide-react";
+import { Factory, PauseCircle, PlayCircle, Wrench } from "lucide-react";
 
 import TitanKpiBarSlot from "../../../foundation/components/TitanKpiBarSlot";
 import TitanKpiCard from "../../../foundation/components/TitanKpiCard";
@@ -16,18 +16,9 @@ function buildSummaryKpiItems(summary) {
       filterable: true,
     },
     {
-      id: "ready",
-      label: "장입 준비",
-      value: summary.ready,
-      countUnit: "대",
-      tone: "prod-wait",
-      icon: Clock,
-      filterable: true,
-    },
-    {
       id: "idle",
       label: "대기",
-      value: summary.idle,
+      value: summary.idle + (summary.ready ?? 0),
       countUnit: "대",
       tone: "inspect-wait",
       icon: PauseCircle,

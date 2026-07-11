@@ -81,6 +81,18 @@
     color var(--titan-transition-fast);
 }
 
+.titan-btn--danger {
+  background: #fff7f7;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.titan-btn--danger:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
 .titan-card {
   position: relative;
   background: var(--titan-surface);
@@ -3463,6 +3475,32 @@ body.titan-modal-open {
 
 .foundation-action-bar__button--danger:hover:not(:disabled) {
   background: #fee2e2;
+}
+
+.titan-master-detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.titan-master-detail-footer__position {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--titan-text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.titan-master-detail-footer__actions {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.titan-standard-detail-popup__footer .titan-master-detail-footer {
+  width: 100%;
 }
 
 /* Foundation Search Panel — facade over TitanSearchPanel */

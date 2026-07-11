@@ -13,16 +13,24 @@ import {
   TITAN_QA_DEMO_SHIPMENT_EVENTS,
   RC1_DEMO_BRANDING_PATCH,
   buildQaDemoMasterSeed,
+  getTitanDemoInspectionLogSeeds,
+  getTitanDemoCertificateSeeds,
 } from "../data/titanDemoSampleData";
 import companyStore from "../foundation/data/master/companyStore";
-import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
+import lotStore, { buildSeedLotRecords } from "../foundation/data/lotStore";
+import productionStore, { mapDemoToProductionRecord } from "../foundation/data/productionStore";
+import qualityStore, { buildSeedQualityBundle } from "../foundation/data/qualityStore";
+import timelineStore, { buildSeedTimelineRecords } from "../foundation/data/timelineStore";
+import { syncAllMasterStoresFromSession } from "../foundation/data/master/masterDataSync";
+import { notifyWorkflowDataRefresh, registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 import {
   OPERATIONS_DATA_MODE_STORAGE_KEY,
   OPERATIONS_DATA_MODES,
   TITAN_QA_DEMO_SEED_VERSION,
 } from "../config/presentationBuildPolicy";
-import { replaceSessionMasterData, TITAN_OPERATIONAL_MASTER_SEED } from "./masterData";
+import { replaceSessionMasterData, TITAN_EMPTY_MASTER_SEED, TITAN_OPERATIONAL_MASTER_SEED } from "./masterData";
 import { replaceOperationsHistory, resetOperationsHistory } from "./titanHistorySession";
+import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
 /** 운영 CRUD 단일 영속 저장소 (sessionStorage) */
 export const OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY =
@@ -98,9 +106,49 @@ function buildSeedSessionRecords() {
   return PRODUCTION_RECORDS.map((record) => normalizeSessionRecord(record));
 }
 
+/** P0-OP-006 Phase 1 — normalized snapshot cache (same array ref until dirty) */
+let sessionRecordsSnapshot = null;
+let sessionRecordsSnapshotDirty = true;
+
+export function invalidateSessionProductionRecordsCache() {
+  sessionRecordsSnapshotDirty = true;
+  sessionRecordsSnapshot = null;
+}
+
+function markSessionRecordsMutated() {
+  invalidateSessionProductionRecordsCache();
+}
+
 function persistSessionRecords() {
   writeJson(OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY, sessionRecords);
+  syncProductionHistoryStore(sessionRecords);
   notifyWorkflowDataRefresh({ source: "production-records" });
+}
+
+function isProductionHistoryRow(record) {
+  if (!record?.registered || !String(record?.lotNo ?? "").trim()) return false;
+  return (
+    record.workflowStatus === WORKFLOW_STATUS.PROD_DONE ||
+    record.completionStatus === WORKFLOW_STATUS.PROD_DONE
+  );
+}
+
+/** 생산완료 row → productionStore (생산 이력 · 관제 SSOT) */
+function syncProductionHistoryStore(records = sessionRecords) {
+  const historyRows = records.filter(isProductionHistoryRow);
+  if (!historyRows.length) return;
+
+  const mapped = historyRows.map((row) =>
+    mapDemoToProductionRecord({
+      ...row,
+      id: row.productionWorkflowId || row.id,
+      completionDate: row.productionCompletedAt || row.workDate || "",
+      productionEndTime: row.productionEndAt || row.chargeEndAt || "",
+    })
+  );
+  const historyIds = new Set(mapped.map((row) => row.productionId));
+  const preserved = productionStore.list().filter((row) => !historyIds.has(row.productionId));
+  productionStore.replaceAll([...preserved, ...mapped]);
 }
 
 function loadSessionRecords() {
@@ -117,6 +165,7 @@ export function replaceSessionProductionRecords(nextRecords = []) {
   sessionRecords = (Array.isArray(nextRecords) ? nextRecords : []).map((record) =>
     normalizeSessionRecord(record)
   );
+  markSessionRecordsMutated();
   persistSessionRecords();
   return sessionRecords;
 }
@@ -125,7 +174,12 @@ export function replaceSessionProductionRecords(nextRecords = []) {
 let sessionRecords = loadSessionRecords();
 
 export function getSessionProductionRecords() {
-  return sessionRecords.map((record) => normalizeInboundDataFields(record));
+  if (!sessionRecordsSnapshotDirty && sessionRecordsSnapshot) {
+    return sessionRecordsSnapshot;
+  }
+  sessionRecordsSnapshot = sessionRecords.map((record) => normalizeInboundDataFields(record));
+  sessionRecordsSnapshotDirty = false;
+  return sessionRecordsSnapshot;
 }
 
 export function getSessionLotGroups() {
@@ -139,6 +193,7 @@ export function updateSessionProductionRecord(id, patch) {
     const synced = syncShipmentStatus(merged);
     return { ...merged, ...synced, stockQty: getStockQty(merged) };
   });
+  markSessionRecordsMutated();
   persistSessionRecords();
   return sessionRecords;
 }
@@ -150,6 +205,7 @@ export function updateSessionProductionRecordsByLot(lotKey, patch) {
     const synced = syncShipmentStatus(merged);
     return { ...merged, ...synced, stockQty: getStockQty(merged) };
   });
+  markSessionRecordsMutated();
   persistSessionRecords();
   return sessionRecords;
 }
@@ -168,8 +224,10 @@ export function addSessionProductionRecord(record) {
     stockQty: getStockQty(normalized),
     shippedQty: normalized.shippedQty ?? 0,
     incomingRegistered: true,
+    inboundQty: Number(normalized.inboundQty ?? normalized.qty) || 0,
   };
   sessionRecords = [newRecord, ...sessionRecords];
+  markSessionRecordsMutated();
   persistSessionRecords();
   return newRecord;
 }
@@ -179,6 +237,7 @@ export function deleteSessionProductionRecord(id) {
   sessionRecords = sessionRecords.filter((record) => record.id !== id);
   const ok = sessionRecords.length < before;
   if (ok) {
+    markSessionRecordsMutated();
     persistSessionRecords();
   }
   return { ok, message: ok ? "" : "관리번호를 찾을 수 없습니다." };
@@ -250,7 +309,7 @@ export function getOperationsRecordCount() {
 export function resetOperationsToEmpty() {
   replaceSessionProductionRecords([]);
   resetOperationsHistory();
-  replaceSessionMasterData(TITAN_OPERATIONAL_MASTER_SEED);
+  replaceSessionMasterData(TITAN_EMPTY_MASTER_SEED);
   setOperationsDataMode(OPERATIONS_DATA_MODES.OPERATIONAL);
   notifyWorkflowDataRefresh({ source: "operations-bootstrap", mode: OPERATIONS_DATA_MODES.OPERATIONAL });
   return { mode: OPERATIONS_DATA_MODES.OPERATIONAL, recordCount: 0 };
@@ -293,3 +352,75 @@ export function loadQaDemoSeed() {
 export function restoreOperationalFromQaDemo() {
   return resetOperationsToEmpty();
 }
+
+const INSPECTION_LOG_STORAGE_KEY = "project-titan-inspection-log-v3";
+const CERTIFICATE_FILES_STORAGE_KEY = "project-titan-certificate-files-v2";
+
+function seedDemoSessionAndFoundationStores(records) {
+  const inspectionLogs = getTitanDemoInspectionLogSeeds(records);
+  const certificates = getTitanDemoCertificateSeeds(records);
+  writeJson(INSPECTION_LOG_STORAGE_KEY, inspectionLogs);
+  writeJson(CERTIFICATE_FILES_STORAGE_KEY, certificates);
+  productionStore.replaceAll(records.map((row) => mapDemoToProductionRecord(row)));
+  lotStore.replaceAll(buildSeedLotRecords(records));
+  writeJson(qualityStore.storageKey, buildSeedQualityBundle(records));
+  timelineStore.replaceAll(buildSeedTimelineRecords());
+  return { inspectionCount: inspectionLogs.length, certificateCount: certificates.length };
+}
+
+/** Demo Master + Demo 업무 + 시연용 데이터 — 관리자 버튼 전용 (자동 Seed 없음) */
+export function loadTitanDemoData() {
+  const profile = companyStore.get();
+  companyStore.replace({
+    ...profile,
+    companyMaster: {
+      ...profile.companyMaster,
+      ...RC1_DEMO_BRANDING_PATCH.companyMaster,
+      updatedAt: new Date().toISOString(),
+    },
+    branding: { ...profile.branding, ...RC1_DEMO_BRANDING_PATCH.branding },
+    documentFooter: {
+      ...profile.documentFooter,
+      ...RC1_DEMO_BRANDING_PATCH.documentFooter,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+
+  const demoMaster = {
+    ...buildQaDemoMasterSeed(TITAN_OPERATIONAL_MASTER_SEED),
+    equipment: [...TITAN_OPERATIONAL_MASTER_SEED.equipment],
+    workers: [...TITAN_OPERATIONAL_MASTER_SEED.workers],
+    heatTreatment: [...TITAN_OPERATIONAL_MASTER_SEED.heatTreatment],
+    customCodes: [...TITAN_OPERATIONAL_MASTER_SEED.customCodes],
+  };
+  const masterData = replaceSessionMasterData(demoMaster);
+  syncAllMasterStoresFromSession(masterData);
+
+  const demoRecords = TITAN_DEMO_PRODUCTION_RECORDS.map((row) => ({ ...row }));
+  replaceSessionProductionRecords(demoRecords);
+  replaceOperationsHistory({
+    shipmentEvents: TITAN_QA_DEMO_SHIPMENT_EVENTS.map((row) => ({ ...row })),
+    transactionStatements: [],
+    defectRecords: [],
+  });
+
+  const sessionSeed = seedDemoSessionAndFoundationStores(demoRecords);
+  setOperationsDataMode(OPERATIONS_DATA_MODES.QA_DEMO);
+  notifyWorkflowDataRefresh({
+    source: "demo-load-explicit",
+    mode: OPERATIONS_DATA_MODES.QA_DEMO,
+    version: TITAN_QA_DEMO_SEED_VERSION,
+  });
+
+  return {
+    ok: true,
+    mode: OPERATIONS_DATA_MODES.QA_DEMO,
+    recordCount: demoRecords.length,
+    inspectionCount: sessionSeed.inspectionCount,
+    certificateCount: sessionSeed.certificateCount,
+    version: TITAN_QA_DEMO_SEED_VERSION,
+    message: `Demo 데이터 로드 완료 · ${demoRecords.length}건`,
+  };
+}
+
+registerWorkflowScreenCacheInvalidator(invalidateSessionProductionRecordsCache);

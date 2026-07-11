@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import TitanAdvancedSearchGrid from "../../foundation/components/TitanAdvancedSearchGrid";
 import {
@@ -42,11 +42,15 @@ import {
   narrowRecordsForSelectedRow,
 } from "../../utils/productionAnalytics";
 import { getProductionResultScreenData } from "../../utils/productionWorkspaceData";
+import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
 import "../InOut/InboundManagement.css";
 import "./ProductionManagement.css";
 
 export default function ProductionResultsManagement() {
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => subscribeWorkflowDataRefresh(() => setRefreshKey((key) => key + 1)), []);
+
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyProductionResultsSearch, { storageKey: "production-results" });
   const [selectedIds, setSelectedIds] = useState([]);

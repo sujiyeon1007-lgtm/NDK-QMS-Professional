@@ -78,8 +78,10 @@ import "./InboundManagement.css";
 import "./OutboundManagement.css";
 import "./OutboundStatementPromptDialog.css";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
-import { OperationsWorkflowNextDialog } from "./OutboundStatementPromptDialog";
+import TitanWorkflowNextStepDialog from "../../foundation/components/TitanWorkflowNextStepDialog";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import { getOperationsWorkflowNextStep, OPERATION_ROUTES } from "../../config/operationsRouteRegistry";
+import { getWorkflowCompletionDialog } from "../../config/workflowNavigation";
 import "../../foundation/components/OperationsWorkflowNextDialog.css";
 
 const OUTBOUND_STATUS_OPTIONS = Object.values(OUTBOUND_STATUS_LABELS);
@@ -197,6 +199,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
     draft,
     onDraftChange,
     onReset,
+    onSearch,
   });
 
   const companies = useMemo(() => getMasterDataByCategory("companies"), []);
@@ -450,7 +453,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
     if (!result) return;
     setStatementPromptOpen(false);
     setPendingRegisterResult(null);
-    setWorkflowNextStep(getOperationsWorkflowNextStep("outboundCompleteOnly"));
+    setWorkflowNextStep(getWorkflowCompletionDialog("outboundComplete"));
   };
 
   const handleStatementPromptIssueAfterComplete = () => {
@@ -596,6 +599,8 @@ export default function OutboundManagement({ forcedMode } = {}) {
         </SecondaryButton>
       </SectionPageActions>
 
+      {!isHistoryMode ? <TitanWorkflowNavigation stepId="outboundManagement" /> : null}
+
       <TitanKpiBarSlot ariaLabel="출고 현황" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar
           chipSetId="outbound"
@@ -733,7 +738,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
         onClose={() => handleStatementIssueDialogClose(false)}
       />
 
-      <OperationsWorkflowNextDialog
+      <TitanWorkflowNextStepDialog
         open={Boolean(workflowNextStep)}
         step={workflowNextStep}
         onNavigate={(path) => {

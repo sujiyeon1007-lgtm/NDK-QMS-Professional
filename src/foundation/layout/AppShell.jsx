@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import Header from "./Header";
+import { GlobalNav, TitanBanner, TitanWorkspaceHeader } from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import TitanErrorBoundary from "../components/TitanErrorBoundary";
@@ -41,14 +41,20 @@ export default function AppShell() {
 
   return (
     <div className="titan-app-shell">
-      <Header />
+      <TitanBanner />
+      <GlobalNav />
       <div className="titan-app-body">
-        <Sidebar />
-        <main className="titan-main">
-          <MainContent />
-        </main>
+        <div className="titan-left-frame">
+          <Sidebar />
+        </div>
+        <div className="titan-right-workspace">
+          <TitanWorkspaceHeader />
+          <main className="titan-main">
+            <MainContent />
+          </main>
+          <Footer />
+        </div>
       </div>
-      <Footer />
       {!editionReady && V1_0_SHOW_EDITION_BOOT_MODAL ? (
         <TitanEditionBootModal onComplete={() => setEditionReady(true)} />
       ) : null}

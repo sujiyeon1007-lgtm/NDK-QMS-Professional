@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Camera, LineChart, List } from "lucide-react";
 import { formatQtyWithUnit } from "../../utils/productUnits";
 import { getHardeningChartPoints } from "../../utils/inspectionReportModel";
 import { applyHardeningDepthRows } from "../../utils/hardeningDepthModel";
+import { buildDimensionInspectionRowsFromSpec } from "../../utils/dimensionInspectionModel";
 import { createDefaultSpecification } from "../../utils/productSpecificationModel";
 import {
   getPreviousHardeningDepthRows,
@@ -9,14 +11,21 @@ import {
   rebuildRowsFromSpecification,
   updateSpecificationSection,
 } from "../../utils/inspectionReportEditor";
+import { buildMainInspectionResultRows } from "../../utils/inspectionScope";
 import HardeningDepthCurveChart from "./HardeningDepthCurveChart";
 import HardeningDepthDataTable from "./HardeningDepthDataTable";
+import HardnessConversionHint from "./HardnessConversionHint";
+import InspectionUtilitiesPanel from "./InspectionUtilitiesPanel";
+import MicrostructurePhotoSlots from "../../pages/Settings/MicrostructurePhotoSlots";
 import {
   DEPTH_FIELD_KEYS,
   DEPTH_FIELD_LABELS,
+  formatDepthCalcAutoDisplay,
   formatDepthMm,
+  getCaseDepthBasisLabel,
   getEffectiveDepthBasisLabel,
 } from "../../utils/heatTreatmentCalculationEngine";
+import { TitanMasterAutocomplete } from "../../foundation/components/TitanSearchAutocomplete";
 
 function JudgmentBadge({ value, compact = false }) {
   if (!value || value === "—") return <span className="ir-judgment ir-judgment--empty">—</span>;
@@ -61,6 +70,43 @@ function BasicCell({ editable, value, onChange, type = "text", onBlur }) {
   );
 }
 
+function MasterAutocompleteCell({
+  editable,
+  field,
+  value,
+  companyFilter = "",
+  onChange,
+  onSelect,
+  enableProductAutofill = false,
+}) {
+  if (!editable) return value || "—";
+  return (
+    <TitanMasterAutocomplete
+      field={field}
+      value={value ?? ""}
+      onChange={onChange}
+      onSelect={onSelect}
+      companyFilter={companyFilter}
+      enableProductAutofill={enableProductAutofill}
+      className="ir-field-autocomplete"
+    />
+  );
+}
+
+function applyProductAutofillSelection(meta, onBasicChange, onPartNoApply) {
+  if (!meta?.autofill || !onBasicChange) return false;
+  const { autofill } = meta;
+  if (autofill.company) onBasicChange("company", autofill.company);
+  if (autofill.partName) onBasicChange("partName", autofill.partName);
+  if (autofill.partNo) {
+    onBasicChange("partNo", autofill.partNo);
+    onPartNoApply?.(autofill.partNo);
+  }
+  if (autofill.drawingNo) onBasicChange("drawingNo", autofill.drawingNo);
+  if (autofill.material) onBasicChange("material", autofill.material);
+  return true;
+}
+
 /** 검사 리포트 본문 — Final Design v1.0 (screen · print · register 공통) */
 export default function InspectionReportDocument({
   report,
@@ -72,19 +118,28 @@ export default function InspectionReportDocument({
   onHvChange,
   onHardnessChange,
   onDimensionChange,
+  onDimensionInspectionChange,
   onAppearanceChange,
   onMicrostructureToggle,
   onMicrostructureJudgment,
   onMicroPhotoUpload,
+  onMicroPhotosChange,
   onOtherChange,
   onRemarksChange,
   onSpecificationChange,
   onHeatTreatmentCalcChange,
+  onCoreHardnessChange,
 }) {
   if (!report) return null;
 
   const [chartOpen, setChartOpen] = useState(true);
+  const [dimensionDetailOpen, setDimensionDetailOpen] = useState(false);
+  const [registerTab, setRegisterTab] = useState("results");
   const scope = getInspectionScope(report.appliedSpecification);
+  const mainResultRows =
+    report.mainResultRows?.length > 0
+      ? report.mainResultRows
+      : buildMainInspectionResultRows(report, scope);
   const chartPoints = getHardeningChartPoints(report);
   const heatCalcs = report.heatTreatmentCalculations;
   const effectiveThresholdHv =
@@ -92,6 +147,11 @@ export default function InspectionReportDocument({
   const depthBasisLabel = report.appliedSpecification
     ? getEffectiveDepthBasisLabel(report.appliedSpecification)
     : "390HV 기준";
+  const caseBasisLabel = heatCalcs?.meta?.caseDepthThresholdHv
+    ? getCaseDepthBasisLabel(heatCalcs.meta.caseDepthThresholdHv)
+    : "390HV 기준";
+  const manualHardnessRows = (report.hardnessRows || []).filter((row) => !row.autoCalculated);
+  const autoHardnessRows = (report.hardnessRows || []).filter((row) => row.autoCalculated);
   const tableClass = mode === "print" ? "ir-table ir-table--print" : "ir-table";
   const isPrint = mode === "print";
   const showChart = scope.hardeningDepth && (isPrint || chartOpen);
@@ -112,6 +172,9 @@ export default function InspectionReportDocument({
       appearanceRows: rebuilt.appearanceRows,
       hardnessRows: rebuilt.hardnessRows,
       dimensionRows: rebuilt.dimensionRows,
+      dimensionInspectionRows: scope.dimension
+        ? buildDimensionInspectionRowsFromSpec(nextSpec)
+        : [],
       otherRows: rebuilt.otherRows,
       hasMicrostructurePhoto: scope.microstructure ? report.hasMicrostructurePhoto : false,
       hardeningDepthRows:
@@ -167,10 +230,623 @@ export default function InspectionReportDocument({
   ) : null;
 
   const microPhotos = report.microstructurePhotos || [];
+  const simplifiedRegister = editable && mode === "screen";
+
+  const resolveHardnessRowIndex = (hardnessKey) => {
+    const manualRows = (report.hardnessRows || []).filter((row) => !row.autoCalculated);
+    return manualRows.findIndex((row) => row.key === hardnessKey);
+  };
+
+  const renderMainResultCell = (row) => {
+    if (!editable) return row.result || "—";
+
+    if (row.inputType === "hardness") {
+      const index = resolveHardnessRowIndex(row.hardnessKey);
+      const manualRow = (report.hardnessRows || []).filter((r) => !r.autoCalculated)[index];
+      if (index < 0 || !manualRow) return row.result || "—";
+      return (
+        <div className="ir-hardness-measured-cell">
+          <CellInput
+            value={manualRow.measuredRaw ?? manualRow.measured ?? ""}
+            onChange={(value) => onHardnessChange?.(index, "measured", value)}
+          />
+          <HardnessConversionHint
+            value={manualRow.measuredRaw ?? manualRow.measured ?? ""}
+            fromUnit={manualRow.unit || "HV"}
+            spec={report.appliedSpecification}
+            maxTargets={2}
+          />
+        </div>
+      );
+    }
+
+    if (row.inputType === "appearance") {
+      return (
+        <select
+          className="ir-field-select"
+          value={row.resultRaw === "불량" ? "불량" : "양호"}
+          onChange={(event) => {
+            const value = event.target.value;
+            (report.appearanceRows || []).forEach((_, index) => {
+              onAppearanceChange?.(index, value);
+            });
+          }}
+        >
+          <option value="양호">양호</option>
+          <option value="불량">불량</option>
+        </select>
+      );
+    }
+
+    if (row.inputType === "microstructure") {
+      return (
+        <span className={`ir-micro-attach${row.hasAttachment ? " ir-micro-attach--on" : ""}`}>
+          {row.hasAttachment ? "첨부" : "—"}
+        </span>
+      );
+    }
+
+    if (row.inputType === "dimension") {
+      return row.result || "—";
+    }
+
+    return row.result || "—";
+  };
+
+  const renderAutoCalcSummaryTable = () => {
+    if (!heatCalcs || (!scope.hardeningDepth && !scope.hardness)) return null;
+
+    return (
+      <div className="ir-ht-calc ir-ht-calc--compact">
+        <h4 className="ir-subsection-title">자동계산 요약</h4>
+        <p className="ir-ht-calc__basis">
+          유효경화깊이: {depthBasisLabel}
+          {heatCalcs.meta?.coreHv != null ? ` · 심부 ${heatCalcs.meta.coreHv}HV` : ""}
+          {" · "}경화깊이: {caseBasisLabel}
+        </p>
+        <table className={`${tableClass} ir-ht-calc__table`}>
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>자동계산</th>
+              <th>최종적용</th>
+              <th>단위</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DEPTH_FIELD_KEYS.map((fieldKey) => {
+              const field = heatCalcs[fieldKey];
+              if (!field) return null;
+              return (
+                <tr key={fieldKey}>
+                  <td>{DEPTH_FIELD_LABELS[fieldKey]}</td>
+                  <td className="ir-ht-calc__auto">
+                    {formatDepthCalcAutoDisplay(field, heatCalcs.meta?.depthDecimalPlaces)}
+                  </td>
+                  <td>
+                    {editable ? (
+                      <CellInput
+                        type="number"
+                        step="0.01"
+                        value={
+                          field.edited != null
+                            ? field.edited
+                            : field.final != null
+                              ? field.final
+                              : ""
+                        }
+                        onChange={(value) => onHeatTreatmentCalcChange?.(fieldKey, value)}
+                      />
+                    ) : field.final != null ? (
+                      formatDepthMm(field.final)
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td>mm</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {editable ? (
+          <p className="ir-ht-calc__hint">
+            자동 계산값은 이력으로 저장됩니다. 최종 적용값을 검사자가 수정할 수 있습니다.
+          </p>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderHardeningDepthBlock = ({ showChart = true, showTable = true, chartFirst = true } = {}) => {
+    if (!scope.hardeningDepth) return null;
+
+    const chartNode = showChart ? (
+      <HardeningDepthCurveChart
+        compact
+        points={chartPoints}
+        effectiveDepthMm={report.effectiveDepthMm}
+        hardeningDepth390={report.hardeningDepth390}
+        referenceLine={effectiveThresholdHv}
+        title="경도곡선"
+      />
+    ) : null;
+
+    const tableNode = showTable ? (
+      <HardeningDepthDataTable
+        rows={report.hardeningDepthRows || []}
+        editable={editable}
+        tableClass={tableClass}
+        spec={report.appliedSpecification}
+        onChange={onHardeningDepthChange || onHvChange}
+        canLoadPrevious={editable && canLoadPrevious}
+        onLoadPrevious={() => {
+          const previous = getPreviousHardeningDepthRows(
+            report.partNo,
+            report.logId,
+            report.company
+          );
+          if (previous) onHardeningDepthChange?.(applyHardeningDepthRows({}, previous));
+        }}
+      />
+    ) : null;
+
+    if (!chartNode && !tableNode) return null;
+
+    return (
+      <div className={`ir-hv-panel${chartFirst ? "" : " ir-hv-panel--table-first"}`}>
+        {chartFirst ? (
+          <>
+            {chartNode}
+            {tableNode}
+          </>
+        ) : (
+          <>
+            {tableNode}
+            {chartNode}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderRegisterBasicGrid = () => (
+    <section className="ir-section ir-section--compact ir-section--full">
+      <h3 className="ir-section-title ir-section-title--plain">기본정보</h3>
+      <div className="ir-basic-grid">
+        <label className="ir-basic-grid__field">
+          <span>관리번호</span>
+          <BasicCell
+            editable={editable}
+            value={report.managementId}
+            onChange={(value) => onBasicChange?.("managementId", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>LOT</span>
+          <BasicCell
+            editable={editable}
+            value={report.lotNo}
+            onChange={(value) => onBasicChange?.("lotNo", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>품명</span>
+          <MasterAutocompleteCell
+            editable={editable}
+            field="partName"
+            value={report.partName}
+            companyFilter={report.company}
+            enableProductAutofill={Boolean(report.company)}
+            onChange={(value) => onBasicChange?.("partName", value)}
+            onSelect={(value, meta) => {
+              if (!applyProductAutofillSelection(meta, onBasicChange, onPartNoApply)) {
+                onBasicChange?.("partName", value);
+              }
+            }}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>품번</span>
+          <MasterAutocompleteCell
+            editable={editable}
+            field="partNo"
+            value={report.partNo}
+            companyFilter={report.company}
+            enableProductAutofill={Boolean(report.company)}
+            onChange={(value) => onBasicChange?.("partNo", value)}
+            onSelect={(value, meta) => {
+              if (!applyProductAutofillSelection(meta, onBasicChange, onPartNoApply)) {
+                onBasicChange?.("partNo", value);
+                onPartNoApply?.(value);
+              }
+            }}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>업체명</span>
+          <MasterAutocompleteCell
+            editable={editable}
+            field="company"
+            value={report.company}
+            onChange={(value) => onBasicChange?.("company", value)}
+            onSelect={(value) => onBasicChange?.("company", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>검사일</span>
+          <BasicCell
+            editable={editable}
+            type="date"
+            value={report.inspectionDate}
+            onChange={(value) => onBasicChange?.("inspectionDate", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>작업수량</span>
+          {report.workQtyLabel || formatQtyWithUnit(report.qty, report.unit)}
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>검사수량</span>
+          {editable ? (
+            <span className="ir-qty-cell">
+              <CellInput
+                type="number"
+                value={report.qty}
+                onChange={(value) => onBasicChange?.("qty", Number(value) || 0)}
+              />
+              <CellInput value={report.unit} onChange={(value) => onBasicChange?.("unit", value)} />
+            </span>
+          ) : (
+            formatQtyWithUnit(report.qty, report.unit)
+          )}
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>열처리 공정</span>
+          <BasicCell
+            editable={editable}
+            value={report.process}
+            onChange={(value) => onBasicChange?.("process", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>검사자</span>
+          <BasicCell
+            editable={editable}
+            value={report.inspector}
+            onChange={(value) => onBasicChange?.("inspector", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field">
+          <span>승인자</span>
+          <BasicCell
+            editable={editable}
+            value={report.approver}
+            onChange={(value) => onBasicChange?.("approver", value)}
+          />
+        </label>
+        <label className="ir-basic-grid__field ir-basic-grid__field--span2">
+          <span>비고</span>
+          {editable ? (
+            <CellInput value={report.remarks ?? ""} onChange={(value) => onRemarksChange?.(value)} />
+          ) : (
+            report.remarks || "—"
+          )}
+        </label>
+      </div>
+    </section>
+  );
+
+  const renderRegisterTabNav = () => {
+    const tabs = [
+      { id: "results", label: "검사결과", icon: List },
+      ...(scope.hardeningDepth
+        ? [{ id: "depth", label: "경화깊이 데이터", icon: LineChart }]
+        : []),
+      ...(scope.microstructure ? [{ id: "micro", label: "조직사진", icon: Camera }] : []),
+    ];
+
+    return (
+      <nav className="ir-tabs" aria-label="검사 리포트 탭">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={`ir-tabs__btn${registerTab === tab.id ? " ir-tabs__btn--active" : ""}`}
+              onClick={() => setRegisterTab(tab.id)}
+            >
+              <Icon size={14} aria-hidden="true" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </nav>
+    );
+  };
+
+  const renderRegisterCoreHardnessField = () => {
+    if (!editable || !scope.hardeningDepth || !heatCalcs) return null;
+
+    return (
+      <label className="ir-core-hv-field">
+        <span>심부경도 (Core) HV</span>
+        <CellInput
+          type="number"
+          value={report.coreHardnessHv ?? ""}
+          onChange={(value) => onCoreHardnessChange?.(value)}
+          placeholder="검사 측정값"
+        />
+        <HardnessConversionHint
+          value={report.coreHardnessHv}
+          fromUnit="HV"
+          spec={report.appliedSpecification}
+          maxTargets={1}
+        />
+        <span className="ir-core-hv-field__hint">Core+값 유효경화깊이 계산에 사용 (판정 항목 아님)</span>
+      </label>
+    );
+  };
+
+  const renderRegisterDetailSection = () => (
+    <section className="ir-register-detail">
+      <h4 className="ir-subsection-title">측정 상세</h4>
+      {renderRegisterCoreHardnessField()}
+      {renderAutoCalcSummaryTable()}
+      {renderHardeningDepthBlock({ showChart: true, showTable: true, chartFirst: false })}
+      {scope.dimension ? renderDimensionDetailSection() : null}
+      {scope.other ? (
+        <div className="ir-other-inline">
+          <h4 className="ir-subsection-title">기타검사</h4>
+          <table className={tableClass}>
+            <thead>
+              <tr>
+                <th>항목</th>
+                <th>결과</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.otherRows.map((row, index) => (
+                <tr key={`${row.item}-${index}`}>
+                  <td>
+                    <CellInput
+                      value={row.item}
+                      onChange={(value) => onOtherChange?.(index, "item", value)}
+                    />
+                  </td>
+                  <td>
+                    <CellInput
+                      value={row.result}
+                      onChange={(value) => onOtherChange?.(index, "result", value)}
+                    />
+                  </td>
+                  <td>
+                    <CellInput
+                      value={row.note}
+                      onChange={(value) => onOtherChange?.(index, "note", value)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </section>
+  );
+
+  const renderRegisterResultsTab = () => (
+    <div className="ir-register-results">
+      <div className="ir-register-results__main">
+        <h4 className="ir-subsection-title">검사항목 결과</h4>
+        <table className={tableClass}>
+          <thead>
+            <tr>
+              <th>검사항목</th>
+              <th>Spec</th>
+              <th>기준</th>
+              <th>결과</th>
+              <th>판정</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mainResultRows.map((row) => (
+              <tr key={row.key}>
+                <td>{row.item}</td>
+                <td>{row.spec}</td>
+                <td>{row.basis}</td>
+                <td>{renderMainResultCell(row)}</td>
+                <td>
+                  <JudgmentBadge value={row.judgment} compact />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="ir-final-inline ir-final-inline--register">
+          <span className="ir-final-inline__label">최종판정</span>
+          <JudgmentBadge value={report.finalJudgment} compact />
+        </div>
+      </div>
+      {renderRegisterDetailSection()}
+    </div>
+  );
+
+  const renderRegisterDepthTab = () => (
+    <section className="ir-section ir-section--compact ir-section--full">
+      <h4 className="ir-subsection-title">경화깊이 데이터</h4>
+      <div className="ir-hv-split ir-hv-split--register">
+        <div className="ir-hv-split__data">
+          <HardeningDepthDataTable
+            rows={report.hardeningDepthRows || []}
+            editable={editable}
+            tableClass={tableClass}
+            spec={report.appliedSpecification}
+            onChange={onHardeningDepthChange || onHvChange}
+            canLoadPrevious={editable && canLoadPrevious}
+            onLoadPrevious={() => {
+              const previous = getPreviousHardeningDepthRows(
+                report.partNo,
+                report.logId,
+                report.company
+              );
+              if (previous) onHardeningDepthChange?.(applyHardeningDepthRows({}, previous));
+            }}
+          />
+        </div>
+        <div className="ir-hv-split__chart">
+          <HardeningDepthCurveChart
+            compact
+            points={chartPoints}
+            effectiveDepthMm={report.effectiveDepthMm}
+            hardeningDepth390={report.hardeningDepth390}
+            referenceLine={effectiveThresholdHv}
+            title="경도곡선"
+          />
+        </div>
+      </div>
+      {renderAutoCalcSummaryTable()}
+    </section>
+  );
+
+  const renderRegisterMicroTab = () => (
+    <section className="ir-section ir-section--compact ir-section--full">
+      <h4 className="ir-subsection-title">조직사진</h4>
+      {microToggle}
+      {report.hasMicrostructurePhoto ? (
+        <>
+          <MicrostructurePhotoSlots
+            photos={report.microstructurePhotos || []}
+            editable={editable}
+            className="ir-micro-slots"
+            onChange={onMicroPhotosChange}
+          />
+          <div className="ir-micro-judgment">
+            <span>조직판정</span>
+            <label>
+              <input
+                type="radio"
+                checked={report.microstructureJudgment === "이상없음"}
+                onChange={() => onMicrostructureJudgment?.("이상없음")}
+              />
+              이상없음
+            </label>
+            <label>
+              <input
+                type="radio"
+                checked={report.microstructureJudgment === "조직이상"}
+                onChange={() => onMicrostructureJudgment?.("조직이상")}
+              />
+              조직이상
+            </label>
+          </div>
+        </>
+      ) : (
+        <p className="ir-section-empty">조직사진 유무를 &quot;있음&quot;으로 선택하면 첨부할 수 있습니다.</p>
+      )}
+    </section>
+  );
+
+  const renderDimensionDetailSection = () => {
+    if (!scope.dimension || !simplifiedRegister) return null;
+
+    return (
+      <section className="ir-section ir-section--full ir-section--collapsible">
+        <button
+          type="button"
+          className="ir-collapse-toggle"
+          onClick={() => setDimensionDetailOpen((open) => !open)}
+        >
+          {dimensionDetailOpen ? "▲" : "▼"} 치수 상세 입력
+        </button>
+        {dimensionDetailOpen ? (
+          <div className="ir-collapse-body">
+            {(report.dimensionInspectionRows?.length ?? 0) > 0 ? (
+              <table className={tableClass}>
+                <thead>
+                  <tr>
+                    <th>항목</th>
+                    <th>스펙</th>
+                    <th>열처리 전</th>
+                    <th>열처리 후</th>
+                    <th>변형량</th>
+                    <th>단위</th>
+                    <th>판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.dimensionInspectionRows.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{row.item}</td>
+                      <td>{row.spec}</td>
+                      <td>
+                        <CellInput
+                          value={row.beforeHtRaw ?? row.beforeHt ?? ""}
+                          onChange={(value) =>
+                            onDimensionInspectionChange?.(index, "beforeHtRaw", value)
+                          }
+                        />
+                      </td>
+                      <td>
+                        <CellInput
+                          value={row.afterHtRaw ?? row.afterHt ?? ""}
+                          onChange={(value) =>
+                            onDimensionInspectionChange?.(index, "afterHtRaw", value)
+                          }
+                        />
+                      </td>
+                      <td>{row.deformationRaw || (row.deformation ?? "—")}</td>
+                      <td>{row.unit || "mm"}</td>
+                      <td>
+                        <JudgmentBadge value={row.judgment} compact />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className={tableClass}>
+                <thead>
+                  <tr>
+                    <th>항목</th>
+                    <th>스펙</th>
+                    <th>측정값</th>
+                    <th>단위</th>
+                    <th>판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.dimensionRows.map((row, index) => (
+                    <tr key={row.item}>
+                      <td>{row.item}</td>
+                      <td>{row.spec}</td>
+                      <td>
+                        <CellInput
+                          value={row.measuredRaw ?? row.measured ?? ""}
+                          onChange={(value) => onDimensionChange?.(index, "measured", value)}
+                        />
+                      </td>
+                      <td>{row.unit || "mm"}</td>
+                      <td>
+                        <JudgmentBadge value={row.judgment} compact />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : null}
+      </section>
+    );
+  };
 
   return (
-    <div className={`ir-document ir-document--${mode}`}>
+    <div className={`ir-document ir-document--${mode}${simplifiedRegister ? " ir-document--register" : ""}`}>
       {scopeToolbar}
+      {!simplifiedRegister ? (
       <section className="ir-section ir-section--full">
         <SectionTitle number="①" title="기본정보" />
         <table className={tableClass}>
@@ -178,27 +854,45 @@ export default function InspectionReportDocument({
             <tr>
               <th>업체명</th>
               <td>
-                <BasicCell
+                <MasterAutocompleteCell
                   editable={editable}
+                  field="company"
                   value={report.company}
                   onChange={(value) => onBasicChange?.("company", value)}
+                  onSelect={(value) => onBasicChange?.("company", value)}
                 />
               </td>
               <th>품명</th>
               <td>
-                <BasicCell
+                <MasterAutocompleteCell
                   editable={editable}
+                  field="partName"
                   value={report.partName}
+                  companyFilter={report.company}
+                  enableProductAutofill={Boolean(report.company)}
                   onChange={(value) => onBasicChange?.("partName", value)}
+                  onSelect={(value, meta) => {
+                    if (!applyProductAutofillSelection(meta, onBasicChange, onPartNoApply)) {
+                      onBasicChange?.("partName", value);
+                    }
+                  }}
                 />
               </td>
               <th>품번</th>
               <td>
-                <BasicCell
+                <MasterAutocompleteCell
                   editable={editable}
+                  field="partNo"
                   value={report.partNo}
+                  companyFilter={report.company}
+                  enableProductAutofill={Boolean(report.company)}
                   onChange={(value) => onBasicChange?.("partNo", value)}
-                  onBlur={(event) => onPartNoApply?.(event.target.value)}
+                  onSelect={(value, meta) => {
+                    if (!applyProductAutofillSelection(meta, onBasicChange, onPartNoApply)) {
+                      onBasicChange?.("partNo", value);
+                      onPartNoApply?.(value);
+                    }
+                  }}
                 />
               </td>
             </tr>
@@ -313,7 +1007,26 @@ export default function InspectionReportDocument({
           </tbody>
         </table>
       </section>
+      ) : null}
 
+      {simplifiedRegister ? (
+        <>
+          {renderRegisterBasicGrid()}
+          {renderRegisterTabNav()}
+          {registerTab === "results" ? renderRegisterResultsTab() : null}
+          {registerTab === "depth" && scope.hardeningDepth ? renderRegisterDepthTab() : null}
+          {registerTab === "micro" && scope.microstructure ? renderRegisterMicroTab() : null}
+          {editable ? (
+            <InspectionUtilitiesPanel
+              report={report}
+              appliedSpecification={report.appliedSpecification}
+              hardeningRows={report.hardeningDepthRows || []}
+              coreHardnessHv={report.coreHardnessHv}
+            />
+          ) : null}
+        </>
+      ) : (
+        <>
       <div className="ir-grid ir-grid--top">
         <section className="ir-section">
           <SectionTitle number="②" title="검사 기준 (Specification)" />
@@ -374,6 +1087,7 @@ export default function InspectionReportDocument({
                 rows={report.hardeningDepthRows || []}
                 editable={editable}
                 tableClass={tableClass}
+                spec={report.appliedSpecification}
                 onChange={onHardeningDepthChange || onHvChange}
                 canLoadPrevious={editable && canLoadPrevious}
                 onLoadPrevious={() => {
@@ -465,7 +1179,26 @@ export default function InspectionReportDocument({
               <p className="ir-ht-calc__basis">
                 유효경화깊이 계산: {depthBasisLabel}
                 {heatCalcs.meta?.coreHv != null ? ` · 심부 ${heatCalcs.meta.coreHv}HV` : ""}
+                {" · "}경화깊이 계산: {caseBasisLabel}
               </p>
+              {editable && scope.hardeningDepth ? (
+                <label className="ir-core-hv-field">
+                  <span>심부경도 (Core) HV</span>
+                  <CellInput
+                    type="number"
+                    value={report.coreHardnessHv ?? ""}
+                    onChange={(value) => onCoreHardnessChange?.(value)}
+                    placeholder="검사 측정값"
+                  />
+                  <HardnessConversionHint
+                    value={report.coreHardnessHv}
+                    fromUnit="HV"
+                    spec={report.appliedSpecification}
+                    maxTargets={1}
+                  />
+                  <span className="ir-core-hv-field__hint">Core+값 유효경화깊이 계산에 사용 (판정 항목 아님)</span>
+                </label>
+              ) : null}
               <table className={`${tableClass} ir-ht-calc__table`}>
                 <thead>
                   <tr>
@@ -483,7 +1216,10 @@ export default function InspectionReportDocument({
                       <tr key={fieldKey}>
                         <td>{DEPTH_FIELD_LABELS[fieldKey]}</td>
                         <td className="ir-ht-calc__auto">
-                          {field.auto != null ? formatDepthMm(field.auto) : "—"}
+                          {formatDepthCalcAutoDisplay(
+                            field,
+                            heatCalcs.meta?.depthDecimalPlaces
+                          )}
                         </td>
                         <td>
                           {editable ? (
@@ -530,16 +1266,24 @@ export default function InspectionReportDocument({
               </tr>
             </thead>
             <tbody>
-              {report.hardnessRows.map((row, index) => (
+              {manualHardnessRows.map((row, index) => (
                 <tr key={row.item}>
                   <td>{row.item}</td>
                   <td>{row.spec}</td>
                   <td>
                     {editable ? (
-                      <CellInput
-                        value={row.measuredRaw ?? row.measured ?? ""}
-                        onChange={(value) => onHardnessChange?.(index, "measured", value)}
-                      />
+                      <div className="ir-hardness-measured-cell">
+                        <CellInput
+                          value={row.measuredRaw ?? row.measured ?? ""}
+                          onChange={(value) => onHardnessChange?.(index, "measured", value)}
+                        />
+                        <HardnessConversionHint
+                          value={row.measuredRaw ?? row.measured ?? ""}
+                          fromUnit={row.unit || "HV"}
+                          spec={report.appliedSpecification}
+                          maxTargets={2}
+                        />
+                      </div>
                     ) : (
                       row.measured
                     )}
@@ -560,11 +1304,31 @@ export default function InspectionReportDocument({
                   </td>
                 </tr>
               ))}
+              {autoHardnessRows.map((row) => (
+                <tr key={`auto-${row.key}`} className="ir-hardness-row--auto">
+                  <td>{row.item}</td>
+                  <td>{row.spec}</td>
+                  <td>{row.measured || "—"}</td>
+                  <td>{row.unit || "mm"}</td>
+                  <td>
+                    <JudgmentBadge value={row.judgment} compact />
+                  </td>
+                  <td>{row.note || "자동 계산"}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <p className="ir-section-summary">
             경도검사 종합 판정: <JudgmentBadge value={report.hardnessSummary} compact />
           </p>
+          {editable ? (
+            <InspectionUtilitiesPanel
+              report={report}
+              appliedSpecification={report.appliedSpecification}
+              hardeningRows={report.hardeningDepthRows || []}
+              coreHardnessHv={report.coreHardnessHv}
+            />
+          ) : null}
         </section>
         ) : null}
       </div>
@@ -573,6 +1337,58 @@ export default function InspectionReportDocument({
         {scope.dimension ? (
         <section className="ir-section">
           <SectionTitle number="⑧" title="치수검사" />
+          {(report.dimensionInspectionRows?.length ?? 0) > 0 ? (
+            <table className={tableClass}>
+              <thead>
+                <tr>
+                  <th>항목</th>
+                  <th>스펙</th>
+                  <th>열처리 전</th>
+                  <th>열처리 후</th>
+                  <th>변형량</th>
+                  <th>단위</th>
+                  <th>판정</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.dimensionInspectionRows.map((row, index) => (
+                  <tr key={row.id}>
+                    <td>{row.item}</td>
+                    <td>{row.spec}</td>
+                    <td>
+                      {editable ? (
+                        <CellInput
+                          value={row.beforeHtRaw ?? row.beforeHt ?? ""}
+                          onChange={(value) =>
+                            onDimensionInspectionChange?.(index, "beforeHtRaw", value)
+                          }
+                        />
+                      ) : (
+                        row.beforeHt || "—"
+                      )}
+                    </td>
+                    <td>
+                      {editable ? (
+                        <CellInput
+                          value={row.afterHtRaw ?? row.afterHt ?? ""}
+                          onChange={(value) =>
+                            onDimensionInspectionChange?.(index, "afterHtRaw", value)
+                          }
+                        />
+                      ) : (
+                        row.afterHt || "—"
+                      )}
+                    </td>
+                    <td>{row.deformationRaw || (row.deformation ?? "—")}</td>
+                    <td>{row.unit || "mm"}</td>
+                    <td>
+                      <JudgmentBadge value={row.judgment} compact />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
           <table className={tableClass}>
             <thead>
               <tr>
@@ -606,6 +1422,7 @@ export default function InspectionReportDocument({
               ))}
             </tbody>
           </table>
+          )}
           <p className="ir-section-summary">
             치수검사 종합 판정: <JudgmentBadge value={report.dimensionSummary} compact />
           </p>
@@ -752,6 +1569,8 @@ export default function InspectionReportDocument({
           </div>
         </section>
       </div>
+        </>
+      )}
     </div>
   );
 }

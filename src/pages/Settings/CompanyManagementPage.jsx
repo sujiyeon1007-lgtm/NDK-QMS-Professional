@@ -16,6 +16,7 @@ import {
   stageMasterUpdate,
 } from "../../utils/masterData";
 import { buildCompanyMasterSummary } from "../../utils/companyMasterDetail";
+import { resolveMasterDetailPage } from "../../config/detailPopupPolicy";
 import CompanyDetailModal from "./CompanyDetailModal";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
@@ -146,6 +147,22 @@ export default function CompanyManagementPage() {
     setSelectedCompanyId(row.id);
     setDetailCompany(row);
     setDetailOpen(true);
+  };
+
+  const handleDetailEdit = () => {
+    if (!detailCompany) return;
+    openRegister("edit", detailCompany);
+  };
+
+  const handleDetailDelete = () => {
+    if (!detailCompany) return;
+    setDeleteTarget(detailCompany);
+  };
+
+  const handleDetailNavigate = (row) => {
+    setSelectedCompanyId(row.id);
+    setDetailCompany(row);
+    setPage(resolveMasterDetailPage(filteredCompanies, row.id, pageSize));
   };
 
   const openRegister = (mode, row = null) => {
@@ -312,6 +329,11 @@ export default function CompanyManagementPage() {
         open={detailOpen}
         company={detailCompany}
         onClose={() => setDetailOpen(false)}
+        onEdit={handleDetailEdit}
+        onDelete={handleDetailDelete}
+        onNavigate={handleDetailNavigate}
+        categoryLabel="거래처"
+        navigationRows={filteredCompanies}
       />
 
       <MasterDataRegisterModal

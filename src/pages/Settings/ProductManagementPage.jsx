@@ -21,10 +21,13 @@ import {
   buildProductMasterSummary,
 } from "../../utils/productMasterDetail";
 import { QRService } from "../../utils/qrEngineRegistryService";
+import { syncProductInspectionFromMaster } from "../../utils/productMasterInspectionSpec";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import ProductDetailModal from "./ProductDetailModal";
 import MasterDataRegisterModal from "./MasterDataRegisterModal";
 import MasterDataDeleteDialog from "./MasterDataDeleteDialog";
+import { resolveMasterDetailPage } from "../../config/detailPopupPolicy";
 
 import "../InOut/InboundManagement.css";
 import "./CompanyManagement.css";
@@ -165,6 +168,22 @@ export default function ProductManagementPage() {
     setDetailOpen(true);
   };
 
+  const handleDetailEdit = () => {
+    if (!detailProduct) return;
+    openRegister("edit", detailProduct);
+  };
+
+  const handleDetailDelete = () => {
+    if (!detailProduct) return;
+    setDeleteTarget(detailProduct);
+  };
+
+  const handleDetailNavigate = (row) => {
+    setSelectedProductId(row.id);
+    setDetailProduct(row);
+    setPage(resolveMasterDetailPage(filteredProducts, row.id, pageSize));
+  };
+
   const openRegister = (mode, row = null) => {
     setRegisterMode(mode);
     setRegisterOpen(true);
@@ -179,6 +198,7 @@ export default function ProductManagementPage() {
 
     if (!result.ok) return;
     QRService.createIfNotExists("products", result.row);
+    syncProductInspectionFromMaster(result.row);
     setRefreshKey((key) => key + 1);
     setRegisterOpen(false);
     if (result.row?.id) {
@@ -208,6 +228,8 @@ export default function ProductManagementPage() {
   return (
     <>
       <div className="company-management-page">
+        <TitanWorkflowNavigation stepId="productRegister" />
+
         <section className="company-master-kpis" aria-label="제품 현황 요약">
           {summaryKpis.map((kpi) => {
             const Icon = PRODUCT_KPI_ICON[kpi.id] ?? Boxes;
@@ -344,6 +366,11 @@ export default function ProductManagementPage() {
         open={detailOpen}
         product={detailProduct}
         onClose={() => setDetailOpen(false)}
+        onEdit={handleDetailEdit}
+        onDelete={handleDetailDelete}
+        onNavigate={handleDetailNavigate}
+        categoryLabel="제품"
+        navigationRows={filteredProducts}
       />
 
       <MasterDataRegisterModal

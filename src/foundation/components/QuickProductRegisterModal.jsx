@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import TitanRegisterModal from "./TitanRegisterModal";
 import TitanSearchableSelect from "./TitanSearchableSelect";
+import { TitanMasterAutocomplete } from "./TitanSearchAutocomplete";
 import {
   generateProductManagementCode,
   getActiveMasterNames,
@@ -107,20 +108,22 @@ export default function QuickProductRegisterModal({
       <div className="master-register-modal__grid">
         <label className="master-register-modal__field">
           <span>품명 *</span>
-          <input
-            type="text"
-            placeholder="품명"
+          <TitanMasterAutocomplete
+            field="partName"
             value={form.name}
-            onChange={(event) => updateField("name", event.target.value)}
+            onChange={(value) => updateField("name", value)}
+            companyFilter={company}
+            placeholder="품명 검색"
           />
         </label>
         <label className="master-register-modal__field">
           <span>품번 *</span>
-          <input
-            type="text"
-            placeholder="품번"
+          <TitanMasterAutocomplete
+            field="partNo"
             value={form.partNo}
-            onChange={(event) => updateField("partNo", event.target.value)}
+            onChange={(value) => updateField("partNo", value)}
+            companyFilter={company}
+            placeholder="품번 검색"
           />
         </label>
         <label className="master-register-modal__field">
@@ -151,7 +154,7 @@ export default function QuickProductRegisterModal({
         </label>
         <TitanSearchableSelect
           className="master-register-modal__field"
-          label="기본 열처리 종류"
+          label="열처리 공정"
           value={form.process}
           onChange={(value) => updateField("process", value)}
           options={processOptions}

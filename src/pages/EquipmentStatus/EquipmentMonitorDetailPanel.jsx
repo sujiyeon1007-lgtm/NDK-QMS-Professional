@@ -8,7 +8,7 @@ import {
 import HomeAnimatedProgressBar from "../Home/HomeAnimatedProgressBar";
 import "./EquipmentMonitorDetailPanel.css";
 
-export default function EquipmentMonitorDetailPanel({ detail, showChargingLink = true }) {
+export default function EquipmentMonitorDetailPanel({ detail, showChargingLink = false }) {
   if (!detail) {
     return (
       <aside className="equipment-monitor-detail equipment-monitor-detail--empty">
@@ -19,12 +19,12 @@ export default function EquipmentMonitorDetailPanel({ detail, showChargingLink =
 
   const statusMeta = EQUIPMENT_RUN_STATUS_META[detail.status] ?? EQUIPMENT_RUN_STATUS_META.idle;
   const isRunning = detail.status === "running";
-  const utilization = isRunning ? detail.utilization ?? detail.progress ?? 0 : 0;
+  const progress = isRunning ? detail.progress ?? detail.utilization ?? 0 : 0;
 
   return (
     <aside className="equipment-monitor-detail" aria-label={EQUIPMENT_STATUS_PAGE_COPY.detailTitle}>
       <div className="equipment-monitor-detail__head">
-        <h3>{EQUIPMENT_STATUS_PAGE_COPY.detailTitle}</h3>
+        <h3>{detail.equipmentName}</h3>
         <StatusChip variant={statusMeta.variant}>
           {statusMeta.emoji} {statusMeta.label}
         </StatusChip>
@@ -40,39 +40,27 @@ export default function EquipmentMonitorDetailPanel({ detail, showChargingLink =
 
       <dl className="equipment-monitor-detail__grid">
         <div>
-          <dt>설비명</dt>
-          <dd>{detail.equipmentName}</dd>
-        </div>
-        <div>
-          <dt>상태</dt>
-          <dd>
-            {statusMeta.emoji} {statusMeta.label}
-          </dd>
-        </div>
-        <div>
-          <dt>작업자</dt>
-          <dd>{detail.operator ?? "—"}</dd>
-        </div>
-        <div>
-          <dt>LOT</dt>
+          <dt>현재 LOT</dt>
           <dd>{detail.currentLotNo ?? "—"}</dd>
         </div>
         <div>
-          <dt>현재 제품</dt>
-          <dd>{detail.currentProductName ?? "—"}</dd>
+          <dt>작업상태</dt>
+          <dd>
+            {statusMeta.emoji} {statusMeta.label}
+          </dd>
         </div>
         <div>
           <dt>시작시간</dt>
           <dd>{detail.startTime ?? "—"}</dd>
         </div>
         <div>
-          <dt>종료예정</dt>
+          <dt>예상종료시간</dt>
           <dd>{detail.expectedEndTime ?? "—"}</dd>
         </div>
         <div className="equipment-monitor-detail__progress">
-          <dt>가동률</dt>
+          <dt>진행률</dt>
           <dd>
-            <HomeAnimatedProgressBar percent={utilization} processKey="production" />
+            <HomeAnimatedProgressBar percent={progress} processKey="production" />
           </dd>
         </div>
       </dl>

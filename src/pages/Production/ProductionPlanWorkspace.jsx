@@ -1,14 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CalendarDays, CheckCircle2, Factory, Layers, Printer, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, Layers, Printer } from "lucide-react";
 
-import { getOperationsWorkflowNextStep } from "../../config/operationsRouteRegistry";
-import { OperationsWorkflowNextDialog } from "../InOut/OutboundStatementPromptDialog";
-import "../../foundation/components/OperationsWorkflowNextDialog.css";
-
-import { PrimaryButton, SecondaryButton } from "../../foundation/components/Button";
+import { SecondaryButton } from "../../foundation/components/Button";
 import TitanDataTable from "../../foundation/components/DataTable";
-import TitanSearchAutocomplete from "../../foundation/components/TitanSearchAutocomplete";
 import TitanSearchPanel, { useSearchSuggestionHelpers } from "../../foundation/components/TitanSearchPanel";
 import TitanStandardProductAdvancedSearch from "../../foundation/components/TitanStandardProductAdvancedSearch";
 import TitanTableFooter from "../../foundation/components/TitanTableFooter";
@@ -27,15 +21,15 @@ import { getMasterDataByCategory } from "../../utils/masterData";
 import { matchesInboundDataSearch } from "../../utils/inboundDataFields";
 import { buildMetricChipItems } from "../../utils/kpiMetricChipItems";
 import { getProductionPlanScreenData } from "../../utils/productionWorkspaceData";
-import { mapRecordToPlanRow } from "../../utils/productionPlanLot";
-import { mapV13ProductListRow } from "../../utils/processFlow";
-import { EQUIPMENT_RUN_STATUS_META } from "../../config/equipmentConfig";
-import { getTitanDataEngine } from "../../foundation/data";
-import { getEquipmentList, createManualChargeableLot } from "../../utils/equipmentWorkflowService";
-import { getPrintOutputDate } from "../../utils/titanPrintDates";
+import { getProductionProcessName } from "../../config/productionProcessCodes";
+import {
+  resolveRecordCurrentProcessCategory,
+  resolveRecordCurrentProcessDetail,
+} from "../../utils/productProcessWorkflow";
+import { resolveRecordCurrentProcess } from "../../utils/workflowProcessStatus";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import { generateProductionLotNo } from "../../utils/productionLotNumber";
-import { QRService } from "../../utils/qrEngineRegistryService";
+import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
+import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import InOutListPrintPreviewModal from "../../components/print/InOutListPrintPreviewModal";
 import { TITAN_PRINT_DOCUMENT_TYPES } from "../../config/titanPrintDocuments";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
@@ -46,53 +40,10 @@ import {
 } from "../InOut/inboundListPrintActions";
 import { applyInboundHtlDocumentPrinted } from "../../utils/titanWorkflowStatus";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
+import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
 import "../InOut/InboundManagement.css";
 import "../Inventory/InventoryStatus.css";
 import "./ProductionManagement.css";
-
-function mapPlanListRow(record) {
-  const planRow = mapRecordToPlanRow(record);
-  const status = planRow.lotNo?.trim()
-    ? { label: "LOT생성", variant: "production" }
-    : { label: "열처리대기", variant: "wait" };
-  const base = mapV13ProductListRow(record, status, { screenKey: "production-plan" });
-  return {
-    ...base,
-    lotNo: planRow.lotNo || "—",
-    htlNo: planRow.htlNo || "—",
-    record,
-  };
-}
-
-function matchesPlanSearch(record, row, search) {
-  if (!matchesBasicSearch(search, row)) return false;
-  if (!matchesInboundDataSearch(search, record)) return false;
-  return true;
-}
-
-function normalizeEquipmentSearchText(value) {
-  return String(value ?? "").replace(/[\s-]+/g, "").toLowerCase();
-}
-
-function resolveEquipmentStatusLabel(status) {
-  if (status === "running") return "작업중";
-  if (status === "maintenance") return "점검중";
-  if (status === "ready") return "장입 준비";
-  return "대기";
-}
-
-function buildEquipmentOptionLabel(equipment) {
-  return `${equipment.name}      ${resolveEquipmentStatusLabel(equipment.status)}`;
-}
-
-function buildLotNumberRecords() {
-  const dataEngine = getTitanDataEngine();
-  const lotRows = dataEngine.lot.list().map((row) => ({ lotNo: row.lotNo }));
-  const equipmentLots = dataEngine.equipment.list().flatMap((equipment) =>
-    (equipment.chargeableLots ?? []).map((row) => ({ lotNo: row.lotNo }))
-  );
-  return [...getSessionProductionRecords(), ...lotRows, ...equipmentLots];
-}
 
 function resolvePlanRecordValue(record, keys, fallback = "—") {
   for (const key of keys) {
@@ -102,65 +53,69 @@ function resolvePlanRecordValue(record, keys, fallback = "—") {
   return fallback;
 }
 
+function resolveRecordProcessFields(record) {
+  const processDetail =
+    String(
+      resolveRecordCurrentProcessDetail(record) ||
+        record?.processDetail ||
+        record?.heatTreatment ||
+        ""
+    ).trim() || "—";
+  const processCategory =
+    String(
+      resolveRecordCurrentProcessCategory(record) ||
+        record?.processCategory ||
+        getProductionProcessName(record) ||
+        ""
+    ).trim() || "—";
+  return { processCategory, processDetail };
+}
+
 function mapProductionWaitingRow(record) {
-  const planRow = mapRecordToPlanRow(record);
   const qty = Number(resolvePlanRecordValue(record, ["qty", "quantity", "incomingQty"], 0)) || 0;
+  const { processCategory, processDetail } = resolveRecordProcessFields(record);
+  const currentProcess = resolveRecordCurrentProcess(record);
   return {
-    ...mapPlanListRow(record),
-    sourceRecord: record,
+    id: record.id,
+    record,
     managementId: resolvePlanRecordValue(record, ["mesManagementNo", "managementId", "id"]),
+    productLabel: resolvePlanRecordValue(record, ["partName", "productName", "itemName"]),
     companyLabel: resolvePlanRecordValue(record, ["company", "companyName"]),
-    productNameLabel: resolvePlanRecordValue(record, ["partName", "productName", "itemName"]),
-    partNoLabel: resolvePlanRecordValue(record, ["partNo", "productNo", "itemNo"]),
-    materialLabel: resolvePlanRecordValue(record, ["material", "materialName"]),
+    processLabel: processCategory,
+    processDetailLabel: processDetail,
     qtyLabel: qty ? qty.toLocaleString("ko-KR") : "—",
-    qtyValue: qty,
-    planDateLabel: resolvePlanRecordValue(record, ["dueDate", "incomingDate", "registeredAt"]),
-    lotStatusLabel: planRow.lotNo?.trim() ? "LOT 생성 완료" : "LOT 미생성",
-    productionStatusLabel: planRow.lotNo?.trim() ? "LOT 생성 완료" : "생산대기",
+    incomingDateLabel: resolvePlanRecordValue(record, ["incomingDate", "registeredAt", "dueDate"]),
+    priorityLabel: resolvePlanRecordValue(record, ["priority", "urgency"], "보통"),
+    currentStatusLabel: currentProcess.label,
+    currentStatusVariant: currentProcess.variant,
   };
 }
 
+function matchesPlanSearch(record, row, search) {
+  if (!matchesBasicSearch(search, row)) return false;
+  if (!matchesInboundDataSearch(search, record)) return false;
+  return true;
+}
+
 const PRODUCTION_WAITING_COLUMNS = [
-  { key: "managementId", label: "관리번호", widthHint: "id", identifier: true },
-  { key: "companyLabel", label: "업체명", widthHint: "company" },
-  { key: "productNameLabel", label: "품명", widthHint: "product" },
-  { key: "partNoLabel", label: "품번", widthHint: "partNo" },
-  { key: "materialLabel", label: "재질", widthHint: "material" },
+  { key: "productLabel", label: "제품", widthHint: "product" },
+  { key: "companyLabel", label: "거래처", widthHint: "company" },
+  { key: "processLabel", label: "공정", widthHint: "process" },
+  { key: "processDetailLabel", label: "세부공정", widthHint: "process" },
   { key: "qtyLabel", label: "수량", widthHint: "qty" },
+  { key: "incomingDateLabel", label: "입고일", widthHint: "date" },
+  { key: "priorityLabel", label: "우선순위", widthHint: "status" },
   {
-    key: "productionStatusLabel",
-    label: "상태",
+    key: "currentStatusLabel",
+    label: "현재상태",
     widthHint: "status",
-    render: (row) => (
-      <StatusChip variant={row.productionStatusLabel === "LOT 생성 완료" ? "production" : "wait"}>
-        {row.productionStatusLabel}
-      </StatusChip>
-    ),
-  },
-  {
-    key: "lotStatusLabel",
-    label: "LOT 여부",
-    widthHint: "status",
-    render: (row) => (
-      <StatusChip variant={row.lotStatusLabel === "LOT 생성 완료" ? "success" : "hold"}>
-        {row.lotStatusLabel}
-      </StatusChip>
-    ),
+    render: (row) => <StatusChip variant={row.currentStatusVariant}>{row.currentStatusLabel}</StatusChip>,
   },
 ];
 
 export default function ProductionPlanWorkspace() {
-  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeRowId, setActiveRowId] = useState("");
-  const [lotPopupRow, setLotPopupRow] = useState(null);
-  const [equipmentQuery, setEquipmentQuery] = useState("");
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
-  const [productionDate, setProductionDate] = useState(getPrintOutputDate());
-  const [popupError, setPopupError] = useState("");
-  const [createdResult, setCreatedResult] = useState(null);
-  const [workflowNextStep, setWorkflowNextStep] = useState(null);
   const [inOutPrintSession, setInOutPrintSession] = useState({ open: false, props: null });
 
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
@@ -222,113 +177,7 @@ export default function ProductionPlanWorkspace() {
 
   const bumpRefresh = useCallback(() => setRefreshKey((key) => key + 1), []);
 
-  const equipmentList = useMemo(() => {
-    void refreshKey;
-    return getEquipmentList();
-  }, [refreshKey]);
-  const selectedEquipment = useMemo(
-    () => equipmentList.find((equipment) => equipment.id === selectedEquipmentId) ?? null,
-    [equipmentList, selectedEquipmentId]
-  );
-  const equipmentOptions = useMemo(
-    () =>
-      equipmentList.map((equipment) => ({
-        equipment,
-        label: buildEquipmentOptionLabel(equipment),
-        searchText: normalizeEquipmentSearchText(
-          `${equipment.id} ${equipment.name} ${equipment.code ?? ""} ${equipment.process} ${EQUIPMENT_RUN_STATUS_META[equipment.status]?.label ?? ""} ${resolveEquipmentStatusLabel(equipment.status)}`
-        ),
-      })),
-    [equipmentList]
-  );
-  const equipmentSuggestions = useMemo(() => {
-    const keyword = normalizeEquipmentSearchText(equipmentQuery);
-    const filtered = keyword ? equipmentOptions.filter((option) => option.searchText.includes(keyword)) : equipmentOptions;
-    return filtered.slice(0, 20).map((option) => option.label);
-  }, [equipmentOptions, equipmentQuery]);
-  const previewLotNo = useMemo(() => {
-    if (!selectedEquipment || !productionDate) return "";
-    return generateProductionLotNo({
-      workDate: productionDate,
-      equipment: selectedEquipment.name,
-      records: buildLotNumberRecords(),
-    });
-  }, [selectedEquipment, productionDate, refreshKey]);
-
-  const resetPopupState = () => {
-    setEquipmentQuery("");
-    setSelectedEquipmentId("");
-    setProductionDate(getPrintOutputDate());
-    setPopupError("");
-  };
-
-  const openLotPopup = (row) => {
-    setActiveRowId(row.id);
-    setLotPopupRow(row);
-    setCreatedResult(null);
-    resetPopupState();
-  };
-
-  const closeLotPopup = () => {
-    setLotPopupRow(null);
-    resetPopupState();
-  };
-
-  const handleEquipmentSelect = (label) => {
-    const keyword = normalizeEquipmentSearchText(label);
-    const matched =
-      equipmentOptions.find((option) => option.label === label) ??
-      equipmentOptions.find((option) => keyword && option.searchText.includes(keyword));
-    if (!matched) {
-      setSelectedEquipmentId("");
-      setEquipmentQuery(label);
-      return;
-    }
-    setSelectedEquipmentId(matched.equipment.id);
-    setEquipmentQuery(matched.label);
-    setPopupError("");
-  };
-
-  const handleCreateLotFromPopup = () => {
-    if (!lotPopupRow) return;
-    if (!selectedEquipment) {
-      setPopupError("설비를 선택하세요.");
-      return;
-    }
-    if (!productionDate) {
-      setPopupError("생산일을 입력하세요.");
-      return;
-    }
-    if (!previewLotNo) {
-      setPopupError("LOT 번호를 생성할 수 없습니다. 설비와 생산일을 확인하세요.");
-      return;
-    }
-
-    const result = createManualChargeableLot({
-      equipmentId: selectedEquipment.id,
-      lotNo: previewLotNo,
-      workDate: productionDate,
-      sourceRecordId: lotPopupRow.sourceRecord?.id,
-      managementId: lotPopupRow.managementId,
-      company: lotPopupRow.companyLabel,
-      productName: lotPopupRow.productNameLabel,
-      partNo: lotPopupRow.partNoLabel,
-      material: lotPopupRow.materialLabel,
-      qty: lotPopupRow.qtyValue,
-    });
-
-    if (!result.ok) {
-      setPopupError(result.message);
-      return;
-    }
-
-    QRService.createIfNotExists("lot", result.lotNo);
-    setCreatedResult(result);
-    setPopupError("");
-    bumpRefresh();
-    closeLotPopup();
-    setWorkflowNextStep(getOperationsWorkflowNextStep("productionLotCreated"));
-  };
+  useEffect(() => subscribeWorkflowDataRefresh(() => bumpRefresh()), [bumpRefresh]);
 
   const handleProductionWaitingPrinted = useCallback(
     (printProps) => {
@@ -381,6 +230,8 @@ export default function ProductionPlanWorkspace() {
         </SecondaryButton>
       </SectionPageActions>
 
+      <TitanWorkflowNavigation stepId="productionPending" />
+
       <TitanKpiBarSlot ariaLabel="생산 대기 KPI" className="inbound-page__kpi">
         <TitanWorkflowStatusChipBar items={kpiItems} ariaLabel="생산 대기 KPI" />
       </TitanKpiBarSlot>
@@ -409,146 +260,27 @@ export default function ProductionPlanWorkspace() {
           <h3>생산 대기 리스트</h3>
           <span className="manual-lot-page__count">{totalCount.toLocaleString("ko-KR")}건</span>
         </div>
-          <TitanDataTable
-            layout="compact"
-            columns={columns}
-            rows={pagedRows}
-            activeRowId={activeRowId}
-            onRowClick={openLotPopup}
-            onRowDoubleClick={openLotPopup}
-            emptyMessage="열처리 대기(HT_WAIT) 제품이 없습니다."
-            ariaLabel="생산 대기 리스트"
-          />
-          <TitanTableFooter
-            totalCount={totalCount}
-            page={page}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
+        <p className="home-empty production-plan-page__hint" role="status">
+          조회 · 검색 · 필터 전용입니다. LOT 생성 · 장입 · 생산 시작은 설비 가동 현황에서 진행하세요.
+        </p>
+        <TitanDataTable
+          layout="compact"
+          columns={columns}
+          rows={pagedRows}
+          activeRowId={activeRowId}
+          onRowClick={(row) => setActiveRowId(row.id)}
+          emptyMessage="열처리 대기(HT_WAIT) 제품이 없습니다."
+          ariaLabel="생산 대기 리스트"
+        />
+        <TitanTableFooter
+          totalCount={totalCount}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
-
-      {lotPopupRow ? (
-        <div className="production-lot-popup" role="dialog" aria-modal="true" aria-label="LOT 생성">
-          <div className="production-lot-popup__panel">
-            <header className="production-lot-popup__header">
-              <div>
-                <p className="manual-lot-page__eyebrow">Production Plan Action</p>
-                <h3>LOT 생성</h3>
-              </div>
-              <button type="button" className="production-lot-popup__close" onClick={closeLotPopup} aria-label="닫기">
-                <X size={18} aria-hidden />
-              </button>
-            </header>
-
-            <dl className="production-lot-popup__summary">
-              <div>
-                <dt>업체명</dt>
-                <dd>{lotPopupRow.companyLabel}</dd>
-              </div>
-              <div>
-                <dt>품명</dt>
-                <dd>{lotPopupRow.productNameLabel}</dd>
-              </div>
-              <div>
-                <dt>품번</dt>
-                <dd>{lotPopupRow.partNoLabel}</dd>
-              </div>
-              <div>
-                <dt>재질</dt>
-                <dd>{lotPopupRow.materialLabel}</dd>
-              </div>
-              <div>
-                <dt>수량</dt>
-                <dd>{lotPopupRow.qtyLabel}</dd>
-              </div>
-              <div>
-                <dt>생산일</dt>
-                <dd>
-                  <input
-                    className="titan-input"
-                    type="date"
-                    value={productionDate}
-                    onChange={(event) => {
-                      setProductionDate(event.target.value);
-                      setPopupError("");
-                      setCreatedResult(null);
-                    }}
-                  />
-                </dd>
-              </div>
-              <div>
-                <dt>설비 선택</dt>
-                <dd>
-                  <TitanSearchAutocomplete
-                    fieldKey="productionPlanLotEquipment"
-                    value={equipmentQuery}
-                    onChange={(value) => {
-                      setEquipmentQuery(value);
-                      setSelectedEquipmentId("");
-                      setPopupError("");
-                      setCreatedResult(null);
-                    }}
-                    onSelect={handleEquipmentSelect}
-                    suggestions={equipmentSuggestions}
-                    placeholder="66 / 3S / 10S / 이온 / 연질화"
-                  />
-                </dd>
-              </div>
-              <div>
-                <dt>생성될 LOT번호</dt>
-                <dd className="manual-lot-page__lot-no">{previewLotNo || "설비 선택 후 자동 Preview"}</dd>
-              </div>
-              <div>
-                <dt>설비 상태</dt>
-                <dd>
-                  {selectedEquipment ? (
-                    <StatusChip variant={EQUIPMENT_RUN_STATUS_META[selectedEquipment.status]?.variant ?? "wait"}>
-                      {EQUIPMENT_RUN_STATUS_META[selectedEquipment.status]?.emoji} {resolveEquipmentStatusLabel(selectedEquipment.status)}
-                    </StatusChip>
-                  ) : (
-                    <StatusChip variant="wait">설비 미선택</StatusChip>
-                  )}
-                </dd>
-              </div>
-            </dl>
-
-            {popupError ? <p className="manual-lot-page__error" role="alert">{popupError}</p> : null}
-
-            {createdResult ? (
-              <div className="manual-lot-page__success manual-lot-page__toast" role="status" aria-live="polite">
-                <CheckCircle2 size={18} aria-hidden />
-                <div>
-                  <strong>LOT 생성 완료</strong>
-                  <span>{createdResult.lotNo}</span>
-                </div>
-              </div>
-            ) : null}
-
-            <footer className="production-lot-popup__footer">
-              <SecondaryButton type="button" onClick={closeLotPopup}>
-                취소
-              </SecondaryButton>
-              <PrimaryButton type="button" onClick={handleCreateLotFromPopup}>
-                <Factory size={14} aria-hidden />
-                LOT 생성
-              </PrimaryButton>
-            </footer>
-          </div>
-        </div>
-      ) : null}
-
-      <OperationsWorkflowNextDialog
-        open={Boolean(workflowNextStep)}
-        step={workflowNextStep}
-        onNavigate={(path) => {
-          navigate(path);
-          setWorkflowNextStep(null);
-        }}
-        onStay={() => setWorkflowNextStep(null)}
-        onClose={() => setWorkflowNextStep(null)}
-      />
 
       <InOutListPrintPreviewModal
         open={inOutPrintSession.open}

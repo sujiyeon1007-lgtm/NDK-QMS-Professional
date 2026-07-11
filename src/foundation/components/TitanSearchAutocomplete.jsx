@@ -9,7 +9,21 @@ import {
   removeRecentSearch,
   toggleSearchFavorite,
 } from "../../utils/titanSearchHistory";
-import { TITAN_SEARCH_FIELD_LABELS } from "../../utils/titanSearchSuggestions";
+import {
+  TITAN_SEARCH_FIELD_LABELS,
+  TITAN_AUTOCOMPLETE_FIELD_ALIASES,
+  buildMasterSuggestionIndex,
+  getSuggestionsForField,
+  resolveMasterAutocompleteConfig,
+  resolveMasterAutocompleteLimit,
+  TITAN_MASTER_AUTOCOMPLETE_DEFAULT_LIMIT,
+} from "../../utils/titanSearchSuggestions";
+import { matchesSearchQuery } from "../../utils/titanSearchMatch";
+import {
+  findCompanyProductByPartNo,
+  findCompanyProductByPartName,
+  mapProductToFormAutofill,
+} from "../../utils/productMasterSearch";
 
 function highlightMatch(text, query) {
   if (!query) return text;
@@ -27,7 +41,7 @@ function highlightMatch(text, query) {
 }
 
 /** Project TITAN — 공통 검색 자동완성 입력 */
-export default function TitanSearchAutocomplete({
+function TitanSearchAutocompleteCore({
   fieldKey,
   value = "",
   onChange,
@@ -38,7 +52,10 @@ export default function TitanSearchAutocomplete({
   allowEmpty = false,
   emptyLabel = "전체",
   onEnterSearch,
+  variant = "search",
+  disabled = false,
 }) {
+  const isRegister = variant === "register";
   const listId = useId();
   const rootRef = useRef(null);
   const inputRef = useRef(null);
@@ -50,12 +67,12 @@ export default function TitanSearchAutocomplete({
   const trimmed = query.trim();
 
   const favorites = useMemo(
-    () => getFavoritesForField(fieldKey),
-    [fieldKey, recentTick, open]
+    () => (isRegister ? [] : getFavoritesForField(fieldKey)),
+    [fieldKey, recentTick, open, isRegister]
   );
   const recentItems = useMemo(
-    () => getRecentSearchesForField(fieldKey),
-    [fieldKey, recentTick, open]
+    () => (isRegister ? [] : getRecentSearchesForField(fieldKey)),
+    [fieldKey, recentTick, open, isRegister]
   );
 
   const suggestionItems = useMemo(() => {
@@ -64,18 +81,19 @@ export default function TitanSearchAutocomplete({
 
     favorites.forEach((item) => {
       if (seen.has(item.value)) return;
-      if (trimmed && !item.value.toLowerCase().includes(trimmed.toLowerCase())) return;
+      if (trimmed && !matchesSearchQuery(item.value, trimmed)) return;
       seen.add(item.value);
       items.push({ type: "favorite", value: item.value, id: item.id });
     });
 
     suggestions.forEach((suggestion) => {
       if (seen.has(suggestion)) return;
+      if (trimmed && !matchesSearchQuery(suggestion, trimmed)) return;
       seen.add(suggestion);
       items.push({ type: "suggestion", value: suggestion, id: `suggest:${suggestion}` });
     });
 
-    if (!trimmed) {
+    if (!trimmed && !isRegister) {
       recentItems.forEach((item) => {
         if (seen.has(item.value)) return;
         seen.add(item.value);
@@ -84,14 +102,14 @@ export default function TitanSearchAutocomplete({
     }
 
     return items;
-  }, [favorites, suggestions, recentItems, trimmed]);
+  }, [favorites, suggestions, recentItems, trimmed, isRegister]);
 
   const showDropdown = open && (suggestionItems.length > 0 || allowEmpty);
 
   const commitValue = (nextValue, saveRecent = true) => {
     onChange?.(nextValue);
     onSelect?.(nextValue);
-    if (saveRecent && String(nextValue ?? "").trim()) {
+    if (!isRegister && saveRecent && String(nextValue ?? "").trim()) {
       addRecentSearch(fieldKey, nextValue);
       setRecentTick((tick) => tick + 1);
     }
@@ -168,7 +186,10 @@ export default function TitanSearchAutocomplete({
         aria-expanded={showDropdown}
         aria-controls={listId}
         aria-autocomplete="list"
-        onFocus={() => setOpen(true)}
+        disabled={disabled}
+        onFocus={() => {
+          if (!disabled) setOpen(true);
+        }}
         onChange={(event) => {
           onChange?.(event.target.value);
           setOpen(true);
@@ -189,11 +210,11 @@ export default function TitanSearchAutocomplete({
             </button>
           ) : null}
 
-          {favorites.length > 0 ? (
+          {!isRegister && favorites.length > 0 ? (
             <div className="titan-search-ac__section-label">⭐ 즐겨찾기</div>
           ) : null}
 
-          {!trimmed && recentItems.length > 0 ? (
+          {!isRegister && !trimmed && recentItems.length > 0 ? (
             <div className="titan-search-ac__recent-bar">
               <span className="titan-search-ac__section-label">최근 검색</span>
               <button
@@ -230,26 +251,28 @@ export default function TitanSearchAutocomplete({
                 ) : null}
                 <span>{highlightMatch(item.value, trimmed)}</span>
               </button>
-              <button
-                type="button"
-                className="titan-search-ac__fav-btn"
-                aria-label={isSearchFavorite(fieldKey, item.value) ? "즐겨찾기 해제" : "즐겨찾기 등록"}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  toggleSearchFavorite(fieldKey, item.value);
-                  setRecentTick((tick) => tick + 1);
-                }}
-              >
-                <Star
-                  size={12}
-                  className={
-                    isSearchFavorite(fieldKey, item.value)
-                      ? "titan-search-ac__star is-on"
-                      : "titan-search-ac__star"
-                  }
-                />
-              </button>
-              {item.type === "recent" ? (
+              {!isRegister ? (
+                <button
+                  type="button"
+                  className="titan-search-ac__fav-btn"
+                  aria-label={isSearchFavorite(fieldKey, item.value) ? "즐겨찾기 해제" : "즐겨찾기 등록"}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    toggleSearchFavorite(fieldKey, item.value);
+                    setRecentTick((tick) => tick + 1);
+                  }}
+                >
+                  <Star
+                    size={12}
+                    className={
+                      isSearchFavorite(fieldKey, item.value)
+                        ? "titan-search-ac__star is-on"
+                        : "titan-search-ac__star"
+                    }
+                  />
+                </button>
+              ) : null}
+              {!isRegister && item.type === "recent" ? (
                 <button
                   type="button"
                   className="titan-search-ac__remove"
@@ -286,7 +309,7 @@ export function TitanSearchField({
   return (
     <label className="titan-search-panel__field">
       <span className="titan-search-panel__label">{label}</span>
-      <TitanSearchAutocomplete
+      <TitanSearchAutocompleteCore
         fieldKey={fieldKey}
         value={value}
         onChange={onChange}
@@ -299,3 +322,182 @@ export function TitanSearchField({
     </label>
   );
 }
+
+function resolveAutoCompleteFieldKey(fieldType, fieldKey) {
+  if (fieldKey) return fieldKey;
+  return TITAN_AUTOCOMPLETE_FIELD_ALIASES[fieldType] || fieldType;
+}
+
+/** Register/search shared autocomplete with master index */
+export function TitanAutoComplete({
+  fieldType,
+  fieldKey: fieldKeyProp,
+  value = "",
+  onChange,
+  onSelect,
+  companyFilter = "",
+  records = [],
+  companies = [],
+  suggestions: externalSuggestions,
+  placeholder = "",
+  className = "",
+  label,
+  disabled = false,
+  limit,
+  variant = "register",
+  allowEmpty = false,
+  emptyLabel = "전체",
+  onEnterSearch,
+  enableProductAutofill = false,
+}) {
+  const fieldKey = resolveAutoCompleteFieldKey(fieldType, fieldKeyProp);
+  const resolvedLimit =
+    limit ?? resolveMasterAutocompleteLimit(fieldType || fieldKey, value);
+
+  const suggestionIndex = useMemo(
+    () =>
+      externalSuggestions
+        ? null
+        : buildMasterSuggestionIndex({ records, companies, companyFilter }),
+    [records, companies, companyFilter, externalSuggestions]
+  );
+
+  const suggestions = useMemo(() => {
+    if (externalSuggestions) return externalSuggestions;
+    return getSuggestionsForField(fieldType || fieldKey, value, {
+      index: suggestionIndex,
+      limit: resolvedLimit,
+    });
+  }, [externalSuggestions, suggestionIndex, fieldType, fieldKey, value, resolvedLimit]);
+
+  const handleSelect = (selectedValue) => {
+    if (enableProductAutofill && companyFilter) {
+      if (fieldType === "partNo" || fieldKey === "partNo") {
+        const product = findCompanyProductByPartNo(companyFilter, selectedValue);
+        if (product) {
+          onSelect?.(selectedValue, { product, autofill: mapProductToFormAutofill(product) });
+          return;
+        }
+      }
+      if (fieldType === "productName" || fieldType === "partName" || fieldKey === "partName") {
+        const product = findCompanyProductByPartName(companyFilter, selectedValue);
+        if (product) {
+          onSelect?.(selectedValue, { product, autofill: mapProductToFormAutofill(product) });
+          return;
+        }
+      }
+    }
+    onSelect?.(selectedValue);
+  };
+
+  const inputClassName = label ? className.replace(/\bform-field\b/g, "").trim() : className;
+
+  const input = (
+    <TitanSearchAutocompleteCore
+      fieldKey={fieldKey}
+      value={value}
+      onChange={onChange}
+      onSelect={handleSelect}
+      suggestions={suggestions}
+      placeholder={placeholder || TITAN_SEARCH_FIELD_LABELS[fieldKey] || fieldKey}
+      className={inputClassName}
+      allowEmpty={allowEmpty}
+      emptyLabel={emptyLabel}
+      onEnterSearch={onEnterSearch}
+      variant={variant}
+      disabled={disabled}
+    />
+  );
+
+  if (!label) return input;
+
+  return (
+    <label className={className.includes("form-field") ? className : `titan-autocomplete-field ${className}`.trim()}>
+      <span>{label}</span>
+      {input}
+    </label>
+  );
+}
+
+export function TitanAutoCompleteField(props) {
+  return <TitanAutoComplete {...props} />;
+}
+
+export function TitanMasterAutocomplete({
+  field,
+  fieldType: fieldTypeProp,
+  value = "",
+  onChange,
+  onSelect,
+  companyFilter = "",
+  label,
+  className = "",
+  placeholder,
+  disabled = false,
+  limit,
+  enableProductAutofill,
+  suggestions,
+  records = [],
+  companies = [],
+  variant = "register",
+  allowEmpty = false,
+  emptyLabel = "전체",
+}) {
+  const config = useMemo(() => resolveMasterAutocompleteConfig(field || fieldTypeProp), [field, fieldTypeProp]);
+  const resolvedLimit = limit ?? resolveMasterAutocompleteLimit(field || config.fieldType, value);
+  const productAutofill =
+    enableProductAutofill ?? (config.productAutofill ? Boolean(companyFilter) : false);
+
+  return (
+    <TitanAutoComplete
+      fieldType={fieldTypeProp || config.fieldType}
+      fieldKey={field}
+      value={value}
+      onChange={onChange}
+      onSelect={onSelect}
+      companyFilter={companyFilter}
+      records={records}
+      companies={companies}
+      suggestions={suggestions}
+      label={label ?? config.label}
+      className={className}
+      placeholder={placeholder}
+      disabled={disabled}
+      limit={resolvedLimit}
+      variant={variant}
+      allowEmpty={allowEmpty}
+      emptyLabel={emptyLabel}
+      enableProductAutofill={productAutofill}
+    />
+  );
+}
+
+export function TitanProductFieldAutocomplete({
+  field = "partName",
+  company = "",
+  onProductSelect,
+  ...props
+}) {
+  const handleSelect = (selectedValue, meta) => {
+    props.onSelect?.(selectedValue, meta);
+    if (meta?.product) {
+      onProductSelect?.(meta.product, meta.autofill);
+    }
+  };
+
+  return (
+    <TitanMasterAutocomplete
+      field={field}
+      companyFilter={company}
+      enableProductAutofill={Boolean(company)}
+      onSelect={handleSelect}
+      {...props}
+    />
+  );
+}
+
+export { TitanSearchAutocompleteCore as TitanAutoCompleteBase };
+
+const TitanSearchAutocomplete = TitanSearchAutocompleteCore;
+export default TitanSearchAutocomplete;
+export { TitanSearchAutocompleteCore };
