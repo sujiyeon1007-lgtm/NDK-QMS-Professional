@@ -1,83 +1,107 @@
 import { useEffect, useMemo, useState } from "react";
 import Input from "../../foundation/components/Input";
 import TitanRegisterModal from "../../foundation/components/TitanRegisterModal";
-import TitanCascadeProductPicker from "../../foundation/components/TitanCascadeProductPicker";
 import TitanSearchableSelect from "../../foundation/components/TitanSearchableSelect";
 import { OUTBOUND_REGISTER_LABEL } from "../../config/registerModalStandard";
 import { getActiveWorkers } from "../../utils/masterData";
-import { getStockQty } from "../../utils/inventory";
 import {
   getOutboundEligibleRecords,
   mapRecordToOutboundRegisterForm,
   validateOutboundRegisterForm,
+  resolveOutboundProductAvailableQty,
+  buildOutboundProductKey,
 } from "../../utils/outboundRegistration";
-import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
 import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 
 const EMPTY_FORM = mapRecordToOutboundRegisterForm(null);
 
-function formatOutboundRecordOption(record) {
-  return `${record.id} · ${record.company} · ${record.partName} · 실재고 ${getStockQty(record)} EA`;
+function formatOutboundProductOption(product) {
+  const available = resolveOutboundProductAvailableQty(product);
+  return `${product.company} · ${product.partName} · ${product.partNo} · 출고가능 ${available} EA`;
 }
 
-function resolveRegisterRecord(managementId, eligibleRecords = []) {
+function resolveRegisterProduct(productKey, managementId, eligibleProducts = []) {
+  const key = String(productKey ?? "").trim();
+  if (key) {
+    const byKey = eligibleProducts.find((item) => item.productKey === key);
+    if (byKey) return byKey;
+  }
+
   const trimmed = managementId?.trim();
   if (!trimmed) return null;
 
   return (
-    eligibleRecords.find((item) => item.id === trimmed) ??
-    getSessionProductionRecords().find((item) => item.id === trimmed) ??
+    eligibleProducts.find((item) => item.id === trimmed) ??
+    eligibleProducts.find((item) => (item.managementIds ?? []).includes(trimmed)) ??
     null
   );
 }
 
-export default function OutboundRegisterModal({ open, onClose, onRegister, initialManagementId = "" }) {
+export default function OutboundRegisterModal({
+  open,
+  onClose,
+  onRegister,
+  initialManagementId = "",
+  initialProductKey = "",
+}) {
   const [form, setForm] = useState(EMPTY_FORM);
   const workers = useMemo(() => getActiveWorkers(), [open]);
 
-  const eligibleRecords = useMemo(() => (open ? getOutboundEligibleRecords() : []), [open]);
+  const eligibleProducts = useMemo(() => (open ? getOutboundEligibleRecords() : []), [open]);
 
-  const displayRecords = useMemo(() => {
-    const records = [...eligibleRecords];
-    const current = resolveRegisterRecord(form.managementId, records);
-    if (current && !records.some((item) => item.id === current.id)) {
-      records.unshift(current);
+  const displayProducts = useMemo(() => {
+    const products = [...eligibleProducts];
+    const current = resolveRegisterProduct(form.productKey, form.managementId, products);
+    if (current && !products.some((item) => item.productKey === current.productKey)) {
+      products.unshift(current);
     }
-    return records;
-  }, [eligibleRecords, form.managementId]);
+    return products;
+  }, [eligibleProducts, form.managementId, form.productKey]);
 
-  const outboundRecordOptions = useMemo(
-    () => displayRecords.map((record) => formatOutboundRecordOption(record)),
-    [displayRecords]
+  const outboundProductOptions = useMemo(
+    () => displayProducts.map((product) => formatOutboundProductOption(product)),
+    [displayProducts]
   );
 
   const selectedOutboundOption = useMemo(() => {
-    const record = displayRecords.find((item) => item.id === form.managementId);
-    return record ? formatOutboundRecordOption(record) : "";
-  }, [displayRecords, form.managementId]);
+    const product = displayProducts.find(
+      (item) =>
+        item.productKey === form.productKey ||
+        (item.id === form.managementId && !form.productKey)
+    );
+    return product ? formatOutboundProductOption(product) : "";
+  }, [displayProducts, form.managementId, form.productKey]);
 
   useEffect(() => {
     if (!open) return;
 
-    const records = getOutboundEligibleRecords();
+    const products = getOutboundEligibleRecords();
     const baseForm = {
       ...EMPTY_FORM,
       shipDate: getPrintOutputDate(),
       manager: resolveDefaultAssigneeFromAuth(),
     };
 
-    const record = resolveRegisterRecord(initialManagementId, records);
-    setForm(mapRecordToOutboundRegisterForm(record, baseForm));
-  }, [open, initialManagementId]);
+    const product = resolveRegisterProduct(initialProductKey, initialManagementId, products);
+    setForm(mapRecordToOutboundRegisterForm(product, baseForm));
+  }, [open, initialManagementId, initialProductKey]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleManagementChange = (managementId) => {
-    const record = resolveRegisterRecord(managementId, eligibleRecords);
-    setForm(mapRecordToOutboundRegisterForm(record, { ...form, managementId, shipQty: "" }));
+  const handleProductChange = (optionLabel) => {
+    const product = displayProducts.find((item) => formatOutboundProductOption(item) === optionLabel);
+    if (!product) return;
+    setForm(
+      mapRecordToOutboundRegisterForm(product, {
+        ...form,
+        managementId: product.id,
+        productKey: product.productKey || buildOutboundProductKey(product),
+        shipQty: "",
+      })
+    );
   };
 
   const handleSubmit = () => {
@@ -90,12 +114,14 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
 
       onRegister?.({
         ok: true,
-        form: { ...form },
+        form: { ...form, productKey: validation.product.productKey },
         managementId: validation.record.id,
+        productKey: validation.product.productKey,
         record: validation.record,
         shipQty: validation.shipQty,
         stockBefore: validation.stock,
         stockAfter: validation.stock - validation.shipQty,
+        allocations: validation.allocations,
       });
       onClose?.();
     } catch (error) {
@@ -118,24 +144,17 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
         <p className="titan-modal__section-title">출고 대상 선택</p>
         <TitanSearchableSelect
           className="titan-modal__field titan-modal__field--full"
-          label="관리번호"
+          label="제품"
           value={selectedOutboundOption}
-          onChange={(option) => {
-            const managementId = option.split(" · ")[0]?.trim() ?? "";
-            handleManagementChange(managementId);
-          }}
-          options={outboundRecordOptions}
-          placeholder="관리번호 선택"
+          onChange={(option) => handleProductChange(option)}
+          options={outboundProductOptions}
+          placeholder="제품 선택 (업체 · 품명 · 품번)"
         />
       </div>
 
       <div className="titan-modal__section">
         <p className="titan-modal__section-title">기본 정보</p>
         <div className="titan-modal__grid">
-          <label className="titan-modal__field">
-            <span>LOT</span>
-            <Input value={form.lotNo} readOnly disabled />
-          </label>
           <label className="titan-modal__field">
             <span>업체명</span>
             <Input value={form.company} readOnly disabled />
@@ -156,6 +175,10 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
             <span>공정</span>
             <Input value={form.processName} readOnly disabled />
           </label>
+          <label className="titan-modal__field">
+            <span>LOT 배분</span>
+            <Input value="자동 (FIFO)" readOnly disabled />
+          </label>
         </div>
       </div>
 
@@ -163,7 +186,7 @@ export default function OutboundRegisterModal({ open, onClose, onRegister, initi
         <p className="titan-modal__section-title">수량</p>
         <div className="titan-modal__grid">
           <label className="titan-modal__field">
-            <span>실재고(EA)</span>
+            <span>출고가능(EA)</span>
             <Input value={form.stockQty} readOnly disabled placeholder="자동 입력" />
           </label>
           <label className="titan-modal__field">

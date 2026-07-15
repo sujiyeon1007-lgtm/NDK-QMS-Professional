@@ -331,7 +331,7 @@ function buildProcessHistoryStep(record, stepKey) {
 
         datetime: formatDisplayDateTime(
 
-          record.incomingRegisteredAt || (record.incomingDate ? `${record.incomingDate}T09:00:00` : "")
+          record.incomingRegisteredAt || record.incomingDate || ""
 
         ),
 

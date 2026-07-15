@@ -26,6 +26,7 @@ import { isHeatTreatmentMenuEligible } from "./menuWorkflowGate";
 import { isIncomingRegistered } from "./productionRecords";
 
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { resolveChargeQty } from "./equipmentChargingQty";
 
 
 
@@ -263,13 +264,17 @@ export function getProductionDailyReportApprovalStatus(record) {
 
 export function formatProductionDailyReportDateTime(record) {
 
-  const raw = record.lotCreatedAt ?? record.incomingDate ?? "";
+  const raw = record.incomingRegisteredAt ?? record.lotCreatedAt ?? record.incomingDate ?? "";
 
   if (!raw) return "—";
 
-  if (String(raw).includes("T")) {
+  const text = String(raw).trim();
 
-    const parsed = new Date(raw);
+  if (text.includes("T") || / \d{2}:\d{2}/.test(text)) {
+
+    const iso = text.includes("T") ? text : `${text.slice(0, 10)}T${text.slice(11).trim()}`;
+
+    const parsed = new Date(iso);
 
     if (!Number.isNaN(parsed.getTime())) {
 
@@ -289,16 +294,18 @@ export function formatProductionDailyReportDateTime(record) {
 
   }
 
-  return `${raw} 09:00`;
+  return `${text.slice(0, 10) || text} 09:00`;
 
 }
 
 
 
 export function getProductionDailyReportWorkQty(record) {
-
-  return `${record.qty ?? 0} ${record.unit || "EA"}`;
-
+  const qty =
+    resolveChargeQty(record, { lotNo: record?.lotNo }) ||
+    Number(record.workQty ?? record.chargeQty) ||
+    0;
+  return `${qty} ${record.unit || "EA"}`;
 }
 
 

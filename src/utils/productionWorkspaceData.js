@@ -43,6 +43,13 @@ import {
 } from "./productionDailyReportStatus";
 
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
+import {
+  expandRecordsByChargeHistory,
+  getLotBundle,
+  normalizeProductionLotKey,
+  resolveRecordLotNo,
+} from "./lotBundleService";
+import { resolveChargeQty } from "./equipmentChargingQty";
 import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 
 import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "./workflowProcessStatus";
@@ -144,7 +151,7 @@ export function getProductionRecords() {
         workDate: row.workDate || "",
         registrar: row.operator || "생산부",
         note: row.note || "",
-        registered: row.status !== "장입대기",
+        registered: row.status !== "장입완료" && row.status !== "장입대기",
         incomingRegistered: true,
         workflowStatus: row.status === "검사대기" ? "INSPECTION_WAIT" : "HT_RUNNING",
         currentProcess: row.status === "검사대기" ? "검사 대기" : "열처리 중",
@@ -161,7 +168,6 @@ export function getProductionRecords() {
 
 
 /** @param {object[]} records @param {(object) => boolean} predicate */
-
 function dedupeProductionRecords(records, predicate) {
 
   const seen = new Set();
@@ -192,6 +198,84 @@ function dedupeProductionRecords(records, predicate) {
 
   return result;
 
+}
+
+function enrichProductionDailyReportRecord(record) {
+  const lotNo = resolveRecordLotNo(record);
+  const enriched =
+    lotNo && !String(record?.lotNo ?? "").trim() ? { ...record, lotNo } : record;
+
+  if (!lotNo) return enriched;
+
+  const bundle = getLotBundle(lotNo);
+  return {
+    ...enriched,
+    lotNo,
+    lotItemCount: bundle?.itemCount ?? 1,
+    lotTotalQty: bundle?.totalQty ?? resolveChargeQty(enriched, { lotNo }),
+    lotProductLabel: bundle?.productLabel ?? enriched.material ?? enriched.partName ?? "—",
+    lotItems: bundle?.lotItems ?? [],
+    chargeQty: resolveChargeQty(enriched, { lotNo }),
+  };
+}
+
+/** 작업일보 — one row per product per LOT charge (append, not replace) */
+function buildProductionDailyReportProductRows(records, predicate) {
+  const seenRowKeys = new Set();
+  const result = [];
+
+  for (const record of records) {
+    if (!predicate(record)) continue;
+
+    const idKey = String(record?.id ?? "").trim();
+    const lotKey = normalizeProductionLotKey(resolveRecordLotNo(record));
+    const rowKey = lotKey ? `${idKey}::${lotKey}` : idKey;
+    if (rowKey) {
+      if (seenRowKeys.has(rowKey)) continue;
+      seenRowKeys.add(rowKey);
+    }
+
+    result.push(enrichProductionDailyReportRecord(record));
+  }
+
+  return result;
+}
+
+/** 생산이력 — one LOT = one list row (SSOT lotBundle) */
+function dedupeProductionRecordsByLot(records, predicate) {
+  const seenLots = new Set();
+  const seenIds = new Set();
+  const result = [];
+
+  for (const record of records) {
+    if (!predicate(record)) continue;
+
+    const lotKey = normalizeProductionLotKey(record?.lotNo);
+    if (lotKey) {
+      if (seenLots.has(lotKey)) continue;
+      seenLots.add(lotKey);
+
+      const bundle = getLotBundle(record.lotNo);
+      result.push({
+        ...record,
+        lotItemCount: bundle?.itemCount ?? 1,
+        lotTotalQty: bundle?.totalQty ?? resolveChargeQty(record, { lotNo: record.lotNo }),
+        lotProductLabel: bundle?.productLabel ?? record.material ?? record.partName ?? "—",
+        lotItems: bundle?.lotItems ?? [],
+        chargeQty: resolveChargeQty(record, { lotNo: record.lotNo }),
+      });
+      continue;
+    }
+
+    const idKey = String(record?.id ?? "").trim();
+    if (idKey) {
+      if (seenIds.has(idKey)) continue;
+      seenIds.add(idKey);
+    }
+    result.push(record);
+  }
+
+  return result;
 }
 
 
@@ -437,16 +521,25 @@ export function getProductionChargingScreenData(records) {
 export function isProductionDailyReportStageRecord(record) {
   if (!isHeatTreatmentWorkType(record)) return false;
   if (!isIncomingRegistered(record)) return false;
-  if (!record?.registered || !record?.lotNo?.trim()) return false;
-  return filterProductionDailyReportRecords([record]).length > 0;
+  const lotNo = resolveRecordLotNo(record);
+  if (!lotNo) return false;
+
+  const lotKey = normalizeProductionLotKey(lotNo);
+  const hasChargeEntry = (record.chargeHistory ?? []).some(
+    (entry) =>
+      normalizeProductionLotKey(entry?.lotNo) === lotKey &&
+      (entry?.status === "in-progress" || entry?.status === "completed")
+  );
+  if (!record?.registered && !hasChargeEntry) return false;
+
+  return filterProductionDailyReportRecords([{ ...record, lotNo }]).length > 0;
 }
 
 
 
 export function buildProductionDailyReportWorkspaceRecords(records = getProductionRecords()) {
-
-  return dedupeProductionRecords(records, isProductionDailyReportStageRecord);
-
+  const expanded = expandRecordsByChargeHistory(records);
+  return buildProductionDailyReportProductRows(expanded, isProductionDailyReportStageRecord);
 }
 
 
@@ -539,9 +632,8 @@ export function isProductionResultStageRecord(record) {
 
 
 export function buildProductionResultWorkspaceRecords(records = getProductionRecords()) {
-
-  return dedupeProductionRecords(records, isProductionResultStageRecord);
-
+  const expanded = expandRecordsByChargeHistory(records, { completedOnly: true });
+  return dedupeProductionRecordsByLot(expanded, isProductionResultStageRecord);
 }
 
 

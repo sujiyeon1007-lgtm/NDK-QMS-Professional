@@ -66,6 +66,13 @@ export default function ProductionChargingEquipmentPage() {
           setChargeQtyEnabled={workflow.setChargeQtyEnabled}
           draftChargeQty={workflow.draftChargeQty}
           setDraftChargeQty={workflow.setDraftChargeQty}
+          selectedChargeRowIds={workflow.selectedChargeRowIds}
+          toggleChargeRow={workflow.toggleChargeRow}
+          toggleAllChargeRows={workflow.toggleAllChargeRows}
+          chargeQtyByRowId={workflow.chargeQtyByRowId}
+          setChargeQtyForRow={workflow.setChargeQtyForRow}
+          totalChargeQty={workflow.totalChargeQty}
+          processName={detail.process ?? workflow.selectedEquipment?.process ?? ""}
         />
       </div>
 

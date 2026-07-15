@@ -15,6 +15,12 @@ import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { getProductionDailyReportStatus } from "./productionDailyReportStatus";
 import { getPrintOutputDate } from "./titanPrintDates";
 import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { resolveChargeQty } from "./equipmentChargingQty";
+
+function resolveProductionQty(record) {
+  const chargeQty = resolveChargeQty(record, { lotNo: record?.lotNo });
+  return chargeQty || (!record?.lotNo ? Number(record?.qty) || 0 : 0);
+}
 
 /** RC1 — 금일 기준 (고정 2026-06-30 사용 시 7월 생산완료 이력이 목록에서 누락됨) */
 export function getReferenceDate(referenceDate) {
@@ -228,7 +234,7 @@ export function isWithinAnalysisPeriod(dateValue, period, referenceDate = getRef
 }
 
 export function sumRecordQty(records = []) {
-  return records.reduce((sum, record) => sum + (Number(record.qty) || 0), 0);
+  return records.reduce((sum, record) => sum + resolveProductionQty(record), 0);
 }
 
 function getDimensionValue(record, dimensionField) {
@@ -299,14 +305,15 @@ export function matchesProductionResultsSearch(record, search) {
 
 export function mapProductionResultRow(record) {
   const status = getProductionResultsDisplayStatus(record);
+  const lotKey = String(record.lotNo ?? "").trim().toUpperCase();
   return {
-    id: record.id,
+    id: lotKey ? `${record.id}::${lotKey}` : record.id,
     lotNo: record.lotNo || "—",
     company: record.company || "—",
     partName: record.partName || "—",
     partNo: record.partNo || "—",
     material: record.material || "—",
-    qty: record.qty ?? 0,
+    qty: resolveProductionQty(record),
     processName: getRecordProcessName(record),
     equipment: record.equipment || "—",
     worker: getRecordWorker(record),
@@ -346,7 +353,7 @@ export function buildProductionTrendSeries(records, period = "month", referenceD
     const trendPeriod = period === "year" ? "year" : period === "week" ? "week" : "month";
     const key = bucketLabel(workDate, period === "day" ? "day" : trendPeriod === "month" ? "month" : trendPeriod, referenceDate);
     if (key === "—") return;
-    buckets.set(key, (buckets.get(key) ?? 0) + (Number(record.qty) || 0));
+    buckets.set(key, (buckets.get(key) ?? 0) + resolveProductionQty(record));
   });
 
   const entries = [...buckets.entries()].map(([label, value]) => ({ label, value }));
@@ -387,7 +394,7 @@ export function aggregateProductionByField(records, field, limit = 6) {
   const totals = new Map();
   records.forEach((record) => {
     const label = getDimensionValue(record, field);
-    totals.set(label, (totals.get(label) ?? 0) + (Number(record.qty) || 0));
+    totals.set(label, (totals.get(label) ?? 0) + resolveProductionQty(record));
   });
   return [...totals.entries()]
     .map(([label, value]) => ({ label, value }))

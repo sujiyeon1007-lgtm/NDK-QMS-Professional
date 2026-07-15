@@ -20,10 +20,13 @@
  */
 
 import { getSessionProductionRecords, isIncomingRegistered } from "./productionRecords";
-import { isOutboundShipComplete } from "./outboundManagementStatus";
 import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "./workflowProcessStatus";
-import { getStockQty } from "./inventory";
 import { isShotWorkType } from "../config/workTypeWorkflow";
+import { buildRecordLotRowKey } from "./lotBundleService";
+import {
+  getOutboundCompletedProductRows,
+  getOutboundEligibleRecords,
+} from "./outboundRegistration";
 
 /** 입고등록 Task Workspace Stage — RECEIVED · 생산 미투입 */
 export const INCOMING_TASK_STAGE = "RECEIVED";
@@ -74,24 +77,21 @@ export function buildInboundHistoryWorkspaceRecords(records = getOperationsRecor
 }
 
 /**
- * SHIP_WAIT · 출고 대기 Stage 판정
- * - 성적서 발행 완료 · 재고 > 0 · 출고 미완료
- * - 출고 완료 시 자동으로 false → Workspace에서 제거
+ * SHIP_WAIT · 출고 대기 Stage 판정 (제품 집계 전 LOT 행 기준 — outboundRegistration SSOT)
  * @param {object} record
  * @returns {boolean}
  */
 export function isOutgoingTaskStageRecord(record) {
-  const current = resolveRecordCurrentProcess(record);
-  return current.key === CURRENT_PROCESS_KEYS.SHIP_WAIT && getStockQty(record) > 0;
+  return getOutboundEligibleRecords([record]).length > 0;
 }
 
 /**
- * 출고 완료 Stage 판정 (출고완료 Tab)
+ * 출고 완료 Stage 판정 (출고완료 Tab · 제품 집계)
  * @param {object} record
  * @returns {boolean}
  */
 export function isOutgoingCompletedStageRecord(record) {
-  return isOutboundShipComplete(record);
+  return getOutboundCompletedProductRows([record]).length > 0;
 }
 
 /** @param {object[]} records @param {(object) => boolean} predicate */
@@ -101,7 +101,7 @@ function dedupeOperationsRecords(records, predicate) {
 
   for (const record of records) {
     if (!predicate(record)) continue;
-    const key = String(record?.id ?? "").trim();
+    const key = buildRecordLotRowKey(record);
     if (key) {
       if (seen.has(key)) continue;
       seen.add(key);
@@ -113,21 +113,22 @@ function dedupeOperationsRecords(records, predicate) {
 }
 
 /**
- * 출고등록 Task Workspace records — SHIP_WAIT · 출고 대기만
+ * 출고등록 Task Workspace — Product-centric UI rows
+ * (LOT는 DB/Trace만 · 목록은 제품 집계 · 출고가능 = sum shippable chargeQty)
  * @param {object[]} [records]
  * @returns {object[]}
  */
 export function buildOutgoingTaskWorkspaceRecords(records = getOperationsRecords()) {
-  return dedupeOperationsRecords(records, isOutgoingTaskStageRecord);
+  return getOutboundEligibleRecords(records);
 }
 
 /**
- * 출고등록 출고완료 Tab records — 출고 완료 Stage만
+ * 출고등록 출고완료 Tab — 제품 집계 (LOT 상세는 popup / shipment events)
  * @param {object[]} [records]
  * @returns {object[]}
  */
 export function buildOutgoingCompletedWorkspaceRecords(records = getOperationsRecords()) {
-  return dedupeOperationsRecords(records, isOutgoingCompletedStageRecord);
+  return getOutboundCompletedProductRows(records);
 }
 
 /**

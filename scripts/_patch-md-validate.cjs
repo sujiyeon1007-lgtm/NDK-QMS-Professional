@@ -1,0 +1,10 @@
+﻿const fs = require("fs");
+const path = require("path");
+const file = path.join(__dirname, "..", "src", "utils", "masterData.js");
+let s = fs.readFileSync(file, "utf8");
+const oldText = `  if (resolvedKey !== "companies" && !normalized.code) {\r\n    return {\r\n      ok: false,\r\n      message:\r\n        resolvedKey === "employees"\r\n          ? "사번을 입력하세요."\r\n          : resolvedKey === "workers"\r\n            ? "작업자 코드를 입력하세요."\r\n            : "코드를 입력하세요.",\r\n    };\r\n  }`;
+const newText = `  if (resolvedKey === "products" && mode === "add" && !normalized.code && normalized.company) {\r\n    normalized.code = generateProductManagementCode(normalized.company);\r\n  }\r\n\r\n  if (resolvedKey !== "companies" && !normalized.code) {\r\n    return {\r\n      ok: false,\r\n      message:\r\n        resolvedKey === "employees"\r\n          ? "사번을 입력하세요."\r\n          : resolvedKey === "workers"\r\n            ? "작업자 코드를 입력하세요."\r\n            : resolvedKey === "products"\r\n              ? "업체를 선택하면 관리번호가 자동 생성됩니다."\r\n              : "코드를 입력하세요.",\r\n    };\r\n  }`;
+console.log("found", s.includes(oldText));
+if (!s.includes(oldText)) throw new Error("miss validate");
+fs.writeFileSync(file, s.replace(oldText, newText), "utf8");
+console.log("validate ok");

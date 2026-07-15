@@ -17,6 +17,7 @@ import { resolveRecordCurrentProcess } from "./workflowProcessStatus";
 import { getRecordWorkflowState } from "./ndkWorkflow";
 import { getQrEquipmentListRows } from "./qrManagementSession";
 import { getAllMasterImportLogs } from "./masterExcelImportLog";
+import { getEquipmentById, getEquipmentRunStatusLabel } from "./equipmentWorkflowService";
 
 function hasText(value) {
   return String(value ?? "").trim().length > 0;
@@ -82,14 +83,11 @@ function recentWorkDate(records) {
     .at(-1);
 }
 
-/** 가동 상태 — 생산기록의 현재공정 기반 (운전중 / 대기 / 미사용) */
-function deriveRunStatus(equipment, records) {
-  if (equipment?.active === false) return "미사용";
-  const running = records.some((r) => {
-    const label = resolveRecordCurrentProcess(r)?.label ?? "";
-    return label === "열처리 중";
-  });
-  return running ? "운전중" : "대기";
+/** 가동 상태 — equipmentWorkflowService SSOT */
+function deriveRunStatus(equipment) {
+  const key = equipment?.code || equipment?.name || equipment?.id;
+  const live = getEquipmentById(key);
+  return getEquipmentRunStatusLabel(live?.status);
 }
 
 function equipmentContext(equipment, index) {
@@ -296,7 +294,7 @@ export function buildEquipmentMasterDetail(equipment) {
         code: equipment.code || "—",
         process: hasText(equipment.equipType) ? equipment.equipType : "—",
         recentLotCount: uniqueLots.size,
-        runStatus: deriveRunStatus(equipment, records),
+        runStatus: deriveRunStatus(equipment),
       },
       qr: {
         // 조회 전용 — Sprint 9 QR Workflow 연결 준비

@@ -69,6 +69,8 @@ const processStatusIndex = pathToFileURL(path.join(root, "src/utils/workflowProc
 const inspectionIndex = pathToFileURL(path.join(root, "src/utils/inspectionLogSession.js")).href;
 const certificateIndex = pathToFileURL(path.join(root, "src/utils/certificateSession.js")).href;
 const outboundIndex = pathToFileURL(path.join(root, "src/utils/outboundRegistration.js")).href;
+const inboundStatusIndex = pathToFileURL(path.join(root, "src/utils/inboundManagementStatus.js")).href;
+const operationsWorkspaceIndex = pathToFileURL(path.join(root, "src/utils/operationsWorkspaceData.js")).href;
 const certPolicyIndex = pathToFileURL(path.join(root, "src/utils/certificateIssuePolicy.js")).href;
 
 const checks = [];
@@ -145,6 +147,10 @@ async function runVariant(label, managementId, partNo, partName, certPolicy) {
   if (!lotNo) return;
 
   executeStartCharging({ equipmentId: EQUIPMENT_ID, lotNo, chargeableRow: waitingRow, operator: OPERATOR });
+  record = getSessionProductionRecords().find((r) => r.id === managementId);
+  const { canCancelInbound: canCancelAfterCharge, hasInboundChargeStarted } = await import(inboundStatusIndex);
+  step(label + " charge started blocks cancel", hasInboundChargeStarted(record) === true, String(hasInboundChargeStarted(record)));
+  step(label + " cancel blocked after charge", canCancelAfterCharge(record).ok === false, canCancelAfterCharge(record).message || "");
   executeFinishCharging({ equipmentId: EQUIPMENT_ID, lotNo, chargeableRow: waitingRow, operator: OPERATOR });
   record = getSessionProductionRecords().find((r) => r.id === managementId);
   step(label + " heat treatment INSPECTION_WAIT", resolveRecordCurrentProcess(record).key === CURRENT_PROCESS_KEYS.INSPECTION_WAIT, resolveRecordCurrentProcess(record).key);
@@ -210,6 +216,45 @@ try {
     phone: "051-555-0101",
   });
   step("1 company register", companyResult.ok === true, companyResult.message || COMPANY);
+
+  const { addSessionProductionRecord, deleteSessionProductionRecord, getSessionProductionRecords } = await import(productionRecordsIndex);
+  const { applyMoveToProductionWaiting } = await import(workflowStatusIndex);
+  const { canCancelInbound, canEditInboundRecord, hasInboundChargeStarted } = await import(inboundStatusIndex);
+  const { buildInboundHistoryWorkspaceRecords } = await import(operationsWorkspaceIndex);
+  const { resolveRecordCurrentProcess, CURRENT_PROCESS_KEYS } = await import(processStatusIndex);
+
+  const CANCEL_MID = "GP0-CANCEL-001";
+  addSessionProductionRecord({
+    id: CANCEL_MID,
+    mesManagementNo: CANCEL_MID,
+    company: COMPANY,
+    partName: "GP0취소테스트",
+    partNo: "GP0-C-001",
+    material: "SCM440",
+    qty: 2,
+    heatTreatment: ION_PROCESS,
+    processDetail: ION_PROCESS,
+    incomingRegistered: true,
+    registered: false,
+    workflowStatus: "",
+    lotNo: "",
+  });
+  applyMoveToProductionWaiting([CANCEL_MID]);
+  let cancelRecord = getSessionProductionRecords().find((r) => r.id === CANCEL_MID);
+  step(
+    "1b inbound history after HT_WAIT",
+    buildInboundHistoryWorkspaceRecords().some((r) => r.id === CANCEL_MID),
+    resolveRecordCurrentProcess(cancelRecord).key
+  );
+  step("1c edit allowed pre-charge", canEditInboundRecord(cancelRecord) === true, String(canEditInboundRecord(cancelRecord)));
+  step("1d cancel allowed pre-charge", canCancelInbound(cancelRecord).ok === true, canCancelInbound(cancelRecord).message || "ok");
+  const deleteResult = deleteSessionProductionRecord(CANCEL_MID);
+  step("1e delete pre-charge", deleteResult.ok === true, deleteResult.message || "");
+  step(
+    "1f removed from history",
+    !buildInboundHistoryWorkspaceRecords().some((r) => r.id === CANCEL_MID),
+    "count=" + buildInboundHistoryWorkspaceRecords().length
+  );
 
   await runVariant("never_issue", "GP0-NEVER-001", "GP0-N-001", "GP0내용품", CERTIFICATE_ISSUE_POLICY.NEVER_ISSUE);
   await runVariant("always_issue", "GP0-ALWAYS-001", "GP0-A-001", "GP0상시품", CERTIFICATE_ISSUE_POLICY.ALWAYS_ISSUE);

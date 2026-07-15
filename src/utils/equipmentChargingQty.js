@@ -1,5 +1,13 @@
 /**
  * Equipment charging quantity helpers (optional partial charge).
+ *
+ * Three-field contract (RC1 P0 SSOT):
+ * - inboundQty — original inbound qty, never changes (입고관리 · 입고이력)
+ * - chargeQty — actual qty charged in this LOT session (작업일보 · 설비가동 · 생산이력 · LOT popup)
+ * - remainingChargeQty — warehouse remaining after cumulative charges (생산대기 · 재고 · 장입가능 리스트)
+ *
+ * Use resolveInboundQty / resolveChargeQty / resolveRemainingChargeQty — do not use record.qty
+ * for heat-treatment work/charge display when chargeHistory or chargeQty exists.
  */
 
 function toPositiveNumber(value) {
@@ -26,7 +34,7 @@ export function resolveTotalChargedQty(record) {
 
 /** 잔여수량 = 입고수량 - 누적 장입수량 (partial charge 시 remainingChargeQty>0 SSoT) */
 export function resolveRemainingChargeQty(record) {
-  const inboundQty = toPositiveNumber(record?.inboundQty) || toPositiveNumber(record?.qty);
+  const inboundQty = resolveInboundQty(record);
   const totalCharged = resolveTotalChargedQty(record);
   const calculated = inboundQty > 0 ? Math.max(0, inboundQty - totalCharged) : 0;
 
@@ -49,14 +57,23 @@ export function resolveRemainingChargeQty(record) {
   return calculated;
 }
 
+/** Original inbound qty — baseline, never reduced by partial charge */
+export function resolveInboundQty(record) {
+  return toPositiveNumber(record?.inboundQty) || toPositiveNumber(record?.qty);
+}
+
 export function resolveInboundQtyForChargeRow(lotRow) {
-  return toPositiveNumber(lotRow?.inboundQty ?? lotRow?.qty ?? lotRow?.remainingChargeQty);
+  return resolveInboundQty(lotRow) || toPositiveNumber(lotRow?.remainingChargeQty);
 }
 
 export function resolveChargeQtyInput(lotRow, draftChargeQty = "") {
   const inboundQty = resolveInboundQtyForChargeRow(lotRow);
   const unit = String(lotRow?.unit ?? "EA").trim() || "EA";
-  const maxQty = toPositiveNumber(lotRow?.remainingChargeQty) || inboundQty || toPositiveNumber(lotRow?.qty);
+  const maxQty =
+    resolveRemainingChargeQty(lotRow) ||
+    toPositiveNumber(lotRow?.remainingChargeQty) ||
+    inboundQty ||
+    toPositiveNumber(lotRow?.qty);
 
   const rawInput = String(draftChargeQty ?? "").trim();
   if (!rawInput) {
@@ -138,6 +155,45 @@ export function hasOtherInProgressChargeSessions(record, excludeEquipmentId) {
   );
 }
 
+/**
+ * LOT display qty — chargeQty / workQty / active chargeHistory only (NOT inboundQty / qty).
+ * @param {Record<string, unknown> | null | undefined} recordOrItem
+ * @param {{ lotNo?: string }} [options]
+ */
+export function resolveChargeQty(recordOrItem, { lotNo = "" } = {}) {
+  if (!recordOrItem) return 0;
+
+  const explicit = Number(recordOrItem.chargeQty);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+  const workQty = Number(recordOrItem.workQty);
+  if (Number.isFinite(workQty) && workQty > 0) return workQty;
+
+  const lotKey = String(lotNo || recordOrItem.lotNo || "").trim().toUpperCase();
+  const history = Array.isArray(recordOrItem.chargeHistory) ? recordOrItem.chargeHistory : [];
+
+  if (lotKey) {
+    const inProgress = findInProgressChargeEntry(recordOrItem, { lotNo: lotKey });
+    const fromActive = Number(inProgress?.chargeQty);
+    if (Number.isFinite(fromActive) && fromActive > 0) return fromActive;
+
+    const fromCompleted = history
+      .filter(
+        (entry) =>
+          entry?.status === "completed" &&
+          String(entry?.lotNo ?? "").trim().toUpperCase() === lotKey
+      )
+      .reduce((sum, entry) => sum + (Number(entry?.chargeQty) || 0), 0);
+    if (fromCompleted > 0) return fromCompleted;
+  } else if (history.length > 0) {
+    const latest = history[history.length - 1];
+    const fromLatest = Number(latest?.chargeQty);
+    if (Number.isFinite(fromLatest) && fromLatest > 0) return fromLatest;
+  }
+
+  return 0;
+}
+
 export function findInProgressChargeEntry(record, { equipmentId = "", lotNo = "", productionId = "" } = {}) {
   const eqKey = String(equipmentId ?? "").trim();
   const lotKey = String(lotNo ?? "").trim().toUpperCase();
@@ -153,6 +209,40 @@ export function findInProgressChargeEntry(record, { equipmentId = "", lotNo = ""
     return row;
   }
   return null;
+}
+
+/**
+ * Validate multi-select charge rows before batch start.
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, string>} qtyByRowId
+ * @param {boolean} [qtyInputEnabled=false]
+ */
+export function validateChargeSelections(rows = [], qtyByRowId = {}, qtyInputEnabled = false) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { ok: false, message: "장입할 제품을 선택하세요.", selections: [], totalChargeQty: 0 };
+  }
+
+  const selections = [];
+  let totalChargeQty = 0;
+
+  for (const row of rows) {
+    const rowId = String(row?.id ?? "").trim();
+    const draftQty = qtyInputEnabled ? String(qtyByRowId?.[rowId] ?? "").trim() : "";
+    const resolved = resolveChargeQtyInput(row, draftQty);
+    if (!resolved.ok) {
+      const label = String(row?.managementId ?? row?.mesManagementNo ?? row?.partNo ?? rowId).trim();
+      return {
+        ok: false,
+        message: label ? `${label}: ${resolved.message}` : resolved.message,
+        selections: [],
+        totalChargeQty: 0,
+      };
+    }
+    selections.push({ row, ...resolved });
+    totalChargeQty += resolved.chargeQty;
+  }
+
+  return { ok: true, message: "", selections, totalChargeQty };
 }
 
 export function appendChargeHistory(existingHistory, entry) {

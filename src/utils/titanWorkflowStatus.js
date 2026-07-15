@@ -285,7 +285,7 @@ export function applyMoveToProductionWaiting(managementIds = []) {
       skipped += 1;
       return;
     }
-    if (isProductionWaitingStageRecord(record)) {
+    if (getWorkflowStatus(record) === WORKFLOW_STATUS.WORK_WAIT) {
       skipped += 1;
       return;
     }

@@ -82,6 +82,7 @@ const TITAN_ALIGN_CENTER_KEYS = new Set([
   "currentStock",
   "inboundQty",
   "remainingChargeQty",
+  "chargeQty",
   "shippedQty",
   "workInputQty",
   "progress",
@@ -155,6 +156,7 @@ export const TITAN_COLUMN_WIDTHS = {
   currentStock: { label: "현재 재고", widthHint: "narrow", widthPercent: 9 },
   inboundQty: { label: "입고수량", widthHint: "narrow", widthPercent: 9 },
   remainingChargeQty: { label: "잔여수량", widthHint: "narrow", widthPercent: 9 },
+  chargeQty: { label: "장입수량", widthHint: "narrow", widthPercent: 9 },
   workInputQty: { label: "작업 투입", widthHint: "narrow", widthPercent: 9 },
   shippedQty: { label: "출고 수량", widthHint: "narrow", widthPercent: 9 },
   lastIncomingDate: { label: "입고일", widthHint: "medium", widthPercent: 10 },
@@ -338,6 +340,31 @@ export function titanColumn(preset, overrides = {}) {
   }
   return column;
 }
+
+/**
+ * RC1 설비 장입 — 장입 가능 LOT 리스트 (6 columns · ratio layout)
+ * 업체명/품명 wide · 품번/재질 medium · 수량 narrow
+ */
+export const CHARGEABLE_LOT_COLUMN_SPEC = [
+  { preset: "company", widthPercent: 18 },
+  { preset: "partName", widthPercent: 24 },
+  { preset: "partNo", widthPercent: 14 },
+  { preset: "material", widthPercent: 12 },
+  { preset: "inboundQty", widthPercent: 9, label: "입고 수량(EA)" },
+  { preset: "remainingChargeQty", widthPercent: 9, label: "잔여 수량(EA)" },
+];
+
+/**
+ * RC1 설비 운전중 — 장입된 제품 리스트 (read-only monitor)
+ */
+export const CHARGED_LOT_RUNNING_COLUMN_SPEC = [
+  { preset: "company", widthPercent: 18 },
+  { preset: "partName", widthPercent: 22 },
+  { preset: "partNo", widthPercent: 14 },
+  { preset: "material", widthPercent: 12 },
+  { preset: "inboundQty", widthPercent: 9, label: "입고수량" },
+  { preset: "chargeQty", widthPercent: 9, label: "장입수량" },
+];
 
 /** HOME · 입고 제품 현황 */
 export const HOME_PRODUCT_COLUMNS = [

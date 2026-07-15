@@ -5,6 +5,7 @@
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { isIncomingRegistered } from "./productionRecords";
 import { buildInoutHistoryWorkspaceRecords } from "./operationsWorkspaceData";
+import { expandRecordsByChargeHistory } from "./lotBundleService";
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import { matchesBasicSearch } from "../config/listSearchStandard";
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
@@ -41,8 +42,15 @@ export function matchesHistoryInquirySearch(record, search) {
   if (search.managementId && !String(record.id ?? "").toLowerCase().includes(search.managementId.trim().toLowerCase())) {
     return false;
   }
-  if (search.lotNo && !String(record.lotNo ?? "").toLowerCase().includes(search.lotNo.trim().toLowerCase())) {
-    return false;
+  if (search.lotNo) {
+    const query = search.lotNo.trim().toLowerCase();
+    const direct = String(record.lotNo ?? "").toLowerCase();
+    const historyMatch = (record.chargeHistory ?? []).some(
+      (entry) =>
+        String(entry?.lotNo ?? "").toLowerCase().includes(query) &&
+        (entry?.status === "in-progress" || entry?.status === "completed")
+    );
+    if (!direct.includes(query) && !historyMatch) return false;
   }
   if (!matchesBasicSearch(search, record)) return false;
   if (!matchesInboundDataSearch(search, record)) return false;
@@ -111,7 +119,7 @@ export function buildQualityTraceabilityTimeline(record) {
 }
 
 export function searchHistoryInquiryRecords(search) {
-  return buildInoutHistoryWorkspaceRecords()
+  return expandRecordsByChargeHistory(buildInoutHistoryWorkspaceRecords())
     .filter((record) => matchesHistoryInquirySearch(record, search))
     .sort((a, b) => String(b.incomingDate ?? "").localeCompare(String(a.incomingDate ?? "")));
 }
@@ -125,7 +133,16 @@ export function findHistoryRecordByQuery(queryParams = {}) {
     return records.find((row) => row.id === managementId) ?? null;
   }
   if (lotNo) {
-    return records.find((row) => String(row.lotNo ?? "").toLowerCase() === lotNo.toLowerCase()) ?? null;
+    return (
+      records.find((row) => {
+        if (String(row.lotNo ?? "").toLowerCase() === lotNo.toLowerCase()) return true;
+        return (row.chargeHistory ?? []).some(
+          (entry) =>
+            String(entry?.lotNo ?? "").toLowerCase() === lotNo.toLowerCase() &&
+            (entry?.status === "in-progress" || entry?.status === "completed")
+        );
+      }) ?? null
+    );
   }
   return null;
 }

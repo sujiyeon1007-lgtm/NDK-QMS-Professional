@@ -11,8 +11,13 @@ import { getProductionProcessName } from "../config/productionProcessCodes";
 import { CERTIFICATE_STATUS } from "./ndkWorkflow";
 import { getSessionProductionRecords } from "./productionRecords";
 import { onCertificateIssued } from "./titanWorkflowStatus";
-import { getInspectionLogsByManagementId } from "./inspectionLogSession";
+import { getInspectionLogsForRecord } from "./inspectionLogSession";
 import { getInspectionReportByLogId } from "./inspectionReportSession";
+import { resolveChargeQty } from "./equipmentChargingQty";
+
+function normalizeCertificateLotKey(value) {
+  return String(value ?? "").trim().toUpperCase();
+}
 
 const STORAGE_KEY = "project-titan-certificate-files-v2";
 
@@ -110,10 +115,24 @@ export function getCertificateEntryByManagementId(managementId) {
   return getCertificateFileEntries().find((entry) => entry.managementId === trimmed) ?? null;
 }
 
+export function getCertificateEntryForRecord(record) {
+  const managementId = String(record?.id ?? record?.managementId ?? "").trim();
+  if (!managementId) return null;
+  const lotKey = normalizeCertificateLotKey(record?.lotNo);
+  const entries = getCertificateFileEntries().filter((entry) => entry.managementId === managementId);
+  if (!lotKey) return entries[0] ?? null;
+  return entries.find((entry) => normalizeCertificateLotKey(entry.lotNo) === lotKey) ?? null;
+}
+
 export function hasCertificateFilesForManagementId(managementId) {
   const entry = getCertificateEntryByManagementId(managementId);
   if (!entry) return false;
   return Boolean(entry.excelFile?.name && entry.pdfFile?.name);
+}
+
+export function hasCertificateFilesForRecord(record) {
+  const entry = getCertificateEntryForRecord(record);
+  return Boolean(entry?.excelFile?.name && entry?.pdfFile?.name);
 }
 
 export function getCertificateFileStatus(entry) {
@@ -132,11 +151,9 @@ export function getCertificateFileStatus(entry) {
   return { label: "등록대기", variant: "wait" };
 }
 
-function getLatestInspectionReportForManagementId(managementId) {
-  const trimmed = managementId?.trim();
-  if (!trimmed) return { log: null, report: null };
-
-  const log = getInspectionLogsByManagementId(trimmed)
+function getLatestInspectionReportForRecord(record) {
+  if (!record) return { log: null, report: null };
+  const log = getInspectionLogsForRecord(record)
     .filter((entry) => !entry.deleted)
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
 
@@ -157,16 +174,29 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
     lotNo: record.lotNo || "",
     purchaseOrderNo: record.purchaseOrderNo || "",
     customerLotNo: record.customerLotNo || "",
-    qty: record.qty,
+    qty: resolveChargeQty(record, { lotNo: record.lotNo }),
     unit: record.unit || "EA",
     process: getProductionProcessName(record),
     registeredDate: getJournalReferenceDate(),
     registeredBy: resolveDefaultAssigneeFromAuth(),
   };
 
-  const { log, report } = getLatestInspectionReportForManagementId(managementId);
+  const { log, report } = getLatestInspectionReportForRecord(record);
   if (!report) {
-    return { ...fromRecord, ...overrides };
+    return {
+      ...fromRecord,
+      ...(log
+        ? {
+            lotNo: log.lotNo || fromRecord.lotNo,
+            qty: log.qty || fromRecord.qty,
+            unit: log.unit || fromRecord.unit,
+            registeredDate: log.inspectionDate || fromRecord.registeredDate,
+            registeredBy: log.assignee || fromRecord.registeredBy,
+            inspectionLogId: log.id,
+          }
+        : {}),
+      ...overrides,
+    };
   }
 
   return {
@@ -190,7 +220,13 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
 
 export function upsertCertificateFileEntry(payload) {
   const entries = safeRead();
-  const index = entries.findIndex((entry) => entry.managementId === payload.managementId?.trim());
+  const managementId = payload.managementId?.trim();
+  const lotKey = normalizeCertificateLotKey(payload.lotNo);
+  const index = entries.findIndex(
+    (entry) =>
+      entry.managementId === managementId &&
+      (!lotKey || normalizeCertificateLotKey(entry.lotNo) === lotKey)
+  );
   const existingRaw = index >= 0 ? entries[index] : null;
   const existingEntry = existingRaw ? normalizeEntry(existingRaw) : null;
 

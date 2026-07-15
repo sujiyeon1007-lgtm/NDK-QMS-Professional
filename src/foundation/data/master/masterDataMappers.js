@@ -21,6 +21,25 @@ function getLocalHeatTreatmentProcessLabel(code) {
   return String(code ?? "").trim();
 }
 
+function normalizeRunStatus(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function hasChargedLot(chargeableLots = []) {
+  return chargeableLots.some((row) => String(row?.lotNo ?? "").trim());
+}
+
+function resolveExplicitRunStatus(row = {}) {
+  const runStatus = normalizeRunStatus(row.runStatus ?? row.masterRunStatus);
+  if (row.breakdown === true || row.breakdownMode === true || runStatus === "breakdown") {
+    return "breakdown";
+  }
+  if (row.maintenanceMode === true || runStatus === "maintenance") {
+    return "maintenance";
+  }
+  return "";
+}
+
 /**
  * @param {Record<string, unknown>} record
  * @returns {Record<string, unknown>}
@@ -38,7 +57,10 @@ export function equipmentStoreToMasterRow(record) {
     location: record.location ?? "",
     inspectionCycle: record.inspectionCycle ?? "",
     note: record.note ?? "",
-    active: record.active !== false && !record.maintenanceDisabled,
+    active: record.active !== false,
+    maintenanceMode: record.maintenanceMode === true,
+    runStatus: record.runStatus,
+    breakdown: record.breakdown === true || record.breakdownMode === true,
   };
 }
 
@@ -65,14 +87,11 @@ export function masterRowToEquipmentRecord(row, existing = null, runtime = {}) {
       : Array.isArray(existing?.chargeableLots)
         ? existing.chargeableLots.map((item) => ({ ...item }))
         : [];
-  const maintenance =
-    runtime.maintenance !== undefined
-      ? runtime.maintenance
-      : Boolean(existing?.maintenance) || row.active === false;
+  const explicitStatus = runtime.status ?? resolveExplicitRunStatus(row);
   const status =
-    runtime.status ??
-    existing?.status ??
-    (maintenance ? "maintenance" : runningSession ? "running" : "idle");
+    explicitStatus ||
+    (runningSession ? "running" : hasChargedLot(chargeableLots) ? "ready" : "idle");
+  const maintenance = status === "maintenance";
 
   const processCode = resolveLocalHeatTreatmentProcessCode(
     row.processCode ?? row.equipType ?? row.process ?? existing?.processCode ?? existing?.process ?? ""
@@ -91,7 +110,10 @@ export function masterRowToEquipmentRecord(row, existing = null, runtime = {}) {
     note: row.note ?? "",
     active: row.active !== false,
     maintenance,
-    maintenanceDisabled: row.active === false,
+    maintenanceMode: row.maintenanceMode === true,
+    runStatus: row.runStatus,
+    breakdown: row.breakdown === true || row.breakdownMode === true,
+    maintenanceDisabled: false,
     smartAccessId: `NDK://EQ/${code}`,
     status,
     currentLot: runningSession?.lotNo ?? chargeableLots[0]?.lotNo ?? null,

@@ -1,0 +1,4 @@
+﻿const fs=require("fs");const f="c:/Users/user1/Desktop/NDK-QMS-Professional/src/config/companyMasterArchitecture.js";let s=fs.readFileSync(f,"utf8");
+const o="export const COMPANY_ABBREVIATION_EXAMPLES = [\n  { name: \"서암열처리\", abbreviation: \"SE\" },\n  { name: \"두산에너빌리티\", abbreviation: \"DS\" },\n  { name: \"GE\", abbreviation: \"GE\" },\n  { name: \"현대로템\", abbreviation: \"HR\" },\n];";
+const n="export const COMPANY_ABBREVIATION_EXAMPLES = [\n  { name: \"서암열처리\", abbreviation: \"SE\" },\n  { name: \"두산에너빌리티\", abbreviation: \"DS\" },\n  { name: \"삼성중공업\", abbreviation: \"SHI\" },\n  { name: \"한화오션\", abbreviation: \"HANWHA\" },\n  { name: \"현대중공업\", abbreviation: \"HHI\" },\n  { name: \"GE\", abbreviation: \"GE\" },\n  { name: \"현대로템\", abbreviation: \"HR\" },\n];";
+if(!s.includes(o)) throw 1; fs.writeFileSync(f,s.replace(o,n)); console.log('company examples ok');

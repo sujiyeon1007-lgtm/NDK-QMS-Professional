@@ -17,6 +17,7 @@ import { addInspectionLog } from "../../utils/inspectionLogSession";
 import { createInspectionReport } from "../../utils/inspectionReportSession";
 import { resolveInspectionLogMetaFromContext } from "../../config/inspectionManagement";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
+import { resolveChargeQty } from "../../utils/equipmentChargingQty";
 import { upsertDevelopmentInspection, getDevelopmentInspectionById } from "../../utils/developmentInspectionSession";
 import { upsertOtherInspection, getOtherInspectionById } from "../../utils/otherInspectionSession";
 import {
@@ -72,7 +73,7 @@ export default function InspectionLogRegisterView() {
                 partNo: record.partNo || prev.partNo,
                 lotNo: record.lotNo || prev.lotNo,
                 material: record.material || prev.material,
-                qty: record.qty ?? prev.qty,
+                qty: resolveChargeQty(record, { lotNo: record.lotNo }) || prev.qty,
                 unit: record.unit || prev.unit,
                 purchaseOrderNo: record.purchaseOrderNo || prev.purchaseOrderNo,
                 customerLotNo: record.customerLotNo || prev.customerLotNo,

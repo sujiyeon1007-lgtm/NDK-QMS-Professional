@@ -1,0 +1,18 @@
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const memory = new Map();
+globalThis.sessionStorage = { getItem:(k)=>memory.get(k)??null, setItem:(k,v)=>memory.set(k,String(v)), removeItem:(k)=>memory.delete(k), clear:()=>memory.clear(), get length(){return memory.size}, key:(i)=>[...memory.keys()][i]??null };
+globalThis.localStorage = { getItem:()=>null, setItem:()=>{}, removeItem:()=>{}, clear:()=>{}, get length(){return 0}, key:()=>null };
+globalThis.window = { dispatchEvent:()=>{}, addEventListener:()=>{}, removeEventListener:()=>{} };
+const { CERTIFICATE_ISSUE_POLICY } = await import(pathToFileURL(path.join(root,"src/utils/certificateIssuePolicy.js")).href);
+const { stageMasterAdd, findProductByCompanyAndPartNo } = await import(pathToFileURL(path.join(root,"src/utils/masterData.js")).href);
+const { getCertificateIssuePolicyFromProduct } = await import(pathToFileURL(path.join(root,"src/utils/certificateIssuePolicy.js")).href);
+const COMPANY = "GP0\uAC70\uB798\uCC98";
+const ION = "\uC774\uC628\uC9C8\uD654";
+stageMasterAdd("companies", { name: COMPANY, code: "GP0TC" });
+const pr = stageMasterAdd("products", { company: COMPANY, partNo: "GP0-N-001", name: "GP0\uB0B4\uC6A9\uD488", material: "SCM440", processCategory: "heatTreatment", processDetail: ION, process: ION, specification: { certificatePolicy: { issuePolicy: CERTIFICATE_ISSUE_POLICY.NEVER_ISSUE } } });
+const found = findProductByCompanyAndPartNo(COMPANY, "GP0-N-001");
+console.log("staged", JSON.stringify(pr.row?.specification?.certificatePolicy));
+console.log("found", JSON.stringify(found?.specification?.certificatePolicy));
+console.log("fromProduct", getCertificateIssuePolicyFromProduct(found));

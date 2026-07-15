@@ -7,14 +7,13 @@
 
 import { OPERATION_ROUTES } from "./operationsRouteRegistry";
 
-/** @typedef {"idle"|"ready"|"running"|"maintenance"} EquipmentRunStatus */
+/** @typedef {"idle"|"ready"|"running"|"maintenance"|"breakdown"} EquipmentRunStatus */
 
 /**
  * 공식 설비 상태 SSOT — 순서 고정
- * ⚪ 대기 → 🟢 운전중 → 🔴 점검중
- * (장입 가능 LOT는 대기 상태에서 LOT 선택으로 처리 — 별도 ready 단계 없음)
+ * 비가동/대기 → 장입완료/작업준비 → 열처리중 → 점검중 → 고장
  */
-export const EQUIPMENT_RUN_STATUS_SSOT = ["idle", "running", "maintenance"];
+export const EQUIPMENT_RUN_STATUS_SSOT = ["idle", "ready", "running", "maintenance", "breakdown"];
 
 /**
  * @typedef {{
@@ -30,19 +29,19 @@ export const EQUIPMENT_RUN_STATUS_SSOT = ["idle", "running", "maintenance"];
 export const EQUIPMENT_RUN_STATUS_META = {
   idle: {
     emoji: "⚪",
-    label: "대기",
+    label: "비가동/대기",
     english: "Idle",
     variant: "wait",
   },
   ready: {
-    emoji: "⚪",
-    label: "대기",
-    english: "Idle",
+    emoji: "🟡",
+    label: "장입완료/작업준비",
+    english: "Ready",
     variant: "wait",
   },
   running: {
     emoji: "🟢",
-    label: "운전중",
+    label: "열처리중",
     english: "Running",
     variant: "progress",
   },
@@ -51,6 +50,12 @@ export const EQUIPMENT_RUN_STATUS_META = {
     label: "점검중",
     english: "Maintenance",
     variant: "hold",
+  },
+  breakdown: {
+    emoji: "⛔",
+    label: "고장",
+    english: "Breakdown",
+    variant: "danger",
   },
 };
 
@@ -70,7 +75,7 @@ export const EQUIPMENT_CHARGING_BUTTON_RULES = {
   ready: {
     showStart: true,
     showComplete: false,
-    startEnabled: false,
+    startEnabled: true,
     completeEnabled: false,
   },
   running: {
@@ -80,6 +85,12 @@ export const EQUIPMENT_CHARGING_BUTTON_RULES = {
     completeEnabled: true,
   },
   maintenance: {
+    showStart: true,
+    showComplete: true,
+    startEnabled: false,
+    completeEnabled: false,
+  },
+  breakdown: {
     showStart: true,
     showComplete: true,
     startEnabled: false,
@@ -123,7 +134,7 @@ const EQUIPMENT_FLEET_SPECS = [
   { process: "기타", prefix: "AUX", count: 3 },
 ];
 
-export const EQUIPMENT_MAINTENANCE_IDS = new Set(["63", "64", "65"]);
+export const EQUIPMENT_MAINTENANCE_IDS = new Set();
 
 function buildEquipmentRawList() {
   /** @type {EquipmentRawRecord[]} */
@@ -225,3 +236,85 @@ export const QR_CHARGING_ACTIVE_SESSION = {
   equipmentId: "3S-1",
   equipmentName: "3S-1",
 };
+
+/** RC1 LOT operational display status (NOT 9-stage Current Process keys) */
+export const RC1_LOT_OPERATIONAL_STATUS = Object.freeze({
+  PRODUCTION_WAIT: "생산대기",
+  CHARGE_COMPLETE: "장입완료",
+  WORK_READY: "작업준비",
+  HT_RUNNING: "열처리중",
+  PRODUCTION_DONE: "생산완료",
+});
+
+export const RC1_LEGACY_CHARGE_WAIT = "장입대기";
+export const RC1_CHARGE_READY_LABEL = RC1_LOT_OPERATIONAL_STATUS.CHARGE_COMPLETE;
+
+function compactRc1LotStatus(value = "") {
+  return String(value ?? "").replace(/\s+/g, "").trim();
+}
+
+export function normalizeRc1LotOperationalStatus(rawStatus = "", context = {}) {
+  const lotNo = String(context.lotNo ?? "").trim();
+  const hasLot = Boolean(lotNo);
+  const status = compactRc1LotStatus(rawStatus);
+
+  if (hasLot && (status === "장입대기" || status === compactRc1LotStatus(RC1_LEGACY_CHARGE_WAIT))) {
+    return RC1_CHARGE_READY_LABEL;
+  }
+
+  if (!hasLot && (status === "장입대기" || status === compactRc1LotStatus(RC1_LEGACY_CHARGE_WAIT))) {
+    return RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_WAIT;
+  }
+
+  if (status === "작업준비" || status.includes("장입완료")) {
+    return RC1_CHARGE_READY_LABEL;
+  }
+
+  if (
+    status.includes("열처리") ||
+    status === "생산중" ||
+    status === "운전중" ||
+    status.includes("진행")
+  ) {
+    return RC1_LOT_OPERATIONAL_STATUS.HT_RUNNING;
+  }
+
+  if (status.includes("생산완료")) {
+    return RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_DONE;
+  }
+
+  if (status.includes("생산대기") || status === "작업대기") {
+    return RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_WAIT;
+  }
+
+  if (rawStatus) return String(rawStatus).trim();
+  return hasLot ? RC1_CHARGE_READY_LABEL : RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_WAIT;
+}
+
+export function resolveRc1ChargeableRowStatusLabel(row = {}) {
+  const lotNo = String(row.lotNo ?? "").trim();
+  const needsLot = Boolean(row.needsLotCreation) || row.source === "production-waiting";
+
+  if (!lotNo && needsLot) {
+    return RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_WAIT;
+  }
+
+  if (lotNo) {
+    return normalizeRc1LotOperationalStatus(row.statusLabel ?? row.status, { lotNo });
+  }
+
+  return RC1_LOT_OPERATIONAL_STATUS.PRODUCTION_WAIT;
+}
+
+export function isRc1LotChargeReadyStatus(status = "") {
+  const norm = compactRc1LotStatus(status);
+  return norm.includes("장입완료") || norm.includes("작업준비");
+}
+
+export function isRc1LotPreStartStatus(status = "") {
+  const norm = compactRc1LotStatus(status);
+  if (norm.includes("생산대기") || norm.includes("workwait")) return true;
+  if (isRc1LotChargeReadyStatus(norm)) return true;
+  if (norm === "장입대기") return true;
+  return norm.includes("대기") && !norm.includes("검사") && !norm.includes("출고");
+}

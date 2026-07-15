@@ -10,6 +10,13 @@ import {
 } from "./ndkWorkflow";
 import { getStockQty } from "./inventory";
 import { isIncomingRegistered } from "./productionRecords";
+import {
+  getInProgressChargeSessions,
+  resolveInboundQtyForChargeRow,
+  resolveRemainingChargeQty,
+  resolveTotalChargedQty,
+} from "./equipmentChargingQty";
+import { getEquipmentList } from "./equipmentWorkflowService";
 import { hasInspectionLogForManagementId } from "./inspectionLogSession";
 import { getProcessFlowStepsByStatus } from "./processFlow";
 import { getWorkflowStatus, WORKFLOW_STATUS } from "./titanWorkflowStatus";
@@ -114,3 +121,89 @@ export function getInboundNextTasks(statusLabel) {
 }
 
 export { getProcessFlowSteps, getProcessFlowStepsByStatus } from "./processFlow";
+
+/** 입고취소(삭제) 차단 메시지 — 장입 후 */
+export const INBOUND_DELETE_BLOCKED_MESSAGE = "장입 후 삭제 불가";
+
+function resolveInboundRecordId(record) {
+  return String(record?.id ?? record?.mesManagementNo ?? "").trim();
+}
+
+function isRecordInEquipmentRunningSession(record) {
+  const recordId = resolveInboundRecordId(record);
+  if (!recordId) return false;
+
+  const lotKey = String(record?.lotNo ?? "").trim().toUpperCase();
+
+  return getEquipmentList().some((equipment) => {
+    const session = equipment?.runningSession;
+    if (!session) return false;
+
+    const sourceId = String(session.sourceRecordId ?? "").trim();
+    if (sourceId && sourceId === recordId) return true;
+
+    const sessionLot = String(session.lotNo ?? "").trim().toUpperCase();
+    if (lotKey && sessionLot && sessionLot === lotKey) return true;
+
+    const lotItems = session.lotItems ?? session.chargeTargets ?? [];
+    if (
+      Array.isArray(lotItems) &&
+      lotItems.some((item) => String(item?.sourceRecordId ?? item?.id ?? "").trim() === recordId)
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+function isFullInboundRemaining(record) {
+  const inboundQty = resolveInboundQtyForChargeRow(record);
+  const totalCharged = resolveTotalChargedQty(record);
+  if (totalCharged > 0) return false;
+  if (inboundQty <= 0) return true;
+  const remaining = resolveRemainingChargeQty(record);
+  return remaining >= inboundQty;
+}
+
+/** 장입(설비 세션·chargeHistory·생산등록) 시작 여부 */
+export function hasInboundChargeStarted(record) {
+  if (!record) return false;
+  if (getInProgressChargeSessions(record).length > 0) return true;
+  if (resolveTotalChargedQty(record) > 0) return true;
+
+  const history = Array.isArray(record.chargeHistory) ? record.chargeHistory : [];
+  if (history.length > 0) return true;
+
+  if (record.registered) return true;
+  if (isRecordInEquipmentRunningSession(record)) return true;
+
+  return false;
+}
+
+/** 입고취소(삭제) 가능 여부 — 장입 전 · 잔여=입고수량 */
+export function canCancelInbound(record) {
+  if (!record) return { ok: false, message: "입고 건을 찾을 수 없습니다." };
+  if (!isIncomingRegistered(record)) {
+    return { ok: false, message: "입고 등록된 건이 아닙니다." };
+  }
+
+  if (hasInboundChargeStarted(record)) {
+    return { ok: false, message: INBOUND_DELETE_BLOCKED_MESSAGE };
+  }
+
+  if (!isFullInboundRemaining(record)) {
+    return { ok: false, message: INBOUND_DELETE_BLOCKED_MESSAGE };
+  }
+
+  return { ok: true, message: "" };
+}
+
+export function canEditInboundRecord(record) {
+  if (!record || !isIncomingRegistered(record)) return false;
+  return !hasInboundChargeStarted(record);
+}
+
+export function canDeleteInboundRecord(record) {
+  return canCancelInbound(record).ok;
+}

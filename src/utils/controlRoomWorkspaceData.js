@@ -12,12 +12,91 @@
 
 import { getTitanDataEngine } from "../foundation/data";
 import {
+  isRc1LotChargeReadyStatus,
+  isRc1LotPreStartStatus,
+  normalizeRc1LotOperationalStatus,
+} from "../config/equipmentConfig";
+import {
   getEquipmentDetailSnapshot,
   getEquipmentListGroupedByProcess,
   getEquipmentSummary,
+  getLotProducts,
+  formatLotProductSummaryLabel,
 } from "./equipmentWorkflowService";
+import { collectDistinctLotNumbers, getLotBundle } from "./lotBundleService";
+import { resolveChargeQty } from "./equipmentChargingQty";
 import { getSessionProductionRecords } from "./productionRecords";
 import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
+
+/** Equipment card display helpers (UI · Blueprint ② 설비 View) */
+
+/**
+ * P0-023 multi-charge — "SCM440 외 2건" product label
+ * @param {object} card getEquipmentMonitorCard row
+ */
+export function formatEquipmentCardProductLabel(card) {
+  const fallback =
+    String(card?.currentProductName ?? card?.currentMaterial ?? "").trim() || null;
+  const equipmentId = String(card?.equipmentId ?? "").trim();
+  if (!equipmentId || card?.status !== "running") return fallback;
+
+  try {
+    const equipment = getTitanDataEngine().equipment.getById(equipmentId);
+    const runningLotNo = String(card?.currentLotNo ?? equipment?.runningSession?.lotNo ?? "").trim();
+    if (!runningLotNo) return fallback;
+
+    const products = getLotProducts(runningLotNo, equipment);
+    return formatLotProductSummaryLabel(products) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Total charge qty label for card — sums multi-target chargeQty when present
+ * @param {object} card
+ */
+export function formatEquipmentCardChargeQtyLabel(card) {
+  const equipmentId = String(card?.equipmentId ?? "").trim();
+  if (!equipmentId || card?.status !== "running") {
+    return card?.chargeQtyLabel ?? null;
+  }
+
+  try {
+    const equipment = getTitanDataEngine().equipment.getById(equipmentId);
+    const session = equipment?.status === "running" ? equipment?.runningSession : null;
+    const targets = Array.isArray(session?.chargeTargets) ? session.chargeTargets : [];
+
+    if (targets.length > 1) {
+      const total = targets.reduce(
+        (sum, target) => sum + (Number(target?.chargeQty) || 0),
+        0
+      );
+      if (total > 0) {
+        return `${total.toLocaleString("ko-KR")} EA`;
+      }
+    }
+
+    const sessionQty = Number(session?.chargeQty) || 0;
+    if (sessionQty > 0) {
+      return `${sessionQty.toLocaleString("ko-KR")} EA`;
+    }
+  } catch {
+    // fall through
+  }
+
+  return card?.chargeQtyLabel ?? null;
+}
+
+/** Card row + display fields for Control Room equipment grid */
+export function enrichEquipmentCardDisplay(card) {
+  if (!card) return card;
+  return {
+    ...card,
+    currentProductName: formatEquipmentCardProductLabel(card),
+    chargeQtyLabel: formatEquipmentCardChargeQtyLabel(card),
+  };
+}
 
 /** View Tab 구성 (Blueprint ② — 설비 / LOT / 제품) */
 export const CONTROL_ROOM_VIEWS = Object.freeze([
@@ -69,6 +148,36 @@ function mapProductionStoreRowToRecord(row) {
   return { ...payload, id };
 }
 
+/** Session overlay — LOT · Workflow runtime fields (SSOT for Control Room) */
+function mergeSessionOverlayOntoRecords(productionRecords, sessionRecords) {
+  const sessionById = new Map();
+  sessionRecords.forEach((row) => {
+    const id = String(row?.id ?? row?.mesManagementNo ?? "").trim();
+    if (id) sessionById.set(id, row);
+  });
+
+  const merged = productionRecords.map((row) => {
+    const id = String(row?.id ?? row?.mesManagementNo ?? "").trim();
+    const session = sessionById.get(id);
+    if (!session) return row;
+    return {
+      ...row,
+      ...session,
+      id: row.id ?? session.id,
+    };
+  });
+
+  const prodIds = new Set(
+    merged.map((row) => String(row?.id ?? row?.mesManagementNo ?? "").trim()).filter(Boolean)
+  );
+  sessionRecords.forEach((session) => {
+    const id = String(session?.id ?? session?.mesManagementNo ?? "").trim();
+    if (id && !prodIds.has(id)) merged.push(session);
+  });
+
+  return merged;
+}
+
 /**
  * Control Room — TitanDataEngine productionStore 기반 records
  * (Workflow KPI · 제품 View용)
@@ -85,9 +194,10 @@ export function getControlRoomRecords() {
     const rows = getTitanDataEngine().production.list();
     const records = rows.map(mapProductionStoreRowToRecord).filter(Boolean);
     if (records.length > 0) {
-      controlRoomRecordsCache = records;
+      const merged = mergeSessionOverlayOntoRecords(records, sessionSnapshot);
+      controlRoomRecordsCache = merged;
       controlRoomRecordsSnapshot = sessionSnapshot;
-      return records;
+      return merged;
     }
   } catch {
     // legacy fallback below
@@ -130,7 +240,13 @@ export function matchesControlRoomLotKpi(row, lotFilter) {
         (status.includes("생산중") || status.includes("진행") || status.includes("운전") || status.includes("열처리"))
       );
     case "waiting":
-      return !terminalOrNextStep && (status.includes("장입") || status === "대기" || status.includes("대기LOT"));
+      return (
+        !terminalOrNextStep &&
+        (isRc1LotChargeReadyStatus(status) ||
+          status.includes("장입") ||
+          status === "대기" ||
+          status.includes("대기LOT"))
+      );
     case "done":
       return status.includes("생산완료");
     case "inspectionWait":
@@ -206,12 +322,12 @@ export function getControlRoomSnapshot() {
 
 /**
  * Blueprint ② LOT View — Monitor Grid (SSOT)
- * LOT · 고객사 · 제품 · 설비 · 공정 · 상태 · 작업자 · 시작시간 · 예상 종료 · 진행률
+ * LOT · 거래처 · 제품 · 설비 · 공정 · 상태 · 작업자 · 시작시간 · 예상 종료 · 진행률
  * 관리번호 · 품번은 검색/상세 전용으로 row에 유지하고 Grid 컬럼에는 표시하지 않는다.
  */
 export const CONTROL_ROOM_LOT_COLUMNS = Object.freeze([
   { id: "lotNo", label: "LOT" },
-  { id: "company", label: "고객사" },
+  { id: "company", label: "거래처" },
   { id: "productName", label: "제품" },
   { id: "equipmentName", label: "설비" },
   { id: "process", label: "공정" },
@@ -273,21 +389,114 @@ function readEquipmentStoreIndex() {
   }
 }
 
+function resolveRecordCompany(record, fallback = "") {
+  const candidates = [
+    record?.company,
+    record?.companyName,
+    record?.customerName,
+    record?.customerCompany,
+    record?.거래처,
+  ];
+  for (const value of candidates) {
+    const text = String(value ?? "").trim();
+    if (text) return text;
+  }
+  return fallback;
+}
+
 function buildRecordIndexByLot(records = getControlRoomRecords()) {
-  /** @type {Map<string, { company?: string, managementId?: string, partNo?: string, productName?: string }>} */
+  /** @type {Map<string, { company?: string, managementId?: string, partNo?: string, productName?: string, chargeStartAt?: string, chargeEndAt?: string, lotItems: object[] }>} */
   const index = new Map();
   records.forEach((record) => {
     const lotNo = String(record.lotNo ?? "").trim();
     if (!lotNo) return;
-    const existing = index.get(lotNo) ?? {};
+    const existing = index.get(lotNo) ?? { lotItems: [] };
+    const workLog = record.productionWorkLog ?? {};
+    const lotItem = {
+      sourceRecordId: record.id ?? record.mesManagementNo,
+      managementId: record.id ?? record.mesManagementNo,
+      partNo: record.partNo ?? record.productNo,
+      productName: record.partName ?? record.productName,
+      material: record.material,
+      company: resolveRecordCompany(record, existing.company),
+      chargeQty: resolveChargeQty(record, { lotNo: record.lotNo }),
+    };
+    const lotItems = [...(existing.lotItems ?? [])];
+    if (!lotItems.some((row) => String(row.sourceRecordId) === String(lotItem.sourceRecordId))) {
+      lotItems.push(lotItem);
+    }
     index.set(lotNo, {
-      company: record.company ?? existing.company,
-      managementId: record.id ?? record.mesManagementNo ?? existing.managementId,
-      partNo: record.partNo ?? record.productNo ?? existing.partNo,
-      productName: record.partName ?? record.productName ?? existing.productName,
+      company: resolveRecordCompany(record, existing.company),
+      managementId: existing.managementId ?? record.id ?? record.mesManagementNo,
+      partNo: existing.partNo ?? record.partNo ?? record.productNo,
+      productName:
+        formatLotProductSummaryLabel(lotItems) ||
+        existing.productName ||
+        record.partName ||
+        record.productName,
+      chargeStartAt:
+        String(workLog.startAt ?? record.chargeStartAt ?? existing.chargeStartAt ?? "").trim() ||
+        undefined,
+      chargeEndAt:
+        String(workLog.endAt ?? record.chargeEndAt ?? existing.chargeEndAt ?? "").trim() ||
+        undefined,
+      lotItems,
+      productCount: lotItems.length,
+      totalQty: lotItems.reduce((sum, row) => sum + (Number(row.chargeQty) || 0), 0),
     });
   });
   return index;
+}
+
+function resolveRunningSessionForLot(equipment, lotNo) {
+  const lotKey = String(lotNo ?? "").trim();
+  if (!equipment || !lotKey) return null;
+  if (equipment.status !== "running") return null;
+  const session = equipment.runningSession ?? null;
+  if (!session) return null;
+  return String(session.lotNo ?? "").trim() === lotKey ? session : null;
+}
+
+function resolveControlRoomLotMonitorTimes({ lot, lotNo, session, equipment, recordMeta }) {
+  const status = normalizeControlRoomStatus(lot);
+  const isWaiting = isRc1LotPreStartStatus(status);
+  const isRunning =
+    status.includes("열처리") ||
+    status.includes("운전") ||
+    status.includes("진행") ||
+    status.includes("생산중");
+  const isDone = status.includes("완료");
+
+  if (isWaiting) {
+    return { startTime: "—", expectedEndTime: "—" };
+  }
+
+  const runningSession = resolveRunningSessionForLot(equipment, lotNo);
+  const startFromRecord = String(recordMeta?.chargeStartAt ?? "").trim();
+  const endFromRecord = String(recordMeta?.chargeEndAt ?? "").trim();
+
+  if (isRunning) {
+    const startTime =
+      runningSession?.startTime ??
+      session?.startTime ??
+      startFromRecord ??
+      "—";
+    const expectedEndTime =
+      runningSession?.expectedEndTime ?? session?.expectedEndTime ?? "—";
+    return {
+      startTime: startTime || "—",
+      expectedEndTime: expectedEndTime || "—",
+    };
+  }
+
+  if (isDone) {
+    return {
+      startTime: startFromRecord || runningSession?.startTime || session?.startTime || "—",
+      expectedEndTime: endFromRecord || runningSession?.expectedEndTime || session?.expectedEndTime || "—",
+    };
+  }
+
+  return { startTime: "—", expectedEndTime: "—" };
 }
 
 /**
@@ -301,30 +510,59 @@ export function buildControlRoomLotMonitorRows(
 ) {
   const { byId: equipmentById, sessionByLot } = readEquipmentStoreIndex();
   const recordByLot = buildRecordIndexByLot(records);
+  const lotStoreByNo = new Map(
+    lots.map((lot) => [String(lot.lotNo ?? "").trim(), lot]).filter(([key]) => key)
+  );
 
-  return lots.map((lot) => {
-    const lotNo = String(lot.lotNo ?? "").trim();
+  return collectDistinctLotNumbers(records).map((lotNo) => {
+    const lot = lotStoreByNo.get(lotNo) ?? { lotNo };
+    const bundle = getLotBundle(lotNo, { records });
     const session = sessionByLot.get(lotNo);
-    const equipmentId = lot.equipmentId ?? session?.equipmentId ?? null;
+    const equipmentId = bundle?.equipmentId || lot.equipmentId || session?.equipmentId || null;
     const equipment = equipmentId ? equipmentById.get(equipmentId) : null;
-    const recordMeta = recordByLot.get(lotNo) ?? {};
-    const progress = Number(lot.progress ?? session?.progress ?? 0);
+    const recordMeta = recordByLot.get(lotNo) ?? { lotItems: [] };
+    const lotItems = bundle?.lotItems?.length
+      ? bundle.lotItems
+      : recordMeta.lotItems?.length > 0
+        ? recordMeta.lotItems
+        : getLotProducts(lotNo, equipment);
+    const progress = Number(bundle?.progress ?? lot.progress ?? session?.progress ?? 0);
+    const runningSession = resolveRunningSessionForLot(equipment, lotNo);
+    const { startTime, expectedEndTime } = resolveControlRoomLotMonitorTimes({
+      lot,
+      lotNo,
+      session,
+      equipment,
+      recordMeta,
+    });
 
     return {
       lotNo,
-      managementId: lot.managementId || recordMeta.managementId || "—",
-      productName: lot.productName || recordMeta.productName || "—",
-      partNo: recordMeta.partNo || lot.partNo || "—",
-      company: recordMeta.company || "—",
-      equipmentName: equipment?.equipmentName ?? equipmentId ?? "—",
+      managementId: bundle?.managementId || lot.managementId || recordMeta.managementId || "—",
+      productName:
+        bundle?.productLabel ||
+        formatLotProductSummaryLabel(lotItems) ||
+        lot.productName ||
+        recordMeta.productName ||
+        "—",
+      partNo: bundle?.partNo || recordMeta.partNo || lot.partNo || "—",
+      company: bundle?.company || resolveRecordCompany({ ...recordMeta, ...lot }, "—"),
+      equipmentName: bundle?.equipmentName || equipment?.equipmentName || equipmentId || "—",
       equipmentId: equipmentId ?? "",
-      process: lot.process || equipment?.process || "—",
-      operator: session?.operator ?? equipment?.runningSession?.operator ?? "—",
+      process: bundle?.process || lot.process || equipment?.process || "—",
+      operator: bundle?.operator || runningSession?.operator || session?.operator || "—",
       progress,
       progressLabel: progress > 0 ? `${progress}%` : "—",
-      status: lot.status ?? "—",
-      startTime: session?.startTime ?? equipment?.runningSession?.startTime ?? "—",
-      expectedEndTime: session?.expectedEndTime ?? equipment?.runningSession?.expectedEndTime ?? "—",
+      status: normalizeRc1LotOperationalStatus(bundle?.status ?? lot.status, { lotNo }),
+      startTime,
+      expectedEndTime,
+      lotItems,
+      productCount: lotItems.length,
+      lotItemCount: lotItems.length,
+      totalQty:
+        bundle?.totalQty ||
+        recordMeta.totalQty ||
+        lotItems.reduce((sum, row) => sum + (Number(row.chargeQty) || 0), 0),
     };
   });
 }
@@ -361,11 +599,18 @@ export function getControlRoomLotDetail(lotNo) {
   const key = String(lotNo ?? "").trim();
   if (!key) return null;
 
+  const bundle = getLotBundle(key);
   const row = buildControlRoomLotMonitorRows().find((item) => item.lotNo === key);
-  if (!row) return null;
+  if (!row && !bundle) return null;
+
+  const lotItems = bundle?.lotItems ?? row?.lotItems ?? getLotProducts(key);
 
   return {
-    ...row,
+    ...(row ?? {}),
+    ...(bundle ?? {}),
+    lotNo: key,
+    lotItems,
+    productName: formatLotProductSummaryLabel(lotItems) || bundle?.productLabel || row?.productName,
     timelineSummary: getControlRoomLotTimelineSummary(key, 7),
   };
 }
@@ -399,6 +644,52 @@ function scoreProductLotActivity(lotRow) {
   return Number(lotRow?.progress ?? 0);
 }
 
+function buildProductKey(record) {
+  const partNo = String(record.partNo ?? record.productNo ?? "").trim();
+  const productName = String(record.partName ?? record.productName ?? "").trim();
+  const company = String(record.company ?? "").trim();
+  return `${company}::${partNo}::${productName}`;
+}
+
+function resolveLotNoForProductKey(productKey, records = getControlRoomRecords()) {
+  const matchingRecords = records.filter((record) => buildProductKey(record) === productKey);
+  for (const record of matchingRecords) {
+    const lotNo = String(record.lotNo ?? "").trim();
+    if (lotNo) return lotNo;
+  }
+
+  const sourceIds = new Set(
+    matchingRecords.map((record) => String(record.id ?? record.mesManagementNo ?? "").trim()).filter(Boolean)
+  );
+  if (sourceIds.size === 0) return "";
+
+  try {
+    for (const equipment of getTitanDataEngine().equipment.list()) {
+      const session = equipment?.runningSession;
+      const sessionLot = String(session?.lotNo ?? "").trim();
+      if (!sessionLot) continue;
+      const sessionSource = String(session?.sourceRecordId ?? "").trim();
+      if (sourceIds.has(sessionSource)) return sessionLot;
+      const lotItems = Array.isArray(session?.lotItems) ? session.lotItems : [];
+      if (lotItems.some((row) => sourceIds.has(String(row?.sourceRecordId ?? "").trim()))) {
+        return sessionLot;
+      }
+    }
+  } catch {
+    // partial engine in tests
+  }
+
+  for (const record of matchingRecords) {
+    for (const entry of record.chargeHistory ?? []) {
+      if (entry?.status === "in-progress" && entry?.lotNo) {
+        return String(entry.lotNo).trim();
+      }
+    }
+  }
+
+  return "";
+}
+
 /**
  * Product Monitor Grid rows (Blueprint ② · Engine Binding · Read Only)
  * @param {object[]} [records]
@@ -416,12 +707,12 @@ export function buildControlRoomProductMonitorRows(
   const productMap = new Map();
 
   records.forEach((record) => {
+    const key = buildProductKey(record);
     const partNo = String(record.partNo ?? record.productNo ?? "").trim();
     const productName = String(record.partName ?? record.productName ?? "").trim();
     const company = String(record.company ?? "").trim();
     if (!partNo && !productName) return;
 
-    const key = `${company}::${partNo}::${productName}`;
     const lotNo = String(record.lotNo ?? "").trim();
 
     if (!productMap.has(key)) {
@@ -436,7 +727,51 @@ export function buildControlRoomProductMonitorRows(
     if (lotNo) {
       productMap.get(key).lotNos.add(lotNo);
     }
+    (record.chargeHistory ?? []).forEach((entry) => {
+      const historyLot = String(entry?.lotNo ?? "").trim();
+      if (
+        historyLot &&
+        (entry?.status === "in-progress" || entry?.status === "completed")
+      ) {
+        productMap.get(key).lotNos.add(historyLot);
+      }
+    });
   });
+
+  try {
+    getTitanDataEngine()
+      .equipment.list()
+      .forEach((equipment) => {
+        const sessionLot = String(equipment?.runningSession?.lotNo ?? "").trim();
+        if (!sessionLot) return;
+        const lotItems = Array.isArray(equipment?.runningSession?.lotItems)
+          ? equipment.runningSession.lotItems
+          : [];
+        lotItems.forEach((item) => {
+          const sourceId = String(item?.sourceRecordId ?? "").trim();
+          if (!sourceId) return;
+          const record = records.find(
+            (row) =>
+              String(row.id ?? "").trim() === sourceId ||
+              String(row.mesManagementNo ?? "").trim() === sourceId
+          );
+          if (!record) return;
+          const key = buildProductKey(record);
+          if (!productMap.has(key)) {
+            productMap.set(key, {
+              productKey: key,
+              productName: String(record.partName ?? record.productName ?? "").trim() || "—",
+              partNo: String(record.partNo ?? record.productNo ?? "").trim() || "—",
+              company: String(record.company ?? "").trim() || "—",
+              lotNos: new Set(),
+            });
+          }
+          productMap.get(key).lotNos.add(sessionLot);
+        });
+      });
+  } catch {
+    // partial engine in tests
+  }
 
   return [...productMap.values()].map((product) => {
     const lotRows = [...product.lotNos]
@@ -467,7 +802,7 @@ export function buildControlRoomProductMonitorRows(
 
 /**
  * Product Popup detail (Blueprint ② · Read Only)
- * 제품 중심 상세 + 해당 제품의 LOT 목록 요약 (전체 Traceability ❌ — LOT Lifecycle 담당)
+ * LOT bundle SSOT — getLotBundle(lotNo) → lotItems[] (all co-charged items)
  * @param {string} productKey
  */
 export function getControlRoomProductDetail(productKey) {
@@ -479,39 +814,61 @@ export function getControlRoomProductDetail(productKey) {
   if (!product) return null;
 
   const records = getControlRoomRecords();
+  const matchingRecords = records.filter((record) => buildProductKey(record) === key);
   const lotRowByNo = new Map(
     buildControlRoomLotMonitorRows().map((row) => [row.lotNo, row])
   );
 
-  const lotNos = new Set(
-    records
-      .filter((record) => {
-        const partNo = String(record.partNo ?? record.productNo ?? "").trim();
-        const company = String(record.company ?? "").trim();
-        return `${company}::${partNo}::${String(record.partName ?? record.productName ?? "").trim()}` === key;
-      })
-      .map((record) => String(record.lotNo ?? "").trim())
-      .filter(Boolean)
-  );
+  const resolvedLotNo =
+    (product.currentLotNo && product.currentLotNo !== "—"
+      ? String(product.currentLotNo).trim()
+      : "") || resolveLotNoForProductKey(key, records);
+
+  const lotNos = new Set();
+  matchingRecords.forEach((record) => {
+    const lotNo = String(record.lotNo ?? "").trim();
+    if (lotNo) lotNos.add(lotNo);
+    (record.chargeHistory ?? []).forEach((entry) => {
+      const historyLot = String(entry?.lotNo ?? "").trim();
+      if (
+        historyLot &&
+        (entry?.status === "in-progress" || entry?.status === "completed")
+      ) {
+        lotNos.add(historyLot);
+      }
+    });
+  });
+  if (resolvedLotNo) lotNos.add(resolvedLotNo);
 
   const lotSummary = [...lotNos]
     .map((lotNo) => {
       const lotRow = lotRowByNo.get(lotNo);
+      const bundle = getLotBundle(lotNo, { records });
       return {
         lotNo,
-        equipmentName: lotRow?.equipmentName ?? "—",
-        process: lotRow?.process ?? "—",
-        operator: lotRow?.operator ?? "—",
-        status: lotRow?.status ?? "—",
-        progress: Number(lotRow?.progress ?? 0),
+        equipmentName: lotRow?.equipmentName ?? bundle?.equipmentName ?? "—",
+        process: lotRow?.process ?? bundle?.process ?? "—",
+        operator: lotRow?.operator ?? bundle?.operator ?? "—",
+        status: lotRow?.status ?? bundle?.status ?? "—",
+        progress: Number(lotRow?.progress ?? bundle?.progress ?? 0),
         progressLabel: lotRow?.progressLabel ?? "—",
+        lotItemCount: bundle?.itemCount ?? lotRow?.lotItemCount ?? 0,
+        productLabel: bundle?.productLabel ?? lotRow?.productName ?? "—",
       };
     })
     .sort((a, b) => scoreProductLotActivity(b) - scoreProductLotActivity(a));
 
+  const currentLotNo =
+    resolvedLotNo || String(lotSummary[0]?.lotNo ?? "").trim();
+  const currentLotBundle = currentLotNo ? getLotBundle(currentLotNo, { records }) : null;
+
   return {
     ...product,
+    currentLotNo: currentLotNo || product.currentLotNo,
     lotSummary,
+    lotItems: currentLotBundle?.lotItems ?? [],
+    currentLotBundle,
+    coLotItemCount: currentLotBundle?.itemCount ?? 0,
   };
 }
 

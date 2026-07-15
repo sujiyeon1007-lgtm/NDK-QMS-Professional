@@ -11,6 +11,7 @@ import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { resolveDefaultAssigneeFromAuth } from "../../utils/titanAssigneeResolver";
 import { getJournalReferenceDate } from "../../utils/workJournalData";
 import { getProductUnitOptions, normalizeProductUnit } from "../../utils/productUnits";
+import { resolveChargeQty } from "../../utils/equipmentChargingQty";
 import "./InspectionLogEntryModal.css";
 
 const emptyProductFields = {
@@ -99,7 +100,7 @@ function InspectionLogEntryForm({ initialData, onClose, onSave }) {
       spec: record.spec || "",
       unitPrice: record.unitPrice != null ? String(record.unitPrice) : "",
       lotNo: record.lotNo || prev.lotNo,
-      qty: String(record.qty ?? ""),
+      qty: String(resolveChargeQty(record, { lotNo: record.lotNo }) || ""),
       unit: record.unit || "EA",
     }));
   };

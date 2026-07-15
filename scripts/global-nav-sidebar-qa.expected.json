@@ -1,0 +1,134 @@
+[
+  {
+    "id": "home",
+    "label": "HOME",
+    "path": "/home",
+    "expectedLabels": [
+      "HOME"
+    ]
+  },
+  {
+    "id": "operations",
+    "label": "운영관리",
+    "path": "/inout",
+    "expectedLabels": [
+      "입고 대기",
+      "입고 이력",
+      "출고 등록",
+      "출고 이력",
+      "재고관리",
+      "출력관리",
+      "영업업무일지",
+      "거래명세서",
+      "운영관리"
+    ]
+  },
+  {
+    "id": "production",
+    "label": "생산관리",
+    "path": "/production",
+    "expectedLabels": [
+      "생산관리",
+      "생산 대기",
+      "설비 가동 현황",
+      "생산일보",
+      "쇼트 작업현황",
+      "생산실적관리",
+      "LOT 관리",
+      "장입관리",
+      "출력관리"
+    ]
+  },
+  {
+    "id": "quality",
+    "label": "품질관리",
+    "path": "/quality",
+    "expectedLabels": [
+      "품질관리",
+      "검사관리",
+      "성적서관리",
+      "부적합",
+      "Knowledge Record",
+      "LOT Lifecycle",
+      "품질 업무일지",
+      "이력조회"
+    ]
+  },
+  {
+    "id": "documents",
+    "label": "문서관리",
+    "path": "/documents",
+    "expectedLabels": [
+      "사내 문서",
+      "수신문서 보관함"
+    ]
+  },
+  {
+    "id": "statistics",
+    "label": "통계관리",
+    "path": "/statistics/dashboard",
+    "expectedLabels": [
+      "Dashboard",
+      "생산 통계",
+      "쇼트현황",
+      "품질 통계",
+      "영업통계"
+    ]
+  },
+  {
+    "id": "masterData",
+    "label": "기준정보관리",
+    "path": "/settings/hub",
+    "expectedLabels": [
+      "거래처",
+      "제품",
+      "재질",
+      "설비",
+      "작업자",
+      "공정",
+      "열처리 Recipe",
+      "불량코드",
+      "사용자 정의코드"
+    ]
+  },
+  {
+    "id": "company",
+    "label": "회사관리",
+    "path": "/company/dashboard",
+    "expectedLabels": [
+      "회사정보",
+      "회사 기본정보",
+      "사업장",
+      "조직도",
+      "부서",
+      "직원",
+      "직급",
+      "Branding",
+      "문서 Footer"
+    ]
+  },
+  {
+    "id": "environment",
+    "label": "환경설정",
+    "path": "/environment",
+    "expectedLabels": [
+      "사용자",
+      "권한",
+      "메뉴관리",
+      "메뉴 ON/OFF",
+      "모듈관리",
+      "번호체계",
+      "QR 설정",
+      "QR 정보관리",
+      "백업",
+      "알림 설정",
+      "Storage",
+      "시스템 로그",
+      "프로그램 설정",
+      "시스템",
+      "직원정보관리",
+      "사용자정의코드",
+      "데이터관리"
+    ]
+  }
+]

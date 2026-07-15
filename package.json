@@ -23,7 +23,12 @@
     "preview:beta": "vite preview --port 4175 --host",
     "beta:sync": "git push origin presentation && git checkout beta-demo && git merge presentation && git push origin beta-demo && git checkout presentation",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron ."
+    "build:electron": "vite build --mode electron",
+    "electron:preview": "npm run build:electron && node scripts/run-electron-prod.cjs",
+    "electron:build": "npm run build:electron && node scripts/run-electron-prod.cjs",
+    "dist:win": "npm run build:electron && electron-builder --win --x64",
+    "dist:portable": "npm run build:electron && electron-builder --win portable --x64",
+    "verify:v11-master-sqlite": "npx vite-node scripts/verify-v11-master-sqlite-persist.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -47,6 +52,7 @@
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^9.1.2",
     "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^10.5.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
@@ -57,6 +63,49 @@
     "wait-on": "^8.0.2"
   },
   "optionalDependencies": {
-    "oracledb": "^6.8.0"
+    "oracledb": "^6.8.0",
+    "better-sqlite3": "^11.9.1"
+  },
+  "build": {
+    "appId": "com.ndk.titan.qms",
+    "productName": "Project TITAN",
+    "copyright": "Copyright © NDK",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Project-TITAN-${version}-${arch}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "Project-TITAN-${version}-portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Project TITAN",
+      "artifactName": "Project-TITAN-${version}-setup.exe"
+    }
   }
 }

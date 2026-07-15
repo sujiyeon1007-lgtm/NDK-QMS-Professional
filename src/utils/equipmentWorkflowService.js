@@ -11,6 +11,7 @@ import {
   EQUIPMENT_RAW_LIST,
   EQUIPMENT_RUN_STATUS_SSOT,
   resolveEquipmentChargingButtons,
+  resolveRc1ChargeableRowStatusLabel,
 } from "../config/equipmentConfig";
 import { getTitanDataEngine } from "../foundation/data";
 import { masterRowToEquipmentRecord } from "../foundation/data/master/masterDataMappers";
@@ -25,7 +26,8 @@ import {
 } from "./productionLotNumber";
 import { getPrintOutputDate } from "./titanPrintDates";
 import { resolveRecordCurrentProcessDetail } from "./productProcessWorkflow";
-import { resolveRemainingChargeQty, findInProgressChargeEntry } from "./equipmentChargingQty";
+import { resolveRemainingChargeQty, resolveChargeQty, findInProgressChargeEntry } from "./equipmentChargingQty";
+import { getLotBundle } from "./lotBundleService";
 import { notifyWorkflowDataRefresh } from "./titanWorkflowRefresh";
 import { isProductionWaitingStageRecord, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 
@@ -185,11 +187,40 @@ function mergeChargeableRows(storedLots = [], waitingRows = [], equipment = {}) 
     if (lotKey) storedLotKeys.add(lotKey);
   });
 
-  return merged.filter((row) => isChargeableRowVisibleForEquipment(row, equipment));
+  return merged
+    .filter((row) => isChargeableRowVisibleForEquipment(row, equipment))
+    .map((row) => ({
+      ...row,
+      statusLabel: resolveRc1ChargeableRowStatusLabel(row),
+    }));
 }
 
 function normalizeEquipmentKey(value) {
   return String(value ?? "").trim();
+}
+
+function normalizeRunStatus(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function hasExplicitMaintenanceFlag(equipment) {
+  return (
+    equipment?.maintenanceMode === true ||
+    normalizeRunStatus(equipment?.runStatus ?? equipment?.masterRunStatus) === "maintenance"
+  );
+}
+
+function hasExplicitBreakdownFlag(equipment) {
+  return (
+    equipment?.breakdown === true ||
+    equipment?.breakdownMode === true ||
+    normalizeRunStatus(equipment?.runStatus ?? equipment?.masterRunStatus) === "breakdown"
+  );
+}
+
+function hasChargedLot(equipment) {
+  const lots = Array.isArray(equipment?.chargeableLots) ? equipment.chargeableLots : [];
+  return lots.some((row) => String(row?.lotNo ?? "").trim());
 }
 
 function upsertLotStoreRecord(lotNo, patch) {
@@ -201,6 +232,212 @@ function upsertLotStoreRecord(lotNo, patch) {
     return dataEngine.lot.update(key, { ...existing, ...patch, lotNo: key });
   }
   return dataEngine.lot.create({ lotNo: key, ...patch });
+}
+
+/** @param {Record<string, unknown>} row */
+function buildLotItemFromChargeableRow(row, chargeQty = null) {
+  const sourceRecordId = String(row?.sourceRecordId ?? row?.id ?? row?.managementId ?? "").trim();
+  const qty = Number.isFinite(Number(chargeQty))
+    ? Number(chargeQty)
+    : Number(row?.chargeQty ?? row?.qty) || 0;
+  return {
+    sourceRecordId,
+    managementId: String(row?.managementId ?? sourceRecordId).trim(),
+    partNo: String(row?.partNo ?? "").trim(),
+    partName: String(row?.partName ?? row?.productName ?? "").trim(),
+    material: String(row?.material ?? "").trim(),
+    company: String(row?.company ?? "").trim(),
+    chargeQty: qty,
+    qty,
+    unit: row?.unit ?? "EA",
+  };
+}
+
+function appendLotStoreItems(lotNo, items = [], patch = {}) {
+  const key = String(lotNo ?? "").trim();
+  if (!key || items.length === 0) return null;
+
+  const dataEngine = getTitanDataEngine();
+  const existing = dataEngine.lot.getByLotNo(key);
+  const currentItems = Array.isArray(existing?.lotItems) ? [...existing.lotItems] : [];
+
+  items.forEach((item) => {
+    const sourceKey = String(item?.sourceRecordId ?? "").trim();
+    if (!sourceKey) return;
+    const index = currentItems.findIndex(
+      (row) => String(row?.sourceRecordId ?? "").trim() === sourceKey
+    );
+    if (index >= 0) {
+      currentItems[index] = { ...currentItems[index], ...item };
+    } else {
+      currentItems.push(item);
+    }
+  });
+
+  const totalQty = currentItems.reduce(
+    (sum, row) => sum + (Number(row?.chargeQty ?? row?.qty) || 0),
+    0
+  );
+
+  return upsertLotStoreRecord(key, {
+    ...(existing ?? {}),
+    ...patch,
+    lotItems: currentItems,
+    quantity: totalQty,
+    productCount: currentItems.length,
+  });
+}
+
+/**
+ * LOT-centric product label — "SCM440 외 2건"
+ * @param {Array<{ material?: string, partName?: string, partNo?: string }>} items
+ */
+export function formatLotProductSummaryLabel(items = []) {
+  const labels = [];
+  const pushLabel = (value) => {
+    const text = String(value ?? "").trim();
+    if (!text || labels.includes(text)) return;
+    labels.push(text);
+  };
+
+  items.forEach((row) => {
+    pushLabel(row?.material || row?.partName || row?.partNo);
+  });
+
+  if (labels.length === 0) return null;
+  if (labels.length === 1) return labels[0];
+  return `${labels[0]} 외 ${labels.length - 1}건`;
+}
+
+/**
+ * Resolve products charged under one LOT (runtime · not static demo map)
+ * @param {string} lotNo
+ * @param {{ runningSession?: object | null } | null} [equipment]
+ */
+export function getLotProducts(lotNo, equipment = null) {
+  const key = String(lotNo ?? "").trim();
+  if (!key) return [];
+
+  const lotKey = key.toUpperCase();
+  const records = getSessionProductionRecords();
+  const fromRecords = records
+    .filter((row) => String(row.lotNo ?? "").trim().toUpperCase() === lotKey)
+    .map((row) => ({
+      sourceRecordId: row.id,
+      partName: String(row.partName ?? row.productName ?? "").trim(),
+      partNo: String(row.partNo ?? "").trim(),
+      material: String(row.material ?? "").trim(),
+      company: String(row.company ?? "").trim(),
+      chargeQty: Number(row.chargeQty ?? row.workQty ?? row.qty) || 0,
+    }))
+    .filter((row) => row.partName || row.partNo || row.material);
+
+  if (fromRecords.length > 0) return fromRecords;
+
+  try {
+    const lotRow = getTitanDataEngine().lot.getByLotNo(key);
+    const lotItems = Array.isArray(lotRow?.lotItems) ? lotRow.lotItems : [];
+    if (lotItems.length > 0) {
+      return lotItems.map((row) => ({
+        sourceRecordId: row.sourceRecordId,
+        partName: String(row.partName ?? "").trim(),
+        partNo: String(row.partNo ?? "").trim(),
+        material: String(row.material ?? "").trim(),
+        company: String(row.company ?? "").trim(),
+        chargeQty: Number(row.chargeQty ?? row.qty) || 0,
+      }));
+    }
+  } catch {
+    // partial engine in node verify
+  }
+
+  const session = equipment?.runningSession ?? null;
+  const sessionLot = String(session?.lotNo ?? "").trim().toUpperCase();
+  if (session && sessionLot === lotKey) {
+    const lotItems = Array.isArray(session.lotItems) ? session.lotItems : [];
+    if (lotItems.length > 0) {
+      return lotItems.map((row) => ({
+        sourceRecordId: row.sourceRecordId,
+        partName: String(row.partName ?? "").trim(),
+        partNo: String(row.partNo ?? "").trim(),
+        material: String(row.material ?? "").trim(),
+        company: String(row.company ?? "").trim(),
+        chargeQty: Number(row.chargeQty ?? row.qty) || 0,
+      }));
+    }
+
+    const targets = Array.isArray(session.chargeTargets) ? session.chargeTargets : [];
+    if (targets.length > 0) {
+      return targets
+        .map((target) => {
+          const sourceId = String(target?.sourceRecordId ?? "").trim();
+          const record = sourceId
+            ? records.find((row) => String(row.id ?? "").trim() === sourceId)
+            : null;
+          return {
+            sourceRecordId: sourceId,
+            partName: String(record?.partName ?? record?.productName ?? "").trim(),
+            partNo: String(record?.partNo ?? "").trim(),
+            material: String(record?.material ?? "").trim(),
+            company: String(record?.company ?? "").trim(),
+            chargeQty: Number(target?.chargeQty) || 0,
+          };
+        })
+        .filter((row) => row.partName || row.partNo || row.material);
+    }
+  }
+
+  const legacy = EQUIPMENT_LOT_PRODUCTS[key] ?? [];
+  return legacy.map((row) => ({ ...row }));
+}
+
+/**
+ * Normalize runningSession — merge chargeTargets into lotItems on read
+ * @param {object | null | undefined} session
+ */
+export function normalizeRunningSession(session) {
+  if (!session) return null;
+
+  const lotItems = Array.isArray(session.lotItems) ? [...session.lotItems] : [];
+  const targets = Array.isArray(session.chargeTargets) ? session.chargeTargets : [];
+  const records = getSessionProductionRecords();
+
+  if (lotItems.length === 0 && targets.length > 0) {
+    targets.forEach((target) => {
+      const sourceId = String(target?.sourceRecordId ?? "").trim();
+      const record = sourceId
+        ? records.find((row) => String(row.id ?? "").trim() === sourceId)
+        : null;
+      lotItems.push(
+        buildLotItemFromChargeableRow(
+          {
+            ...record,
+            sourceRecordId: sourceId,
+            chargeQty: target.chargeQty,
+          },
+          target.chargeQty
+        )
+      );
+    });
+  }
+
+  const totalChargeQty =
+    Number(session.chargeQty) ||
+    lotItems.reduce((sum, row) => sum + (Number(row.chargeQty ?? row.qty) || 0), 0) ||
+    targets.reduce((sum, row) => sum + (Number(row.chargeQty) || 0), 0) ||
+    0;
+
+  return {
+    ...session,
+    lotItems,
+    chargeTargets: targets.length > 0 ? targets : lotItems.map((row) => ({
+      lotNo: session.lotNo,
+      sourceRecordId: row.sourceRecordId,
+      chargeQty: row.chargeQty ?? row.qty,
+    })),
+    chargeQty: totalChargeQty,
+    productSummary: formatLotProductSummaryLabel(lotItems),
+  };
 }
 
 function buildManualProductionId(lotNo) {
@@ -280,7 +517,6 @@ function hasActiveEquipmentRunningRecord(runningSession, equipmentId = "") {
 }
 
 function reconcileEquipmentStoreRecord(storeRecord) {
-  const maintenance = Boolean(storeRecord.maintenance) || storeRecord.status === "maintenance";
   const equipmentKey = String(storeRecord.equipmentId ?? storeRecord.code ?? "").trim();
   let runningSession = storeRecord.runningSession ?? null;
   const chargeableLots = Array.isArray(storeRecord.chargeableLots)
@@ -291,16 +527,20 @@ function reconcileEquipmentStoreRecord(storeRecord) {
     runningSession = null;
   }
 
-  let status = /** @type {import("../config/equipmentConfig").EquipmentRunStatus} */ ("idle");
-  if (maintenance) status = "maintenance";
-  else if (runningSession) status = "running";
+  const status = computeEquipmentRunStatus({
+    ...storeRecord,
+    runningSession,
+    chargeableLots,
+  });
+  const chargedLotNo = chargeableLots.find((row) => String(row?.lotNo ?? "").trim())?.lotNo ?? null;
 
   return {
     ...storeRecord,
     runningSession,
     chargeableLots,
     status,
-    currentLot: runningSession?.lotNo ?? chargeableLots[0]?.lotNo ?? null,
+    maintenance: status === "maintenance",
+    currentLot: runningSession?.lotNo ?? chargedLotNo,
     workflowState: runningSession ? storeRecord.workflowState : undefined,
   };
 }
@@ -320,11 +560,14 @@ export function reconcileAllEquipmentSessionsInStore() {
       const next = reconcileEquipmentStoreRecord(storeRecord);
       const changed =
         Boolean(storeRecord.runningSession) !== Boolean(next.runningSession) ||
-        storeRecord.status !== next.status;
+        storeRecord.status !== next.status ||
+        Boolean(storeRecord.maintenance) !== Boolean(next.maintenance) ||
+        storeRecord.currentLot !== next.currentLot;
       if (changed || storeRecord.runningSession !== next.runningSession) {
         dataEngine.equipment.update(equipmentKey, {
           runningSession: next.runningSession,
           status: next.status,
+          maintenance: next.maintenance,
           currentLot: next.currentLot,
           workflowState: next.workflowState,
         });
@@ -343,8 +586,20 @@ export function reconcileAllEquipmentSessionsInStore() {
  */
 export function computeEquipmentRunStatus(equipment) {
   if (!equipment) return "idle";
-  if (equipment.maintenance) return "maintenance";
+  if (hasExplicitBreakdownFlag(equipment)) return "breakdown";
+  if (hasExplicitMaintenanceFlag(equipment)) return "maintenance";
+  if (equipment.runningSession) return "running";
+  if (hasChargedLot(equipment)) return "ready";
   return "idle";
+}
+
+export function getEquipmentRunStatusLabel(status) {
+  const key = String(status ?? "idle").trim();
+  if (key === "ready") return "장입완료/작업준비";
+  if (key === "running") return "열처리중";
+  if (key === "maintenance") return "점검중";
+  if (key === "breakdown") return "고장";
+  return "비가동/대기";
 }
 
 /**
@@ -353,7 +608,7 @@ export function computeEquipmentRunStatus(equipment) {
 function buildEquipmentViewModelFromStore(storeRecord) {
   const reconciled = reconcileEquipmentStoreRecord(storeRecord);
   const status = /** @type {import("../config/equipmentConfig").EquipmentRunStatus} */ (
-    reconciled.status === "ready" ? "idle" : (reconciled.status ?? "idle")
+    computeEquipmentRunStatus(reconciled)
   );
   const runningSession = reconciled.runningSession ?? null;
   const storedChargeableLots = Array.isArray(reconciled.chargeableLots)
@@ -362,14 +617,14 @@ function buildEquipmentViewModelFromStore(storeRecord) {
   const chargeableLots = mergeChargeableRows(
     storedChargeableLots,
     buildWaitingProductChargeableRows({
-      process: storeRecord.process,
-      processCode: storeRecord.processCode,
-      maintenance: Boolean(storeRecord.maintenance),
+      process: reconciled.process,
+      processCode: reconciled.processCode,
+      maintenance: Boolean(reconciled.maintenance),
       status,
     }),
     {
-      process: storeRecord.process,
-      processCode: storeRecord.processCode,
+      process: reconciled.process,
+      processCode: reconciled.processCode,
     }
   );
   const displayLots = runningSession
@@ -382,8 +637,11 @@ function buildEquipmentViewModelFromStore(storeRecord) {
     process: storeRecord.process,
     processCode: storeRecord.processCode ?? "",
     code: storeRecord.code,
-    maintenance: Boolean(storeRecord.maintenance),
-    smartAccessId: storeRecord.smartAccessId,
+    maintenance: Boolean(reconciled.maintenance),
+    maintenanceMode: Boolean(reconciled.maintenanceMode),
+    runStatus: reconciled.runStatus,
+    breakdown: Boolean(reconciled.breakdown),
+    smartAccessId: reconciled.smartAccessId,
     status,
     runningSession: runningSession ? { ...runningSession } : null,
     chargeableLots,
@@ -429,8 +687,11 @@ function buildEquipmentViewModelFromRaw(raw) {
     }),
     { process: raw.process, processCode: "" }
   );
-  let status = base.status;
-  if (status === "ready") status = "idle";
+  const status = computeEquipmentRunStatus({
+    ...raw,
+    chargeableLots,
+    runningSession: base.runningSession,
+  });
 
   return {
     ...base,
@@ -480,7 +741,12 @@ export function getActiveChargingSession(equipmentId) {
 
 export function getChargeableLots(equipmentId) {
   const equipment = getEquipmentById(equipmentId);
-  if (!equipment || equipment.status === "running" || equipment.status === "maintenance") {
+  if (
+    !equipment ||
+    equipment.status === "running" ||
+    equipment.status === "maintenance" ||
+    equipment.status === "breakdown"
+  ) {
     return [];
   }
   return equipment.chargeableLots.map((row) => ({ ...row }));
@@ -624,6 +890,73 @@ export function ensureLotBeforeCharging(equipmentId, chargeableRow = {}) {
   };
 }
 
+/**
+ * Multi-select batch — ONE shared LOT for all selected inbound products.
+ * @param {string} equipmentId
+ * @param {Record<string, unknown>[]} chargeableRows
+ * @param {string} [draftLotNo]
+ */
+export function ensureSharedBatchLot(equipmentId, chargeableRows = [], draftLotNo = "") {
+  const rows = Array.isArray(chargeableRows) ? chargeableRows.filter(Boolean) : [];
+  if (rows.length === 0) {
+    return { ok: false, message: "장입할 제품을 선택하세요." };
+  }
+
+  const equipmentKey = normalizeEquipmentKey(equipmentId);
+  const sharedCandidate =
+    String(draftLotNo ?? "").trim() ||
+    previewAutoChargeLotNumber(equipmentKey, rows[0]) ||
+    "";
+
+  const firstEnsured = ensureLotBeforeCharging(equipmentKey, {
+    ...rows[0],
+    lotNo: sharedCandidate,
+    needsLotCreation: true,
+  });
+  if (!firstEnsured.ok) return firstEnsured;
+
+  const sharedLotNo = String(firstEnsured.lotNo ?? "").trim();
+  const prepared = [
+    {
+      ...firstEnsured,
+      chargeableRow: { ...(firstEnsured.chargeableRow ?? rows[0]), lotNo: sharedLotNo },
+    },
+  ];
+
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    const sourceRecordId = String(row?.sourceRecordId ?? row?.id ?? "").trim();
+    const attached = createManualChargeableLot({
+      equipmentId: equipmentKey,
+      lotNo: sharedLotNo,
+      workDate: String(row?.workDate ?? getPrintOutputDate()).trim(),
+      sourceRecordId,
+      managementId: String(row?.managementId ?? sourceRecordId).trim(),
+      company: String(row?.company ?? "").trim(),
+      productName: String(row?.partName ?? row?.productName ?? "").trim(),
+      partNo: String(row?.partNo ?? "").trim(),
+      material: String(row?.material ?? "").trim(),
+      qty: row?.qty,
+      operator: String(row?.operator ?? "").trim(),
+      note: String(row?.note ?? "").trim(),
+      source: "equipment-charging",
+    });
+
+    if (!attached.ok && !attached.sharedLot) {
+      return attached;
+    }
+
+    prepared.push({
+      ok: true,
+      lotNo: sharedLotNo,
+      chargeableRow: attached.chargeableRow ?? { ...row, lotNo: sharedLotNo },
+      sharedLot: true,
+    });
+  }
+
+  return { ok: true, lotNo: sharedLotNo, items: prepared };
+}
+
 export { recordMatchesEquipmentProcess, getProductionWaitingRecordsForEquipment };
 
 /**
@@ -669,8 +1002,12 @@ export function createManualChargeableLot(input) {
   const dataEngine = getTitanDataEngine();
   const equipment = ensureEquipmentStoreRecord(equipmentId);
   if (!equipment) return { ok: false, message: "설비 정보를 찾을 수 없습니다." };
-  if (equipment.maintenance || equipment.status === "maintenance") {
+  const status = computeEquipmentRunStatus(equipment);
+  if (status === "maintenance") {
     return { ok: false, message: "점검중 설비에는 LOT를 연결할 수 없습니다." };
+  }
+  if (status === "breakdown") {
+    return { ok: false, message: "고장 설비에는 LOT를 연결할 수 없습니다." };
   }
   if (equipment.runningSession) {
     return { ok: false, message: "작업중 설비에는 새 LOT를 연결할 수 없습니다." };
@@ -690,20 +1027,83 @@ export function createManualChargeableLot(input) {
     qty,
     operator: String(input?.operator ?? "").trim(),
     workDate: String(input?.workDate ?? "").trim(),
-    statusLabel: "장입대기",
+    statusLabel: "장입완료",
     source: lotSource,
     note: String(input?.note ?? "").trim(),
     ...(sourceRecordId ? { sourceRecordId, managementId } : {}),
   };
 
   const currentLots = Array.isArray(equipment.chargeableLots) ? equipment.chargeableLots : [];
-  const lotKey = lotNo.toUpperCase();
   const filteredLots = sourceRecordId
     ? currentLots.filter(
         (row) => String(row.sourceRecordId ?? row.id ?? "").trim() !== sourceRecordId
       )
     : currentLots;
-  if (filteredLots.some((row) => String(row?.lotNo ?? "").trim().toUpperCase() === lotKey)) {
+  const lotKey = lotNo.toUpperCase();
+  const existingLotIndex = filteredLots.findIndex(
+    (row) => String(row?.lotNo ?? "").trim().toUpperCase() === lotKey
+  );
+  if (existingLotIndex >= 0 && sourceRecordId) {
+    const existingLotRow = filteredLots[existingLotIndex];
+    if (String(existingLotRow?.sourceRecordId ?? "").trim() === sourceRecordId) {
+      return { ok: false, message: "이미 해당 설비에 연결된 제품입니다." };
+    }
+
+    const lotItem = buildLotItemFromChargeableRow(chargeableRow, qty);
+    appendLotStoreItems(lotNo, [lotItem], {
+      productName: formatLotProductSummaryLabel([
+        ...(getLotProducts(lotNo) ?? []),
+        lotItem,
+      ]),
+      partNo: chargeableRow.partNo,
+      process: equipment.process ?? "",
+      equipmentId,
+      status: "장입완료",
+      progress: 0,
+      source: lotSource,
+      workDate: chargeableRow.workDate,
+      company: chargeableRow.company,
+      material: chargeableRow.material,
+      operator: chargeableRow.operator,
+      note: chargeableRow.note,
+    });
+
+    if (sourceRecordId) {
+      updateSessionProductionRecord(sourceRecordId, {
+        lotNo,
+        equipment: equipment.equipmentName ?? equipmentId,
+        equipmentId,
+        workDate: chargeableRow.workDate,
+        registrar: chargeableRow.operator || "생산부",
+        registered: false,
+        incomingRegistered: true,
+        workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
+        currentProcess: "열처리 대기",
+        qrGenerated: true,
+        source: lotSource,
+        lotAutoGeneratedAt: new Date().toISOString(),
+      });
+    }
+
+    notifyWorkflowDataRefresh({
+      action: "sharedLotProductAttached",
+      equipmentId,
+      lotNo,
+      sourceRecordId,
+    });
+
+    return {
+      ok: true,
+      message: `${lotNo} LOT에 제품이 추가되었습니다.`,
+      lotNo,
+      equipmentId,
+      equipmentName: equipment.equipmentName ?? equipmentId,
+      chargeableRow: { ...chargeableRow, lotNo },
+      sharedLot: true,
+    };
+  }
+
+  if (existingLotIndex >= 0) {
     return { ok: false, message: "이미 해당 설비에 연결된 LOT입니다." };
   }
 
@@ -722,7 +1122,7 @@ export function createManualChargeableLot(input) {
     quantity: qty,
     process: equipment.process ?? "",
     equipmentId,
-    status: "장입대기",
+    status: "장입완료",
     progress: 0,
     source: lotSource,
     workDate: chargeableRow.workDate,
@@ -730,6 +1130,8 @@ export function createManualChargeableLot(input) {
     material: chargeableRow.material,
     operator: chargeableRow.operator,
     note: chargeableRow.note,
+    lotItems: [buildLotItemFromChargeableRow(chargeableRow, qty)],
+    productCount: 1,
   });
 
   const productionId = sourceRecordId || buildManualProductionId(lotNo);
@@ -797,14 +1199,53 @@ export function getAvailableLots(equipmentId) {
   return getChargeableLots(equipmentId);
 }
 
-export function getLotProducts(lotNo) {
-  const key = String(lotNo ?? "").trim();
-  if (!key) return [];
-  return (EQUIPMENT_LOT_PRODUCTS[key] ?? []).map((row) => ({ ...row }));
+/**
+ * 운전중 설비 Popup — 장입된 제품 리스트 행 (getLotBundle / runningSession.lotItems SSOT)
+ * @param {Record<string, unknown> | null | undefined} session
+ */
+export function buildChargedLotRunningRows(session) {
+  const lotNo = String(session?.lotNo ?? "").trim();
+  if (!lotNo) return [];
+
+  const bundle = getLotBundle(lotNo);
+  const sessionItems = Array.isArray(session?.lotItems) ? session.lotItems : [];
+  const items = bundle?.lotItems?.length ? bundle.lotItems : sessionItems;
+  if (!items.length) return [];
+
+  const records = getSessionProductionRecords();
+
+  return items.map((item, index) => {
+    const sourceId = String(item?.sourceRecordId ?? item?.managementId ?? item?.id ?? "").trim();
+    const record =
+      records.find((row) => String(row.id ?? "").trim() === sourceId) ??
+      records.find((row) => String(row.mesManagementNo ?? "").trim() === sourceId) ??
+      {};
+
+    const mergedBase = {
+      ...record,
+      ...item,
+      id: sourceId || `${lotNo}-${index}`,
+      sourceRecordId: sourceId,
+      company: String(item.company ?? record.company ?? "").trim(),
+      partName: String(
+        item.partName ?? item.itemName ?? record.partName ?? record.productName ?? ""
+      ).trim(),
+      partNo: String(item.partNo ?? record.partNo ?? "").trim(),
+      material: String(item.material ?? record.material ?? "").trim(),
+      inboundQty: record.inboundQty ?? record.qty ?? item.inboundQty,
+      unit: record.unit ?? item.unit ?? "EA",
+    };
+
+    return {
+      ...mergedBase,
+      chargeQty: resolveChargeQty(mergedBase, { lotNo }),
+    };
+  });
 }
 
-function getLotPrimaryPartName(lotNo) {
-  return getLotProducts(lotNo)[0]?.partName ?? "—";
+function getLotPrimaryPartName(lotNo, equipment = null) {
+  const products = getLotProducts(lotNo, equipment);
+  return products[0]?.material || products[0]?.partName || products[0]?.partNo || "—";
 }
 
 /**
@@ -815,6 +1256,9 @@ function getLotPrimaryPartName(lotNo) {
  */
 export function computeEquipmentAlarm(equipment) {
   if (!equipment) return null;
+  if (equipment.status === "breakdown") {
+    return { level: "warning", label: "고장" };
+  }
   if (equipment.maintenance || equipment.status === "maintenance") {
     return { level: "warning", label: "점검 필요" };
   }
@@ -831,7 +1275,7 @@ export function getEquipmentSummary() {
   const counts = Object.fromEntries(EQUIPMENT_RUN_STATUS_SSOT.map((key) => [key, 0]));
 
   list.forEach((item) => {
-    const key = item.status === "ready" ? "idle" : item.status;
+    const key = item.status;
     if (counts[key] != null) {
       counts[key] += 1;
     }
@@ -839,10 +1283,11 @@ export function getEquipmentSummary() {
 
   return {
     total: list.length,
-    idle: counts.idle + (counts.ready ?? 0),
-    ready: 0,
+    idle: counts.idle,
+    ready: counts.ready ?? 0,
     running: counts.running,
     maintenance: counts.maintenance,
+    breakdown: counts.breakdown ?? 0,
   };
 }
 
@@ -854,32 +1299,42 @@ export function getEquipmentDetailSnapshot(equipmentId) {
   const equipment = getEquipmentById(equipmentId);
   if (!equipment) return null;
 
-  const activeLotNo =
-    equipment.runningSession?.lotNo
-    ?? (Array.isArray(equipment.chargeableLots) ? equipment.chargeableLots[0]?.lotNo : null)
-    ?? null;
-  const sameLotProducts = activeLotNo ? getLotProducts(activeLotNo) : [];
+  const runningSession = normalizeRunningSession(equipment.runningSession);
+  const isRunning = equipment.status === "running" && Boolean(runningSession);
+  const runningLotNo = isRunning ? String(runningSession?.lotNo ?? "").trim() : "";
+  const sameLotProducts = runningLotNo ? getLotProducts(runningLotNo, equipment) : [];
+  const chargeQty = isRunning
+    ? Number(runningSession?.chargeQty) ||
+      sameLotProducts.reduce((sum, row) => sum + (Number(row.chargeQty) || 0), 0) ||
+      null
+    : null;
+  const productLabel =
+    formatLotProductSummaryLabel(sameLotProducts) ||
+    (isRunning ? getLotPrimaryPartName(runningLotNo, equipment) : null);
 
   return {
     equipmentId: equipment.id,
     equipmentName: equipment.name,
     process: equipment.process,
     status: equipment.status,
-    currentLotNo: equipment.runningSession?.lotNo ?? null,
-    startTime: equipment.runningSession?.startTime ?? null,
-    expectedEndTime: equipment.runningSession?.expectedEndTime ?? null,
-    progress: equipment.runningSession?.progress ?? 0,
-    statusLabel: equipment.runningSession?.statusLabel ?? null,
-    // Blueprint ② 설비 View 필드 (작업자 · 현재 제품 · 알람 · 가동률)
-    operator: equipment.runningSession?.operator ?? null,
-    currentProductName: sameLotProducts[0]?.partName ?? null,
-    alarm: computeEquipmentAlarm(equipment),
-    utilization: equipment.status === "running" ? equipment.runningSession?.progress ?? 0 : 0,
+    currentLotNo: runningLotNo || null,
+    startTime: isRunning ? runningSession?.startTime ?? null : null,
+    expectedEndTime: isRunning ? runningSession?.expectedEndTime ?? null : null,
+    progress: isRunning ? runningSession?.progress ?? 0 : 0,
+    statusLabel: isRunning ? runningSession?.statusLabel ?? null : null,
+    operator: isRunning ? runningSession?.operator ?? null : null,
+    currentProductName: isRunning ? productLabel : null,
+    recipeName: isRunning ? runningSession?.recipeName ?? null : null,
+    chargeQty,
+    chargeQtyLabel: chargeQty > 0 ? `${chargeQty.toLocaleString("ko-KR")} EA` : null,
+    alarm: computeEquipmentAlarm({ ...equipment, runningSession }),
+    utilization: isRunning ? runningSession?.progress ?? 0 : 0,
     chargeableLots: equipment.chargeableLots,
     displayLots: equipment.displayLots,
     sameLotProducts,
     sameLotProductCount: sameLotProducts.length,
     chargingButtons: equipment.chargingButtons,
+    runningSession,
   };
 }
 
@@ -892,28 +1347,38 @@ export function getEquipmentMonitorCard(equipmentOrId) {
     typeof equipmentOrId === "string" ? getEquipmentById(equipmentOrId) : equipmentOrId;
   if (!equipment) return null;
 
-  const activeLotNo =
-    equipment.runningSession?.lotNo
-    ?? (Array.isArray(equipment.chargeableLots) ? equipment.chargeableLots[0]?.lotNo : null)
-    ?? null;
-  const sameLotProducts = activeLotNo ? getLotProducts(activeLotNo) : [];
+  const runningSession = normalizeRunningSession(equipment.runningSession);
+  const isRunning = equipment.status === "running" && Boolean(runningSession);
+  const runningLotNo = isRunning ? String(runningSession?.lotNo ?? "").trim() : "";
+  const sameLotProducts = runningLotNo ? getLotProducts(runningLotNo, equipment) : [];
+  const chargeQty = isRunning
+    ? Number(runningSession?.chargeQty) ||
+      sameLotProducts.reduce((sum, row) => sum + (Number(row.chargeQty) || 0), 0) ||
+      null
+    : null;
+  const productLabel =
+    formatLotProductSummaryLabel(sameLotProducts) ||
+    (isRunning ? getLotPrimaryPartName(runningLotNo, equipment) : null);
 
   return {
     equipmentId: equipment.id,
     equipmentName: equipment.name,
     process: equipment.process,
     status: equipment.status,
-    currentLotNo: equipment.runningSession?.lotNo ?? activeLotNo,
-    startTime: equipment.runningSession?.startTime ?? null,
-    expectedEndTime: equipment.runningSession?.expectedEndTime ?? null,
-    progress: equipment.runningSession?.progress ?? 0,
-    // Blueprint ② 설비 View 필드 (작업자 · 현재 제품 · 알람 · 가동률)
-    operator: equipment.runningSession?.operator ?? null,
-    currentProductName: sameLotProducts[0]?.partName ?? null,
-    alarm: computeEquipmentAlarm(equipment),
-    utilization: equipment.status === "running" ? equipment.runningSession?.progress ?? 0 : 0,
+    currentLotNo: runningLotNo || null,
+    startTime: isRunning ? runningSession?.startTime ?? null : null,
+    expectedEndTime: isRunning ? runningSession?.expectedEndTime ?? null : null,
+    progress: isRunning ? runningSession?.progress ?? 0 : 0,
+    operator: isRunning ? runningSession?.operator ?? null : null,
+    currentProductName: isRunning ? productLabel : null,
+    recipeName: isRunning ? runningSession?.recipeName ?? null : null,
+    chargeQty,
+    chargeQtyLabel: chargeQty > 0 ? `${chargeQty.toLocaleString("ko-KR")} EA` : null,
+    alarm: computeEquipmentAlarm({ ...equipment, runningSession }),
+    utilization: isRunning ? runningSession?.progress ?? 0 : 0,
     sameLotProductCount: sameLotProducts.length,
-    displayLots: equipment.displayLots,
+    displayLots: isRunning ? equipment.displayLots : [],
+    runningSession,
   };
 }
 

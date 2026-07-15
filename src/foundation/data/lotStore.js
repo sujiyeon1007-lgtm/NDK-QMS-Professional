@@ -16,19 +16,46 @@ export function buildSeedLotRecords(records = TITAN_DEMO_PRODUCTION_RECORDS) {
     const lotNo = String(record.lotNo ?? "").trim();
     if (!lotNo) return;
 
+    const lotItem = {
+      sourceRecordId: record.id ?? record.mesManagementNo ?? "",
+      managementId: record.id ?? record.mesManagementNo ?? "",
+      partNo: record.partNo ?? record.productNo ?? "",
+      partName: record.partName ?? record.productName ?? "",
+      material: record.material ?? "",
+      company: record.company ?? "",
+      chargeQty: Number(record.qty) || 0,
+      qty: Number(record.qty) || 0,
+      unit: record.unit ?? "EA",
+    };
+
     if (!lotMap.has(lotNo)) {
       lotMap.set(lotNo, {
         lotNo,
-        productNo: record.partNo ?? record.productNo ?? "",
-        productName: record.partName ?? record.productName ?? "",
-        quantity: Number(record.quantity) || 0,
+        productNo: lotItem.partNo,
+        productName: lotItem.partName,
+        quantity: lotItem.qty,
         process: record.heatTreatment ?? record.processName ?? record.process ?? "",
         progress: 0,
         equipmentId: record.equipment ?? null,
         status: record.workflowStatus ?? record.completionStatus ?? "대기",
-        managementId: record.id ?? record.mesManagementNo ?? "",
+        managementId: lotItem.managementId,
+        lotItems: [lotItem],
+        productCount: 1,
       });
+      return;
     }
+
+    const existing = lotMap.get(lotNo);
+    const lotItems = Array.isArray(existing.lotItems) ? [...existing.lotItems] : [];
+    if (!lotItems.some((row) => String(row.sourceRecordId) === String(lotItem.sourceRecordId))) {
+      lotItems.push(lotItem);
+    }
+    lotMap.set(lotNo, {
+      ...existing,
+      lotItems,
+      productCount: lotItems.length,
+      quantity: lotItems.reduce((sum, row) => sum + (Number(row.qty) || 0), 0),
+    });
   });
 
   Object.entries(EQUIPMENT_RUNNING_LOTS).forEach(([equipmentId, session]) => {
@@ -55,7 +82,7 @@ export function buildSeedLotRecords(records = TITAN_DEMO_PRODUCTION_RECORDS) {
         productName: row.partName ?? existing.productName ?? "",
         quantity: row.qty ?? existing.quantity ?? 0,
         equipmentId,
-        status: row.statusLabel ?? "장입대기",
+        status: row.statusLabel ?? "장입완료",
         progress: existing.progress ?? 0,
       });
     });

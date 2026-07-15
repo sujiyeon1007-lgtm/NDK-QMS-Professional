@@ -42,7 +42,7 @@ export function getStatusLabelTone(statusLabel = "") {
   if (label === "검사진행" || label.includes("검사중")) return "inspect-progress";
   if (label.includes("검사")) return "inspect-wait";
   if (label.includes("열처리진행") || label === "열처리중" || label.includes("생산진행") || label === "생산중") return "prod-progress";
-  if (label.includes("열처리대기") || label.includes("생산대기")) return "prod-wait";
+  if (label.includes("열처리대기") || label.includes("생산대기") || label.includes("장입완료") || label.includes("작업준비")) return "prod-wait";
   if (label.includes("입고")) return "incoming-reg";
   return "incoming-reg";
 }

@@ -31,6 +31,7 @@ import {
 import { replaceSessionMasterData, TITAN_EMPTY_MASTER_SEED, TITAN_OPERATIONAL_MASTER_SEED } from "./masterData";
 import { replaceOperationsHistory, resetOperationsHistory } from "./titanHistorySession";
 import { WORKFLOW_STATUS } from "./titanWorkflowStatus";
+import { formatLocalDateTime } from "./titanPrintDates";
 
 /** 운영 CRUD 단일 영속 저장소 (sessionStorage) */
 export const OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY =
@@ -224,6 +225,7 @@ export function addSessionProductionRecord(record) {
     stockQty: getStockQty(normalized),
     shippedQty: normalized.shippedQty ?? 0,
     incomingRegistered: true,
+    incomingRegisteredAt: normalized.incomingRegisteredAt || formatLocalDateTime(),
     inboundQty: Number(normalized.inboundQty ?? normalized.qty) || 0,
   };
   sessionRecords = [newRecord, ...sessionRecords];

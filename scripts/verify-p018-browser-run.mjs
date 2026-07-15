@@ -44,11 +44,18 @@ function step(name, ok, detail = "") {
 }
 
 async function readQty(page, equipmentId, managementId) {
-  await page.goto(`${BASE}/production/charging/equipment/${encodeURIComponent(equipmentId)}`);
-  await page.waitForTimeout(1000);
+  await page.goto(`${BASE}/production/charging/equipment/${encodeURIComponent(equipmentId)}`, {
+    waitUntil: "domcontentloaded",
+    timeout: 60000,
+  });
+  await page.waitForSelector(".qr-lot-table__grid tbody tr", { timeout: 15000 });
   const row = page.locator(".qr-lot-table__grid tbody tr").filter({ hasText: managementId }).first();
   if ((await row.count()) === 0) return null;
-  const text = (await row.locator("td").nth(5).innerText()).trim();
+  const headers = await page.locator(".qr-lot-table__grid thead th").allInnerTexts();
+  const cells = await row.locator("td").allInnerTexts();
+  const remainIndex = headers.findIndex((text) => text.includes("\uC794\uC5EC\uC218\uB7C9"));
+  const targetIndex = remainIndex >= 0 ? remainIndex : 5;
+  const text = String(cells[targetIndex] ?? "").trim();
   const match = text.match(/([\d,]+)/);
   return match ? Number(match[1].replace(/,/g, "")) : null;
 }
@@ -125,17 +132,22 @@ async function main() {
 
   try {
     await page.addInitScript(
-      ({ authKey, equipmentKey, productionKey, equipmentRows, productionRows }) => {
-        sessionStorage.setItem(authKey, JSON.stringify({
-          userId: "admin",
-          loginId: "admin",
-          name: "admin",
-          roleLabels: ["admin"],
-          isProgramAdministrator: true,
-          loginAt: new Date().toISOString(),
-        }));
+      ({ authKey, equipmentKey, productionKey, equipmentRows, productionRows, seedFlag }) => {
+        if (sessionStorage.getItem(seedFlag) === "1") return;
+        sessionStorage.setItem(
+          authKey,
+          JSON.stringify({
+            userId: "admin",
+            loginId: "admin",
+            name: "admin",
+            roleLabels: ["admin"],
+            isProgramAdministrator: true,
+            loginAt: new Date().toISOString(),
+          })
+        );
         sessionStorage.setItem(equipmentKey, JSON.stringify(equipmentRows));
         sessionStorage.setItem(productionKey, JSON.stringify(productionRows));
+        sessionStorage.setItem(seedFlag, "1");
       },
       {
         authKey: "project-titan-auth-session-v1",
@@ -143,6 +155,7 @@ async function main() {
         productionKey: OPERATIONS_PRODUCTION_RECORDS_STORAGE_KEY,
         equipmentRows,
         productionRows,
+        seedFlag: "p018-browser-seed-v1",
       }
     );
 

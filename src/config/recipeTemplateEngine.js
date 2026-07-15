@@ -314,6 +314,98 @@ export function getRecipeRepresentativeSummary(recipe) {
   };
 }
 
+/**
+ * @typedef {object} ChargeWorkConditionField
+ * @property {string} key — Recipe Template parameter key (workConditions / actualParameters)
+ * @property {string} label
+ * @property {string} [unit]
+ * @property {boolean} [required]
+ */
+
+/** RC1 — 장입 시작 운전조건 · 이온질화 (Recipe Template key 정렬) */
+export const CHARGE_WORK_CONDITION_ION_FIELDS = [
+  { key: "treatmentTemp", label: "온도", unit: "℃" },
+  { key: "treatmentTime", label: "시간", unit: "h" },
+  { key: "processPressure", label: "압력", unit: "Pa/mbar" },
+  { key: "dischargeVoltage", label: "방전전압", unit: "V" },
+  { key: "dischargeCurrent", label: "전류", unit: "A" },
+  { key: "hydrogen", label: "수소", unit: "H₂", inputType: "number" },
+  { key: "ammonia", label: "암모니아", unit: "NH₃", inputType: "number" },
+  { key: "argon", label: "아르곤", unit: "Ar", inputType: "number" },
+  { key: "x2", label: "X GAS", unit: "", inputType: "number" },
+];
+
+/** RC1 — 장입 시작 운전조건 · 연질화 / 가스질화 (Recipe Template key 정렬) */
+export const CHARGE_WORK_CONDITION_GAS_FIELDS = [
+  { key: "treatmentTemp", label: "온도", unit: "℃" },
+  { key: "treatmentTime", label: "시간", unit: "h" },
+  { key: "ammonia", label: "암모니아", unit: "NH₃", inputType: "number" },
+  { key: "nitrogen", label: "질소", unit: "N₂", inputType: "number" },
+  { key: "co2", label: "CO₂", unit: "", inputType: "number" },
+];
+
+const CHARGE_WORK_CONDITION_PROCESS_GROUPS = {
+  ion: ["이온질화"],
+  gas: ["연질화", "가스질화", "가스연질화"],
+};
+
+/**
+ * 설비 공정명 → Recipe Template (향후 Recipe Master 연동용)
+ * @param {string} processName
+ * @returns {RecipeTemplateDefinition|null}
+ */
+export function resolveRecipeTemplateByProcessName(processName) {
+  const norm = normKey(processName);
+  if (!norm) return null;
+  return (
+    RECIPE_TEMPLATE_REGISTRY.find((tpl) =>
+      tpl.processNames.some((name) => normKey(name) === norm)
+    ) ?? null
+  );
+}
+
+/**
+ * 장입 시작 운전조건 프로필 — ion | gas
+ * @param {string} processName
+ * @returns {"ion"|"gas"}
+ */
+export function resolveChargeWorkConditionProfileId(processName) {
+  const norm = normKey(processName);
+  if (CHARGE_WORK_CONDITION_PROCESS_GROUPS.ion.some((name) => normKey(name) === norm)) {
+    return "ion";
+  }
+  if (CHARGE_WORK_CONDITION_PROCESS_GROUPS.gas.some((name) => normKey(name) === norm)) {
+    return "gas";
+  }
+  const template = resolveRecipeTemplateByProcessName(processName);
+  if (template?.id === ION_NITRIDING_TEMPLATE.id) return "ion";
+  if (
+    template?.id === SOFT_NITRIDING_TEMPLATE.id ||
+    template?.id === GAS_NITRIDING_TEMPLATE.id
+  ) {
+    return "gas";
+  }
+  return "gas";
+}
+
+/**
+ * 장입 시작 팝업 운전조건 필드 (공정별 자동 전환)
+ * @param {string} processName — 설비 process (이온질화 · 가스질화 · 가스연질화 …)
+ * @returns {ChargeWorkConditionField[]}
+ */
+export function getChargeWorkConditionFields(processName) {
+  return resolveChargeWorkConditionProfileId(processName) === "ion"
+    ? CHARGE_WORK_CONDITION_ION_FIELDS
+    : CHARGE_WORK_CONDITION_GAS_FIELDS;
+}
+
+/** @returns {Record<string, string>} */
+export function buildEmptyChargeWorkConditions(processName) {
+  return Object.fromEntries(
+    getChargeWorkConditionFields(processName).map((field) => [field.key, ""])
+  );
+}
+
 export default {
   RECIPE_TEMPLATE_REGISTRY,
   ION_NITRIDING_TEMPLATE,
@@ -321,6 +413,9 @@ export default {
   GAS_NITRIDING_TEMPLATE,
   SALT_BATH_NITRIDING_TEMPLATE,
   resolveRecipeTemplate,
+  resolveRecipeTemplateByProcessName,
+  getChargeWorkConditionFields,
+  buildEmptyChargeWorkConditions,
   buildRecipeTemplateView,
   normalizeRecipeRecord,
 };

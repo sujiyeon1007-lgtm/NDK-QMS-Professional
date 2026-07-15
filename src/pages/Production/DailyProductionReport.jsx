@@ -32,7 +32,11 @@ import { getProductionDailyReportScreenData, getProductionPlanScreenData } from 
 import { getSessionProductionRecords } from "../../utils/productionRecords";
 import { getTitanDataEngine } from "../../foundation/data";
 import { EQUIPMENT_RUN_STATUS_META } from "../../config/equipmentConfig";
-import { getEquipmentList, createManualChargeableLot } from "../../utils/equipmentWorkflowService";
+import {
+  getEquipmentList,
+  createManualChargeableLot,
+  getEquipmentRunStatusLabel,
+} from "../../utils/equipmentWorkflowService";
 import { generateProductionLotNo } from "../../utils/productionLotNumber";
 import {
   APPROVAL_STATUS_OPTIONS,
@@ -41,6 +45,7 @@ import {
   getProductionDailyReportStatus,
   matchesProductionChipSearch,
 } from "../../utils/productionDailyReportStatus";
+import { resolveChargeQty, resolveRemainingChargeQty } from "../../utils/equipmentChargingQty";
 import { getProcessFlowSteps, mapV13ProductListRow, formatWorkQtyLabel } from "../../utils/processFlow";
 import { validateLotNoForDailyReportRegister } from "../../utils/lotFormatValidation";
 import { onDailyReportSaved } from "../../utils/titanWorkflowStatus";
@@ -91,6 +96,7 @@ import {
 } from "../../utils/productionComplete";
 import { resolveEquipmentContext } from "../../utils/equipmentQr";
 import { subscribeWorkflowDataRefresh } from "../../utils/titanWorkflowRefresh";
+import { buildRecordLotRowKey } from "../../utils/lotBundleService";
 import { SMART_WORK_DAILY_QUERY } from "../../config/titanV11Workflow";
 import "../InOut/InboundManagement.css";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -139,7 +145,12 @@ function matchesProductionDailyReportSearch(record, row, search) {
   }
   if (search.incomingDateFrom && record.incomingDate < search.incomingDateFrom) return false;
   if (search.incomingDateTo && record.incomingDate > search.incomingDateTo) return false;
-  if (search.qty && !String(record.qty).includes(search.qty)) return false;
+  if (
+    search.qty &&
+    !String(resolveChargeQty(record, { lotNo: record.lotNo })).includes(search.qty)
+  ) {
+    return false;
+  }
   if (search.note && !String(record.note ?? "").includes(search.note)) return false;
   if (search.status && row.statusLabel !== search.status) return false;
   const workDate = record.workDate || record.dueDate || "—";
@@ -159,9 +170,10 @@ function mapRecordToRow(record) {
     screenKey: "production",
   });
   const workLog = record.productionWorkLog ?? {};
-  const chargeQty = record.chargeQty ?? record.workQty ?? record.completedQty ?? record.qty;
+  const chargeQty = resolveChargeQty(record, { lotNo: record?.lotNo });
   return {
     ...row,
+    id: buildRecordLotRowKey(record),
     chargeQtyLabel: formatWorkQtyLabel(record, { workQty: chargeQty }),
     equipmentLabel: String(record.equipment ?? record.equipmentId ?? "").trim() || "—",
     workerLabel:
@@ -193,9 +205,7 @@ function resolveManualLotStatusVariant(status) {
 }
 
 function resolveManualLotEquipmentStatusLabel(status) {
-  if (status === "running") return "작업중";
-  if (status === "maintenance") return "점검중";
-  return "대기";
+  return getEquipmentRunStatusLabel(status);
 }
 
 function resolveManualLotRecordValue(record, keys, fallback = "—") {
@@ -207,7 +217,7 @@ function resolveManualLotRecordValue(record, keys, fallback = "—") {
 }
 
 function mapManualLotWaitingRow(record) {
-  const qty = resolveManualLotRecordValue(record, ["qty", "quantity", "incomingQty"], 0);
+  const qty = resolveRemainingChargeQty(record);
   return {
     ...record,
     id: record.id,

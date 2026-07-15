@@ -97,6 +97,7 @@ export function saveShipmentEvent(payload) {
     shippedAt: payload.shippedAt ?? new Date().toISOString().slice(0, 10),
     shippedBy: payload.shippedBy ?? getCurrentTitanUser(),
     managementId: payload.managementId,
+    lotNo: payload.lotNo ?? "",
     company: payload.company,
     partName: payload.partName,
     partNo: payload.partNo,

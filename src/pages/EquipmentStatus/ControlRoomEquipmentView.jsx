@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 
 import EquipmentSummaryBar from "../QrManagement/components/EquipmentSummaryBar";
+import { enrichEquipmentCardDisplay } from "../../utils/controlRoomWorkspaceData";
 import ControlRoomEquipmentCard from "./ControlRoomEquipmentCard";
 import ControlRoomEquipmentPopup from "./ControlRoomEquipmentPopup";
-import EquipmentMonitorDetailPanel from "./EquipmentMonitorDetailPanel";
 
 /**
  * Control Room — 설비 View (Blueprint ② · Sprint 3B)
@@ -29,11 +29,6 @@ export default function ControlRoomEquipmentView({
     [getEquipmentDetail, popupEquipmentId]
   );
 
-  const selectedDetail = useMemo(
-    () => (selectedEquipmentId ? getEquipmentDetail(selectedEquipmentId) : null),
-    [getEquipmentDetail, selectedEquipmentId]
-  );
-
   const filteredGroups = useMemo(() => {
     if (statusFilter === "total") return equipmentGroups;
 
@@ -50,6 +45,15 @@ export default function ControlRoomEquipmentView({
       .filter((group) => group.items.length > 0);
   }, [equipmentGroups, statusFilter]);
 
+  const displayGroups = useMemo(
+    () =>
+      filteredGroups.map((group) => ({
+        ...group,
+        items: group.items.map((equipment) => enrichEquipmentCardDisplay(equipment)),
+      })),
+    [filteredGroups]
+  );
+
   return (
     <div className="control-room__equipment-view">
       <EquipmentSummaryBar
@@ -58,9 +62,9 @@ export default function ControlRoomEquipmentView({
         onFilterChange={handleStatusFilterChange}
       />
 
-      <div className="equipment-status-page__workspace">
+      <div className="equipment-status-page__workspace equipment-status-page__workspace--single">
         <div className="equipment-status-page__groups" aria-label="공정별 설비 현황">
-          {filteredGroups.map((group) => (
+          {displayGroups.map((group) => (
             <section key={group.process} className="equipment-status-page__group">
               <h2 className="equipment-status-page__group-title">{group.process}</h2>
               <div className="equipment-status-page__cards">
@@ -76,15 +80,15 @@ export default function ControlRoomEquipmentView({
               </div>
             </section>
           ))}
-          {filteredGroups.length === 0 ? (
+          {displayGroups.length === 0 ? (
             <div className="control-room__placeholder" role="status">
               <p className="control-room__placeholder-title">선택한 상태의 설비가 없습니다.</p>
-              <p className="control-room__placeholder-desc">상단 KPI에서 현재 설비를 선택하면 전체 설비를 다시 볼 수 있습니다.</p>
+              <p className="control-room__placeholder-desc">
+                상단 KPI에서 현재 설비를 선택하면 전체 설비를 다시 볼 수 있습니다.
+              </p>
             </div>
           ) : null}
         </div>
-
-        <EquipmentMonitorDetailPanel detail={selectedDetail} />
       </div>
 
       <ControlRoomEquipmentPopup

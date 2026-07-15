@@ -14,6 +14,7 @@ import {
 import { normalizeInspectionCriteriaSpec, resolveCriterionItemUnit } from "./inspectionCriteriaModel";
 import { findProductByPartNo } from "./masterData";
 import { cloneSpecification, INSPECTION_HARDNESS_EXCLUDED_KEYS } from "./productSpecificationModel";
+import { resolveChargeQty } from "./equipmentChargingQty";
 import {
   buildMainInspectionResultRows,
   buildScopedResultSummary,
@@ -219,7 +220,10 @@ export function buildInitialRegisterReport({ record = null, product = null } = {
     : [];
 
   const traceRow = record
-    ? mapV13ProductListRow(record, { label: "검사대기", variant: "wait" }, { screenKey: "inspection", workQty: record.qty })
+    ? mapV13ProductListRow(record, { label: "검사대기", variant: "wait" }, {
+        screenKey: "inspection",
+        workQty: resolveChargeQty(record, { lotNo: record.lotNo }),
+      })
     : null;
 
   const base = {

@@ -123,11 +123,13 @@ export function getHomeDisplayStatus(record) {
 }
 
 function formatRegisteredAt(record, index) {
-  const date = record.lotCreatedAt ?? record.incomingDate ?? "";
+  const date = record.incomingRegisteredAt ?? record.lotCreatedAt ?? record.incomingDate ?? "";
   const time = DISPLAY_TIMES[index] ?? "—";
   if (!date) return "—";
-  if (String(date).includes("T")) {
-    const parsed = new Date(date);
+  const text = String(date).trim();
+  if (text.includes("T") || / \d{2}:\d{2}/.test(text)) {
+    const iso = text.includes("T") ? text : `${text.slice(0, 10)}T${text.slice(11).trim()}`;
+    const parsed = new Date(iso);
     if (!Number.isNaN(parsed.getTime())) {
       const y = parsed.getFullYear();
       const m = String(parsed.getMonth() + 1).padStart(2, "0");
@@ -137,7 +139,7 @@ function formatRegisteredAt(record, index) {
       return `${y}-${m}-${d} ${hh}:${mm}`;
     }
   }
-  return `${date} ${time}`;
+  return `${text.slice(0, 10) || text} ${time}`;
 }
 
 export function buildRecentWorkList(records = getHomeWorkspaceRecords(), options = {}) {

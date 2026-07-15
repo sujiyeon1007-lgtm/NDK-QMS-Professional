@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import TitanDetailPopup from "../../foundation/components/TitanDetailPopup";
 import StatusChip from "../../foundation/components/StatusChip";
 import HomeAnimatedProgressBar from "../Home/HomeAnimatedProgressBar";
+import { resolveChargeQty } from "../../utils/equipmentChargingQty";
 
 function resolveProductStatusVariant(status) {
   const label = String(status ?? "");
@@ -73,6 +74,37 @@ export default function ControlRoomProductPopup({ detail, open, onClose }) {
               <span className="control-room-product-popup__progress-label">현재 LOT 진행률</span>
               <HomeAnimatedProgressBar percent={progress} processKey="production" />
             </div>
+
+            {detail.lotItems?.length > 0 ? (
+              <div className="control-room-product-popup__co-lot">
+                <h4>
+                  동일 LOT 구성품목 — {detail.currentLotNo}
+                  {detail.coLotItemCount > 1 ? ` (${detail.coLotItemCount}건)` : ""}
+                </h4>
+                <table className="control-room-product-popup__lot-table">
+                  <thead>
+                    <tr>
+                      <th>재질</th>
+                      <th>품명</th>
+                      <th>품번</th>
+                      <th>수량</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.lotItems.map((item) => (
+                      <tr key={item.sourceRecordId || `${item.partNo}-${item.material}`}>
+                        <td>{item.material || "—"}</td>
+                        <td>{item.partName || item.productName || "—"}</td>
+                        <td>{item.partNo || "—"}</td>
+                        <td>
+                          {resolveChargeQty(item, { lotNo: detail.currentLotNo }).toLocaleString("ko-KR")} EA
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
 
             {detail.lotSummary?.length > 0 ? (
               <div className="control-room-product-popup__lots">

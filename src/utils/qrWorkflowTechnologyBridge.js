@@ -1,6 +1,6 @@
 import { AWR_STATUS_LABELS, AWR_WORK_FIELDS } from "../config/actualWorkRecordModel";
 import { KR_RESULT_LABELS } from "../config/knowledgeRecordModel";
-import { buildRecipeTemplateView } from "../config/recipeTemplateEngine";
+import { buildRecipeTemplateView, getChargeWorkConditionFields } from "../config/recipeTemplateEngine";
 import { getRecipeById } from "./actualWorkRecordStore";
 import { buildInspectionResultView } from "./knowledgeRecordStore";
 import {
@@ -194,3 +194,6 @@ export function buildQrWorkflowTechnologyView(input = {}) {
     links: buildLinks(resolvedLotNo),
   };
 }
+
+/** 장입 시작 운전조건 필드 — Recipe Template Engine 위임 */
+export { getChargeWorkConditionFields };

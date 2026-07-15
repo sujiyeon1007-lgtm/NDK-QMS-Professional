@@ -107,11 +107,11 @@
 
 .equipment-status-page__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   grid-auto-flow: row dense;
   align-items: stretch;
-  grid-auto-rows: 1fr;
-  gap: 10px;
+  grid-auto-rows: minmax(0, auto);
+  gap: 14px;
 }
 
 .equipment-monitor-card {
@@ -194,12 +194,12 @@
 .control-room-equipment-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 178px;
-  height: 178px;
-  padding: 10px 12px;
+  gap: 10px;
+  min-height: 212px;
+  height: auto;
+  padding: 12px 14px;
   border: 1px solid var(--titan-table-border, #dde6f0);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--titan-surface, #fff);
   text-align: left;
   cursor: pointer;
@@ -207,17 +207,19 @@
   color: inherit;
   appearance: none;
   box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-
-.control-room-equipment-card:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 2px;
 }
 
 .control-room-equipment-card:hover {
   border-color: #93c5fd;
   background: #f8fafc;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+}
+
+.control-room-equipment-card:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .control-room-equipment-card.is-selected {
@@ -304,18 +306,26 @@
 .control-room-equipment-card__meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px 8px;
+  gap: 8px 12px;
   margin: 0;
   flex: 1 1 auto;
   align-content: start;
 }
 
+.control-room-equipment-card__meta > div:nth-child(7) {
+  grid-column: 1;
+}
+
+.control-room-equipment-card__meta > div:nth-child(8) {
+  grid-column: 2;
+}
+
 .control-room-equipment-card__meta > div {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
-  min-height: 28px;
+  min-height: 32px;
 }
 
 .control-room-equipment-card__meta dt {
@@ -323,12 +333,14 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--titan-text-secondary, #64748b);
+  letter-spacing: 0.01em;
 }
 
 .control-room-equipment-card__meta dd {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.35;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -342,6 +354,10 @@
   gap: 4px;
   margin-top: auto;
   flex: 0 0 auto;
+}
+
+.control-room-equipment-card__util--span {
+  grid-column: 1 / -1;
 }
 
 .control-room-equipment-card__util-head {
@@ -359,7 +375,7 @@
 }
 
 .control-room-equipment-card__util-track {
-  height: 5px;
+  height: 6px;
   border-radius: 999px;
   background: #eef2f7;
   overflow: hidden;
@@ -477,6 +493,86 @@
   font-size: 12px;
 }
 
+.control-room-equipment-popup--rc1 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.control-room-equipment-popup__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--titan-table-border, #dde6f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.control-room-equipment-popup__summary-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.control-room-equipment-popup__summary-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.control-room-equipment-popup__summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin: 0;
+}
+
+.control-room-equipment-popup__summary-stats > div {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.control-room-equipment-popup__summary-stats dt {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--titan-text-secondary, #64748b);
+}
+
+.control-room-equipment-popup__summary-stats dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.control-room-equipment-popup__summary-progress dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-room-equipment-popup__summary-progress-track {
+  width: 72px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--titan-table-border, #dde6f0);
+  overflow: hidden;
+}
+
+.control-room-equipment-popup__summary-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #93c5fd 0%, var(--titan-primary, #2563eb) 100%);
+}
+
 .control-room-equipment-popup--full {
   gap: 18px;
 }
@@ -502,12 +598,13 @@
   font-weight: 700;
 }
 
-.titan-detail-popup .control-room-equipment-popup--full {
+.titan-detail-popup .control-room-equipment-popup--rc1 {
   min-height: 0;
+  height: 100%;
 }
 
-.titan-detail-popup .equipment-charging-workflow--popup .titan-table-wrap {
-  max-height: 240px;
+.titan-detail-popup .equipment-charging-workflow--popup-split .titan-table-wrap {
+  max-height: none;
   overflow: auto;
 }
 

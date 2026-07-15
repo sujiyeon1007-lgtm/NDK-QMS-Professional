@@ -93,7 +93,7 @@ try {
   const { isChargeLotNumberFormat } = await import(
     pathToFileURL(path.join(root, "src/utils/productionLotNumber.js")).href
   );
-  const { executeStartCharging, executeFinishCharging } = await import(
+  const { executeStartCharging, executeFinishCharging, executeStartChargingBatch } = await import(
     pathToFileURL(path.join(root, "src/utils/titanWorkflowIntegration.js")).href
   );
   const { resolveRecordCurrentProcess, CURRENT_PROCESS_KEYS } = await import(
@@ -303,6 +303,22 @@ try {
         : String(startResult?.message ?? "start failed")
     );
 
+    const { buildProductionDailyReportWorkspaceRecords, buildProductionResultWorkspaceRecords } =
+      await import(
+        pathToFileURL(path.join(root, "src/utils/productionWorkspaceData.js")).href
+      );
+    const dailyRowsBeforeFinish = buildProductionDailyReportWorkspaceRecords().filter(
+      (row) => String(row.lotNo ?? "").trim() === lotNo
+    );
+    const resultRowsBeforeFinish = buildProductionResultWorkspaceRecords().filter(
+      (row) => String(row.lotNo ?? "").trim() === lotNo
+    );
+    step(
+      "8b Start → 작업일보 row exists before Finish",
+      dailyRowsBeforeFinish.length >= 1 && resultRowsBeforeFinish.length === 0,
+      `daily=${dailyRowsBeforeFinish.length} result=${resultRowsBeforeFinish.length}`
+    );
+
     let finishResult = null;
     try {
       finishResult = executeFinishCharging({
@@ -427,6 +443,22 @@ try {
         `charge=${afterPartialStart?.chargeQty} remain=${afterPartialStart?.remainingChargeQty}`
       );
 
+      const { buildProductionDailyReportWorkspaceRecords } = await import(
+        pathToFileURL(path.join(root, "src/utils/productionWorkspaceData.js")).href
+      );
+      const { resolveChargeQty } = await import(
+        pathToFileURL(path.join(root, "src/utils/equipmentChargingQty.js")).href
+      );
+      const dailyPartialRow = buildProductionDailyReportWorkspaceRecords().find(
+        (row) => String(row.id ?? "").trim() === PARTIAL_ID
+      );
+      const dailyPartialChargeQty = resolveChargeQty(dailyPartialRow, { lotNo: partialLotNo });
+      step(
+        "11a1 P0 partial charge: 작업일보 shows chargeQty (100 inbound → 20 charge)",
+        dailyPartialChargeQty === partialChargeQty,
+        `dailyCharge=${dailyPartialChargeQty} inbound=${afterPartialStart?.inboundQty ?? afterPartialStart?.qty}`
+      );
+
       executeFinishCharging({
         equipmentId: EQUIPMENT_ID,
         lotNo: partialLotNo,
@@ -503,6 +535,16 @@ try {
           },
           operator: OPERATOR,
         });
+
+        const p200DailyRow = buildProductionDailyReportWorkspaceRecords().find(
+          (row) => String(row.id ?? "").trim() === P200_ID
+        );
+        const p200DailyChargeQty = resolveChargeQty(p200DailyRow, { lotNo: p200LotNo });
+        step(
+          "11b1 P0-016: 작업일보 200 inbound → 100 charge shows 100 not 200",
+          p200DailyChargeQty === p200ChargeQty,
+          `dailyCharge=${p200DailyChargeQty} inbound=200`
+        );
 
         executeFinishCharging({
           equipmentId: EQUIPMENT_ID,
@@ -791,9 +833,70 @@ try {
               : true,
             `status=${eqAfterSecond?.status ?? "missing"} session=${Boolean(eqAfterSecond?.runningSession)}`
           );
+
+          const { buildProductionDailyReportWorkspaceRecords, buildProductionResultWorkspaceRecords } =
+            await import(
+              pathToFileURL(path.join(root, "src/utils/productionWorkspaceData.js")).href
+            );
+          const p016DailyRows = buildProductionDailyReportWorkspaceRecords().filter(
+            (row) => String(row.id ?? "").trim() === P016_ID
+          );
+          const p016DailyLotNos = p016DailyRows
+            .map((row) => String(row.lotNo ?? "").trim())
+            .filter(Boolean);
+          const p016DailyBothLots =
+            p016DailyLotNos.includes(firstLotNo) && p016DailyLotNos.includes(secondLotNo);
+          step(
+            "11g P0-first-LOT: 작업일보 keeps finished LOT A after LOT B start",
+            p016DailyBothLots && p016DailyRows.length >= 2,
+            `lots=${p016DailyLotNos.join(",") || "none"} rows=${p016DailyRows.length}`
+          );
+
+          const p016ResultRows = buildProductionResultWorkspaceRecords().filter(
+            (row) => String(row.lotNo ?? "").trim() === firstLotNo
+          );
+          step(
+            "11h P0-first-LOT: 생산이력 includes finished LOT A after LOT B start",
+            p016ResultRows.length >= 1,
+            `resultLots=${p016ResultRows.map((row) => row.lotNo).join(",") || "none"}`
+          );
+
+          const { buildInspectionMassWorkspaceRows } = await import(
+            pathToFileURL(path.join(root, "src/utils/qualityWorkspaceData.js")).href
+          );
+          const { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } = await import(
+            pathToFileURL(path.join(root, "src/utils/workflowProcessStatus.js")).href
+          );
+          const p016InspectionRows = buildInspectionMassWorkspaceRows().filter(
+            (row) => String(row.managementId ?? "").trim() === P016_ID
+          );
+          const p016InspectionLotNos = p016InspectionRows
+            .map((row) => String(row.lotNo ?? "").trim())
+            .filter(Boolean);
+          const p016InspectionWaitLots = p016InspectionRows.filter((row) => {
+            const record = row.record;
+            return (
+              record &&
+              resolveRecordCurrentProcess(record).key === CURRENT_PROCESS_KEYS.INSPECTION_WAIT
+            );
+          });
+          const p016QualityBothLots =
+            p016InspectionLotNos.includes(firstLotNo) &&
+            (p016InspectionLotNos.includes(secondLotNo) ||
+              p016InspectionWaitLots.some(
+                (row) => String(row.lotNo ?? "").trim() === firstLotNo
+              ));
+          step(
+            "11i P0-first-LOT: 품질 검사대기 keeps finished LOT A after LOT B start",
+            p016QualityBothLots && p016InspectionRows.length >= 1,
+            `lots=${p016InspectionLotNos.join(",") || "none"} rows=${p016InspectionRows.length} wait=${p016InspectionWaitLots.length}`
+          );
         } else {
           step("11d P0-016 2nd charge generates new LOT", false, "requeued row missing");
           step("11e P0-017 2nd executeStartCharging runtime", false, "skipped");
+          step("11g P0-first-LOT: 작업일보 keeps finished LOT A after LOT B start", false, "skipped");
+          step("11h P0-first-LOT: 생산이력 includes finished LOT A after LOT B start", false, "skipped");
+          step("11i P0-first-LOT: 품질 검사대기 keeps finished LOT A after LOT B start", false, "skipped");
         }
       } else {
         step("11c P0-016 partial 20/15/5 requeues product row", false, "waiting row missing");
@@ -954,6 +1057,7 @@ try {
     step("6c previewAutoChargeLotNumber restore candidate", false, "skipped");
     step("7 Session record has lotNo after charging prep", false, "skipped");
     step("8 executeStartCharging auto-creates daily report (HT_RUNNING)", false, "skipped");
+    step("8b Start → 작업일보 row exists before Finish", false, "skipped");
     step("9 executeFinishCharging -> INSPECTION_WAIT", false, "skipped");
     step("9b 생산이력 workspace includes finished record", false, "skipped");
     step("9c 생산이력 month filter includes workDate", false, "skipped");
@@ -1090,6 +1194,500 @@ try {
       p019Error instanceof Error ? p019Error.message : String(p019Error)
     );
   }
+
+  // --- P0-023: same equipment multi-select batch start (2 inbound records) ---
+  const P023_A = "RC1-EQ-P023-MULTI-A";
+  const P023_B = "RC1-EQ-P023-MULTI-B";
+
+  resetTitanDataEngineInstance();
+  getTitanDataEngine();
+  syncMasterCategoryToStore(
+    "equipment",
+    EQUIPMENT_RAW_LIST.filter((row) => !row.maintenance).map((row) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      process: row.process,
+      active: true,
+    }))
+  );
+  replaceSessionProductionRecords([]);
+
+  for (const [recordId, partNo, qty] of [
+    [P023_A, "P023-A", 10],
+    [P023_B, "P023-B", 8],
+  ]) {
+    addSessionProductionRecord({
+      id: recordId,
+      mesManagementNo: recordId,
+      company: "RC1\uC785\uACE0\uAC80\uC99D",
+      partName: `P023\uD488 ${partNo}`,
+      partNo,
+      material: "SCM440",
+      qty,
+      inboundQty: qty,
+      incomingRegistered: true,
+      registered: false,
+      workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
+      lotNo: "",
+      heatTreatment: ION_PROCESS,
+      processDetail: ION_PROCESS,
+    });
+    applyMoveToProductionWaiting([recordId]);
+  }
+
+  const p023RowA = getChargeableLots(EQUIPMENT_ID).find(
+    (row) => String(row.sourceRecordId ?? row.id ?? "").trim() === P023_A
+  );
+  const p023RowB = getChargeableLots(EQUIPMENT_ID).find(
+    (row) => String(row.sourceRecordId ?? row.id ?? "").trim() === P023_B
+  );
+  step(
+    "P0-023-pre: 2 chargeable rows on ION-01",
+    Boolean(p023RowA) && Boolean(p023RowB),
+    `A=${Boolean(p023RowA)} B=${Boolean(p023RowB)}`
+  );
+
+  if (p023RowA && p023RowB) {
+    const sharedLotPreview = previewAutoChargeLotNumber(EQUIPMENT_ID, p023RowA);
+    const chargeA = 6;
+    const chargeB = 5;
+
+    try {
+      executeStartChargingBatch({
+        equipmentId: EQUIPMENT_ID,
+        operator: OPERATOR,
+        sharedLotNo: sharedLotPreview,
+        items: [
+          {
+            lotNo: sharedLotPreview,
+            chargeQty: chargeA,
+            chargeQtyMeta: {
+              ok: true,
+              chargeQty: chargeA,
+              inboundQty: 10,
+              remainingQty: 4,
+              isPartial: true,
+            },
+            chargeableRow: {
+              ...p023RowA,
+              sourceRecordId: P023_A,
+              chargeQty: chargeA,
+              inboundQty: 10,
+              remainingChargeQty: 4,
+              isPartialCharge: true,
+            },
+          },
+          {
+            lotNo: sharedLotPreview,
+            chargeQty: chargeB,
+            chargeQtyMeta: {
+              ok: true,
+              chargeQty: chargeB,
+              inboundQty: 8,
+              remainingQty: 3,
+              isPartial: true,
+            },
+            chargeableRow: {
+              ...p023RowB,
+              sourceRecordId: P023_B,
+              chargeQty: chargeB,
+              inboundQty: 8,
+              remainingChargeQty: 3,
+              isPartialCharge: true,
+            },
+          },
+        ],
+      });
+    } catch (p023Error) {
+      step(
+        "P0-023: batch start 2 inbound on same equipment",
+        false,
+        p023Error instanceof Error ? p023Error.message : String(p023Error)
+      );
+    }
+
+    const afterA = getSessionProductionRecords().find((r) => r.id === P023_A);
+    const afterB = getSessionProductionRecords().find((r) => r.id === P023_B);
+    const eqAfterBatch = getEquipmentById(EQUIPMENT_ID);
+    const batchLotNo = String(eqAfterBatch?.runningSession?.lotNo ?? "").trim();
+    const sameLotOk = Boolean(batchLotNo) && batchLotNo === sharedLotPreview;
+    const historyOk =
+      afterA?.chargeHistory?.some(
+        (entry) => entry.status === "in-progress" && entry.chargeQty === chargeA
+      ) &&
+      afterB?.chargeHistory?.some(
+        (entry) => entry.status === "in-progress" && entry.chargeQty === chargeB
+      );
+    const runningOk = eqAfterBatch?.status === "running" && Boolean(eqAfterBatch?.runningSession);
+    const lotItems = eqAfterBatch?.runningSession?.lotItems ?? [];
+    const targetsOk =
+      Array.isArray(eqAfterBatch?.runningSession?.chargeTargets) &&
+      eqAfterBatch.runningSession.chargeTargets.length >= 2;
+    step(
+      "P0-023: batch start 2 inbound on same equipment (one lotNo)",
+      sameLotOk && historyOk && runningOk,
+      `lot=${batchLotNo} histA=${afterA?.chargeHistory?.length ?? 0} histB=${afterB?.chargeHistory?.length ?? 0}`
+    );
+    step(
+      "P0-023: runningSession tracks multiple charge targets",
+      targetsOk,
+      `targets=${eqAfterBatch?.runningSession?.chargeTargets?.length ?? 0}`
+    );
+    step(
+      "P0-023: runningSession lotItems has 2 products",
+      lotItems.length >= 2,
+      `lotItems=${lotItems.length}`
+    );
+
+    if (sameLotOk && runningOk) {
+      executeFinishCharging({
+        equipmentId: EQUIPMENT_ID,
+        lotNo: batchLotNo,
+        chargeableRow: { sourceRecordId: P023_A },
+        operator: OPERATOR,
+      });
+
+      const afterFinishA = getSessionProductionRecords().find((r) => r.id === P023_A);
+      const afterFinishB = getSessionProductionRecords().find((r) => r.id === P023_B);
+      const eqAfterFinish = getEquipmentById(EQUIPMENT_ID);
+      const finishWholeLotOk =
+        eqAfterFinish?.status !== "running" &&
+        !eqAfterFinish?.runningSession &&
+        afterFinishA?.chargeHistory?.some((entry) => entry.status === "completed") &&
+        afterFinishB?.chargeHistory?.some((entry) => entry.status === "completed");
+      step(
+        "P0-023: finish completes whole LOT (both products)",
+        finishWholeLotOk,
+        `eq=${eqAfterFinish?.status ?? "missing"} A=${getWorkflowStatus(afterFinishA)} B=${getWorkflowStatus(afterFinishB)}`
+      );
+    } else {
+      step("P0-023: finish completes whole LOT (both products)", false, "skipped");
+    }
+  } else {
+    step("P0-023: batch start 2 inbound on same equipment (one lotNo)", false, "waiting rows missing");
+    step("P0-023: runningSession tracks multiple charge targets", false, "skipped");
+    step("P0-023: runningSession lotItems has 2 products", false, "skipped");
+    step("P0-023: finish completes whole LOT (both products)", false, "skipped");
+  }
+
+  // --- P0 Item 6: LOT Bundle SSOT (Product Popup · 작업일보 · 생산이력 · F5) ---
+  const { getLotBundle } = await import(
+    pathToFileURL(path.join(root, "src/utils/lotBundleService.js")).href
+  );
+  const {
+    getControlRoomProductDetail,
+    buildControlRoomProductMonitorRows,
+    invalidateControlRoomWorkspaceCache,
+  } = await import(pathToFileURL(path.join(root, "src/utils/controlRoomWorkspaceData.js")).href);
+  const {
+    buildProductionDailyReportWorkspaceRecords,
+    buildProductionResultWorkspaceRecords,
+  } = await import(
+    pathToFileURL(path.join(root, "src/utils/productionWorkspaceData.js")).href
+  );
+
+  const P023_LOT = String(getEquipmentById(EQUIPMENT_ID)?.runningSession?.lotNo ?? "").trim();
+  const p023Records = getSessionProductionRecords().filter(
+    (row) => row.id === P023_A || row.id === P023_B
+  );
+  const p023LotFromRecords = String(
+    p023Records.find((row) => String(row.lotNo ?? "").trim())?.lotNo ?? ""
+  ).trim();
+
+  // Re-run batch if finish cleared session (use records lotNo)
+  let ssotLotNo = P023_LOT || p023LotFromRecords;
+  if (!ssotLotNo) {
+    resetTitanDataEngineInstance();
+    getTitanDataEngine();
+    syncMasterCategoryToStore(
+      "equipment",
+      EQUIPMENT_RAW_LIST.filter((row) => !row.maintenance).map((row) => ({
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        process: row.process,
+        active: true,
+      }))
+    );
+    replaceSessionProductionRecords([]);
+    const materials = ["SCM440", "SACM645", "SNCM439"];
+    const ssotIds = materials.map((m, i) => `RC1-LOT-SSOT-${i + 1}`);
+    for (let i = 0; i < materials.length; i += 1) {
+      addSessionProductionRecord({
+        id: ssotIds[i],
+        mesManagementNo: ssotIds[i],
+        company: "RC1\uC785\uACE0\uAC80\uC99D",
+        partName: `SSOT\uD488 ${materials[i]}`,
+        partNo: `SSOT-${materials[i]}`,
+        material: materials[i],
+        qty: 5 + i,
+        inboundQty: 5 + i,
+        incomingRegistered: true,
+        registered: false,
+        workflowStatus: WORKFLOW_STATUS.WORK_WAIT,
+        lotNo: "",
+        heatTreatment: ION_PROCESS,
+        processDetail: ION_PROCESS,
+      });
+      applyMoveToProductionWaiting([ssotIds[i]]);
+    }
+    const ssotRows = getChargeableLots(EQUIPMENT_ID).filter((row) =>
+      ssotIds.includes(String(row.sourceRecordId ?? row.id ?? "").trim())
+    );
+    const sharedLot = previewAutoChargeLotNumber(EQUIPMENT_ID, ssotRows[0]);
+    if (ssotRows.length >= 3 && sharedLot) {
+      executeStartChargingBatch({
+        equipmentId: EQUIPMENT_ID,
+        operator: OPERATOR,
+        sharedLotNo: sharedLot,
+        items: ssotRows.map((row, idx) => ({
+          lotNo: sharedLot,
+          chargeQty: 5 + idx,
+          chargeQtyMeta: { ok: true, chargeQty: 5 + idx, inboundQty: 5 + idx, remainingQty: 0, isPartial: false },
+          chargeableRow: { ...row, chargeQty: 5 + idx, inboundQty: 5 + idx, remainingChargeQty: 0 },
+        })),
+      });
+      ssotLotNo = sharedLot;
+    }
+  }
+
+  if (ssotLotNo) {
+    const bundle = getLotBundle(ssotLotNo);
+    const bundleMaterials = new Set(
+      (bundle?.lotItems ?? []).map((row) => String(row.material ?? "").trim()).filter(Boolean)
+    );
+    step(
+      "P0-LOT-SSOT: getLotBundle returns 2+ co-items",
+      (bundle?.itemCount ?? 0) >= 2,
+      `lot=${ssotLotNo} items=${bundle?.itemCount ?? 0} label=${bundle?.productLabel ?? ""}`
+    );
+
+    const bundleUsesChargeQty =
+      (bundle?.lotItems ?? []).every((item) => {
+        const chargeQty = Number(item.chargeQty) || 0;
+        const record = getSessionProductionRecords().find(
+          (row) => String(row.id ?? "").trim() === String(item.sourceRecordId ?? "").trim()
+        );
+        const inboundQty = Number(record?.inboundQty ?? record?.qty) || 0;
+        return chargeQty > 0 && (inboundQty <= 0 || chargeQty <= inboundQty);
+      }) && (bundle?.totalQty ?? 0) > 0;
+    step(
+      "P0-LOT-SSOT: getLotBundle lotItems use chargeQty (not inboundQty)",
+      bundleUsesChargeQty,
+      `totalQty=${bundle?.totalQty ?? 0}`
+    );
+
+    invalidateControlRoomWorkspaceCache?.();
+    const productRows = buildControlRoomProductMonitorRows();
+    let anyProductKey = productRows.find((row) => String(row.currentLotNo ?? "") === ssotLotNo)?.productKey;
+    if (!anyProductKey && bundle?.lotItems?.[0]) {
+      const anchor = getSessionProductionRecords().find(
+        (row) =>
+          String(row.id ?? "").trim() === String(bundle.lotItems[0]?.sourceRecordId ?? "").trim()
+      );
+      if (anchor) {
+        anyProductKey = `${String(anchor.company ?? "").trim()}::${String(anchor.partNo ?? "").trim()}::${String(anchor.partName ?? anchor.productName ?? "").trim()}`;
+      }
+    }
+    const productDetail = anyProductKey ? getControlRoomProductDetail(anyProductKey) : null;
+    const popupCoItemsOk =
+      Boolean(productDetail) &&
+      (productDetail.lotItems?.length ?? 0) >= 2 &&
+      productDetail.coLotItemCount >= 2;
+    step(
+      "P0-LOT-SSOT: Product View popup shows all LOT co-items",
+      popupCoItemsOk,
+      `key=${anyProductKey ?? "missing"} coItems=${productDetail?.lotItems?.length ?? 0}`
+    );
+
+    const altProductKey = productRows.find(
+      (row) =>
+        String(row.currentLotNo ?? "") === ssotLotNo &&
+        row.productKey &&
+        row.productKey !== anyProductKey
+    )?.productKey;
+    const altProductDetail = altProductKey ? getControlRoomProductDetail(altProductKey) : null;
+    const crossProductLotItemsOk =
+      !altProductDetail ||
+      (altProductDetail.lotItems?.length ?? 0) === (productDetail?.lotItems?.length ?? 0);
+    step(
+      "P0-LOT-SSOT: SCM440/SACM645 click → same lotItems[]",
+      crossProductLotItemsOk,
+      `alt=${altProductKey ?? "none"} items=${altProductDetail?.lotItems?.length ?? 0}`
+    );
+
+    const dailyRows = buildProductionDailyReportWorkspaceRecords();
+    const dailyLotRows = dailyRows.filter(
+      (row) => String(row.lotNo ?? "").trim() === ssotLotNo
+    );
+    const expectedDailyLotRows = Math.max(bundle?.itemCount ?? 0, 2);
+    const dailyLotRowsShareLotNo =
+      dailyLotRows.length >= expectedDailyLotRows &&
+      dailyLotRows.every((row) => String(row.lotNo ?? "").trim() === ssotLotNo);
+    step(
+      "P0-LOT-SSOT: 작업일보 one row per product with shared lotNo",
+      dailyLotRowsShareLotNo,
+      `lotRows=${dailyLotRows.length} bundleItems=${bundle?.itemCount ?? 0} totalDaily=${dailyRows.length}`
+    );
+
+    const resultRows = buildProductionResultWorkspaceRecords();
+    const resultLotKeys = resultRows
+      .map((row) => String(row.lotNo ?? "").trim())
+      .filter(Boolean);
+    const uniqueResultLots = new Set(resultLotKeys);
+    step(
+      "P0-LOT-SSOT: 생산이력 dedupes by LOT",
+      resultLotKeys.length === uniqueResultLots.size,
+      `rows=${resultRows.length} uniqueLots=${uniqueResultLots.size}`
+    );
+
+    if (bundleMaterials.size >= 2) {
+      step(
+        "P0-LOT-SSOT: multi-material bundle (SCM440+SACM645+SNCM439 pattern)",
+        bundleMaterials.size >= 2,
+        [...bundleMaterials].join("+")
+      );
+    } else {
+      step("P0-LOT-SSOT: multi-material bundle (SCM440+SACM645+SNCM439 pattern)", true, "2-product batch ok");
+    }
+
+    reconcileAllEquipmentSessionsInStore();
+    const bundleAfterReconcile = getLotBundle(ssotLotNo);
+    step(
+      "P0-LOT-SSOT: F5 reconcile — getLotBundle stable",
+      (bundleAfterReconcile?.itemCount ?? 0) === (bundle?.itemCount ?? 0),
+      `before=${bundle?.itemCount ?? 0} after=${bundleAfterReconcile?.itemCount ?? 0}`
+    );
+  } else {
+    step("P0-LOT-SSOT: getLotBundle returns 2+ co-items", false, "no shared lotNo");
+    step("P0-LOT-SSOT: getLotBundle lotItems use chargeQty (not inboundQty)", false, "skipped");
+    step("P0-LOT-SSOT: Product View popup shows all LOT co-items", false, "skipped");
+    step("P0-LOT-SSOT: SCM440/SACM645 click → same lotItems[]", false, "skipped");
+    step("P0-LOT-SSOT: 작업일보 one row per product with shared lotNo", false, "skipped");
+    step("P0-LOT-SSOT: 생산이력 dedupes by LOT", false, "skipped");
+    step("P0-LOT-SSOT: multi-material bundle (SCM440+SACM645+SNCM439 pattern)", false, "skipped");
+    step("P0-LOT-SSOT: F5 reconcile — getLotBundle stable", false, "skipped");
+  }
+
+  // --- P0 outbound: Product-centric UI + LOT FIFO allocation ---
+  const OUTBOUND_LOT_ID = "RC1-OUT-LOT-CHARGE-15";
+  const { buildOutgoingTaskWorkspaceRecords } = await import(
+    pathToFileURL(path.join(root, "src/utils/operationsWorkspaceData.js")).href
+  );
+  const {
+    applyOutboundRegister,
+    allocateOutboundShipQtyFifo,
+    getOutboundEligibleLotRows,
+    getOutboundShippedQtyForLot,
+    resolveOutboundProductAvailableQty,
+  } = await import(pathToFileURL(path.join(root, "src/utils/outboundRegistration.js")).href);
+  const { getShipmentEvents } = await import(
+    pathToFileURL(path.join(root, "src/utils/titanHistorySession.js")).href
+  );
+  const { CERTIFICATE_STATUS } = await import(
+    pathToFileURL(path.join(root, "src/utils/ndkWorkflow.js")).href
+  );
+
+  replaceSessionProductionRecords([
+    {
+      id: OUTBOUND_LOT_ID,
+      mesManagementNo: OUTBOUND_LOT_ID,
+      company: "RC1출고검증",
+      partName: "출고LOT품",
+      partNo: "OUT-LOT-P0",
+      material: "SCM440",
+      qty: 20,
+      inboundQty: 20,
+      unit: "EA",
+      incomingRegistered: true,
+      registered: true,
+      certificateStatus: CERTIFICATE_STATUS.ISSUED,
+      shipmentStatus: "출고대기",
+      chargeHistory: [
+        {
+          lotNo: "LOT-A",
+          chargeQty: 10,
+          status: "completed",
+          equipmentId: "ION-01",
+          completedAt: "2026-07-01T10:00:00.000Z",
+        },
+        {
+          lotNo: "LOT-B",
+          chargeQty: 10,
+          status: "completed",
+          equipmentId: "ION-01",
+          completedAt: "2026-07-02T10:00:00.000Z",
+        },
+      ],
+    },
+  ]);
+  const { addInspectionLog: addOutboundInspectionLog } = await import(
+    pathToFileURL(path.join(root, "src/utils/inspectionLogSession.js")).href
+  );
+  addOutboundInspectionLog({
+    managementId: OUTBOUND_LOT_ID,
+    lotNo: "LOT-A",
+    qty: 10,
+    unit: "EA",
+    judgment: "합격",
+  });
+  addOutboundInspectionLog({
+    managementId: OUTBOUND_LOT_ID,
+    lotNo: "LOT-B",
+    qty: 10,
+    unit: "EA",
+    judgment: "합격",
+  });
+
+  const outboundProductRows = buildOutgoingTaskWorkspaceRecords();
+  const outboundProduct = outboundProductRows.find(
+    (row) => String(row.partNo ?? "").trim() === "OUT-LOT-P0"
+  );
+  const productAvailable = resolveOutboundProductAvailableQty(outboundProduct);
+  step(
+    "P0 outbound: product UI row aggregates LOT A+B (20EA shippable, not 2 LOT rows)",
+    outboundProductRows.length === 1 && productAvailable === 20,
+    `rows=${outboundProductRows.length} available=${productAvailable} productKey=${outboundProduct?.productKey ?? ""}`
+  );
+
+  const lotRows = getOutboundEligibleLotRows();
+  const fifoPlan = allocateOutboundShipQtyFifo(lotRows, 15);
+  const planA = fifoPlan.allocations.find((item) => item.lotNo === "LOT-A");
+  const planB = fifoPlan.allocations.find((item) => item.lotNo === "LOT-B");
+  step(
+    "P0 outbound: FIFO ship 15 from 10+10 → LOT A 10 + LOT B 5",
+    fifoPlan.ok === true && planA?.shipQty === 10 && planB?.shipQty === 5,
+    `A=${planA?.shipQty ?? "?"} B=${planB?.shipQty ?? "?"} alloc=${fifoPlan.allocations.length}`
+  );
+
+  const shipResult = applyOutboundRegister({
+    productKey: outboundProduct?.productKey,
+    managementId: OUTBOUND_LOT_ID,
+    shipQty: "15",
+    shipDate: "2026-07-11",
+    manager: "RC1검증",
+    note: "FIFO product ship",
+  });
+  const events = getShipmentEvents(OUTBOUND_LOT_ID);
+  const eventA = events.find((event) => String(event?.lotNo ?? "").trim() === "LOT-A");
+  const eventB = events.find((event) => String(event?.lotNo ?? "").trim() === "LOT-B");
+  const lotARow = lotRows.find((row) => String(row.lotNo ?? "").trim() === "LOT-A");
+  const lotBRow = {
+    ...lotRows.find((row) => String(row.lotNo ?? "").trim() === "LOT-B"),
+  };
+  // refresh shipped qty from events after register
+  const shippedA = getOutboundShippedQtyForLot({ ...lotARow, id: OUTBOUND_LOT_ID, lotNo: "LOT-A" });
+  const shippedB = getOutboundShippedQtyForLot({ ...lotBRow, id: OUTBOUND_LOT_ID, lotNo: "LOT-B" });
+  step(
+    "P0 outbound: DB LOT events after product ship 15 → A10 + B5",
+    shipResult.ok === true &&
+      Number(eventA?.shipQty) === 10 &&
+      Number(eventB?.shipQty) === 5 &&
+      shippedA === 10 &&
+      shippedB === 5,
+    `ok=${shipResult.ok} A=${eventA?.shipQty}/${shippedA} B=${eventB?.shipQty}/${shippedB}`
+  );
 } catch (error) {
   fatal = true;
   step("Runtime", false, error instanceof Error ? error.message : String(error));

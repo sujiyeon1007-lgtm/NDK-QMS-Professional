@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import TitanListInteractionHint from "../../foundation/components/TitanListInteractionHint";
 import PageTopBar from "../../foundation/layout/PageTopBar";
 import { QR_CHARGING_PAGE_COPY } from "../../config/equipmentConfig";
@@ -6,12 +6,14 @@ import { TITAN_MENU_CATALOG } from "../../config/menuConfig";
 import EquipmentCard from "./components/EquipmentCard";
 import EquipmentSummaryBar from "./components/EquipmentSummaryBar";
 import EquipmentChargingActions from "./components/EquipmentChargingActions";
+import ChargeStartConditionsForm from "./components/ChargeStartConditionsForm";
 import LotTable from "./components/LotTable";
 import LotChargeQtyPanel from "./components/LotChargeQtyPanel";
 import CurrentProcess from "./components/CurrentProcess";
 import { useQRWorkflow } from "./hooks/useQRWorkflow";
 import ProcessStepCompleteDialog from "../Production/charging/ProcessStepCompleteDialog";
 import "./QRManagement.css";
+import "./components/EquipmentChargingWorkflowContent.css";
 
 const PAGE_META = TITAN_MENU_CATALOG.qrCharging?.pageMeta ?? {
   kicker: "Smart Access",
@@ -20,6 +22,8 @@ const PAGE_META = TITAN_MENU_CATALOG.qrCharging?.pageMeta ?? {
 };
 
 export default function QRManagement() {
+  const chargeFormRef = useRef(null);
+
   const {
     equipmentList,
     equipmentSummary,
@@ -40,12 +44,26 @@ export default function QRManagement() {
     setChargeQtyEnabled,
     draftChargeQty,
     setDraftChargeQty,
+    selectedEquipment,
   } = useQRWorkflow();
 
   const selectedLotRow = useMemo(
     () => availableLots.find((row) => row.id === activeLotId) ?? null,
     [availableLots, activeLotId]
   );
+
+  const lotSummary = useMemo(() => {
+    if (!selectedLotRow) return "";
+    return String(selectedLotRow.lotNo ?? selectedLotRow.partName ?? selectedLotRow.partNo ?? "").trim();
+  }, [selectedLotRow]);
+
+  const handleStartClick = useCallback(() => {
+    const result = chargeFormRef.current?.validate?.();
+    if (!result?.ok) return;
+    handleStartCharging(result.payload);
+  }, [handleStartCharging]);
+
+  const showStartForm = Boolean(chargingButtons?.showStart) && Boolean(selectedLotRow);
 
   return (
     <div className="qr-management-page">
@@ -87,6 +105,21 @@ export default function QRManagement() {
         </section>
       </div>
 
+      {workflowError ? (
+        <p className="home-empty" role="alert">
+          {workflowError}
+        </p>
+      ) : null}
+
+      {showStartForm ? (
+        <ChargeStartConditionsForm
+          ref={chargeFormRef}
+          processName={selectedEquipment?.process ?? ""}
+          lotSummary={lotSummary}
+          enabled={showStartForm}
+        />
+      ) : null}
+
       <div
         className={`qr-management-page__footer${
           chargingButtons.showStart || chargingButtons.showComplete
@@ -97,15 +130,10 @@ export default function QRManagement() {
         <CurrentProcess session={activeSession} />
         <EquipmentChargingActions
           buttonState={chargingButtons}
-          onStart={handleStartCharging}
+          onStart={handleStartClick}
           onComplete={handleFinishCharging}
         />
       </div>
-      {workflowError ? (
-        <p className="home-empty" role="alert">
-          {workflowError}
-        </p>
-      ) : null}
 
       <ProcessStepCompleteDialog
         open={stepCompleteDialog.open}

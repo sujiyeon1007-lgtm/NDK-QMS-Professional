@@ -50,6 +50,9 @@ import { findCompanyProduct } from "../../utils/productMasterSearch";
 import { buildInboundProcessWorkflowPatch } from "../../utils/productProcessWorkflow";
 import {
   INBOUND_STATUS_LABELS,
+  canCancelInbound,
+  canDeleteInboundRecord,
+  canEditInboundRecord,
   getInboundManagementStatus,
   isInboundShipOutComplete,
 } from "../../utils/inboundManagementStatus";
@@ -58,7 +61,6 @@ import {
   buildIncomingTaskWorkspaceRecords,
   isIncomingTaskStageRecord,
 } from "../../utils/operationsWorkspaceData";
-import { CURRENT_PROCESS_KEYS, resolveRecordCurrentProcess } from "../../utils/workflowProcessStatus";
 import { mapV13ProductListRow } from "../../utils/processFlow";
 import { isHtlFirstPrintTarget, isProductionWaitingOutputTarget } from "../../utils/htlPrintEligibility";
 import { openRowDetailPopup } from "../../foundation/utils/openRowDetailPopup";
@@ -223,21 +225,6 @@ function InboundPrintCriteriaModal({
 
 function isProductionWaitingOutputShortcut(searchParams) {
   return searchParams.get("shortcut") === PRODUCTION_WAITING_OUTPUT_SHORTCUT;
-}
-
-function canEditInboundRecord(record) {
-  if (!record) return false;
-  const processKey = resolveRecordCurrentProcess(record).key;
-  if (processKey === CURRENT_PROCESS_KEYS.RECEIVED) return true;
-  if (processKey === CURRENT_PROCESS_KEYS.HT_WAIT && !record.registered && !record.lotNo?.trim()) {
-    return true;
-  }
-  return false;
-}
-
-function canDeleteInboundRecord(record) {
-  if (!record) return false;
-  return resolveRecordCurrentProcess(record).key === CURRENT_PROCESS_KEYS.RECEIVED;
 }
 
 function canMoveToProductionInboundRecord(record) {
@@ -618,9 +605,30 @@ export default function InboundManagement({ forcedMode } = {}) {
     }
   };
 
+  const openEditModal = (row) => {
+    const record = row?.record ?? row;
+    if (!record?.id) return;
+    if (!canEditInboundRecord(record)) {
+      window.alert("장입 후에는 입고 정보를 수정할 수 없습니다.");
+      return;
+    }
+    setActiveId(record.id);
+    setRegisterMode("edit");
+    setEditRecordId(record.id);
+    setRegisterInitialForm(recordToRegisterForm(record));
+    setRegisterOpen(true);
+  };
+
   const handleInboundDelete = (row) => {
     const record = row?.record ?? row;
     if (!record?.id) return;
+
+    const cancelCheck = canCancelInbound(record);
+    if (!cancelCheck.ok) {
+      window.alert(cancelCheck.message);
+      return;
+    }
+
     const confirmed = window.confirm(`${record.id} 입고 건을 삭제하시겠습니까?`);
     if (!confirmed) return;
     const result = deleteSessionProductionRecord(record.id);
@@ -634,43 +642,61 @@ export default function InboundManagement({ forcedMode } = {}) {
     setRefreshKey((k) => k + 1);
   };
 
+  const renderInboundRowActions = (row) => (
+    <InboundRowActions
+      canEdit={canEditInboundRecord(row.record)}
+      canMoveToProduction={!isHistoryMode && canMoveToProductionInboundRecord(row.record)}
+      canDelete={canDeleteInboundRecord(row.record)}
+      onEdit={() => openEditModal(row)}
+      onMoveToProduction={() => handleInboundMoveToProduction(row)}
+      onDelete={() => handleInboundDelete(row)}
+    />
+  );
+
+  const detailFooterActions = useMemo(() => {
+    const record = detailPopupRow?.record ?? detailPopupRow;
+    if (!record?.id) return undefined;
+
+    const actions = [];
+
+    if (canEditInboundRecord(record)) {
+      actions.push({
+        id: "inbound-edit",
+        label: "수정",
+        onClick: () => {
+          openEditModal(detailPopupRow);
+          setDetailPopupRow(null);
+        },
+      });
+    }
+
+    if (canDeleteInboundRecord(record)) {
+      actions.push({
+        id: "inbound-delete",
+        label: "삭제",
+        onClick: () => handleInboundDelete(detailPopupRow),
+      });
+    }
+
+    return actions.length > 0 ? actions : undefined;
+  }, [detailPopupRow, refreshKey]);
+
   const renderProcessChip = (row) => renderWorkflowProcessChip(row);
 
   const columns = useMemo(
     () =>
       buildInboundListColumns({
         renderProcess: renderProcessChip,
-        // 입고 이력(history) — 순수 조회 + 출력 화면 (등록/수정/삭제 ❌)
-        renderActions: isHistoryMode
-          ? undefined
-          : (row) => (
-              <InboundRowActions
-                canEdit={canEditInboundRecord(row.record)}
-                canMoveToProduction={canMoveToProductionInboundRecord(row.record)}
-                canDelete={canDeleteInboundRecord(row.record)}
-                onEdit={() => openEditModal(row)}
-                onMoveToProduction={() => handleInboundMoveToProduction(row)}
-                onDelete={() => handleInboundDelete(row)}
-              />
-            ),
+        renderActions: renderInboundRowActions,
       }),
-    [isHistoryMode]
+    [isHistoryMode, refreshKey]
   );
+
 
   const openRegisterModal = () => {
     setRegisterMode("create");
     setEditRecordId(null);
     setRegisterInitialForm(null);
-    setRegisterOpen(true);
-  };
-
-  const openEditModal = (row) => {
-    const record = row?.record ?? row;
-    if (!record?.id) return;
-    setActiveId(record.id);
-    setRegisterMode("edit");
-    setEditRecordId(record.id);
-    setRegisterInitialForm(recordToRegisterForm(record));
     setRegisterOpen(true);
   };
 
@@ -694,8 +720,10 @@ export default function InboundManagement({ forcedMode } = {}) {
       spec: form.spec || "",
       unitPrice: form.unitPrice ? Number(String(form.unitPrice).replace(/,/g, "")) || null : null,
       qty: Number(parsed.qty) || 0,
+      inboundQty: Number(parsed.qty) || 0,
       unit: parsed.unit,
       incomingDate: form.incomingDate || today,
+      incomingRegisteredAt: form.incomingDate || today,
       dueDate: form.dueDate || today,
       lotNo: form.lotNo?.trim() || "",
       customerLotNo: form.customerLotNo?.trim() || "",
@@ -706,6 +734,7 @@ export default function InboundManagement({ forcedMode } = {}) {
       note: form.note,
       urgent: form.urgent,
       registrar: form.manager?.trim() || "",
+      operator: form.manager?.trim() || "",
       incomingRegistered: true,
       certificateIssuePolicy: normalizeCertificateIssuePolicy(form.certificateIssuePolicy),
       certificateIssuePolicySource: form.certificateIssuePolicySource || "product",
@@ -741,6 +770,7 @@ export default function InboundManagement({ forcedMode } = {}) {
       id: managementId,
       ...buildRecordPatchFromForm(form),
       ...workflowPatch,
+      lotNo: "",
       htlNo: "",
       equipment: "",
       workDate: "",
@@ -764,7 +794,7 @@ export default function InboundManagement({ forcedMode } = {}) {
       assignee: form.manager,
       managementId,
       company: form.company,
-      lotNo: form.lotNo,
+      lotNo: "",
       date: form.incomingDate || getPrintOutputDate(),
       title: `입고 등록 — ${form.company} (${managementId})`,
     });
@@ -936,6 +966,7 @@ export default function InboundManagement({ forcedMode } = {}) {
         open={Boolean(detailPopupRow)}
         onClose={() => setDetailPopupRow(null)}
         listRow={detailPopupRow}
+        footerActions={detailFooterActions}
         onSelectCoLotProduct={(id) => {
           const target = rows.find((row) => row.id === id || row.managementId === id);
           if (target) {

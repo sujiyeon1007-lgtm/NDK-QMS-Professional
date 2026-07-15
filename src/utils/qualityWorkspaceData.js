@@ -37,6 +37,11 @@ import {
 import { getSessionProductionRecords } from "./productionRecords";
 import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
 import {
+  buildRecordLotRowKey,
+  expandRecordsByChargeHistory,
+  normalizeProductionLotKey,
+} from "./lotBundleService";
+import {
   buildQualityTraceabilityTimeline,
   searchHistoryInquiryRecords,
 } from "./qualityHistoryInquiry";
@@ -119,7 +124,7 @@ function dedupeQualityRecords(records, predicate) {
 
   for (const record of records) {
     if (!predicate(record)) continue;
-    const key = String(record?.id ?? "").trim();
+    const key = buildRecordLotRowKey(record);
     if (key) {
       if (seen.has(key)) continue;
       seen.add(key);
@@ -128,6 +133,18 @@ function dedupeQualityRecords(records, predicate) {
   }
 
   return result;
+}
+
+function expandQualityRecords(records) {
+  return expandRecordsByChargeHistory(records);
+}
+
+function buildQualityRowMatchKey(row) {
+  const lotKey = normalizeProductionLotKey(
+    String(row?.lotNo ?? row?.record?.lotNo ?? "").trim()
+  );
+  const id = String(row?.managementId ?? row?.id ?? row?.record?.id ?? "").trim();
+  return lotKey ? `${id}::${lotKey}` : id;
 }
 
 function getLatestInspectionLog(managementId) {
@@ -252,22 +269,24 @@ export function isQualityHistoryWorkspaceRecord(record) {
 // ─── 검사관리 (양산 · 개발 · 기타) ───────────────────────────────────────────
 
 export function buildInspectionMassWorkspaceRows(records = getQualityRecords(), inspectionType = null) {
-  const eligibleIds = new Set(
-    dedupeQualityRecords(records, isQualityInspectionRegisterRecord).map((record) => record.id)
+  const expanded = expandQualityRecords(records);
+  const eligibleKeys = new Set(
+    dedupeQualityRecords(expanded, isQualityInspectionRegisterRecord).map(buildRecordLotRowKey)
   );
 
   return getMassProductionInspectionRows({ inspectionType }).filter((row) =>
-    eligibleIds.has(row.managementId)
+    eligibleKeys.has(buildQualityRowMatchKey(row))
   );
 }
 
 export function buildInspectionStatusWorkspaceRows(records = getQualityRecords(), inspectionType = null) {
-  const eligibleIds = new Set(
-    dedupeQualityRecords(records, isQualityInspectionStatusRecord).map((record) => record.id)
+  const expanded = expandQualityRecords(records);
+  const eligibleKeys = new Set(
+    dedupeQualityRecords(expanded, isQualityInspectionStatusRecord).map(buildRecordLotRowKey)
   );
 
   return getMassProductionInspectionRows({ inspectionType }).filter(
-    (row) => eligibleIds.has(row.managementId) && Boolean(row.logId)
+    (row) => eligibleKeys.has(buildQualityRowMatchKey(row)) && Boolean(row.logId)
   );
 }
 
@@ -359,11 +378,14 @@ export function getInspectionScreenData(records = getQualityRecords()) {
 // ─── 성적서관리 ─────────────────────────────────────────────────────────────
 
 export function buildCertificateWorkspaceRows(records = getQualityRecords()) {
-  const eligibleIds = new Set(
-    dedupeQualityRecords(records, isQualityCertificateTaskRecord).map((record) => record.id)
+  const expanded = expandQualityRecords(records);
+  const eligibleKeys = new Set(
+    dedupeQualityRecords(expanded, isQualityCertificateTaskRecord).map(buildRecordLotRowKey)
   );
 
-  return getCertificateRegisterListRows().filter((row) => eligibleIds.has(row.entry?.managementId));
+  return getCertificateRegisterListRows().filter((row) =>
+    eligibleKeys.has(buildQualityRowMatchKey({ ...row, managementId: row.entry?.managementId }))
+  );
 }
 
 export function buildCertificateHistoryWorkspaceRows() {
@@ -446,7 +468,7 @@ export function getCertificateScreenData(rows) {
 // ─── Quality History ───────────────────────────────────────────────────────
 
 export function buildQualityHistoryWorkspaceRecords(records = getQualityRecords()) {
-  return dedupeQualityRecords(records, isQualityHistoryWorkspaceRecord);
+  return dedupeQualityRecords(expandQualityRecords(records), isQualityHistoryWorkspaceRecord);
 }
 
 export function countQualityHistoryWorkspace(records = buildQualityHistoryWorkspaceRecords()) {
@@ -482,7 +504,7 @@ export function searchQualityHistoryWorkspaceRecords(search = {}) {
 // ─── NCR / 판정 (불량이력) ─────────────────────────────────────────────────
 
 export function buildNcrWorkspaceRecords(records = getQualityRecords()) {
-  return dedupeQualityRecords(records, isQualityNcrBranchRecord);
+  return dedupeQualityRecords(expandQualityRecords(records), isQualityNcrBranchRecord);
 }
 
 export function buildNcrWorkspaceRows(records = getQualityRecords()) {

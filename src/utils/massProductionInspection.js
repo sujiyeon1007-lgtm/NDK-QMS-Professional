@@ -17,12 +17,24 @@ import {
 } from "./workflowProcessStatus";
 import { getSessionProductionRecords } from "./productionRecords";
 import { registerWorkflowScreenCacheInvalidator } from "./titanWorkflowRefresh";
+import {
+  expandRecordsByChargeHistory,
+  normalizeProductionLotKey,
+  resolveRecordLotNo,
+} from "./lotBundleService";
 import { formatFoundationAttachmentTypeLabel } from "./foundationAttachmentEngine";
 import {
   INSPECTION_TYPE,
   matchesRecordInspectionTypeFilter,
   resolveLogInspectionType,
 } from "../config/inspectionManagement";
+import { resolveChargeQty } from "./equipmentChargingQty";
+
+function buildInspectionLotKey(managementId, lotNo) {
+  const id = String(managementId ?? "").trim();
+  const lotKey = normalizeProductionLotKey(lotNo);
+  return lotKey ? `${id}::${lotKey}` : id;
+}
 
 function resolveProductionCompleteDate(record) {
   const raw =
@@ -53,7 +65,7 @@ function buildMassLogIndex(logs = getInspectionLogs(), inspectionTypeFilter = nu
       return log.category === "양산" || log.category === "개발";
     })
     .forEach((log) => {
-      const key = log.managementId.trim();
+      const key = buildInspectionLotKey(log.managementId, log.lotNo);
       const existing = index.get(key);
       if (!existing || String(log.createdAt) > String(existing.createdAt)) {
         index.set(key, log);
@@ -75,21 +87,26 @@ export function invalidateMassProductionInspectionCache() {
 
 function buildMassProductionInspectionRowsUncached(inspectionTypeFilter = null) {
   const logIndex = buildMassLogIndex(getInspectionLogs(), inspectionTypeFilter);
-  return getSessionProductionRecords()
+  const expanded = expandRecordsByChargeHistory(getSessionProductionRecords());
+
+  return expanded
     .filter(isInspectionMenuEligible)
     .filter((record) => matchesRecordInspectionTypeFilter(record, inspectionTypeFilter))
     .map((record) => {
-      const log = logIndex.get(record.id) ?? null;
+      const lotNo = resolveRecordLotNo(record);
+      const lotKey = normalizeProductionLotKey(lotNo);
+      const log = logIndex.get(buildInspectionLotKey(record.id, lotNo)) ?? null;
       const status = resolveMassInspectionStatus(log);
       const v13 = mapV13ProductListRow(record, status, { screenKey: "inspection" });
       const attachments = normalizeTitanAttachments(log?.attachments);
 
       return {
         ...v13,
-        id: log?.id ?? record.id,
-        rowKey: log?.id ?? `prod-${record.id}`,
+        id: log?.id ?? `${record.id}::${lotKey || "no-lot"}`,
+        rowKey: log?.id ? `${log.id}::${lotKey}` : `prod-${record.id}::${lotKey}`,
         screenKey: "inspection",
         managementId: record.id,
+        lotNo: lotNo || v13.lotNo,
         customerLotNo:
           record.customerLotNo?.trim() ||
           record.purchaseOrderNo?.trim() ||
@@ -97,7 +114,7 @@ function buildMassProductionInspectionRowsUncached(inspectionTypeFilter = null) 
           log?.purchaseOrderNo?.trim() ||
           "—",
         material: record.material || "—",
-        qty: v13.inboundQtyLabel,
+        qty: `${resolveChargeQty(record, { lotNo })} ${record.unit || "EA"}`,
         heatTreatmentProcess: v13.heatTreatmentProcess ?? v13.processName,
         processName: v13.heatTreatmentProcess ?? v13.processName,
         inspectionDate: log?.inspectionDate || "—",

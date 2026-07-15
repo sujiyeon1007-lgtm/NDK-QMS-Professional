@@ -26,6 +26,11 @@ import {
   normalizeOtherInspectionKind,
   resolveInspectionCategoryFromLegacy,
 } from "../config/inspectionManagement";
+import { resolveChargeQty } from "./equipmentChargingQty";
+
+function normalizeInspectionLotKey(value) {
+  return String(value ?? "").trim().toUpperCase();
+}
 
 const STORAGE_KEY = "project-titan-inspection-log-v3";
 export const INSPECTION_ATTACHMENT_ACCEPT = FOUNDATION_ATTACHMENT_ACCEPT;
@@ -167,6 +172,20 @@ export function hasInspectionLogForManagementId(managementId) {
   return getInspectionLogsByManagementId(managementId).length > 0;
 }
 
+/** RC1 LOT-level inspection lookup. A LOT row must not inherit another LOT's inspection. */
+export function getInspectionLogsForRecord(record) {
+  const managementId = String(record?.id ?? record?.managementId ?? "").trim();
+  if (!managementId) return [];
+  const logs = getInspectionLogsByManagementId(managementId);
+  const lotKey = normalizeInspectionLotKey(record?.lotNo);
+  if (!lotKey) return logs;
+  return logs.filter((log) => normalizeInspectionLotKey(log?.lotNo) === lotKey);
+}
+
+export function hasInspectionLogForRecord(record) {
+  return getInspectionLogsForRecord(record).length > 0;
+}
+
 export function addInspectionLog(payload) {
   const log = normalizeLog({
     category: "양산",
@@ -264,7 +283,7 @@ export function buildInspectionLogFromRecord(record, overrides = {}) {
     lotNo: record.lotNo || "",
     purchaseOrderNo: record.purchaseOrderNo || "",
     customerLotNo: record.customerLotNo || "",
-    qty: record.qty,
+    qty: resolveChargeQty(record, { lotNo: record.lotNo }),
     unit: record.unit || "EA",
     process: record.heatTreatment || "",
     assignee: overrideAssignee ?? getCurrentTitanUser(),

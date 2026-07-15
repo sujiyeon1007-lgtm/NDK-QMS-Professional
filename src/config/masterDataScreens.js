@@ -40,7 +40,6 @@ export const MASTER_DATA_SCREENS = {
     icon: Building2,
     columns: [
       { key: "name", label: "업체명" },
-      { key: "code", label: "코드" },
       { key: "ceoName", label: "대표자" },
       { key: "ndkAssigneeLabel", label: "우리회사 담당자" },
       { key: "phoneLabel", label: "대표번호" },

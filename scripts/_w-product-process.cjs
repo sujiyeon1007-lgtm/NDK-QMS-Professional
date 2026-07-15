@@ -1,0 +1,43 @@
+﻿const fs = require("fs");
+const path = require("path");
+const out = path.join(__dirname, "..", "src", "config", "productProcessSelection.js");
+const lines = [
+  'import { TITAN_PROCESS_MASTER_V2_PLANNED } from "./titanProcessMasterV2";',
+  "",
+  "export const PRODUCT_PROCESS_CATEGORIES = [",
+  '  { id: "heatTreatment", label: "\uc5f4\ucc98\ub9ac", enabled: true },',
+  '  { id: "shot", label: "\uc1fc\ud2b8", enabled: true },',
+  '  { id: "cleaning", label: "\uc138\ucc99", enabled: false, planned: true },',
+  "];",
+  "",
+  "export const PRODUCT_PROCESS_DETAILS = {",
+  '  heatTreatment: ["\uc774\uc628\uc9c8\ud654", "\uac00\uc2a4\uc9c8\ud654", "\uce68\ud0c4", "\uc9c4\uacf5\uc5f4\ucc98\ub9ac", "\ud480\ub984", "\uc18c\uc785", "\ub728\uc784", "\uae30\ud0c0"],',
+  '  shot: ["\uc1fc\ud2b8"],',
+  '  cleaning: ["\uc138\ucc99"],',
+  "};",
+  "",
+  "export function getProductProcessDetailOptions(categoryId) {",
+  "  if (!categoryId) return [];",
+  "  return PRODUCT_PROCESS_DETAILS[categoryId] ?? [];",
+  "}",
+  "",
+  "export function resolveProductProcessLabel(processCategory, processDetail, fallbackProcess = \"\") {",
+  "  const detail = String(processDetail ?? \"\").trim();",
+  "  if (detail) return detail;",
+  "  return String(fallbackProcess ?? \"\").trim();",
+  "}",
+  "",
+  "export function inferProcessCategoryFromDetail(processDetail, fallbackProcess = \"\") {",
+  "  const value = String(processDetail ?? fallbackProcess ?? \"\").trim();",
+  "  if (!value) return \"\";",
+  '  if (value === "\uc1fc\ud2b8") return "shot";',
+  '  if (value === "\uc138\ucc99") return "cleaning";',
+  "  if ((PRODUCT_PROCESS_DETAILS.heatTreatment ?? []).includes(value)) return \"heatTreatment\";",
+  "  return \"heatTreatment\";",
+  "}",
+  "",
+  "export const PRODUCT_PROCESS_SELECTION_NOTE = TITAN_PROCESS_MASTER_V2_PLANNED.note;",
+  "",
+];
+fs.writeFileSync(out, lines.join("\n"), "utf8");
+console.log("wrote", out);

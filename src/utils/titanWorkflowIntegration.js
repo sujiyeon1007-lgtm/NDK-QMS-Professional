@@ -8,6 +8,7 @@ import { getTitanWorkflowEngine } from "../foundation/workflow";
 import { WORKFLOW_EVENTS } from "../foundation/workflow/workflowEvents";
 import { EQUIPMENT_LOT_PRODUCTS } from "../config/equipmentConfig";
 import { getRecordsForProductionLot, normalizeProductionLotKey } from "./productionDailyReportPrintData";
+import { getLotBundle } from "./lotBundleService";
 import { getSessionProductionRecords, updateSessionProductionRecord } from "./productionRecords";
 import { onDailyReportSaved, onProductionComplete, WORKFLOW_STATUS } from "./titanWorkflowStatus";
 import { getCurrentTitanUser } from "./titanHistorySession";
@@ -20,6 +21,7 @@ import {
   addActualWorkRecord,
   getActualWorkRecords,
   getApprovedRecipesForSelection,
+  getRecipeById,
   updateActualWorkRecord,
 } from "./actualWorkRecordStore";
 import { addKnowledgeRecord, getKnowledgeRecords } from "./knowledgeRecordStore";
@@ -70,7 +72,7 @@ function normalizeWorkConditions(value) {
   );
 }
 
-function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
+function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}, equipmentId = "") {
   const records = getSessionProductionRecords();
   const sourceRecordId = String(
     chargeableRow.sourceRecordId ?? chargeableRow.managementId ?? ""
@@ -90,6 +92,27 @@ function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
 
   const byLot = records.filter((row) => normalizeProductionLotKey(row.lotNo) === key);
   if (byLot.length > 0) return byLot;
+
+  const equipmentKey = String(equipmentId ?? "").trim();
+  if (equipmentKey) {
+    try {
+      const equipment = getTitanDataEngine().equipment.getById(equipmentKey);
+      const session = equipment?.runningSession ?? null;
+      const targets = Array.isArray(session?.chargeTargets) ? session.chargeTargets : [];
+      const lotItems = Array.isArray(session?.lotItems) ? session.lotItems : [];
+      const sourceIds = new Set(
+        [...targets, ...lotItems]
+          .map((row) => String(row?.sourceRecordId ?? "").trim())
+          .filter(Boolean)
+      );
+      if (sourceIds.size > 0) {
+        const byTargets = records.filter((row) => sourceIds.has(String(row.id ?? "").trim()));
+        if (byTargets.length > 0) return byTargets;
+      }
+    } catch {
+      // partial engine
+    }
+  }
 
   const partName = String(chargeableRow.partName ?? "").trim();
   if (partName && chargeableRow.source === "production-waiting") {
@@ -114,6 +137,15 @@ function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
   }
 
   const lotProducts = EQUIPMENT_LOT_PRODUCTS[lotNo] ?? [];
+  const bundleItems = getLotBundle(lotNo)?.lotItems ?? [];
+  if (bundleItems.length > 0) {
+    const sourceIds = new Set(
+      bundleItems.map((row) => String(row.sourceRecordId ?? "").trim()).filter(Boolean)
+    );
+    const byBundle = records.filter((row) => sourceIds.has(String(row.id ?? "").trim()));
+    if (byBundle.length > 0) return byBundle;
+  }
+
   const partNames = new Set(lotProducts.map((row) => String(row.partName ?? "").trim()).filter(Boolean));
   if (partNames.size > 0) {
     return records.filter(
@@ -123,6 +155,25 @@ function resolveLegacyRecordsForChargingLot(lotNo, chargeableRow = {}) {
         partNames.has(String(row.partName ?? "").trim())
     );
   }
+
+  return [];
+}
+
+function resolveAllRecordsForChargingFinish(params = {}) {
+  const lotNo = String(params.lotNo ?? "").trim();
+  const equipmentId = String(params.equipmentId ?? "").trim();
+
+  const byLot = getRecordsForProductionLot(lotNo, getSessionProductionRecords(), {
+    registeredOnly: false,
+  });
+  if (byLot.length > 0) return byLot;
+
+  const byChargeTargets = resolveLegacyRecordsForChargingLot(
+    lotNo,
+    params.chargeableRow ?? {},
+    equipmentId
+  );
+  if (byChargeTargets.length > 0) return byChargeTargets;
 
   return [];
 }
@@ -243,12 +294,15 @@ function bridgeLegacyDailyReportOnStart(params) {
         inboundQty,
       },
       updatedAt: now,
+      // P0: 작업일보 row visible at Start (not Finish)
+      registered: true,
+      lotNo,
+      dailyReportAutoCreated: true,
+      dailyReportDraftStarted: true,
     };
 
     if (!otherActiveSessions && !alreadyActiveOnEquipment) {
       Object.assign(sessionPatch, {
-        registered: true,
-        lotNo,
         equipment: equipmentName,
         equipmentId,
         workDate,
@@ -258,14 +312,7 @@ function bridgeLegacyDailyReportOnStart(params) {
         productionStartAt: now,
         chargeStartAt: startDateTime,
         productionWorkflowId: productionId,
-        dailyReportAutoCreated: true,
-        dailyReportDraftStarted: true,
         awaitingNextProcessStep: false,
-      });
-    } else if (!alreadyActiveOnEquipment) {
-      Object.assign(sessionPatch, {
-        dailyReportAutoCreated: true,
-        dailyReportDraftStarted: true,
       });
     }
 
@@ -296,9 +343,7 @@ function bridgeLegacyProductionCompleteOnFinish(params) {
   const endDateTime = `${todayWorkDate()} ${endClock}`;
 
   const legacyRecords = appendLegacyFinishRecordFallback(
-    getRecordsForProductionLot(lotNo, getSessionProductionRecords(), { registeredOnly: false }).length > 0
-      ? getRecordsForProductionLot(lotNo, getSessionProductionRecords(), { registeredOnly: false })
-      : resolveLegacyRecordsForChargingLot(lotNo, params.chargeableRow ?? {}),
+    resolveAllRecordsForChargingFinish(params),
     params
   );
 
@@ -651,6 +696,22 @@ function findActualWorkRecordForLot(lotNo, equipmentName = "") {
   );
 }
 
+function patchRunningSessionWorkMeta(equipmentId, patch = {}) {
+  const key = String(equipmentId ?? "").trim();
+  if (!key) return;
+
+  const dataEngine = getTitanDataEngine();
+  const equipment = dataEngine.equipment.getById(key);
+  if (!equipment?.runningSession) return;
+
+  dataEngine.equipment.update(key, {
+    runningSession: {
+      ...equipment.runningSession,
+      ...patch,
+    },
+  });
+}
+
 function syncActualWorkOnStart(params) {
   const lotNo = String(params.lotNo ?? "").trim();
   if (!lotNo) return null;
@@ -675,7 +736,9 @@ function syncActualWorkOnStart(params) {
     return result.ok ? result.row : existing;
   }
 
-  const recipe = getApprovedRecipesForSelection()[0] ?? null;
+  const recipeId = String(params.recipeId ?? "").trim();
+  const recipe =
+    (recipeId ? getRecipeById(recipeId) : null) ?? getApprovedRecipesForSelection()[0] ?? null;
   if (!recipe) return null;
 
   const result = addActualWorkRecord({
@@ -754,6 +817,220 @@ function syncKnowledgeOnFinish(params) {
   };
 }
 
+function createWorkflowProductionId() {
+  return `PRD-WF-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function buildRunningSessionLotItem(target, chargeableRow = {}) {
+  const sourceRecordId = String(
+    target?.sourceRecordId ?? chargeableRow?.sourceRecordId ?? chargeableRow?.id ?? ""
+  ).trim();
+  const chargeQty = Number(target?.chargeQty ?? chargeableRow?.chargeQty ?? chargeableRow?.qty) || 0;
+  return {
+    sourceRecordId,
+    managementId: String(chargeableRow?.managementId ?? sourceRecordId).trim(),
+    partNo: String(chargeableRow?.partNo ?? "").trim(),
+    partName: String(chargeableRow?.partName ?? chargeableRow?.productName ?? "").trim(),
+    material: String(chargeableRow?.material ?? "").trim(),
+    company: String(chargeableRow?.company ?? "").trim(),
+    chargeQty,
+    qty: chargeQty,
+    unit: chargeableRow?.unit ?? "EA",
+  };
+}
+
+function appendRunningSessionChargeTarget(equipmentId, target, chargeableRow = {}) {
+  const dataEngine = getTitanDataEngine();
+  const equipment = dataEngine.equipment.getById(equipmentId);
+  if (!equipment?.runningSession) return;
+
+  const session = equipment.runningSession;
+  const existingTargets = Array.isArray(session.chargeTargets) ? session.chargeTargets : [];
+  const existingLotItems = Array.isArray(session.lotItems) ? session.lotItems : [];
+  const primaryTarget = session.lotNo
+    ? [
+        {
+          lotNo: session.lotNo,
+          sourceRecordId: session.sourceRecordId,
+          productionId: session.productionId,
+          chargeQty: session.chargeQty,
+        },
+      ]
+    : [];
+  const baseTargets = existingTargets.length > 0 ? existingTargets : primaryTarget;
+  const lotKey = String(target?.lotNo ?? session.lotNo ?? "").trim().toUpperCase();
+  const sourceKey = String(target?.sourceRecordId ?? "").trim();
+  const alreadyTracked = baseTargets.some(
+    (entry) =>
+      String(entry?.lotNo ?? "").trim().toUpperCase() === lotKey &&
+      String(entry?.sourceRecordId ?? "").trim() === sourceKey
+  );
+
+  const nextTargets = alreadyTracked ? baseTargets : [...baseTargets, target];
+  const lotItem = buildRunningSessionLotItem(target, chargeableRow);
+  const nextLotItems = existingLotItems.some(
+    (row) => String(row?.sourceRecordId ?? "").trim() === sourceKey
+  )
+    ? existingLotItems.map((row) =>
+        String(row?.sourceRecordId ?? "").trim() === sourceKey ? { ...row, ...lotItem } : row
+      )
+    : [...existingLotItems, lotItem];
+
+  const totalChargeQty = nextTargets.reduce(
+    (sum, row) => sum + (Number(row?.chargeQty) || 0),
+    0
+  );
+
+  dataEngine.equipment.update(equipmentId, {
+    runningSession: {
+      ...session,
+      chargeTargets: nextTargets,
+      lotItems: nextLotItems,
+      chargeQty: totalChargeQty,
+    },
+  });
+}
+
+/**
+ * Additional charge target on an already-running equipment (batch multi-select).
+ * @param {Record<string, unknown>} input
+ */
+function executeStartChargingAdditionalTarget(input) {
+  const equipmentId = String(input.equipmentId ?? "").trim();
+  const lotNo = String(input.lotNo ?? "").trim();
+  if (!equipmentId) throw new Error("equipmentId is required");
+  if (!lotNo) throw new Error("lotNo is required");
+
+  const dataEngine = getTitanDataEngine();
+  const equipment = dataEngine.equipment.getById(equipmentId);
+  if (!equipment?.runningSession) {
+    throw new Error("설비가 장입 중이 아닙니다. 추가 장입 대상을 등록할 수 없습니다.");
+  }
+
+  const operator = input.operator ?? getCurrentTitanUser() ?? "생산부";
+  const managementId = String(
+    input.chargeableRow?.managementId ??
+      input.chargeableRow?.sourceRecordId ??
+      input.managementId ??
+      ""
+  ).trim();
+  const productionId = String(input.productionId ?? createWorkflowProductionId()).trim();
+  const now = formatNowClock();
+
+  const workflow = getTitanWorkflowEngine();
+  workflow.eventBus.emit(WORKFLOW_EVENTS.PRODUCTION_STARTED, {
+    ...input,
+    equipmentId,
+    lotNo,
+    productionId,
+    operator,
+    managementId,
+    startTime: now,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+    productName: input.chargeableRow?.partName ?? "",
+    quantity: input.chargeQty ?? input.chargeableRow?.chargeQty ?? input.chargeableRow?.qty ?? 0,
+  });
+
+  syncEquipmentChargeableLotsAfterStart(equipmentId, lotNo, input.chargeableRow ?? {});
+  const actualWorkRecord = syncActualWorkOnStart({
+    ...input,
+    equipmentId,
+    lotNo,
+    operator,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+  });
+
+  const legacyIds = bridgeLegacyDailyReportOnStart({
+    ...input,
+    equipmentId,
+    lotNo,
+    operator,
+    productionId,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+  });
+
+  appendRunningSessionChargeTarget(
+    equipmentId,
+    {
+      lotNo,
+      sourceRecordId: managementId,
+      productionId,
+      chargeQty: Number(input.chargeQty ?? input.chargeableRow?.chargeQty) || 0,
+    },
+    input.chargeableRow ?? {}
+  );
+
+  recordLotEquipmentLifecycleEvent({
+    lotNo,
+    action: "equipmentWorkStart",
+    equipmentId,
+    equipmentName: equipment?.equipmentName ?? equipmentId,
+    operator,
+    managementIds: legacyIds,
+  });
+
+  notifyWorkflowDataRefresh({
+    action: "startCharging",
+    equipmentId,
+    lotNo,
+    productionId,
+    legacyRecordIds: legacyIds,
+    actualWorkRecordId: actualWorkRecord?.id ?? null,
+    batchAdditional: true,
+  });
+
+  return { equipmentId, lotNo, productionId, legacyRecordIds: legacyIds, actualWorkRecord };
+}
+
+/**
+ * Batch start — first item drives equipment session; additional items append chargeHistory.
+ * @param {{
+ *   equipmentId: string,
+ *   items: Array<Record<string, unknown>>,
+ *   operator?: string,
+ * }} input
+ */
+export function executeStartChargingBatch(input) {
+  const equipmentId = String(input.equipmentId ?? "").trim();
+  const items = Array.isArray(input.items) ? input.items : [];
+  if (!equipmentId) throw new Error("equipmentId is required");
+  if (items.length === 0) throw new Error("장입할 제품을 선택하세요.");
+
+  const sharedLotNo = String(
+    input.sharedLotNo ?? input.lotNo ?? items[0]?.lotNo ?? ""
+  ).trim();
+  const normalizedItems = items.map((item) => ({
+    ...item,
+    lotNo: sharedLotNo || String(item.lotNo ?? "").trim(),
+  }));
+
+  const results = [];
+  for (let index = 0; index < normalizedItems.length; index += 1) {
+    const item = normalizedItems[index];
+    if (index === 0) {
+      results.push(
+        executeStartCharging({
+          ...input,
+          ...item,
+          equipmentId,
+          lotNo: item.lotNo,
+        })
+      );
+    } else {
+      results.push(
+        executeStartChargingAdditionalTarget({
+          ...input,
+          ...item,
+          equipmentId,
+          lotNo: item.lotNo,
+        })
+      );
+    }
+  }
+
+  return { equipmentId, lotNo: sharedLotNo || normalizedItems[0]?.lotNo, results, primary: results[0] };
+}
+
 /**
  * @param {{
  *   equipmentId: string,
@@ -800,6 +1077,23 @@ export function executeStartCharging(input) {
     operator,
     equipmentName: equipment?.equipmentName ?? equipmentId,
   });
+
+  patchRunningSessionWorkMeta(equipmentId, {
+    recipeId: actualWorkRecord?.recipeId ?? input.recipeId ?? null,
+    recipeName: actualWorkRecord?.recipeName ?? null,
+    chargeQty: Number(input.chargeQty ?? input.chargeableRow?.chargeQty) || undefined,
+  });
+
+  appendRunningSessionChargeTarget(
+    equipmentId,
+    {
+      lotNo,
+      sourceRecordId: managementId,
+      productionId: result.productionId,
+      chargeQty: Number(input.chargeQty ?? input.chargeableRow?.chargeQty) || 0,
+    },
+    input.chargeableRow ?? {}
+  );
 
   const legacyIds = bridgeLegacyDailyReportOnStart({
     ...input,

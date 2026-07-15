@@ -12,7 +12,7 @@ import {
   requiresCertificateIssue,
   skipsCertificateWaitByDefault,
 } from "./certificateIssuePolicy";
-import { isProductionWaitingStageRecord } from "./titanWorkflowStatus";
+import { WORKFLOW_STATUS, getWorkflowStatus } from "./titanWorkflowStatus";
 import {
   isHeatTreatmentComplete,
   isInspectionComplete,
@@ -200,8 +200,8 @@ export function resolveRecordCurrentProcess(record) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.HT_WAIT);
   }
 
-  // ②-a 열처리 대기 — 생산 대기 투입 · LOT 생성 전 (입고리스트 출력과 독립)
-  if (isProductionWaitingStageRecord(record)) {
+  // ②-a 열처리 대기 — explicit WORK_WAIT only (chargeable ≠ current process)
+  if (getWorkflowStatus(record) === WORKFLOW_STATUS.WORK_WAIT) {
     return buildCurrentProcess(CURRENT_PROCESS_KEYS.HT_WAIT);
   }
 

@@ -2,7 +2,7 @@
  * Project TITAN V1.5 — Data Engine Models (QR Workflow 대비 · SSOT)
  */
 
-/** @typedef {"idle"|"ready"|"running"|"maintenance"} EquipmentStatus */
+/** @typedef {"idle"|"ready"|"running"|"maintenance"|"breakdown"} EquipmentStatus */
 
 /**
  * @typedef {Object} EquipmentRecord

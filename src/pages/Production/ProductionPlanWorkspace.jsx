@@ -41,6 +41,7 @@ import {
 import { applyInboundHtlDocumentPrinted } from "../../utils/titanWorkflowStatus";
 import SectionPageActions from "../../foundation/layout/SectionPageActions";
 import TitanWorkflowNavigation from "../../foundation/components/TitanWorkflowNavigation";
+import { resolveRemainingChargeQty } from "../../utils/equipmentChargingQty";
 import "../InOut/InboundManagement.css";
 import "../Inventory/InventoryStatus.css";
 import "./ProductionManagement.css";
@@ -72,7 +73,7 @@ function resolveRecordProcessFields(record) {
 }
 
 function mapProductionWaitingRow(record) {
-  const qty = Number(resolvePlanRecordValue(record, ["qty", "quantity", "incomingQty"], 0)) || 0;
+  const qty = resolveRemainingChargeQty(record);
   const { processCategory, processDetail } = resolveRecordProcessFields(record);
   const currentProcess = resolveRecordCurrentProcess(record);
   return {

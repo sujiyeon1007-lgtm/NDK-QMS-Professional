@@ -7,8 +7,11 @@
 
 import { CERTIFICATE_STATUS, SHIPMENT_STATUS } from "./ndkWorkflow";
 import { getStockQty } from "./inventory";
-import { hasInspectionLogForManagementId } from "./inspectionLogSession";
-import { hasCertificateFilesForManagementId } from "./certificateSession";
+import { hasInspectionLogForRecord } from "./inspectionLogSession";
+import {
+  hasCertificateFilesForManagementId,
+  hasCertificateFilesForRecord,
+} from "./certificateSession";
 import { isIncomingRegistered } from "./productionRecords";
 import { isProductionComplete } from "./productionComplete";
 import { isHeatTreatmentWorkType, isShotWorkComplete } from "../config/workTypeWorkflow";
@@ -47,7 +50,7 @@ export function isHeatTreatmentComplete(record) {
 
 export function isInspectionComplete(record) {
   if (!record?.id) return false;
-  return hasInspectionLogForManagementId(record.id);
+  return hasInspectionLogForRecord(record);
 }
 
 export function isInspectionMenuEligible(record) {
@@ -57,8 +60,14 @@ export function isInspectionMenuEligible(record) {
 
 export function isCertificateIssued(record) {
   if (!record) return false;
-  if (record.certificateStatus === CERTIFICATE_STATUS.ISSUED) return true;
-  return hasCertificateFilesForManagementId(record.id);
+  if (hasCertificateFilesForRecord(record)) return true;
+  const chargedLots = new Set(
+    (record.chargeHistory ?? [])
+      .map((entry) => String(entry?.lotNo ?? "").trim().toUpperCase())
+      .filter(Boolean)
+  );
+  if (chargedLots.size <= 1 && record.certificateStatus === CERTIFICATE_STATUS.ISSUED) return true;
+  return !record?.lotNo?.trim() && hasCertificateFilesForManagementId(record.id);
 }
 
 export function isCertificateMenuEligible(record) {

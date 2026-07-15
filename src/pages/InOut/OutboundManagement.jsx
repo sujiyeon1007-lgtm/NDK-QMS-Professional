@@ -35,7 +35,6 @@ import { useTitanListSearch } from "../../foundation/hooks/useTitanListSearch";
 import { useListPagination } from "../../foundation/hooks/useListPagination";
 import { getMasterDataByCategory } from "../../utils/masterData";
 import { getSessionProductionRecords } from "../../utils/productionRecords";
-import { SHIPMENT_STATUS } from "../../utils/ndkWorkflow";
 import {
   OUTBOUND_STATUS_LABELS,
   formatOutboundDateDetailLabel,
@@ -46,7 +45,6 @@ import {
   getOutboundShipDate,
   getOutboundShipQty,
   getOutboundShipmentCount,
-  getOutboundTotalShippedQty,
   getStatementPrintStatus,
 } from "../../utils/outboundManagementStatus";
 import {
@@ -64,11 +62,17 @@ import {
 } from "../../config/registerModalStandard";
 import { buildInOutListPrintProps } from "../../utils/inOutListPrintRows";
 import { getPrintOutputDate } from "../../utils/titanPrintDates";
-import { getStockQty, getIncomingQty } from "../../utils/inventory";
+import { getIncomingQty } from "../../utils/inventory";
+import { resolveChargeQty } from "../../utils/equipmentChargingQty";
 import {
   applyOutboundRegister,
   cancelLastOutboundShipment,
   getLastOutboundShipQty,
+  hasOutboundShipmentForLot,
+  resolveOutboundAvailableQty,
+  resolveOutboundProductCompletedQty,
+  resolveOutboundProductShippedQty,
+  buildOutboundProductKey,
 } from "../../utils/outboundRegistration";
 import { isTitanAdminUser } from "../../utils/titanAdminAccess";
 import OutboundRegisterModal from "./OutboundRegisterModal";
@@ -94,8 +98,12 @@ function resolveRegisterTargetId(selectedRows = [], activeRow = null) {
 }
 
 function appendOutboundListFields(record, row = {}) {
+  const productKey = record?.productKey || buildOutboundProductKey(record);
   return {
     ...row,
+    id: productKey || record.id,
+    productKey,
+    lotNo: "—",
     outboundDate: formatOutboundDateLabel(record),
     outboundDateLabel: formatOutboundDateDetailLabel(record),
     shipDateLabel: formatOutboundDateDetailLabel(record),
@@ -107,17 +115,20 @@ function appendOutboundListFields(record, row = {}) {
 
 function mapOutboundListRow(record) {
   const statementStatus = getStatementPrintStatus(record);
-  const stock = getStockQty(record);
+  const availableQty = resolveOutboundAvailableQty(record);
+  const shippedQty = resolveOutboundProductShippedQty(record);
+  const completedQty = resolveOutboundProductCompletedQty(record);
 
-  if (record.shipmentStatus === SHIPMENT_STATUS.DONE && stock <= 0) {
-    return appendOutboundListFields(
-      record,
-      {
-        ...mapV13ProductListRow(record, { label: "출고완료", variant: "complete" }, { workQty: getOutboundTotalShippedQty(record), screenKey: "outbound" }),
-        statementStatusLabel: statementStatus.label,
-        statementStatusVariant: statementStatus.variant,
-      }
-    );
+  if (hasOutboundShipmentForLot(record) && availableQty <= 0) {
+    return appendOutboundListFields(record, {
+      ...mapV13ProductListRow(record, { label: "출고완료", variant: "complete" }, {
+        workQty: shippedQty || completedQty,
+        screenKey: "outbound",
+      }),
+      statementStatusLabel: statementStatus.label,
+      statementStatusVariant: statementStatus.variant,
+      stockQtyLabel: `${availableQty} EA`,
+    });
   }
 
   const status = getOutboundManagementStatus(record) ?? {
@@ -125,14 +136,15 @@ function mapOutboundListRow(record) {
     variant: "ship-wait",
   };
 
-  return appendOutboundListFields(
-    record,
-    {
-      ...mapV13ProductListRow(record, status, { workQty: stock, screenKey: "outbound" }),
-      statementStatusLabel: statementStatus.label,
-      statementStatusVariant: statementStatus.variant,
-    }
-  );
+  return appendOutboundListFields(record, {
+    ...mapV13ProductListRow(record, status, {
+      workQty: availableQty || completedQty,
+      screenKey: "outbound",
+    }),
+    statementStatusLabel: statementStatus.label,
+    statementStatusVariant: statementStatus.variant,
+    stockQtyLabel: `${availableQty} EA`,
+  });
 }
 
 function resolveOutboundListRecords(viewMode) {
@@ -181,6 +193,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerInitialId, setRegisterInitialId] = useState("");
+  const [registerInitialProductKey, setRegisterInitialProductKey] = useState("");
   const { search, draft, onDraftChange, onSearch, onReset, advancedOpen, onAdvancedToggle } =
     useTitanListSearch(createEmptyOutboundSearch, { storageKey: "outbound" });
   const [selectedIds, setSelectedIds] = useState([]);
@@ -249,6 +262,16 @@ export default function OutboundManagement({ forcedMode } = {}) {
   const buildOutboundDetailContent = (row, companyLabel) => {
     const record = row?.record ?? null;
     if (!row || !record) return null;
+    const lotRows = record.outboundLotRows ?? [];
+    const lotSummary =
+      lotRows.length > 0
+        ? lotRows
+            .map(
+              (lot) =>
+                `${lot.lotNo || "—"} ${resolveOutboundAvailableQty(lot)}/${resolveChargeQty(lot, { lotNo: lot.lotNo })} EA`
+            )
+            .join(", ")
+        : row.lotNo;
     return (
       <dl className="inbound-detail">
         <div>
@@ -261,7 +284,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
         </div>
         <div>
           <dt>LOT.NO</dt>
-          <dd>{row.lotNo}</dd>
+          <dd>{lotSummary}</dd>
         </div>
         <div>
           <dt>업체 LOT</dt>
@@ -298,12 +321,16 @@ export default function OutboundManagement({ forcedMode } = {}) {
           <dd>{getIncomingQty(record)} EA</dd>
         </div>
         <div>
-          <dt>총 출고수량</dt>
-          <dd>{getOutboundTotalShippedQty(record)}</dd>
+          <dt>작업완료</dt>
+          <dd>{resolveOutboundProductCompletedQty(record)} EA</dd>
         </div>
         <div>
-          <dt>잔량</dt>
-          <dd>{getStockQty(record)} EA</dd>
+          <dt>출고가능</dt>
+          <dd>{resolveOutboundAvailableQty(record)} EA</dd>
+        </div>
+        <div>
+          <dt>총 출고수량</dt>
+          <dd>{resolveOutboundProductShippedQty(record)} EA</dd>
         </div>
         <div>
           <dt>출고횟수</dt>
@@ -379,9 +406,23 @@ export default function OutboundManagement({ forcedMode } = {}) {
     }
   };
 
-  const openRegisterModal = (managementId = "") => {
+  const openRegisterModal = (managementId = "", productKey = "") => {
     const resolvedId = managementId || resolveRegisterTargetId(selectedRows, activeRow);
-    setRegisterInitialId(resolvedId);
+    const targetRow =
+      selectedRows.find(
+        (row) =>
+          (productKey && row.productKey === productKey) ||
+          row.managementId === resolvedId ||
+          row.id === resolvedId
+      ) ??
+      (activeRow &&
+      ((productKey && activeRow.productKey === productKey) ||
+        activeRow.managementId === resolvedId ||
+        activeRow.id === resolvedId)
+        ? activeRow
+        : null);
+    setRegisterInitialId(resolvedId || targetRow?.managementId || "");
+    setRegisterInitialProductKey(productKey || targetRow?.productKey || "");
     setRegisterOpen(true);
   };
 
@@ -399,14 +440,14 @@ export default function OutboundManagement({ forcedMode } = {}) {
       buildInOutListPrintProps(printTargetRows, {
         listNoPrefix: "OUT",
         outputDate: getPrintOutputDate(),
-        resolveQty: (record) => getStockQty(record),
+        resolveQty: (record) => resolveOutboundAvailableQty(record),
       })
     );
     setOutboundListPrintOpen(true);
   };
 
   const activeRecord = activeRow?.record ?? null;
-  const canRegisterOutbound = Boolean(activeRecord && getStockQty(activeRecord) > 0);
+  const canRegisterOutbound = Boolean(activeRecord && resolveOutboundAvailableQty(activeRecord) > 0);
   const detailActionLabel = canRegisterOutbound
     ? OUTBOUND_REGISTER_LABEL
     : OUTBOUND_STATEMENT_REPRINT_LABEL;
@@ -414,7 +455,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
 
   const handleDetailAction = () => {
     if (canRegisterOutbound) {
-      openRegisterModal(activeRow.managementId);
+      openRegisterModal(activeRow.managementId, activeRow.productKey);
       return;
     }
     openStatementPrintPreview({
@@ -425,7 +466,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
 
   const handleOutboundRegister = (result) => {
     if (!result?.ok || !result.managementId) return;
-    setActiveId(result.managementId);
+    setActiveId(result.productKey || result.form?.productKey || result.managementId);
     setPendingRegisterResult(result);
     setStatementPromptOpen(true);
   };
@@ -487,7 +528,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
   const handleOutboundCancel = (row = activeRow) => {
     const record = row?.record ?? row;
     if (!record) return;
-    const cancelResult = cancelLastOutboundShipment(record.id);
+    const cancelResult = cancelLastOutboundShipment(record.id, record.lotNo);
     if (!cancelResult.ok) {
       window.alert(cancelResult.message);
       return;
@@ -525,8 +566,8 @@ export default function OutboundManagement({ forcedMode } = {}) {
   const handleRowShip = (row) => {
     const record = row?.record ?? row;
     if (!record) return;
-    if (getStockQty(record) > 0) {
-      openRegisterModal(row.managementId ?? row.id);
+    if (resolveOutboundAvailableQty(record) > 0) {
+      openRegisterModal(row.managementId ?? row.id, row.productKey);
       return;
     }
     openStatementPrintPreview({
@@ -563,7 +604,7 @@ export default function OutboundManagement({ forcedMode } = {}) {
             }
           : (row) => {
               const record = row.record ?? row;
-              const canShip = getStockQty(record) > 0;
+              const canShip = resolveOutboundAvailableQty(record) > 0;
               return (
                 <OutboundRowActions
                   canShip={canShip || (record?.shippedQty ?? 0) > 0}
@@ -686,9 +727,11 @@ export default function OutboundManagement({ forcedMode } = {}) {
       <OutboundRegisterModal
         open={registerOpen}
         initialManagementId={registerInitialId}
+        initialProductKey={registerInitialProductKey}
         onClose={() => {
           setRegisterOpen(false);
           setRegisterInitialId("");
+          setRegisterInitialProductKey("");
         }}
         onRegister={handleOutboundRegister}
       />

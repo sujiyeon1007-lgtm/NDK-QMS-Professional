@@ -1,0 +1,10 @@
+[
+  {
+    "id": "home",
+    "label": "HOME",
+    "path": "/home",
+    "expectedLabels": [
+      "HOME"
+    ]
+  }
+]

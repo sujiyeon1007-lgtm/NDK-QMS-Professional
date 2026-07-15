@@ -109,7 +109,7 @@ export default function ControlRoomLotView({
           type="search"
           value={searchKeyword}
           onChange={(event) => setSearchKeyword(event.target.value)}
-          placeholder="LOT · 관리번호 · 고객사 · 제품명 · 품번 · 설비 · 작업자"
+          placeholder="LOT · 관리번호 · 거래처 · 제품명 · 품번 · 설비 · 작업자"
           autoComplete="off"
         />
         {searchKeyword ? (

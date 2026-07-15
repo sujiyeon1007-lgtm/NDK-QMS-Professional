@@ -5,7 +5,7 @@
 import { getTitanDataEngine } from "../foundation/data";
 import { normalizeProductionLotKey } from "./productionDailyReportPrintData";
 import { getSessionProductionRecords } from "./productionRecords";
-import { hasInspectionLogForManagementId } from "./inspectionLogSession";
+import { getInspectionLogsByLotNo } from "./inspectionLogSession";
 import { getCertificateFileEntries } from "./certificateSession";
 import { getTimelineByLotNo } from "./timelineQuery";
 import { getEquipmentById } from "./equipmentWorkflowService";
@@ -19,7 +19,9 @@ function findLegacyRecordsByLot(lotNo) {
   const key = normalizeLotNo(lotNo);
   if (!key) return [];
   return getSessionProductionRecords().filter(
-    (row) => normalizeLotNo(row.lotNo) === key
+    (row) =>
+      normalizeLotNo(row.lotNo) === key ||
+      (row.chargeHistory ?? []).some((entry) => normalizeLotNo(entry?.lotNo) === key)
   );
 }
 
@@ -97,7 +99,7 @@ export function buildLotTraceabilityView(lotNo) {
 
   const inspectionStatus = inspectionRows.length
     ? inspectionRows[inspectionRows.length - 1]?.status ?? "검사완료"
-    : hasInspectionLogForManagementId(managementId)
+    : getInspectionLogsByLotNo(key).length > 0
       ? "검사완료"
       : "미검사";
 

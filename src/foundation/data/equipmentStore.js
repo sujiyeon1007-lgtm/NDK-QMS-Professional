@@ -136,12 +136,12 @@ export const equipmentStore = {
 
       (acc, item) => {
         acc.total += 1;
-        const key = item.status === "ready" ? "idle" : item.status;
+        const key = item.status;
         if (acc[key] != null) acc[key] += 1;
         return acc;
       },
 
-      { total: 0, idle: 0, ready: 0, running: 0, maintenance: 0 }
+      { total: 0, idle: 0, ready: 0, running: 0, maintenance: 0, breakdown: 0 }
 
     );
 

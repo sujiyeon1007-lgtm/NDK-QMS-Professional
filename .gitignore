@@ -28,3 +28,39 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# RC1 dev logs & temp artifacts (repo root)
+/build-*.txt
+/build*.txt
+/verify-*.txt
+/qa-*.txt
+/*_out.txt
+/*_out2.txt
+/_tmp_*
+/_decode_*
+/_rewrite_*
+/_restore_*
+/preview-log.txt
+/pw-install.txt
+/company-import-out.txt
+/golden-path-out.txt
+/golden-scenario-out.txt
+/rc1-*-output.txt
+/rc1-build*.txt
+/rc1-verify*.txt
+/build-sprint*.log
+release-portable-tmp/
+release-rc1-build-fresh/
+
+# RC1 QA screenshots (optional local only)
+/qa-*.png
+
+# Electron / packaged release artifacts (never commit - GH 100MB limit)
+release/
+release_*/
+release-*/
+**/win-unpacked/
+*.asar
+public.zip
+/electron-stdout.txt
+/electron-stderr.txt

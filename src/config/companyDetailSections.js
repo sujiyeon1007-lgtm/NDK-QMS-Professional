@@ -93,11 +93,10 @@ export const COMPANY_QUALITY_COLUMNS = [
 
 /**
  * 거래처관리 리스트 — 빠른 조회 (Compact · 왼쪽 정렬)
- * 업체명 | 코드 | 대표자 | 우리회사 담당자 | 대표번호 | 이메일 | 상태
+ * 업체명 | 대표자 | 우리회사 담당자 | 대표번호 | 이메일 | 상태
  */
 export const COMPANY_LIST_COLUMNS = [
-  { key: "name", label: "업체명" },
-  { key: "code", label: "코드", identifier: true },
+  { key: "name", label: "업체명", identifier: true },
   { key: "ceoName", label: "대표자" },
   { key: "ndkAssigneeLabel", label: "우리회사 담당자" },
   { key: "phoneLabel", label: "대표번호" },

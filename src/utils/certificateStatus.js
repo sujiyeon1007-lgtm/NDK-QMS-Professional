@@ -6,13 +6,14 @@ import { matchesBasicSearch } from "../config/listSearchStandard";
 import { matchesInboundDataSearch } from "./inboundDataFields";
 import {
   buildCertificateEntryFromRecord,
-  getCertificateEntryByManagementId,
+  getCertificateEntryForRecord,
   getCertificateHistoryEntries,
   isCertificateEntryIssued,
 } from "./certificateSession";
 import { isCertificateIssued, isCertificateMenuEligible, MENU_TASK_STATUS } from "./menuWorkflowGate";
 import { mapV13ProductListRow } from "./processFlow";
 import { getSessionProductionRecords } from "./productionRecords";
+import { expandRecordsByChargeHistory, buildRecordLotRowKey } from "./lotBundleService";
 import { formatQtyWithUnit } from "./productUnits";
 import {
   CERTIFICATE_MANAGEMENT_STATUS,
@@ -20,7 +21,7 @@ import {
 } from "./workflowProcessStatus";
 
 function resolveCertificateMenuEntry(record) {
-  const existing = getCertificateEntryByManagementId(record.id);
+  const existing = getCertificateEntryForRecord(record);
   if (existing) return existing;
   return buildCertificateEntryFromRecord(record);
 }
@@ -29,7 +30,9 @@ function resolveCertificateMenuEntry(record) {
 export function getCertificateRegisterListRows() {
   return getCertificateMenuListRows().filter((row) => {
     const record = getSessionProductionRecords().find((item) => item.id === row.entry?.managementId);
-    if (record && isCertificateIssued(record)) return false;
+    if (record && isCertificateIssued({ ...record, lotNo: row.entry?.lotNo || record.lotNo })) {
+      return false;
+    }
     if (isCertificateEntryIssued(row.entry)) return false;
     return true;
   });
@@ -83,15 +86,28 @@ export function matchesCertificateHistorySearch(row, search) {
 
 /** 검사완료 제품 — 성적서관리 자동 표시 대상 */
 export function getCertificateMenuListRows() {
-  return getSessionProductionRecords()
+  const seen = new Set();
+  const rows = [];
+
+  expandRecordsByChargeHistory(getSessionProductionRecords())
     .filter(isCertificateMenuEligible)
-    .map((record) => {
+    .forEach((record) => {
+      const key = buildRecordLotRowKey(record);
+      if (key && seen.has(key)) return;
+      if (key) seen.add(key);
+
       const entry = resolveCertificateMenuEntry(record);
-      return mapCertificateEntryToListRow({
-        ...entry,
-        id: entry.id || `pending-cert-${record.id}`,
-      });
+      rows.push(
+        mapCertificateEntryToListRow({
+          ...entry,
+          id: entry.id || `pending-cert-${key || record.id}`,
+          lotNo: record.lotNo?.trim() || entry.lotNo,
+          qty: entry.qty || record.chargeQty,
+        })
+      );
     });
+
+  return rows;
 }
 
 export function mapCertificateEntryToListRow(entry) {
@@ -101,7 +117,11 @@ export function mapCertificateEntryToListRow(entry) {
   const customerLotNo = entry.customerLotNo || record?.customerLotNo || "";
   const heatTreatmentProcess = entry.process?.trim() || record?.process || "—";
   const v13 = record
-    ? mapV13ProductListRow(record, status, { screenKey: "certificate" })
+    ? mapV13ProductListRow(
+        { ...record, lotNo: entry.lotNo || record.lotNo, workQty: entry.qty },
+        status,
+        { screenKey: "certificate", workQty: entry.qty }
+      )
     : {
         id: entry.id,
         incomingDate: entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",

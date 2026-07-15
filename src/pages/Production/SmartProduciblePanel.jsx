@@ -7,6 +7,7 @@ import {
   countProducibleBySource,
   getProducibleSourceMeta,
 } from "../../utils/smartProducibleWorkList";
+import { resolveRemainingChargeQty } from "../../utils/equipmentChargingQty";
 
 /** Smart Workflow — 설비별 생산 가능 목록 (기존 테이블 스타일 재사용) */
 export default function SmartProduciblePanel({ equipmentContext, refreshKey = 0, onSelectRecord }) {
@@ -31,7 +32,7 @@ export default function SmartProduciblePanel({ equipmentContext, refreshKey = 0,
           partName: record.partName ?? "—",
           partNo: record.partNo ?? "—",
           material: record.material ?? "—",
-          qty: record.qty ?? "—",
+          qty: resolveRemainingChargeQty(record) || "—",
           incomingDate: record.incomingDate ?? "—",
           record,
         };
