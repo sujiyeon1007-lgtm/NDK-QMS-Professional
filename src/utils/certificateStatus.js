@@ -14,6 +14,7 @@ import { isCertificateIssued, isCertificateMenuEligible, MENU_TASK_STATUS } from
 import { mapV13ProductListRow } from "./processFlow";
 import { getSessionProductionRecords } from "./productionRecords";
 import { expandRecordsByChargeHistory, buildRecordLotRowKey } from "./lotBundleService";
+import { resolveChargeQty } from "./equipmentChargingQty";
 import { formatQtyWithUnit } from "./productUnits";
 import {
   CERTIFICATE_MANAGEMENT_STATUS,
@@ -26,14 +27,22 @@ function resolveCertificateMenuEntry(record) {
   return buildCertificateEntryFromRecord(record);
 }
 
-/** 검사완료 제품 — 성적서등록 대기 (미발행) */
+function resolveCertificateRowLotNo(row) {
+  const fromEntry = String(row?.entry?.lotNo ?? "").trim();
+  if (fromEntry) return fromEntry;
+  const fromRow = String(row?.lotNo ?? "").trim();
+  return fromRow && fromRow !== "—" ? fromRow : "";
+}
+
+/** 검사완료 LOT — 성적서등록 대기 (미발행 · 제품 집계 ❌) */
 export function getCertificateRegisterListRows() {
   return getCertificateMenuListRows().filter((row) => {
+    if (isCertificateEntryIssued(row.entry)) return false;
+    const lotNo = resolveCertificateRowLotNo(row);
     const record = getSessionProductionRecords().find((item) => item.id === row.entry?.managementId);
-    if (record && isCertificateIssued({ ...record, lotNo: row.entry?.lotNo || record.lotNo })) {
+    if (record && isCertificateIssued({ ...record, lotNo: lotNo || record.lotNo })) {
       return false;
     }
-    if (isCertificateEntryIssued(row.entry)) return false;
     return true;
   });
 }
@@ -84,7 +93,7 @@ export function matchesCertificateHistorySearch(row, search) {
   return true;
 }
 
-/** 검사완료 제품 — 성적서관리 자동 표시 대상 */
+/** 검사완료 LOT — 성적서관리 자동 표시 대상 (one row per chargeHistory LOT) */
 export function getCertificateMenuListRows() {
   const seen = new Set();
   const rows = [];
@@ -96,13 +105,15 @@ export function getCertificateMenuListRows() {
       if (key && seen.has(key)) return;
       if (key) seen.add(key);
 
+      const lotNo = record.lotNo?.trim() || "";
+      const chargeQty = resolveChargeQty(record, { lotNo });
       const entry = resolveCertificateMenuEntry(record);
       rows.push(
         mapCertificateEntryToListRow({
           ...entry,
           id: entry.id || `pending-cert-${key || record.id}`,
-          lotNo: record.lotNo?.trim() || entry.lotNo,
-          qty: entry.qty || record.chargeQty,
+          lotNo: lotNo || entry.lotNo,
+          qty: chargeQty || Number(entry.qty) || 0,
         })
       );
     });
@@ -113,25 +124,33 @@ export function getCertificateMenuListRows() {
 export function mapCertificateEntryToListRow(entry) {
   const status = getCertificateManagementStatus(entry);
   const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
+  const lotNo = String(entry.lotNo ?? record?.lotNo ?? "").trim();
+  const chargeQty = resolveChargeQty(
+    record
+      ? { ...record, lotNo, chargeQty: entry.qty ?? record.chargeQty }
+      : { ...entry, lotNo, chargeQty: entry.qty },
+    { lotNo }
+  );
   const purchaseOrderNo = entry.purchaseOrderNo || record?.purchaseOrderNo || "";
   const customerLotNo = entry.customerLotNo || record?.customerLotNo || "";
   const heatTreatmentProcess = entry.process?.trim() || record?.process || "—";
+  const unit = entry.unit || record?.unit || "EA";
   const v13 = record
     ? mapV13ProductListRow(
-        { ...record, lotNo: entry.lotNo || record.lotNo, workQty: entry.qty },
+        { ...record, lotNo: lotNo || record.lotNo, workQty: chargeQty, chargeQty },
         status,
-        { screenKey: "certificate", workQty: entry.qty }
+        { screenKey: "certificate", workQty: chargeQty }
       )
     : {
         id: entry.id,
         incomingDate: entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",
         productionDate: "—",
-        lotNo: entry.lotNo?.trim() || "—",
+        lotNo: lotNo || "—",
         company: entry.company || "—",
         partName: entry.partName || "—",
         partNo: entry.partNo || "—",
-        inboundQtyLabel: formatQtyWithUnit(entry.qty, entry.unit),
-        workQtyLabel: formatQtyWithUnit(entry.qty, entry.unit),
+        inboundQtyLabel: formatQtyWithUnit(chargeQty, unit),
+        workQtyLabel: formatQtyWithUnit(chargeQty, unit),
         currentProcess: "성적서",
         workflowProcess: "성적서",
         workflowStatus: status.label,
@@ -145,17 +164,19 @@ export function mapCertificateEntryToListRow(entry) {
     id: entry.id,
     screenKey: "certificate",
     managementId: entry.managementId || "—",
+    lotNo: lotNo || v13.lotNo || "—",
     purchaseOrderNo: purchaseOrderNo || "—",
     customerLotNo: customerLotNo || "—",
     material: entry.material || "—",
-    qty: formatQtyWithUnit(entry.qty, entry.unit),
+    qty: formatQtyWithUnit(chargeQty, unit),
+    workQtyLabel: formatQtyWithUnit(chargeQty, unit),
     heatTreatmentProcess,
     processName: heatTreatmentProcess,
     excelRegistered: Boolean(entry.excelFile?.name),
     pdfRegistered: Boolean(entry.pdfFile?.name),
     registeredDate: entry.registeredDate || entry.createdAt?.slice(0, 10) || "—",
     assignee: entry.registeredBy || "—",
-    entry,
+    entry: { ...entry, lotNo, qty: chargeQty, unit },
   };
 }
 

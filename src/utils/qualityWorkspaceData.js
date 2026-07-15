@@ -60,16 +60,18 @@ import {
 } from "./workflowProcessStatus";
 import { requiresCertificateIssue } from "./certificateIssuePolicy";
 
-/** P0-OP-006 Phase 1 — screen data memo keyed on production records snapshot */
+/** P0-OP-006 Phase 1 — screen data memo keyed on production records + inspection logs */
 let inspectionMassSnapshot = null;
 let inspectionMassCache = null;
 let certificateWorkspaceSnapshot = null;
+let certificateWorkspaceLogCount = null;
 let certificateWorkspaceCache = null;
 
 export function invalidateQualityWorkspaceDataCache() {
   inspectionMassSnapshot = null;
   inspectionMassCache = null;
   certificateWorkspaceSnapshot = null;
+  certificateWorkspaceLogCount = null;
   certificateWorkspaceCache = null;
 }
 
@@ -437,7 +439,13 @@ export function countCertificateWorkspace(rows = buildCertificateWorkspaceRows()
 
 export function getCertificateWorkspaceScreenData(records) {
   const snapshot = records ?? getQualityRecords();
-  if (!records && certificateWorkspaceSnapshot === snapshot && certificateWorkspaceCache) {
+  const logCount = getInspectionLogs().length;
+  if (
+    !records &&
+    certificateWorkspaceSnapshot === snapshot &&
+    certificateWorkspaceLogCount === logCount &&
+    certificateWorkspaceCache
+  ) {
     return certificateWorkspaceCache;
   }
 
@@ -449,6 +457,7 @@ export function getCertificateWorkspaceScreenData(records) {
 
   if (!records) {
     certificateWorkspaceSnapshot = snapshot;
+    certificateWorkspaceLogCount = logCount;
     certificateWorkspaceCache = result;
   }
   return result;

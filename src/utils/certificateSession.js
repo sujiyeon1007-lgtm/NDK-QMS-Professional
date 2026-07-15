@@ -165,16 +165,19 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
   if (!record) return null;
 
   const managementId = record.id || record.managementId;
+  const lotNo = String(record.lotNo ?? "").trim();
+  /** LOT charge qty SSOT — never product inbound sum */
+  const chargeQty = resolveChargeQty(record, { lotNo });
   const fromRecord = {
     managementId,
     company: record.company,
     partName: record.partName,
     partNo: record.partNo,
     material: record.material,
-    lotNo: record.lotNo || "",
+    lotNo,
     purchaseOrderNo: record.purchaseOrderNo || "",
     customerLotNo: record.customerLotNo || "",
-    qty: resolveChargeQty(record, { lotNo: record.lotNo }),
+    qty: chargeQty,
     unit: record.unit || "EA",
     process: getProductionProcessName(record),
     registeredDate: getJournalReferenceDate(),
@@ -183,12 +186,16 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
 
   const { log, report } = getLatestInspectionReportForRecord(record);
   if (!report) {
+    const resolvedLotNo = log?.lotNo?.trim() || fromRecord.lotNo;
     return {
       ...fromRecord,
       ...(log
         ? {
-            lotNo: log.lotNo || fromRecord.lotNo,
-            qty: log.qty || fromRecord.qty,
+            lotNo: resolvedLotNo,
+            qty: resolveChargeQty(
+              { ...record, lotNo: resolvedLotNo, chargeQty: record.chargeQty },
+              { lotNo: resolvedLotNo }
+            ) || chargeQty,
             unit: log.unit || fromRecord.unit,
             registeredDate: log.inspectionDate || fromRecord.registeredDate,
             registeredBy: log.assignee || fromRecord.registeredBy,
@@ -199,16 +206,21 @@ export function buildCertificateEntryFromRecord(record, overrides = {}) {
     };
   }
 
+  const reportLotNo = report.lotNo?.trim() || fromRecord.lotNo;
   return {
     ...fromRecord,
     company: report.company?.trim() || fromRecord.company,
     partName: report.partName?.trim() || fromRecord.partName,
     partNo: report.partNo?.trim() || fromRecord.partNo,
     material: report.material?.trim() || fromRecord.material,
-    lotNo: report.lotNo?.trim() || fromRecord.lotNo,
+    lotNo: reportLotNo,
     purchaseOrderNo: report.purchaseOrderNo?.trim() || fromRecord.purchaseOrderNo,
     customerLotNo: report.customerLotNo?.trim() || fromRecord.customerLotNo,
-    qty: report.qty ?? fromRecord.qty,
+    qty:
+      resolveChargeQty(
+        { ...record, lotNo: reportLotNo, chargeQty: record.chargeQty },
+        { lotNo: reportLotNo }
+      ) || chargeQty,
     unit: report.unit?.trim() || fromRecord.unit,
     process: report.process?.trim() || fromRecord.process,
     registeredDate: report.inspectionDate?.trim() || log?.inspectionDate || fromRecord.registeredDate,
@@ -323,6 +335,8 @@ export function getCertificateHistoryEntries({ includeDeleted = false } = {}) {
 export function isCertificateEntryIssued(entry) {
   if (!entry) return false;
   if (Number(entry.issueCount) > 0) return true;
+  // LOT-keyed pending entry must not inherit product-level certificateStatus
+  if (normalizeCertificateLotKey(entry.lotNo)) return false;
   const record = getSessionProductionRecords().find((item) => item.id === entry.managementId);
   return record?.certificateStatus === CERTIFICATE_STATUS.ISSUED;
 }

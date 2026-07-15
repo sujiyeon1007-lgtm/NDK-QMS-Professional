@@ -37,8 +37,9 @@ export const RC1_SCREEN_SSOT = Object.freeze({
     rowModel: "lot",
   },
   certificateManagement: {
-    source: "inspection",
-    quantityField: "qty",
+    source: "chargeHistory",
+    quantityField: "chargeQty",
+    quantityResolver: "resolveChargeQty",
     rowModel: "lot",
   },
   /**

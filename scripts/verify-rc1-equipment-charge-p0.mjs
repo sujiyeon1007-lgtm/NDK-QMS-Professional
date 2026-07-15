@@ -1570,6 +1570,83 @@ try {
     step("P0-LOT-SSOT: F5 reconcile — getLotBundle stable", false, "skipped");
   }
 
+  // --- P0 certificate: LOT-centric issuance list (not product inbound sum) ---
+  const CERT_LOT_ID = "RC1-CERT-LOT-SSOT-20";
+  const { buildCertificateWorkspaceRows, invalidateQualityWorkspaceDataCache } = await import(
+    pathToFileURL(path.join(root, "src/utils/qualityWorkspaceData.js")).href
+  );
+  const { getCertificateRegisterListRows } = await import(
+    pathToFileURL(path.join(root, "src/utils/certificateStatus.js")).href
+  );
+  const { addInspectionLog: addCertInspectionLog } = await import(
+    pathToFileURL(path.join(root, "src/utils/inspectionLogSession.js")).href
+  );
+
+  replaceSessionProductionRecords([
+    {
+      id: CERT_LOT_ID,
+      mesManagementNo: CERT_LOT_ID,
+      company: "RC1\uC131\uC801\uC11C\uAC80\uC99D",
+      partName: "Product A",
+      partNo: "CERT-LOT-P0",
+      material: "SCM440",
+      qty: 20,
+      inboundQty: 20,
+      unit: "EA",
+      incomingRegistered: true,
+      registered: true,
+      lotNo: "LOT-B",
+      chargeHistory: [
+        {
+          lotNo: "LOT-A",
+          chargeQty: 10,
+          status: "completed",
+          equipmentId: "ION-01",
+          completedAt: "2026-07-01T10:00:00.000Z",
+        },
+        {
+          lotNo: "LOT-B",
+          chargeQty: 10,
+          status: "completed",
+          equipmentId: "ION-01",
+          completedAt: "2026-07-02T10:00:00.000Z",
+        },
+      ],
+    },
+  ]);
+  addCertInspectionLog({
+    managementId: CERT_LOT_ID,
+    lotNo: "LOT-A",
+    qty: 20,
+    unit: "EA",
+    judgment: "\uD569\uACA9",
+  });
+  addCertInspectionLog({
+    managementId: CERT_LOT_ID,
+    lotNo: "LOT-B",
+    qty: 20,
+    unit: "EA",
+    judgment: "\uD569\uACA9",
+  });
+  invalidateQualityWorkspaceDataCache?.();
+  const certRows = buildCertificateWorkspaceRows();
+  const certRegisterRows = getCertificateRegisterListRows().filter(
+    (row) => String(row.managementId ?? "").trim() === CERT_LOT_ID
+  );
+  const certLotA = certRows.find((row) => String(row.lotNo ?? "").trim() === "LOT-A");
+  const certLotB = certRows.find((row) => String(row.lotNo ?? "").trim() === "LOT-B");
+  const certEntryQtyA = Number(certLotA?.entry?.qty);
+  const certEntryQtyB = Number(certLotB?.entry?.qty);
+  step(
+    "P0 certificate: two inspected LOTs → two issuance rows (10EA each, not product 20EA)",
+    certRows.length === 2 &&
+      certRegisterRows.length === 2 &&
+      certEntryQtyA === 10 &&
+      certEntryQtyB === 10 &&
+      !certRows.some((row) => Number(row.entry?.qty) === 20),
+    `rows=${certRows.length} register=${certRegisterRows.length} A=${certEntryQtyA} B=${certEntryQtyB}`
+  );
+
   // --- P0 outbound: Product-centric UI + LOT FIFO allocation ---
   const OUTBOUND_LOT_ID = "RC1-OUT-LOT-CHARGE-15";
   const { buildOutgoingTaskWorkspaceRecords } = await import(
